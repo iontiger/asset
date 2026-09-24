@@ -958,6 +958,57 @@
   }
   .toast.show { opacity:1; }
 
+  /* ── 축하 효과 ─────────────────────── */
+  .fx-canvas { position:fixed; inset:0; width:100vw; height:100vh; pointer-events:none; z-index:40; }
+  .fx-card-wrap {
+    position:fixed; inset:0; z-index:41; pointer-events:none;
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .fx-card {
+    pointer-events:auto; cursor:pointer; text-align:center; max-width:min(92vw, 760px);
+    padding:30px 44px 28px; border-radius:30px;
+    background:color-mix(in srgb, var(--surface) 84%, transparent);
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    box-shadow:var(--shadow-pop), 0 0 0 1px var(--border);
+    animation:fxIn .95s cubic-bezier(.2,1.5,.4,1) both;
+  }
+  .fx-card.out { animation:fxOut .45s cubic-bezier(.5,0,.8,.4) forwards; }
+  .fx-emoji { font-size:2.6rem; line-height:1; display:inline-block; animation:fxWiggle 1.2s ease-in-out .3s 2; }
+  .fx-title {
+    margin-top:6px; font-size:clamp(2.6rem, 7.5vw, 6rem); font-weight:900; letter-spacing:-.045em; line-height:1.05;
+    background:linear-gradient(115deg, #ff5a6e 0%, #ffb400 30%, #2fbf71 55%, #3987e5 78%, #9b5de5 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    background-size:200% 100%; animation:fxShine 2.4s linear infinite;
+  }
+  .fx-card.mid { padding:24px 36px 22px; }
+  .fx-card.mid .fx-title { font-size:clamp(2rem, 5vw, 3.6rem); }
+  .fx-card.mid .fx-emoji { font-size:2rem; }
+  .fx-sub { margin-top:10px; font-size:1.05rem; font-weight:700; color:var(--ink-2); }
+  .fx-lines { margin-top:14px; display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+  .fx-lines span {
+    font-size:.8rem; font-weight:700; padding:4px 11px; border-radius:99px;
+    background:var(--accent-wash); color:var(--accent-deep);
+  }
+  .fx-hint { margin-top:12px; font-size:.7rem; color:var(--muted); }
+  @keyframes fxIn {
+    0%   { transform:scale(.15) rotate(-6deg); opacity:0; }
+    55%  { transform:scale(1.14) rotate(1deg); opacity:1; }
+    75%  { transform:scale(.96); }
+    100% { transform:scale(1); }
+  }
+  @keyframes fxOut { to { transform:scale(1.4); opacity:0; } }
+  @keyframes fxShine { to { background-position:-200% 0; } }
+  @keyframes fxWiggle { 0%, 100% { transform:rotate(0); } 25% { transform:rotate(-14deg) scale(1.15); } 75% { transform:rotate(12deg) scale(1.1); } }
+  /* 숫자가 톡 커졌다 돌아오는 효과 */
+  .num-pop { animation:numPop .8s cubic-bezier(.2,1.6,.4,1); transform-origin:left center; }
+  @keyframes numPop { 0% { transform:scale(1); } 35% { transform:scale(1.28); color:var(--up); } 100% { transform:scale(1); } }
+  @media (prefers-reduced-motion: reduce) {
+    .fx-card, .fx-card.out, .fx-emoji, .fx-title, .num-pop { animation:none; }
+  }
+  .fx-set .btn-row { margin-top:10px; }
+  .switch-row { display:flex; align-items:center; gap:10px; font-size:.86rem; font-weight:600; cursor:pointer; }
+  .switch-row input { width:18px; height:18px; accent-color:var(--accent); }
+
   /* ── 좁은 화면 대응 ───────────────── */
   /* 창 폭이 아니라 실제로 쓸 수 있는 폭(컨테이너)에 맞춘다 — 사이드바 폭과 무관하게 동작 */
   /* 중간 폭: 작은 KPI를 순자산 아래 한 줄로 */
@@ -1594,6 +1645,17 @@
             <button type="button" class="btn btn-primary" id="btnOwnerAdd">추가</button>
           </div>
         </div>
+        <div class="set-sec fx-set">
+          <h3>축하 효과</h3>
+          <p>순자산이 천만원 단위로 새 기록을 세우거나 억 단위를 넘을 때, 목표의 10%씩 다가갈 때,
+          대출이 천만원 단위로 줄 때 화면 효과로 축하해 드려요. 같은 기록은 한 번만 축하합니다.</p>
+          <label class="switch-row"><input type="checkbox" id="fxToggle"> 축하 효과 켜기</label>
+          <div class="btn-row">
+            <button type="button" class="btn btn-ghost btn-sm" data-fx="rain">🌸 꽃가루</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-fx="fireworks">🎆 폭죽</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-fx="zoom">🔢 숫자</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1903,7 +1965,7 @@ function serializeDb() {
     app: 'asset-pc',
     version: 1,
     updatedAt: new Date().toISOString(),
-    settings: { goal: goalAmount, fcMonthly: fcMonthly, fcRate: fcRate },
+    settings: { goal: goalAmount, fcMonthly: fcMonthly, fcRate: fcRate, marks: marks || undefined },
     owners: OWNERS.map(function (o) { return { id: o.id, name: o.name }; })
   }, null, 2);
   var sorted = rows.slice().sort(function (a, b) {
@@ -1930,6 +1992,9 @@ function applyDb(obj) {
   var oldDefault = st.fcMonthly === 10000000 && !st.fcRate;
   fcMonthly = !oldDefault && isFinite(st.fcMonthly) ? Math.round(st.fcMonthly) : FC_DEFAULT_MONTHLY;
   fcRate = !oldDefault && isFinite(st.fcRate) ? Math.round(st.fcRate * 10) / 10 : FC_DEFAULT_RATE;
+  // 축하 기준선 — 없으면(처음 쓰는 파일) 지금 값을 기준으로 삼고 지난 기록은 축하하지 않는다
+  marks = st.marks && typeof st.marks === 'object' ? Object.assign({}, st.marks) : null;
+  syncMarks();
 }
 
 // ── 파일 읽기/쓰기 ──
@@ -1963,6 +2028,8 @@ async function readFolder() {
     // 새 폴더 — 빈 데이터 파일을 만든다
     OWNERS = DEFAULT_OWNERS.slice();
     rows = [];
+    marks = null;
+    syncMarks();
     store.locked = false;
     await writeDataFile(serializeDb());
     showToast(DATA_FILE + ' 파일을 새로 만들었습니다');
@@ -2133,6 +2200,8 @@ function openLocal() {
     catch (e) { rows = []; OWNERS = DEFAULT_OWNERS.slice(); }
   } else {
     rows = []; OWNERS = DEFAULT_OWNERS.slice();
+    marks = null;
+    syncMarks();
   }
   setBanner('');
   setStoreState('loaded');
@@ -2148,6 +2217,8 @@ function openDemo() {
   lsDel(MODE_KEY);
   OWNERS = DEMO_OWNERS.slice();
   rows = normalizeRows(demoRows());
+  marks = null;
+  syncMarks();
   setBanner(FS_SUPPORTED
     ? '<span>지금은 <b>데모 데이터</b>입니다. 데이터 폴더를 고르면 이 PC에 <code>' + DATA_FILE +
       '</code> 파일을 만들어 기록을 관리합니다.</span>' +
@@ -2371,6 +2442,7 @@ function importFiles(fileList) {
         if (isFinite(inSettings.fcMonthly)) fcMonthly = Math.round(inSettings.fcMonthly);
         if (isFinite(inSettings.fcRate)) fcRate = Math.round(inSettings.fcRate * 10) / 10;
       }
+      syncMarks(true);
     }, '가져오기 완료 — 기록 ' + inRows.length + '건').then(function () {
       renderOwnerManageList();
       renderSettingsInfo();
@@ -3398,7 +3470,7 @@ function editHistoryAmount(btn, r) {
     done = true;
     var v = inp.dataset.value;
     if (save && v !== '' && Number(v) !== r.amount) {
-      commit(function () { r.amount = Number(v); }, r.date + ' 금액 수정 완료');
+      commitWithMilestones(function () { r.amount = Number(v); }, r.date + ' 금액 수정 완료');
     } else {
       renderDetail();
     }
@@ -3646,7 +3718,7 @@ function saveEntries() {
   var today = fmtDateStr(new Date());
   saving = true;
   $('btnSave').disabled = true;
-  commit(function () {
+  commitWithMilestones(function () {
     entries.forEach(function (en) {
       rows = rows.filter(function (r) { return !(r.date === today && r.name === en.name); });
       rows.push({ date: today, name: en.name, amount: en.amount, group: en.group, owner: en.owner, logo: en.logo });
@@ -3714,6 +3786,368 @@ $('inputList').addEventListener('click', function (e) {
 $('btnSave').addEventListener('click', saveEntries);
 $('btnDiscard').addEventListener('click', discardEntries);
 
+/* ═══════════ 축하 효과 엔진 ═══════════
+   꽃가루(rain) · 폭죽(fireworks) · 터지는 꽃가루(burst) · 반짝임(sparkle)을
+   화면 전체를 덮는 캔버스 하나에 그린다. 입자가 없으면 그리기를 멈춘다. */
+var FX = (function () {
+  var cv = null, ctx = null, parts = [], raf = 0, W = 0, H = 0, last = 0;
+  var WARM = ['#ff5a6e', '#ffb400', '#ffd23f', '#ff8fab', '#f15bb5'];
+  var COOL = ['#3987e5', '#00bbf9', '#2fbf71', '#9b5de5', '#4cc9f0'];
+  var ALL = WARM.concat(COOL);
+  function ensure() {
+    if (cv) return;
+    cv = document.createElement('canvas');
+    cv.className = 'fx-canvas';
+    document.body.appendChild(cv);
+    ctx = cv.getContext('2d');
+    resize();
+    window.addEventListener('resize', resize);
+  }
+  function resize() {
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function start() {
+    ensure();
+    if (!raf) { last = performance.now(); raf = requestAnimationFrame(loop); }
+  }
+  function confetti(x, y, vx, vy, colors, delay) {
+    parts.push({ k: 'c', x: x, y: y, vx: vx, vy: vy, rot: rnd(0, 6.28), vr: rnd(-.18, .18),
+                 w: rnd(6, 11), h: rnd(8, 15), c: pick(colors), shape: pick(['rect', 'rect', 'circle', 'petal']),
+                 phase: rnd(0, 6.28), life: rnd(260, 380), wait: delay || 0 });
+  }
+  function spark(x, y, vx, vy, c, life, size) {
+    parts.push({ k: 's', x: x, y: y, vx: vx, vy: vy, c: c, life: life, max: life, size: size || rnd(1.6, 2.8) });
+  }
+  function explode(x, y) {
+    var c1 = pick(ALL), c2 = pick(ALL), n = 70 + Math.floor(Math.random() * 30);
+    for (var i = 0; i < n; i++) {
+      var a = Math.PI * 2 * i / n + rnd(-.05, .05), sp = rnd(2.2, 6.5);
+      spark(x, y, Math.cos(a) * sp, Math.sin(a) * sp, i % 3 ? c1 : c2, rnd(55, 85));
+    }
+    for (var j = 0; j < 14; j++) spark(x, y, rnd(-1.5, 1.5), rnd(-1.5, 1.5), '#fff8d6', rnd(20, 35), 3.4);
+  }
+  function loop(t) {
+    var dt = Math.min(2.5, (t - last) / 16.67);
+    last = t;
+    ctx.clearRect(0, 0, W, H);
+    for (var i = parts.length - 1; i >= 0; i--) {
+      var p = parts[i];
+      if (p.wait > 0) { p.wait -= dt; continue; }
+      if (p.k === 'c') {                       // 꽃가루: 하늘하늘 떨어진다
+        p.phase += .06 * dt;
+        p.vy = Math.min(p.vy + .06 * dt, 3.2);
+        p.vx *= Math.pow(.985, dt);
+        p.x += (p.vx + Math.sin(p.phase) * .9) * dt;
+        p.y += p.vy * dt;
+        p.rot += p.vr * dt;
+        p.life -= dt;
+        var fade = Math.min(1, p.life / 50);
+        ctx.save();
+        ctx.globalAlpha = fade;
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.scale(1, Math.abs(Math.cos(p.phase * 1.3)) * .8 + .2);   // 뒤집히며 반짝이는 느낌
+        ctx.fillStyle = p.c;
+        if (p.shape === 'circle') { ctx.beginPath(); ctx.arc(0, 0, p.w / 2, 0, 6.29); ctx.fill(); }
+        else if (p.shape === 'petal') { ctx.beginPath(); ctx.ellipse(0, 0, p.w / 2, p.h / 1.6, 0, 0, 6.29); ctx.fill(); }
+        else ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+        if (p.life <= 0 || p.y > H + 40) parts.splice(i, 1);
+      } else if (p.k === 'r') {               // 폭죽 로켓: 솟아오르다 터진다
+        p.x += p.vx * dt; p.y += p.vy * dt; p.vy += .05 * dt;
+        spark(p.x, p.y, rnd(-.3, .3), rnd(.2, .8), '#ffd9a0', 18, 1.6);
+        if (p.vy >= -1.2 || p.y <= p.ty) { explode(p.x, p.y); parts.splice(i, 1); }
+      } else {                                 // 불꽃 조각
+        p.vx *= Math.pow(.965, dt); p.vy = p.vy * Math.pow(.965, dt) + .05 * dt;
+        p.x += p.vx * dt; p.y += p.vy * dt;
+        p.life -= dt;
+        ctx.globalAlpha = Math.max(0, p.life / p.max);
+        ctx.fillStyle = p.c;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, 6.29); ctx.fill();
+        ctx.globalAlpha = 1;
+        if (p.life <= 0) parts.splice(i, 1);
+      }
+    }
+    if (parts.length) raf = requestAnimationFrame(loop);
+    else { raf = 0; ctx.clearRect(0, 0, W, H); }
+  }
+  return {
+    // 꽃가루가 위에서 흩날리며 떨어진다
+    rain: function (n, palette) {
+      start();
+      var cols = palette === 'cool' ? COOL : ALL;
+      for (var i = 0; i < (n || 180); i++) confetti(rnd(0, W), rnd(-60, -10), rnd(-1, 1), rnd(1, 3), cols, rnd(0, 90));
+    },
+    // 한 점에서 꽃가루가 팡 터진다
+    burst: function (x, y, n) {
+      start();
+      for (var i = 0; i < (n || 70); i++) {
+        var a = rnd(-Math.PI * .95, -Math.PI * .05), sp = rnd(4, 11);
+        confetti(x, y, Math.cos(a) * sp, Math.sin(a) * sp, ALL, 0);
+      }
+    },
+    // 폭죽 n발을 시간차로
+    fireworks: function (n, spread) {
+      start();
+      for (var i = 0; i < (n || 5); i++) {
+        (function (k) {
+          setTimeout(function () {
+            start();
+            var x = rnd(W * .15, W * .85);
+            parts.push({ k: 'r', x: x, y: H + 10, vx: rnd(-1.2, 1.2), vy: -rnd(9, 12.5), ty: rnd(H * .12, H * .42) });
+          }, k * (spread || 420) + rnd(0, 180));
+        })(i);
+      }
+    },
+    // 요소 둘레에 별가루가 반짝
+    sparkle: function (elm) {
+      if (!elm) return;
+      start();
+      var r = elm.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      for (var i = 0; i < 34; i++) {
+        var a = rnd(0, 6.28), sp = rnd(1.5, 4.5);
+        spark(cx + Math.cos(a) * r.width * .3, cy + Math.sin(a) * r.height * .3,
+              Math.cos(a) * sp, Math.sin(a) * sp - 1, pick(['#ffd23f', '#ffb400', '#fff3b0', '#ff8fab']), rnd(35, 60), rnd(1.8, 3));
+      }
+    }
+  };
+})();
+
+var FX_KEY = 'asset_pc_fx';
+function fxEnabled() {
+  return lsGet(FX_KEY) !== '0' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+// 가운데에 크게 떴다가 사라지는 축하 카드 — 숫자가 크게 확대됐다 제자리로
+var fxCardTm = 0;
+function showFxCard(o) {
+  var wrap = document.querySelector('.fx-card-wrap');
+  if (!wrap) {
+    wrap = el('div', 'fx-card-wrap');
+    document.body.appendChild(wrap);
+    wrap.addEventListener('click', function (e) { if (e.target.closest('.fx-card')) hideFxCard(); });
+  }
+  clearTimeout(fxCardTm);
+  wrap.innerHTML = '';
+  var card = el('div', 'fx-card' + (o.size === 'mid' ? ' mid' : ''));
+  card.setAttribute('role', 'status');
+  if (o.emoji) card.appendChild(el('div', 'fx-emoji', o.emoji));
+  card.appendChild(el('div', 'fx-title', o.title));
+  if (o.sub) card.appendChild(el('div', 'fx-sub', o.sub));
+  if (o.lines && o.lines.length) {
+    var ls = el('div', 'fx-lines');
+    o.lines.forEach(function (t) { ls.appendChild(el('span', '', t)); });
+    card.appendChild(ls);
+  }
+  card.appendChild(el('div', 'fx-hint', '누르면 닫힙니다'));
+  wrap.appendChild(card);
+  fxCardTm = setTimeout(hideFxCard, o.ms || 3400);
+}
+function hideFxCard() {
+  clearTimeout(fxCardTm);
+  var card = document.querySelector('.fx-card');
+  if (!card || card.classList.contains('out')) return;
+  card.classList.add('out');
+  setTimeout(function () { if (card.parentNode) card.remove(); }, 460);
+}
+function popNumber(elm) {
+  if (!elm) return;
+  elm.classList.remove('num-pop');
+  void elm.offsetWidth;   // 애니메이션 다시 시작
+  elm.classList.add('num-pop');
+}
+
+/* ═══════════ 마일스톤 — 작은 성과도 축하 ═══════════
+   목표까지는 몇 년이 걸리니, 그 사이의 작은 전진마다 보상한다.
+   기준선(marks)은 데이터 파일에 함께 저장되는 "최고 기록" 이라서
+   떨어졌다가 같은 수준으로 돌아오면 다시 축하하지 않는다. */
+var marks = null;   // { peakNet, minDebt, pctStep, goal, has, dayDone }
+
+function netStats() {
+  var ser = totalSeries();
+  var debt = 0;
+  Object.values(latestByName()).forEach(function (a) { if (isDebtRow(a)) debt += a.amount; });
+  return { net: ser.length ? ser[ser.length - 1].total : 0, debt: debt, has: ser.length > 0 };
+}
+function pctStepOf(net) {
+  return goalAmount > 0 ? Math.max(0, Math.min(10, Math.floor(net / goalAmount * 10))) : 0;
+}
+// 기준선을 지금 값에 맞춘다 (축하 없이) — 처음이거나, 목표 금액이 바뀌었을 때
+function syncMarks(force) {
+  var st = netStats();
+  if (force || !marks || !isFinite(marks.peakNet) || !marks.has) {
+    marks = { peakNet: st.net, minDebt: st.debt, pctStep: pctStepOf(st.net), goal: goalAmount,
+              has: st.has, dayDone: marks && marks.dayDone || null };
+    return;
+  }
+  if (marks.goal !== goalAmount) {
+    marks.goal = goalAmount;
+    marks.pctStep = pctStepOf(Math.max(st.net, marks.peakNet));
+  }
+}
+function weekKeyOf(ds) {
+  var d = parseDate(ds);
+  d.setDate(d.getDate() - (d.getDay() + 6) % 7);   // 그 주 월요일
+  return fmtDateStr(d);
+}
+function recordWeekStreak() {
+  var weeks = {};
+  rows.forEach(function (r) { weeks[weekKeyOf(r.date)] = true; });
+  var d = parseDate(weekKeyOf(fmtDateStr(new Date()))), n = 0;
+  while (weeks[fmtDateStr(d)] && n < 520) { n++; d.setDate(d.getDate() - 7); }
+  return n;
+}
+function monthStreak(key) {
+  var n = 0, k = key, s;
+  while (n < 60 && (s = monthSummary(k)) && s.change > 0) { n++; k = shiftMonthKey(k, -1); }
+  return n;
+}
+function allRecordedToday() {
+  var today = fmtDateStr(new Date()), list = Object.values(latestByName());
+  return list.length >= 2 && list.every(function (a) { return a.date === today; });
+}
+
+// 저장 직후 호출 — 넘어선 기준선마다 이벤트를 만들고 기준선을 올린다
+function evaluateMilestones(pre) {
+  if (!marks || !marks.has) { syncMarks(true); return []; }
+  syncMarks();
+  var st = netStats(), ev = [], today = fmtDateStr(new Date());
+  var P = { goal: 100, debtFree: 90, eok: 80, pct: 60, chun: 50, debt: 40, peak: 20, streak: 15, day: 10 };
+  if (st.net > marks.peakNet) {
+    var e8a = Math.floor(marks.peakNet / 1e8), e8b = Math.floor(st.net / 1e8);
+    var e7a = Math.floor(marks.peakNet / 1e7), e7b = Math.floor(st.net / 1e7);
+    if (st.net >= goalAmount && marks.peakNet < goalAmount) ev.push({ t: 'goal', p: P.goal });
+    else if (e8b > e8a && e8b >= 1) ev.push({ t: 'eok', p: P.eok, n: e8b });
+    else if (e7b > e7a && e7b >= 1) ev.push({ t: 'chun', p: P.chun, n: e7b });
+    else ev.push({ t: 'peak', p: P.peak });
+    var ps = pctStepOf(st.net);
+    if (ps > marks.pctStep && ps >= 1 && ps < 10) ev.push({ t: 'pct', p: P.pct, n: ps * 10 });
+    marks.pctStep = Math.max(marks.pctStep, ps);
+    marks.peakNet = st.net;
+  }
+  if (st.debt < marks.minDebt) {
+    if (st.debt === 0) ev.push({ t: 'debtFree', p: P.debtFree });
+    else if (Math.floor(st.debt / 1e7) < Math.floor(marks.minDebt / 1e7)) {
+      ev.push({ t: 'debt', p: P.debt, n: Math.floor(st.debt / 1e7) });
+    }
+    marks.minDebt = st.debt;
+  }
+  if (pre && pre.save) {
+    if (!pre.weekHad) {
+      var wk = recordWeekStreak();
+      if (wk >= 2) ev.push({ t: 'streak', p: P.streak, n: wk });
+    }
+    if (!pre.allToday && allRecordedToday() && marks.dayDone !== today) {
+      ev.push({ t: 'day', p: P.day });
+      marks.dayDone = today;
+    }
+  }
+  ev.forEach(function (e) { e.net = st.net; e.debt = st.debt; });
+  return ev.sort(function (a, b) { return b.p - a.p; });
+}
+
+function milestoneShort(e) {
+  switch (e.t) {
+    case 'goal': return '목표 달성';
+    case 'debtFree': return '부채 제로';
+    case 'eok': return e.n + '억 돌파';
+    case 'pct': return '목표의 ' + e.n + '%';
+    case 'chun': return fmtCompact(e.n * 1e7) + ' 돌파';
+    case 'debt': return '대출 ' + fmtCompact(e.n * 1e7) + '대 진입';
+    case 'peak': return '순자산 신기록 ' + fmtHeaderTotal(e.net) + '원';
+    case 'streak': return e.n + '주 연속 기록 🔥';
+    case 'day': return '오늘 모든 자산 기록 완료 ✓';
+  }
+  return '';
+}
+
+// 가장 큰 이벤트 하나로 연출하고, 나머지는 카드 아래 배지로
+function celebrate(ev, baseMsg) {
+  if (!ev.length) { if (baseMsg) showToast(baseMsg); return; }
+  var top = ev[0], rest = ev.slice(1).map(milestoneShort);
+  var fx = fxEnabled();
+  if (top.t !== 'streak' && top.t !== 'day') { popNumber($('headerTotal')); popNumber($('heroValue')); }
+  if (top.p < 40 || !fx) {
+    // 작은 성과 — 반짝임 + 토스트 (효과를 꺼 두면 큰 성과도 토스트로만)
+    if (fx) FX.sparkle(top.t === 'streak' || top.t === 'day' ? document.querySelector('.save-bar-inner') || $('headerTotal') : $('headerTotal'));
+    showToast([baseMsg].concat(ev.map(milestoneShort)).filter(Boolean).join(' · '));
+    return;
+  }
+  if (baseMsg) showToast(baseMsg);
+  var W = window.innerWidth, H = window.innerHeight;
+  switch (top.t) {
+    case 'goal':
+      FX.fireworks(9, 380); FX.rain(260);
+      showFxCard({ emoji: '🏆', title: '목표 달성!', sub: fmtHeaderTotal(goalAmount) + '원 — 해냈어요!', lines: rest, ms: 5200 });
+      break;
+    case 'debtFree':
+      FX.fireworks(6); FX.rain(200, 'cool');
+      showFxCard({ emoji: '🕊️', title: '부채 제로!', sub: '모든 대출을 갚았어요', lines: rest, ms: 4600 });
+      break;
+    case 'eok':
+      FX.fireworks(5); FX.burst(W / 2, H * .62, 90);
+      showFxCard({ emoji: '🎆', title: top.n + '억 돌파!', sub: '순자산 ' + fmtHeaderTotal(top.net) + '원', lines: rest, ms: 4200 });
+      break;
+    case 'pct':
+      FX.rain(220);
+      showFxCard({ emoji: '🎯', title: '목표의 ' + top.n + '%', size: 'mid', lines: rest, ms: 3600,
+                   sub: '목표 ' + fmtHeaderTotal(goalAmount) + '원까지 ' + fmtHeaderTotal(goalAmount - top.net) + '원 남았어요' });
+      break;
+    case 'chun':
+      FX.rain(170);
+      showFxCard({ emoji: '🌸', title: fmtCompact(top.n * 1e7) + ' 돌파', size: 'mid', lines: rest, ms: 3200,
+                   sub: '다음 ' + fmtCompact((top.n + 1) * 1e7) + '까지 ' + fmtCompact((top.n + 1) * 1e7 - top.net) + '원' });
+      break;
+    case 'debt':
+      FX.rain(150, 'cool');
+      showFxCard({ emoji: '💪', title: '대출 ' + fmtCompact(top.n * 1e7) + '대', size: 'mid', lines: rest, ms: 3200,
+                   sub: '잔액 ' + fmtHeaderTotal(top.debt) + '원으로 줄었어요' });
+      break;
+  }
+}
+
+// 저장 전 상태를 기억해 두었다가, 저장이 끝나면 넘어선 마일스톤을 축하한다
+function commitWithMilestones(mutate, okMsg) {
+  var pre = { save: true, allToday: allRecordedToday(),
+              weekHad: rows.some(function (r) { return weekKeyOf(r.date) === weekKeyOf(fmtDateStr(new Date())); }) };
+  var snapMarks = JSON.stringify(marks), ev = [];
+  return commit(function () {
+    mutate();
+    ev = evaluateMilestones(pre);     // 기준선 변경이 같은 저장에 함께 실린다
+  }, null).then(function (ok) {
+    if (ok) celebrate(ev, okMsg);
+    else marks = JSON.parse(snapMarks);
+    return ok;
+  });
+}
+
+// 설정: 켜기/끄기 · 미리보기
+$('fxToggle').checked = lsGet(FX_KEY) !== '0';
+$('fxToggle').addEventListener('change', function () {
+  lsSet(FX_KEY, this.checked ? '1' : '0');
+  showToast(this.checked ? '축하 효과를 켰어요' : '축하 효과를 껐어요');
+});
+document.querySelector('.fx-set').addEventListener('click', function (e) {
+  var b = e.target.closest('[data-fx]');
+  if (!b) return;
+  closeSheet('settingsSheet');
+  var W = window.innerWidth, H = window.innerHeight;
+  setTimeout(function () {
+    if (b.dataset.fx === 'rain') FX.rain(180);
+    else if (b.dataset.fx === 'fireworks') FX.fireworks(5);
+    else {
+      FX.burst(W / 2, H * .62, 90);
+      showFxCard({ emoji: '🎆', title: '13억 돌파!', sub: '미리보기 — 순자산이 억 단위를 넘으면 이렇게 축하해요',
+                   lines: ['목표의 70%', '3주 연속 기록 🔥'] });
+    }
+  }, 250);
+});
+
 /* ═══════════ 새 자산 추가 ═══════════
    금액 입력(여러 자산을 한꺼번에 고쳐 저장)과 흐름을 나눈다 — 새 자산은 창에서
    정보와 현재 금액을 넣고 "추가"를 누르면 그 자리에서 바로 저장된다. */
@@ -3776,7 +4210,7 @@ function submitNewAsset() {
   };
   var btn = $('btnNaAdd');
   btn.disabled = true;
-  commit(function () {
+  commitWithMilestones(function () {
     rows.push(row);
     selectedName = name;
   }, '"' + name + '" 을(를) 추가했습니다').then(function (ok) {
@@ -4188,6 +4622,7 @@ $('goalForm').addEventListener('submit', function (e) {
   closeSheet('goalSheet');
   if (v === goalAmount) return;
   goalAmount = v;
+  syncMarks();    // 새 목표 기준으로 10% 단계 기준선을 다시 잡는다 (바꾼 것만으로는 축하하지 않음)
   renderHome();   // 링 · 미래 예상 · 차트 목표선이 함께 바뀐다
   persistQuiet();
   showToast('목표 자산을 ' + fmtHeaderTotal(v) + '원으로 바꿨습니다');
@@ -4619,7 +5054,9 @@ function renderMonthCardInner() {
   if (!s) { card.style.display = 'none'; return; }
   card.style.display = '';
   $('msTitle').textContent = monthTitle(key) + ' 요약';
-  $('msRange').textContent = msRangeText(s);
+  var streak = key === thisKey ? 0 : monthStreak(key);
+  if (key === thisKey && s.change > 0) streak = 1 + monthStreak(shiftMonthKey(key, -1));
+  $('msRange').textContent = msRangeText(s) + (streak >= 2 ? ' · 🔥 ' + streak + '개월 연속 증가' : '');
   // 더 볼 기록이 없으면 이전 버튼을, 이번 달이면 다음 버튼을 잠근다
   $('msPrev').disabled = !monthSummary(shiftMonthKey(key, -1));
   $('msNext').disabled = key >= thisKey;
@@ -4703,7 +5140,8 @@ $('msNext').addEventListener('click', function () { msStep(1); });
 function openMonthSheet(key) {
   var s = monthSummary(key);
   if (!s) return false;
-  $('msSheetCap').textContent = msRangeText(s) + ' 결산';
+  var streak = monthStreak(key);
+  $('msSheetCap').textContent = msRangeText(s) + ' 결산' + (streak >= 2 ? ' · 🔥 ' + streak + '개월 연속 증가' : '');
   $('msSheetTitle').textContent = s.label + ' 요약';
   paintMonthSummary($('msSheetBody'), s);
   openSheet('monthSheet');
@@ -4755,8 +5193,12 @@ function openMonthlyPopupIfDue() {
   if (store.mode === 'demo') return false;   // 데모 숫자로는 결산 팝업을 띄우지 않는다
   var thisKey = monthKeyOf(new Date());
   if (lsGet('asset_ms_shown') === thisKey) return false;
-  if (!openMonthSheet(shiftMonthKey(thisKey, -1))) return false;
+  var lastKey = shiftMonthKey(thisKey, -1);
+  if (!openMonthSheet(lastKey)) return false;
   lsSet('asset_ms_shown', thisKey);
+  // 지난달이 플러스로 끝났으면 꽃가루
+  var s = monthSummary(lastKey);
+  if (s && s.change > 0 && fxEnabled()) setTimeout(function () { FX.rain(140); }, 350);
   return true;
 }
 
