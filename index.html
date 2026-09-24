@@ -12,6 +12,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@700&family=Orbitron:wght@700&display=swap" rel="stylesheet">
 <!-- 본문 서체: Pretendard (없으면 맑은 고딕으로 대체) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<script>
+  // 화면이 그려지기 전에 테마를 정한다 (깜빡임 방지) — 자동이면 윈도우 설정을 따른다
+  (function () {
+    var t = 'auto';
+    try { t = localStorage.getItem('asset_pc_theme') || 'auto'; } catch (e) {}
+    var dark = t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  })();
+</script>
 <style>
   :root {
     --bg:        #f9f9f7;
@@ -62,48 +71,48 @@
     --fgz5-fill:  #bfd3f7;  --fgz5-ink: #1049c8;  /* 극단적 탐욕 — 강렬한 파랑 */
     --side-w: 252px;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg:        #0d0d0d;
-      --surface:   #1a1a19;
-      --ink:       #ffffff;
-      --ink-2:     #c3c2b7;
-      --muted:     #898781;
-      --grid:      #2c2c2a;
-      --baseline:  #383835;
-      --border:    rgba(255,255,255,.10);
-      --hover:     rgba(255,255,255,.045);
-      --accent:    #3987e5;
-      --accent-deep:#86b6ef;
-      --accent-wash:rgba(57,135,229,.14);
-      --up:        #0ca30c;
-      --down:      #e66767;
-      --warn:      #e0ac3f;
-      --kospi-up:   #ef5b56;
-      --kospi-down: #6b93e8;
-      --chip3-bg: rgba(25,158,112,.20);  --chip3-fg: #4fc79a;
-      --own0-bg: rgba(57,135,229,.20);  --own0-fg: #86b6ef;
-      --own1-bg: rgba(213,81,129,.22);  --own1-fg: #e893b4;
-      --own2-bg: rgba(201,133,0,.22);   --own2-fg: #e0ac3f;
-      --own3-bg: rgba(144,133,233,.22); --own3-fg: #b6aef2;
-      --own4-bg: rgba(25,158,112,.20);  --own4-fg: #4fc79a;
-      --own5-bg: rgba(230,103,103,.22); --own5-fg: #f09b9b;
-      --own6-bg: rgba(0,180,180,.20);   --own6-fg: #5fd6d6;
-      --own7-bg: rgba(160,160,160,.20); --own7-fg: #cfcfcf;
-      --grp1: #3987e5;
-      --grp2: #199e70;
-      --grp3: #c98500;
-      --grp4: #9085e9;
-      --grp5: #e66767;
-      --shadow-pop: 0 24px 60px rgba(0,0,0,.6), 0 4px 14px rgba(0,0,0,.4);
-      --fg-track:   #2f2f2d;
-      --fg-dash:    #9a9a94;
-      --fgz1-fill:  rgba(215,25,28,.42);   --fgz1-ink: #ff6154;
-      --fgz2-fill:  rgba(191,104,38,.40);  --fgz2-ink: #e0904f;
-      --fgz3-fill:  rgba(140,140,134,.34); --fgz3-ink: #a8a7a1;
-      --fgz4-fill:  rgba(30,158,74,.38);   --fgz4-ink: #3fc46f;
-      --fgz5-fill:  rgba(16,73,200,.46);   --fgz5-ink: #7aa5ff;
-    }
+  /* 다크 테마 — <html data-theme="dark"> 일 때. 자동/밝게/어둡게는 JS가 정한다 */
+  :root[data-theme="dark"] {
+    color-scheme:dark;
+    --bg:        #0d0d0d;
+    --surface:   #1a1a19;
+    --ink:       #ffffff;
+    --ink-2:     #c3c2b7;
+    --muted:     #898781;
+    --grid:      #2c2c2a;
+    --baseline:  #383835;
+    --border:    rgba(255,255,255,.10);
+    --hover:     rgba(255,255,255,.045);
+    --accent:    #3987e5;
+    --accent-deep:#86b6ef;
+    --accent-wash:rgba(57,135,229,.14);
+    --up:        #0ca30c;
+    --down:      #e66767;
+    --warn:      #e0ac3f;
+    --kospi-up:   #ef5b56;
+    --kospi-down: #6b93e8;
+    --chip3-bg: rgba(25,158,112,.20);  --chip3-fg: #4fc79a;
+    --own0-bg: rgba(57,135,229,.20);  --own0-fg: #86b6ef;
+    --own1-bg: rgba(213,81,129,.22);  --own1-fg: #e893b4;
+    --own2-bg: rgba(201,133,0,.22);   --own2-fg: #e0ac3f;
+    --own3-bg: rgba(144,133,233,.22); --own3-fg: #b6aef2;
+    --own4-bg: rgba(25,158,112,.20);  --own4-fg: #4fc79a;
+    --own5-bg: rgba(230,103,103,.22); --own5-fg: #f09b9b;
+    --own6-bg: rgba(0,180,180,.20);   --own6-fg: #5fd6d6;
+    --own7-bg: rgba(160,160,160,.20); --own7-fg: #cfcfcf;
+    --grp1: #3987e5;
+    --grp2: #199e70;
+    --grp3: #c98500;
+    --grp4: #9085e9;
+    --grp5: #e66767;
+    --shadow-pop: 0 24px 60px rgba(0,0,0,.6), 0 4px 14px rgba(0,0,0,.4);
+    --fg-track:   #2f2f2d;
+    --fg-dash:    #9a9a94;
+    --fgz1-fill:  rgba(215,25,28,.42);   --fgz1-ink: #ff6154;
+    --fgz2-fill:  rgba(191,104,38,.40);  --fgz2-ink: #e0904f;
+    --fgz3-fill:  rgba(140,140,134,.34); --fgz3-ink: #a8a7a1;
+    --fgz4-fill:  rgba(30,158,74,.38);   --fgz4-ink: #3fc46f;
+    --fgz5-fill:  rgba(16,73,200,.46);   --fgz5-ink: #7aa5ff;
   }
 
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -284,6 +293,9 @@
   .kpi-stack { display:flex; flex-direction:column; gap:12px; min-width:0; container:kpis / inline-size; }
   .kpi.sm { flex:1; padding:14px 16px; justify-content:center; }
   .kpi.sm .kpi-v { margin-top:6px; font-size:1.3rem; }
+  @container kpis (max-width: 560px) and (min-width: 300px) {
+    .spark { display:none; }
+  }
   @container kpis (max-width: 520px) and (min-width: 300px) {
     .kpi.sm { padding:12px 13px; }
     .kpi.sm .kpi-v { font-size:1.08rem; }
@@ -314,6 +326,60 @@
   .delta .period { color:var(--muted); font-weight:500; }
 
   /* ── 대시보드 본문 ─────────────────── */
+  /* 테마 전환 */
+  .theme-seg { display:flex; }
+  .theme-seg button { flex:1; padding:5px 6px; font-size:.74rem; }
+
+  /* 순자산 카드 — 오른쪽에 목표 달성률 링 */
+  .kpi.hero { flex-direction:row; align-items:stretch; gap:22px; container:hero / inline-size; }
+  .hero-main { flex:1; min-width:0; display:flex; flex-direction:column; }
+  .hero-goal {
+    position:relative; flex:none; display:flex; align-items:center; gap:14px;
+    padding-left:22px; border-left:1px solid var(--border);
+  }
+  .ring { width:84px; height:84px; transform:rotate(-90deg); flex:none; }
+  .ring circle { fill:none; stroke-width:8; }
+  .ring-bg { stroke:var(--accent-wash); }
+  .ring-fg { stroke:var(--accent); stroke-linecap:round; transition:stroke-dashoffset .7s cubic-bezier(.22,1,.36,1); }
+  .ring-fg.done { stroke:var(--up); }
+  .ring-pct {
+    position:absolute; left:22px; top:50%; width:84px; transform:translateY(-50%);
+    text-align:center; font-size:.95rem; font-weight:800; font-variant-numeric:tabular-nums;
+  }
+  .hg-l { font-size:.72rem; color:var(--muted); font-weight:600; }
+  .hg-v { font-size:1.05rem; font-weight:800; margin-top:2px; white-space:nowrap; }
+  .hg-s { font-size:.74rem; color:var(--ink-2); margin-top:3px; white-space:nowrap; }
+  @container hero (max-width: 560px) { .hero-goal { display:none; } }
+
+  /* 작은 KPI 추세선 */
+  .spark { margin-left:auto; width:64px; height:22px; flex:none; overflow:visible; }
+  .spark polyline { fill:none; stroke-width:1.7; stroke-linejoin:round; stroke-linecap:round; vector-effect:non-scaling-stroke; }
+  .spark path { stroke:none; opacity:.12; }
+
+  /* 차트 도구 — 목표·예상 토글 */
+  .chart-tools { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .tgl {
+    border:1px solid var(--border); background:var(--bg); color:var(--muted); cursor:pointer;
+    font-size:.78rem; font-weight:700; padding:7px 12px; border-radius:10px;
+    transition:background-color .15s, color .15s;
+  }
+  .tgl:hover { color:var(--ink); }
+  .tgl.on { background:var(--own1-bg); color:var(--own1-fg); border-color:transparent; }
+
+  /* 미래 예상 — 적립액 · 수익률 스테퍼 두 개 */
+  .steppers { display:grid; grid-template-columns:minmax(0,1fr); gap:6px; margin:14px 0 8px; }
+  .steppers .stepper { margin:0; padding:5px 6px; gap:6px; }
+  .steppers .stepper button { width:30px; height:30px; font-size:1.05rem; border-radius:8px; }
+  .steppers .st-val { font-size:.9rem; }
+  .steppers .st-cap { font-size:.62rem; }
+
+  /* 월별 순자산 증감 막대 */
+  .ms-bars { margin:2px 0 16px; }
+  .ms-bars-cap { font-size:.72rem; color:var(--muted); margin-bottom:4px; }
+  .ms-bars svg { display:block; width:100%; }
+  .ms-bars .hit { cursor:pointer; }
+  .ms-bars .hit:hover { fill:var(--hover); }
+
   /* 대시보드 그리드 — 넓을 때:
        순자산      | 작은 KPI | 미래 예상
        자산 구성   | 작은 KPI | (세로로 길게)
@@ -985,6 +1051,11 @@
   </nav>
   <div class="side-foot">
     <div class="store-card" id="storeCard"></div>
+    <div class="seg theme-seg" id="themeSeg" role="group" aria-label="화면 테마">
+      <button type="button" data-theme="auto" title="윈도우 설정 따르기">자동</button>
+      <button type="button" data-theme="light" title="밝은 화면">밝게</button>
+      <button type="button" data-theme="dark" title="어두운 화면">어둡게</button>
+    </div>
     <button class="side-btn" id="btnSettings">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       설정 · 데이터 파일
@@ -1001,6 +1072,7 @@
       <div class="topbar-sub" id="viewSub"></div>
     </div>
     <div class="topbar-actions">
+      <div class="seg" id="dashOwners" hidden role="group" aria-label="소유자별 보기"></div>
       <button class="btn btn-primary" id="btnTopAdd" hidden>＋ 새 자산</button>
     </div>
   </header>
@@ -1012,27 +1084,41 @@
     <!-- 한 장의 그리드: 영역 배치는 CSS(grid-template-areas)가 폭에 따라 바꾼다 -->
     <div class="dboard">
       <div class="card kpi hero">
-        <div class="kpi-l" id="heroLabel">총 자산</div>
-        <div class="kpi-v" id="heroValue">—</div>
-        <div class="kpi-s">
-          <div class="delta" id="heroDelta" style="display:none"></div>
-          <div id="heroUpdated"></div>
+        <div class="hero-main">
+          <div class="kpi-l" id="heroLabel">총 자산</div>
+          <div class="kpi-v" id="heroValue">—</div>
+          <div class="kpi-s">
+            <div class="delta" id="heroDelta" style="display:none"></div>
+            <div id="heroUpdated"></div>
+          </div>
+        </div>
+        <div class="hero-goal" id="heroGoal" hidden>
+          <svg class="ring" viewBox="0 0 84 84" aria-hidden="true">
+            <circle class="ring-bg" cx="42" cy="42" r="35"/>
+            <circle class="ring-fg" id="ringFg" cx="42" cy="42" r="35"/>
+          </svg>
+          <div class="ring-pct" id="ringPct"></div>
+          <div class="hg-t">
+            <div class="hg-l">목표 자산</div>
+            <div class="hg-v" id="hgGoal"></div>
+            <div class="hg-s" id="hgEta"></div>
+          </div>
         </div>
       </div>
 
       <div class="kpi-stack">
         <div class="card kpi sm">
-          <div class="kpi-l"><span class="kpi-dot" style="background:var(--accent)"></span>자산 합계</div>
+          <div class="kpi-l"><span class="kpi-dot" style="background:var(--accent)"></span>자산 합계<svg class="spark" id="spkGross" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true"></svg></div>
           <div class="kpi-v" id="kpiGross">—</div>
           <div class="kpi-s" id="kpiGrossSub"></div>
         </div>
         <div class="card kpi sm">
-          <div class="kpi-l"><span class="kpi-dot" style="background:var(--grp5)"></span>부채 합계</div>
+          <div class="kpi-l"><span class="kpi-dot" style="background:var(--grp5)"></span>부채 합계<svg class="spark" id="spkDebt" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true"></svg></div>
           <div class="kpi-v" id="kpiDebt">—</div>
           <div class="kpi-s" id="kpiDebtSub"></div>
         </div>
         <div class="card kpi sm">
-          <div class="kpi-l"><span class="kpi-dot" style="background:var(--grp2)"></span><span id="kpiMonthL">이번 달 증감</span></div>
+          <div class="kpi-l"><span class="kpi-dot" style="background:var(--grp2)"></span><span id="kpiMonthL">이번 달 증감</span><svg class="spark" id="spkMonth" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true"></svg></div>
           <div class="kpi-v" id="kpiMonth">—</div>
           <div class="kpi-s" id="kpiMonthSub"></div>
         </div>
@@ -1053,12 +1139,16 @@
             <div class="card-title">순자산 추이</div>
             <div class="card-sub" id="chartSub"></div>
           </div>
-          <div class="seg" id="ranges">
-            <button data-range="7">1주</button>
-            <button data-range="30">1개월</button>
-            <button data-range="91" class="on">3개월</button>
-            <button data-range="365">1년</button>
-            <button data-range="all">전체</button>
+          <div class="chart-tools">
+            <button type="button" class="tgl" id="projToggle" aria-pressed="false"
+                    title="목표선과 미래 예상선을 차트에 함께 표시">목표 · 예상</button>
+            <div class="seg" id="ranges">
+              <button data-range="7">1주</button>
+              <button data-range="30">1개월</button>
+              <button data-range="91" class="on">3개월</button>
+              <button data-range="365">1년</button>
+              <button data-range="all">전체</button>
+            </div>
           </div>
         </div>
         <div class="chart-wrap" id="chartWrap">
@@ -1077,13 +1167,23 @@
           </div>
         </div>
         <div id="goalBox"></div>
-        <div class="stepper">
-          <button id="fcMinus" aria-label="100만원 감액" title="100만원 감액">−</button>
-          <div class="st-mid">
-            <div class="st-val" id="fcMonthly"></div>
-            <div class="st-cap">매달 더해지는 금액 (±100만원)</div>
+        <div class="steppers">
+          <div class="stepper">
+            <button id="fcMinus" aria-label="100만원 감액" title="100만원 감액">−</button>
+            <div class="st-mid">
+              <div class="st-val" id="fcMonthly"></div>
+              <div class="st-cap">매달 적립 (±100만원)</div>
+            </div>
+            <button id="fcPlus" aria-label="100만원 증액" title="100만원 증액">＋</button>
           </div>
-          <button id="fcPlus" aria-label="100만원 증액" title="100만원 증액">＋</button>
+          <div class="stepper">
+            <button id="fcRateMinus" aria-label="수익률 0.5%p 낮추기" title="0.5%p 낮추기">−</button>
+            <div class="st-mid">
+              <div class="st-val" id="fcRate"></div>
+              <div class="st-cap">연 수익률 · 월 복리 (±0.5%p)</div>
+            </div>
+            <button id="fcRatePlus" aria-label="수익률 0.5%p 올리기" title="0.5%p 올리기">＋</button>
+          </div>
         </div>
         <div class="fc-list" id="fcList"></div>
       </div>
@@ -1100,6 +1200,7 @@
             <button type="button" id="msNext" aria-label="다음 달" title="다음 달">›</button>
           </div>
         </div>
+        <div class="ms-bars" id="msBars" hidden></div>
         <div class="ms-body" id="msBody"></div>
       </div>
 
@@ -1490,7 +1591,9 @@ function fmtAxis(v, step) {
   var a = Math.abs(v);
   if (Math.max(a, step) >= 1e8) {
     var dec = step >= 1e8 ? 0 : Math.min(2, Math.ceil(-Math.log10(step / 1e8)));
-    return (v / 1e8).toFixed(dec).replace(/\.?0+$/, '') + '억';
+    var t = (v / 1e8).toFixed(dec);
+    // 소수점이 있을 때만 끝의 0을 지운다 (10억이 "1억"이 되지 않게)
+    return (t.indexOf('.') >= 0 ? t.replace(/\.?0+$/, '') : t) + '억';
   }
   if (Math.max(a, step) >= 1e4) {
     var dec2 = step >= 1e4 ? 0 : Math.min(1, Math.ceil(-Math.log10(step / 1e4)));
@@ -1691,7 +1794,7 @@ function serializeDb() {
     app: 'asset-pc',
     version: 1,
     updatedAt: new Date().toISOString(),
-    settings: { goal: goalAmount, fcMonthly: fcMonthly },
+    settings: { goal: goalAmount, fcMonthly: fcMonthly, fcRate: fcRate },
     owners: OWNERS.map(function (o) { return { id: o.id, name: o.name }; })
   }, null, 2);
   var sorted = rows.slice().sort(function (a, b) {
@@ -1714,6 +1817,7 @@ function applyDb(obj) {
   var st = obj.settings || {};
   if (isFinite(st.goal) && st.goal > 0) goalAmount = Math.round(st.goal);
   if (isFinite(st.fcMonthly)) fcMonthly = Math.round(st.fcMonthly);
+  if (isFinite(st.fcRate)) fcRate = Math.round(st.fcRate * 10) / 10;
 }
 
 // ── 파일 읽기/쓰기 ──
@@ -2153,6 +2257,7 @@ function importFiles(fileList) {
       if (inSettings) {
         if (isFinite(inSettings.goal) && inSettings.goal > 0) goalAmount = Math.round(inSettings.goal);
         if (isFinite(inSettings.fcMonthly)) fcMonthly = Math.round(inSettings.fcMonthly);
+        if (isFinite(inSettings.fcRate)) fcRate = Math.round(inSettings.fcRate * 10) / 10;
       }
     }, '가져오기 완료 — 기록 ' + inRows.length + '건').then(function () {
       renderOwnerManageList();
@@ -2164,7 +2269,49 @@ function importFiles(fileList) {
 }
 
 /* ═══════════ 렌더: 대시보드 ═══════════ */
+/* ── 대시보드 소유자 필터 ──
+   대시보드를 그리는 동안만 rows 를 그 소유자의 기록으로 바꿔 끼운다 —
+   합계·차트·구성·월간 요약·미래 예상이 모두 같은 기준으로 계산된다. */
+var dashOwner = lsGet('asset_pc_dash_owner') || 'all';
+function withDashRows(fn) {
+  if (dashOwner === 'all') return fn();
+  var all = rows;
+  rows = rows.filter(function (r) { return r.owner === dashOwner; });
+  try { return fn(); } finally { rows = all; }
+}
+function renderDashOwners() {
+  var wrap = $('dashOwners');
+  if (dashOwner !== 'all' && !OWNERS.some(function (o) { return o.id === dashOwner; })) dashOwner = 'all';
+  wrap.hidden = currentView !== 'home' || !OWNERS.length;
+  wrap.innerHTML = '';
+  var all = el('button', dashOwner === 'all' ? 'on' : '', '전체');
+  all.type = 'button';
+  all.dataset.owner = 'all';
+  wrap.appendChild(all);
+  OWNERS.forEach(function (o, i) {
+    var b = el('button', 'p' + (i % OWNER_PALETTE_SIZE) + (o.id === dashOwner ? ' on' : ''), o.name);
+    b.type = 'button';
+    b.dataset.owner = o.id;
+    wrap.appendChild(b);
+  });
+}
+$('dashOwners').addEventListener('click', function (e) {
+  var b = e.target.closest('button');
+  if (!b || b.dataset.owner === dashOwner) return;
+  dashOwner = b.dataset.owner;
+  lsSet('asset_pc_dash_owner', dashOwner);
+  renderDashOwners();
+  renderHome();
+});
+
 function renderHome() {
+  // 사이드바 총자산은 필터와 상관없이 전체
+  var allSeries = totalSeries();
+  $('headerTotal').textContent = allSeries.length ? fmtHeaderTotal(allSeries[allSeries.length - 1].total) : '';
+  withDashRows(renderHomeInner);
+}
+
+function renderHomeInner() {
   var series = totalSeries();
   var hero = $('heroValue');
   renderKpis();
@@ -2172,8 +2319,9 @@ function renderHome() {
     hero.textContent = '—';
     heroPrev = null;
     $('heroDelta').style.display = 'none';
-    $('heroUpdated').textContent = '입력 탭에서 자산을 추가하세요';
-    $('headerTotal').textContent = '';
+    $('heroUpdated').textContent = dashOwner === 'all' ? '입력 탭에서 자산을 추가하세요' : '이 소유자의 자산이 없습니다';
+    $('heroLabel').textContent = '순자산' + (dashOwner === 'all' ? '' : ' · ' + ownerName(dashOwner));
+    $('heroGoal').hidden = true;
     $('chartSub').textContent = '';
     drawLineChart($('chartWrap'), [], CHART_H);
     renderComposition();
@@ -2188,7 +2336,8 @@ function renderHome() {
   hero.appendChild(el('span', 'won', '원'));
   fitHeroValue();
   animateHero(last.total);
-  $('heroLabel').textContent = rows.some(isDebtRow) ? '순자산' : '총 자산';
+  $('heroLabel').textContent = (rows.some(isDebtRow) ? '순자산' : '총 자산') +
+    (dashOwner === 'all' ? '' : ' · ' + ownerName(dashOwner));
   $('heroUpdated').textContent = '약 ' + fmtCompact(last.total) + ' · 최근 입력 ' + last.date;
   renderComposition();
 
@@ -2210,14 +2359,64 @@ function renderHome() {
     deltaEl.style.display = 'none';
     $('chartSub').textContent = rangeLabel();
   }
-  drawLineChart($('chartWrap'), fs, CHART_H);
+  drawLineChart($('chartWrap'), fs, CHART_H,
+    chartProj && fs.length ? { proj: projectionSeries(fs), goal: goalAmount } : null);
   renderForecast();
   renderMonthCard();
   renderFgCard();
 }
 
+// 차트와 같은 기간의 시작 날짜 (전체면 null)
+function rangeCutDate() {
+  if (currentRange === 'all' || !rows.length) return null;
+  var lastD = rows.reduce(function (m, r) { return r.date > m ? r.date : m; }, '');
+  var c = parseDate(lastD);
+  c.setDate(c.getDate() - currentRange);
+  return fmtDateStr(c);
+}
+// 작은 추세선 — 값 배열을 0~100 × 0~24 상자에 맞춰 그린다
+function drawSpark(id, values, color) {
+  var svg = $(id);
+  if (!svg) return;
+  if (values.length < 2) { svg.innerHTML = ''; return; }
+  var mn = Math.min.apply(null, values), mx = Math.max.apply(null, values);
+  if (mn === mx) { mn -= 1; mx += 1; }
+  var pts = values.map(function (v, i) {
+    return (i / (values.length - 1) * 100).toFixed(2) + ',' + (22 - (v - mn) / (mx - mn) * 20).toFixed(2);
+  });
+  svg.innerHTML = '<path d="M0,24 L' + pts.join(' L') + ' L100,24 Z" fill="' + color + '"/>' +
+    '<polyline points="' + pts.join(' ') + '" stroke="' + color + '"/>';
+}
+function renderSparks() {
+  var byName = buildByName();
+  var cut = rangeCutDate();
+  var dates = Array.from(new Set(rows.map(function (r) { return r.date; }))).sort()
+    .filter(function (d) { return !cut || d >= cut; });
+  var gross = [], debt = [];
+  dates.forEach(function (d) {
+    var g = 0, b = 0;
+    Object.keys(byName).forEach(function (k) {
+      var last = lastAtOrBefore(byName[k], d);
+      if (!last) return;
+      if (isDebtRow(last)) b += last.amount; else g += last.amount;
+    });
+    gross.push(g); debt.push(b);
+  });
+  drawSpark('spkGross', gross, 'var(--accent)');
+  drawSpark('spkDebt', debt.some(function (v) { return v; }) ? debt : [], 'var(--down)');
+  // 이번 달: 전월 말부터 오늘까지의 순자산
+  var thisKey = monthKeyOf(new Date());
+  var start = fmtDateStr(monthLastDay(shiftMonthKey(thisKey, -1)));
+  var startVal = netAt(byName, start);
+  var month = totalSeries().filter(function (p) { return p.date > start; }).map(function (p) { return p.total; });
+  if (startVal !== null) month.unshift(startVal);
+  var up = month.length > 1 && month[month.length - 1] >= month[0];
+  drawSpark('spkMonth', month, up ? 'var(--up)' : 'var(--down)');
+}
+
 // KPI: 자산 합계 · 부채 합계 · 이번 달 증감
 function renderKpis() {
+  renderSparks();
   var gross = 0, debt = 0, nA = 0, nD = 0;
   Object.values(latestByName()).forEach(function (a) {
     if (isDebtRow(a)) { debt += a.amount; nD++; } else { gross += a.amount; nA++; }
@@ -2257,10 +2456,37 @@ var fcMonthly = 10000000;                     // 기본: 매달 +1,000만원 (�
 var FC_STEP = 1000000;                        // ± 100만원
 var fcMode = 'month';
 var goalAmount = 3500000000;                  // 기본 목표: 35억 (데이터 파일에 저장)
+var fcRate = 0;                               // 연 수익률(%) — 월 복리로 계산 (데이터 파일에 저장)
+var FC_RATE_STEP = 0.5;
+
+// base 에서 months 개월 뒤의 예상 금액 — 매달 (수익률/12) 만큼 불어나고 적립액이 더해진다.
+// 소수 개월은 앞뒤 달 사이를 선형으로 잇는다 (차트의 짧은 기간용).
+function projValueAt(base, months) {
+  var r = fcRate / 100 / 12, v = base, k = Math.floor(months);
+  for (var i = 0; i < k; i++) v = v * (1 + r) + fcMonthly;
+  var frac = months - k;
+  if (frac > 0) v += (v * (1 + r) + fcMonthly - v) * frac;
+  return v;
+}
+// 목표까지 몇 개월 — 이미 달성이면 0, 100년 안에 못 닿으면 null
+function monthsToGoal(base) {
+  if (base >= goalAmount) return 0;
+  var r = fcRate / 100 / 12, v = base;
+  for (var m = 1; m <= 1200; m++) {
+    v = v * (1 + r) + fcMonthly;
+    if (v >= goalAmount) return m;
+  }
+  return null;
+}
+function etaDate(months) {
+  var now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + months, 1);
+}
 
 function fmtEok(n) { return (n / 1e8).toFixed(2) + '억원'; }
 
-function renderForecast() {
+function renderForecast() { withDashRows(renderForecastInner); }
+function renderForecastInner() {
   var card = $('forecastCard');
   var series = totalSeries();
   if (!series.length) { card.style.display = 'none'; return; }
@@ -2271,6 +2497,9 @@ function renderForecast() {
   var stVal = $('fcMonthly');
   stVal.textContent = (fcMonthly < 0 ? '−' : '+') + fmtCompact(Math.abs(fcMonthly)) + '원';
   stVal.classList.toggle('minus', fcMonthly < 0);
+  var rv = $('fcRate');
+  rv.textContent = (fcRate > 0 ? '+' : fcRate < 0 ? '−' : '') + Math.abs(fcRate).toFixed(1) + '%';
+  rv.classList.toggle('minus', fcRate < 0);
 
   // ── 목표 진행 상황 ──
   var gb = $('goalBox');
@@ -2289,19 +2518,23 @@ function renderForecast() {
   meter.appendChild(fill);
   gb.appendChild(meter);
 
-  var etaText;
-  if (base >= goalAmount) {
+  var etaText, etaShort;
+  var months = monthsToGoal(base);
+  if (months === 0) {
     etaText = '목표 달성! 🎉';
-  } else if (fcMonthly <= 0) {
-    etaText = '매달 더해지는 금액이 0 이하라 도달 시점을 계산할 수 없어요';
+    etaShort = '달성! 🎉';
+  } else if (months === null) {
+    etaText = '지금 적립액·수익률로는 100년 안에 닿지 않아요';
+    etaShort = '도달 시점 없음';
   } else {
-    var months = Math.ceil((goalAmount - base) / fcMonthly);
-    var gd = new Date(now.getFullYear(), now.getMonth() + months, 1);
+    var gd = etaDate(months);
     var yy = Math.floor(months / 12), mm = months % 12;
     var rel = (yy ? yy + '년 ' : '') + (mm ? mm + '개월' : '');
     etaText = gd.getFullYear() + '년 ' + (gd.getMonth() + 1) + '월 도달 예상 (' + rel.trim() + ' 후)';
+    etaShort = gd.getFullYear() + '년 ' + (gd.getMonth() + 1) + '월 예상';
   }
   gb.appendChild(el('div', 'goal-eta', '현재 ' + pct.toFixed(1) + '% 달성 · ' + etaText));
+  renderHeroGoal(pct, etaShort);
 
   // ── 타임라인 ──
   var list = $('fcList');
@@ -2322,26 +2555,57 @@ function renderForecast() {
   if (fcMode === 'month') {
     for (var m = 1; m <= 12; m++) {
       var d = new Date(now.getFullYear(), now.getMonth() + m, 1);
-      addRow(d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월', base + fcMonthly * m,
+      addRow(d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월', projValueAt(base, m),
              false, d.getMonth() === 0);  // 1월 행 = 연도 경계
     }
   } else {
     for (var y = 1; y <= 10; y++) {
-      addRow((now.getFullYear() + y) + '년 ' + (now.getMonth() + 1) + '월',
-             base + fcMonthly * 12 * y);
+      addRow((now.getFullYear() + y) + '년 ' + (now.getMonth() + 1) + '월', projValueAt(base, 12 * y));
     }
   }
+}
+
+// 순자산 카드 오른쪽의 목표 달성률 링
+function renderHeroGoal(pct, etaShort) {
+  var box = $('heroGoal');
+  box.hidden = false;
+  var c = 2 * Math.PI * 35;
+  var ring = $('ringFg');
+  ring.style.strokeDasharray = c.toFixed(1);
+  ring.style.strokeDashoffset = (c * (1 - Math.max(0, Math.min(100, pct)) / 100)).toFixed(1);
+  ring.classList.toggle('done', pct >= 100);
+  $('ringPct').textContent = Math.max(0, pct).toFixed(pct >= 100 ? 0 : 1) + '%';
+  $('hgGoal').textContent = parseFloat((goalAmount / 1e8).toFixed(2)) + '억원';
+  $('hgEta').textContent = etaShort;
+}
+
+// 차트 오른쪽으로 이어지는 예상선 — 보고 있는 기간만큼 앞으로 (전체면 기록 기간만큼, 최대 10년)
+function projectionSeries(fs) {
+  var last = fs[fs.length - 1];
+  var lastD = parseDate(last.date);
+  var spanDays = currentRange === 'all'
+    ? Math.max(30, Math.round((lastD - parseDate(fs[0].date)) / 864e5)) : currentRange;
+  spanDays = Math.min(spanDays, 3650);
+  var out = [], prev = last.date;
+  for (var i = 1; i <= 12; i++) {
+    var days = Math.round(spanDays * i / 12);
+    var d = new Date(lastD);
+    d.setDate(d.getDate() + days);
+    var ds = fmtDateStr(d);
+    if (ds === prev) continue;
+    prev = ds;
+    out.push({ date: ds, total: projValueAt(last.total, days / 30.4375), proj: true });
+  }
+  return out;
 }
 
 // 총자산 숫자 카운트업 애니메이션 (값이 안 바뀌었거나 모션 최소화 설정이면 생략)
 var heroPrev = null;
 function animateHero(target) {
   var node = $('heroValue').firstChild;   // 숫자 텍스트 노드
-  var headerEl = $('headerTotal');
   if (heroPrev === target ||
       window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     heroPrev = target;
-    headerEl.textContent = fmtHeaderTotal(target);
     return;
   }
   var from = heroPrev === null ? 0 : heroPrev;
@@ -2352,7 +2616,6 @@ function animateHero(target) {
     var e = 1 - Math.pow(1 - p, 3);   // easeOutCubic
     var cur = from + (target - from) * e;
     node.nodeValue = comma(cur);
-    headerEl.textContent = fmtHeaderTotal(cur);
     if (p < 1) requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
@@ -2417,7 +2680,7 @@ function rangeLabel() {
 
 /* ═══════════ 차트 (SVG) ═══════════ */
 // 컨테이너(wrap)에 라인 차트를 그림 — 대시보드 순자산 차트와 자산별 차트에서 공용
-function drawLineChart(wrap, series, H) {
+function drawLineChart(wrap, series, H, opts) {
   var tooltip = wrap.querySelector('.tooltip');
   var old = wrap.querySelector('svg'); if (old) old.remove();
   var empty = wrap.querySelector('.chart-empty');
@@ -2433,11 +2696,23 @@ function drawLineChart(wrap, series, H) {
 
   var W = wrap.clientWidth || 320;
   var padL = 8, padR = 14, padT = 16, padB = 28;
-  var vals = series.map(function (p) { return p.total; });
+  var proj = (opts && opts.proj) || [];
+  var goal = opts && opts.goal;
+  var all = series.concat(proj);            // 실제 기록 + 예상 (x축 · 툴팁 공용)
+  var vals = all.map(function (p) { return p.total; });
   var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
   if (min === max) { min -= 1; max += 1; }
+  // 목표선은 가까이 있을 때만 축에 넣는다 — 너무 멀면 선이 납작해지므로 위쪽에 표시만
+  var goalIn = false;
+  if (goal) {
+    var sp0 = max - min;
+    if (goal <= max + sp0 * 1.2 && goal >= min - sp0) {
+      goalIn = true;
+      min = Math.min(min, goal); max = Math.max(max, goal);
+    }
+  }
   var span = max - min;
-  min -= span * 0.12; max += span * 0.08;
+  min -= span * 0.12; max += span * (goal ? 0.12 : 0.08);
 
   // y 눈금: 깔끔한 단위로 (큰 차트는 4~5개, 작은 차트는 3~4개)
   var rawStep = (max - min) / (H >= 260 ? 5 : 3);
@@ -2448,8 +2723,8 @@ function drawLineChart(wrap, series, H) {
   var yTicks = [];
   for (var v = y0; v <= max; v += step) yTicks.push(v);
 
-  var t0 = parseDate(series[0].date).getTime();
-  var t1 = parseDate(series[series.length - 1].date).getTime();
+  var t0 = parseDate(all[0].date).getTime();
+  var t1 = parseDate(all[all.length - 1].date).getTime();
   if (t0 === t1) t1 = t0 + 1;
   var X = function (d) { return padL + (parseDate(d).getTime() - t0) / (t1 - t0) * (W - padL - padR); };
   var Y = function (val) { return padT + (1 - (val - min) / (max - min)) * (H - padT - padB); };
@@ -2471,10 +2746,11 @@ function drawLineChart(wrap, series, H) {
   var cMuted = css.getPropertyValue('--muted').trim();
   var cAccent = css.getPropertyValue('--accent').trim();
   var cSurface = css.getPropertyValue('--surface').trim();
+  var cGoal = css.getPropertyValue('--own1-fg').trim();
   var fs = W > 500 ? 11 : 10;
 
   // 가로 격자 + y 라벨 — 라벨이 마지막 데이터 점(끝점 도트)과 겹치면 생략
-  var endY = Y(series[series.length - 1].total);
+  var endY = Y(all[all.length - 1].total);
   yTicks.forEach(function (v) {
     var y = Y(v);
     sv('line', { x1: padL, x2: W - padR, y1: y, y2: y, stroke: cGrid, 'stroke-width': 1 });
@@ -2484,21 +2760,22 @@ function drawLineChart(wrap, series, H) {
   });
 
   // x 라벨 — 넓을수록 더 많이
-  var nLab = Math.max(2, Math.min(series.length, Math.max(4, Math.floor(W / 120))));
-  var lastDate = parseDate(series[series.length - 1].date);
-  var firstDate = parseDate(series[0].date);
+  var nLab = Math.max(2, Math.min(all.length, Math.max(4, Math.floor(W / 120))));
+  var lastDate = parseDate(all[all.length - 1].date);
+  var firstDate = parseDate(all[0].date);
   var longRange = (lastDate - firstDate) > 200 * 864e5;
   var usedIdx = {};
   for (var i = 0; i < nLab; i++) {
-    var idx = Math.round(i * (series.length - 1) / (nLab - 1));
+    var idx = Math.round(i * (all.length - 1) / (nLab - 1));
     if (usedIdx[idx]) continue;
     usedIdx[idx] = true;
-    var d = parseDate(series[idx].date);
+    var d = parseDate(all[idx].date);
     var lbl = longRange
       ? String(d.getFullYear()).slice(2) + '.' + (d.getMonth() + 1)
       : (d.getMonth() + 1) + '.' + d.getDate();
     var anchor = i === 0 ? 'start' : (i === nLab - 1 ? 'end' : 'middle');
-    var t = sv('text', { x: X(series[idx].date), y: H - 8, 'text-anchor': anchor, 'font-size': fs, fill: cMuted });
+    var t = sv('text', { x: X(all[idx].date), y: H - 8, 'text-anchor': anchor, 'font-size': fs,
+                         fill: all[idx].proj ? cGoal : cMuted });
     t.textContent = lbl;
   }
 
@@ -2516,6 +2793,43 @@ function drawLineChart(wrap, series, H) {
   sv('path', { d: areaD, fill: cAccent, 'fill-opacity': 0.1 });
   sv('path', { d: lineD, fill: 'none', stroke: cAccent, 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
   var endP = pts[pts.length - 1];
+
+  // 예상선 · 오늘 구분선 · 목표선
+  var ppts = proj.map(function (p) {
+    return { x: X(p.date), y: Y(p.total), date: p.date, total: p.total, proj: true };
+  });
+  if (ppts.length) {
+    sv('line', { x1: endP.x, x2: endP.x, y1: padT, y2: base, stroke: cMuted, 'stroke-width': 1,
+                 'stroke-dasharray': '2 3', opacity: 0.7 });
+    var tl = sv('text', { x: endP.x - 4, y: padT + 9, 'text-anchor': 'end', 'font-size': fs - 1, fill: cMuted });
+    tl.textContent = '오늘';
+    var tp = sv('text', { x: endP.x + 4, y: padT + 9, 'font-size': fs - 1, fill: cGoal });
+    tp.textContent = '예상';
+    var pd = 'M' + endP.x.toFixed(1) + ' ' + endP.y.toFixed(1);
+    ppts.forEach(function (p) { pd += ' L' + p.x.toFixed(1) + ' ' + p.y.toFixed(1); });
+    sv('path', { d: pd, fill: 'none', stroke: cAccent, 'stroke-width': 2, 'stroke-dasharray': '5 5',
+                 'stroke-linecap': 'round', opacity: 0.75 });
+  }
+  if (goal) {
+    var gTxt = '목표 ' + parseFloat((goal / 1e8).toFixed(2)) + '억';
+    if (goalIn) {
+      var gy = Y(goal);
+      sv('line', { x1: padL, x2: W - padR, y1: gy, y2: gy, stroke: cGoal, 'stroke-width': 1.5,
+                   'stroke-dasharray': '6 4' });
+      var gt = sv('text', { x: padL + 2, y: gy - 6, 'font-size': fs, 'font-weight': 700, fill: cGoal });
+      gt.textContent = gTxt;
+      // 예상선이 목표를 처음 넘는 곳 — 앞 점과의 사이를 보간해 정확한 교차점에 찍는다
+      var hi = ppts.findIndex(function (p) { return p.total >= goal; });
+      if (hi >= 0 && endP.total < goal) {
+        var a0 = hi ? ppts[hi - 1] : endP, a1 = ppts[hi];
+        var cx = a0.x + (goal - a0.total) / ((a1.total - a0.total) || 1) * (a1.x - a0.x);
+        sv('circle', { cx: cx, cy: gy, r: 4.5, fill: cSurface, stroke: cGoal, 'stroke-width': 2 });
+      }
+    } else if (goal > max) {
+      var ga = sv('text', { x: padL + 2, y: padT + 9, 'font-size': fs, 'font-weight': 700, fill: cGoal });
+      ga.textContent = gTxt + ' ↑ (범위 밖)';
+    }
+  }
   sv('circle', { cx: endP.x, cy: endP.y, r: 4, fill: cAccent, stroke: cSurface, 'stroke-width': 2 });
 
   // 크로스헤어 + 호버 점 (마우스를 따라 가장 가까운 날짜에 스냅)
@@ -2524,27 +2838,35 @@ function drawLineChart(wrap, series, H) {
 
   wrap.insertBefore(svg, tooltip);
 
+  var hpts = pts.concat(ppts);   // 툴팁은 예상 점에도 붙는다
   function onMove(clientX) {
     var rect = svg.getBoundingClientRect();
     var mx = clientX - rect.left;
     var bi = 0, bd = Infinity;
-    pts.forEach(function (p, i) {
+    hpts.forEach(function (p, i) {
       var dd = Math.abs(p.x - mx);
       if (dd < bd) { bd = dd; bi = i; }
     });
-    var best = pts[bi];
+    var best = hpts[bi];
     xhair.setAttribute('x1', best.x); xhair.setAttribute('x2', best.x);
     xhair.setAttribute('opacity', 0.6);
     hdot.setAttribute('cx', best.x); hdot.setAttribute('cy', best.y);
     hdot.setAttribute('opacity', 1);
+    hdot.setAttribute('fill', best.proj ? cSurface : cAccent);
+    hdot.setAttribute('stroke', best.proj ? cAccent : cSurface);
     var d = parseDate(best.date);
     tooltip.querySelector('.t-date').textContent =
-      d.getFullYear() + '.' + (d.getMonth() + 1) + '.' + d.getDate() + ' (' + WEEKDAYS[d.getDay()] + ')';
+      d.getFullYear() + '.' + (d.getMonth() + 1) + '.' + d.getDate() + ' (' + WEEKDAYS[d.getDay()] + ')' +
+      (best.proj ? ' · 예상' : '');
     tooltip.querySelector('.t-val').textContent = comma(best.total) + '원';
     var td = tooltip.querySelector('.t-diff');
     if (td) {
-      if (bi > 0) {
-        var df = best.total - pts[bi - 1].total;
+      if (best.proj) {
+        var dn = best.total - endP.total;
+        td.className = 't-diff ' + (dn > 0 ? 'up' : dn < 0 ? 'down' : '');
+        td.textContent = '지금보다 ' + signedTxt(dn);
+      } else if (bi > 0) {
+        var df = best.total - hpts[bi - 1].total;
         td.className = 't-diff ' + (df > 0 ? 'up' : df < 0 ? 'down' : '');
         td.textContent = '직전 대비 ' + signedTxt(df);
       } else {
@@ -3523,6 +3845,7 @@ function renderTopbar() {
   }
   $('viewSub').textContent = sub;
   $('btnTopAdd').hidden = currentView === 'home';
+  renderDashOwners();
 }
 
 function switchView(v) {
@@ -3597,13 +3920,34 @@ $('logoFileInput').addEventListener('change', function () {
 // 미래 자산 예상
 $('fcPlus').addEventListener('click', function () {
   fcMonthly += FC_STEP;
-  renderForecast();
+  renderHome();
   persistQuiet();
 });
 $('fcMinus').addEventListener('click', function () {
   fcMonthly -= FC_STEP;
-  renderForecast();
+  renderHome();
   persistQuiet();
+});
+function stepRate(d) {
+  fcRate = Math.max(-10, Math.min(30, Math.round((fcRate + d) * 10) / 10));
+  renderHome();
+  persistQuiet();
+}
+$('fcRatePlus').addEventListener('click', function () { stepRate(FC_RATE_STEP); });
+$('fcRateMinus').addEventListener('click', function () { stepRate(-FC_RATE_STEP); });
+
+// 차트: 목표·예상선 켜고 끄기
+var chartProj = lsGet('asset_pc_proj') !== '0';
+function syncProjToggle() {
+  $('projToggle').classList.toggle('on', chartProj);
+  $('projToggle').setAttribute('aria-pressed', String(chartProj));
+}
+syncProjToggle();
+$('projToggle').addEventListener('click', function () {
+  chartProj = !chartProj;
+  lsSet('asset_pc_proj', chartProj ? '1' : '0');
+  syncProjToggle();
+  renderHome();
 });
 $('fcModes').addEventListener('click', function (e) {
   var btn = e.target.closest('button');
@@ -3656,7 +4000,7 @@ $('goalBox').addEventListener('click', function (e) {
       goalAmount = Math.round(v * 1e8);
       persistQuiet();
     }
-    renderForecast();  // goalBox를 다시 그리면서 버튼도 복원됨
+    renderHome();  // goalBox를 다시 그리면서 버튼도 복원되고, 차트 목표선도 바뀐다
   }
   inp.addEventListener('blur', commitGoal);
   inp.addEventListener('keydown', function (ev) {
@@ -4069,7 +4413,8 @@ function paintMonthSummary(body, s) {
 // 대시보드 카드에서 보고 있는 달 — null 이면 이번 달. 다시 열면 이번 달로 돌아온다.
 var msViewKey = null;
 
-function renderMonthCard() {
+function renderMonthCard() { withDashRows(renderMonthCardInner); }
+function renderMonthCardInner() {
   var card = $('msCard');
   var thisKey = monthKeyOf(new Date());
   var key = msViewKey || thisKey;
@@ -4084,12 +4429,75 @@ function renderMonthCard() {
   $('msPrev').disabled = !monthSummary(shiftMonthKey(key, -1));
   $('msNext').disabled = key >= thisKey;
   paintMonthSummary($('msBody'), s);
+  renderMonthBars(key, thisKey);
 }
+
+// 최근 12개월 순자산 증감 막대 — 누르면 그 달 요약으로
+function renderMonthBars(selKey, thisKey) {
+  var box = $('msBars');
+  var data = [];
+  for (var i = 11; i >= 0; i--) {
+    var k = shiftMonthKey(thisKey, -i);
+    var sm = monthSummary(k);
+    data.push({ key: k, v: sm ? sm.change : null });
+  }
+  var known = data.filter(function (d) { return d.v !== null; });
+  if (known.length < 2) { box.hidden = true; box.innerHTML = ''; return; }
+  box.hidden = false;
+  var W = box.clientWidth || $('msCard').clientWidth - 44 || 600;
+  var H = 132, padT = 20, padB = 22, plotH = H - padT - padB;
+  var maxPos = Math.max(0, Math.max.apply(null, known.map(function (d) { return d.v; })));
+  var maxNeg = Math.max(0, -Math.min.apply(null, known.map(function (d) { return d.v; })));
+  var tot = maxPos + maxNeg || 1;
+  var zeroY = padT + maxPos / tot * plotH;
+  var slot = W / 12, bw = Math.min(30, slot * 0.58);
+  var css = getComputedStyle(document.documentElement);
+  var cUp = css.getPropertyValue('--up').trim(), cDown = css.getPropertyValue('--down').trim();
+  var cMuted = css.getPropertyValue('--muted').trim(), cGrid = css.getPropertyValue('--grid').trim();
+  var cInk = css.getPropertyValue('--ink').trim();
+  var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" ' +
+            'aria-label="최근 12개월 순자산 증감">';
+  svg += '<line x1="0" x2="' + W + '" y1="' + zeroY.toFixed(1) + '" y2="' + zeroY.toFixed(1) +
+         '" stroke="' + cGrid + '" stroke-width="1"/>';
+  data.forEach(function (d, i) {
+    var cx = slot * i + slot / 2;
+    var sel = d.key === selKey;
+    var mon = Number(d.key.slice(5));
+    var lab = mon === 1 && i > 0 ? d.key.slice(2, 4) + '.1' : mon + '월';
+    if (d.v !== null) {
+      var h = Math.max(2, Math.abs(d.v) / tot * plotH);
+      var y = d.v >= 0 ? zeroY - h : zeroY;
+      svg += '<rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) +
+             '" height="' + h.toFixed(1) + '" rx="3" fill="' + (d.v >= 0 ? cUp : cDown) + '" opacity="' +
+             (sel ? 1 : 0.45) + '"/>';
+      if (sel) {
+        var ty = d.v >= 0 ? y - 5 : y + h + 12;
+        svg += '<text x="' + cx.toFixed(1) + '" y="' + ty.toFixed(1) + '" text-anchor="middle" font-size="10.5" ' +
+               'font-weight="700" fill="' + (d.v >= 0 ? cUp : cDown) + '">' + signedTxt(d.v) + '</text>';
+      }
+    }
+    svg += '<text x="' + cx.toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="10.5" ' +
+           'font-weight="' + (sel ? 800 : 500) + '" fill="' + (sel ? cInk : cMuted) + '">' + lab + '</text>';
+    if (d.v !== null) {
+      svg += '<rect class="hit" data-key="' + d.key + '" x="' + (slot * i).toFixed(1) + '" y="0" width="' +
+             slot.toFixed(1) + '" height="' + H + '" fill="transparent"><title>' + monthTitle(d.key) + ' ' +
+             signedTxt(d.v) + '</title></rect>';
+    }
+  });
+  box.innerHTML = '<div class="ms-bars-cap">최근 12개월 순자산 증감 · 막대를 누르면 그 달 요약</div>' + svg + '</svg>';
+}
+$('msBars').addEventListener('click', function (e) {
+  var hit = e.target.closest('[data-key]');
+  if (!hit) return;
+  var thisKey = monthKeyOf(new Date());
+  msViewKey = hit.dataset.key === thisKey ? null : hit.dataset.key;
+  renderMonthCard();
+});
 
 function msStep(n) {
   var thisKey = monthKeyOf(new Date());
   var next = shiftMonthKey(msViewKey || thisKey, n);
-  if (next > thisKey || !monthSummary(next)) return;
+  if (next > thisKey || !withDashRows(function () { return monthSummary(next); })) return;
   msViewKey = next === thisKey ? null : next;
   renderMonthCard();
 }
@@ -4314,6 +4722,31 @@ window.addEventListener('resize', function () {
 
 runPopups._tm = setTimeout(runPopups, 6000);   // 한쪽이 응답 없어도 팝업은 뜬다
 showFearGreed();
+
+/* ═══════════ 화면 테마: 자동 · 밝게 · 어둡게 ═══════════ */
+var THEME_KEY = 'asset_pc_theme';
+var themePref = lsGet(THEME_KEY) || 'auto';
+var darkMq = window.matchMedia('(prefers-color-scheme: dark)');
+function applyTheme(redraw) {
+  var dark = themePref === 'dark' || (themePref === 'auto' && darkMq.matches);
+  var t = dark ? 'dark' : 'light';
+  var changed = document.documentElement.dataset.theme !== t;
+  document.documentElement.dataset.theme = t;
+  document.querySelectorAll('#themeSeg button').forEach(function (b) {
+    b.classList.toggle('on', b.dataset.theme === themePref);
+  });
+  // 차트는 그릴 때 색을 읽으므로 다시 그린다
+  if (changed && redraw) { renderHome(); drawDetailChart(); }
+}
+$('themeSeg').addEventListener('click', function (e) {
+  var b = e.target.closest('button');
+  if (!b) return;
+  themePref = b.dataset.theme;
+  lsSet(THEME_KEY, themePref);
+  applyTheme(true);
+});
+darkMq.addEventListener('change', function () { if (themePref === 'auto') applyTheme(true); });
+applyTheme(false);
 
 renderStoreCard();
 renderTopbar();
