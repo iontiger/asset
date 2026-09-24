@@ -254,7 +254,7 @@
   .rb-kpis .kpi { padding:16px 18px; }
   .rb-kpis .kpi-v { margin-top:8px; font-size:1.45rem; }
   .rb-kpis .kpi-v.warn { color:var(--warn); }
-  .rb-kpis .kpi-s { padding-top:6px; }
+  .rb-kpis .kpi-s { padding-top:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .rb-total { cursor:pointer; transition:border-color .15s, box-shadow .15s; }
   .rb-total:hover, .rb-total:focus-visible { border-color:var(--baseline); box-shadow:0 8px 22px rgba(0,0,0,.06); outline:none; }
   .rb-total .kpi-v { font-size:1.9rem; }
@@ -508,7 +508,7 @@
   .ms-weather.wx-storm { --wx-bg:rgba(74,58,167,.20); }
 
   /* ── 목표까지 등산 지도 ── */
-  .mtn-card { padding:0; overflow:hidden; margin-bottom:18px; }
+  .card.mtn-card { padding:0; overflow:hidden; margin-bottom:18px; }
   .mtn-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:18px 22px 0; flex-wrap:wrap; }
   .mtn-head .card-sub { font-size:.8rem; }
   .mtn-svg { display:block; width:100%; height:auto; }
@@ -581,7 +581,7 @@
   .cloud-status.warn { color:var(--warn); border-color:color-mix(in srgb, var(--warn) 35%, transparent); }
   .cloud-status.err { color:var(--down); border-color:color-mix(in srgb, var(--down) 35%, transparent); }
   .cloud-status.busy { color:var(--accent-deep); }
-  .cloud-steps { display:flex; margin:2px 0 14px; max-width:none; font-size:.8rem; }
+  .guide-steps.cloud-steps { display:flex; margin:2px 0 14px; max-width:none; font-size:.8rem; }
   .cloud-steps a { color:var(--accent-deep); font-weight:700; }
   .cloud-form { margin:4px 0 12px; }
   .cloud-note { font-size:.8rem !important; }
@@ -858,7 +858,9 @@
   .hg-l { font-size:.72rem; color:var(--muted); font-weight:600; }
   .hg-v { font-size:1.05rem; font-weight:800; margin-top:2px; white-space:nowrap; }
   .hg-s { font-size:.74rem; color:var(--ink-2); margin-top:3px; white-space:nowrap; }
-  @container hero (max-width: 560px) { .hero-goal { display:none; } }
+  /* 폭이 좁아지면 링 옆 글씨부터 숨기고, 아주 좁을 때만 링까지 숨긴다 */
+  @container hero (max-width: 640px) { .hg-t { display:none; } .kpi.hero { gap:14px; } .hero-goal { padding-left:8px; } }
+  @container hero (max-width: 400px) { .hero-goal { display:none; } }
 
   /* 작은 KPI 추세선 */
   .spark { margin-left:auto; width:64px; height:22px; flex:none; overflow:visible; }
@@ -902,6 +904,15 @@
       "comp  kpi   fc"
       "chart chart fc"
       "ms    ms    fg"
+      "heat  heat  heat";
+  }
+  /* 공포·탐욕 지수를 못 불러왔으면 월간 요약이 그 자리까지 넓게 */
+  .dboard:not(.has-fg) {
+    grid-template-areas:
+      "hero  kpi   fc"
+      "comp  kpi   fc"
+      "chart chart fc"
+      "ms    ms    ms"
       "heat  heat  heat";
   }
   .dboard > .hero { grid-area:hero; }
@@ -1078,6 +1089,8 @@
     width:36px; height:36px; border-radius:10px; flex:none;
     border:1px solid var(--border); object-fit:cover; background:var(--bg);
   }
+  /* 가로로 긴 은행 로고도 잘리지 않게 — 흰 바탕에 통째로 */
+  img.logo { object-fit:contain; background:#fff; padding:2px; }
   .logo-fallback {
     display:flex; align-items:center; justify-content:center;
     font-size:.92rem; font-weight:700; color:var(--accent-deep);
@@ -1503,6 +1516,15 @@
         "ms    fg"
         "heat  heat";
     }
+    .dboard:not(.has-fg) {
+      grid-template-areas:
+        "hero  fc"
+        "kpi   fc"
+        "comp  fc"
+        "chart fc"
+        "ms    ms"
+        "heat  heat";
+    }
     .kpi-stack { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
   }
   /* 좁은 폭: 한 열 */
@@ -1511,6 +1533,7 @@
       grid-template-columns:minmax(0,1fr);
       grid-template-areas:"hero" "kpi" "comp" "chart" "fc" "ms" "fg" "heat";
     }
+    .dboard:not(.has-fg) { grid-template-areas:"hero" "kpi" "comp" "chart" "fc" "ms" "heat"; }
   }
   /* 자산: 휴대폰 폭에서만 상세 패널을 아래로 내린다 */
   @container main (max-width: 540px) {
@@ -1600,10 +1623,10 @@
     .side-nav { flex-direction:row; order:3; flex:1 1 100%; }
     .side-nav { overflow-x:auto; scrollbar-width:none; }
     .side-nav::-webkit-scrollbar { display:none; }
-    .side-nav button { flex:1 0 auto; justify-content:center; white-space:nowrap; padding:9px 10px; gap:8px; }
+    .side-nav button { flex:1 0 auto; width:auto; justify-content:center; white-space:nowrap; padding:9px 10px; gap:8px; }
     .brand { flex:1; }
     .side-nav kbd, .brand-total { display:none; }
-    .nav-sep { width:1px; height:auto; margin:6px 2px; }
+    .nav-sep { width:1px; height:auto; margin:6px 2px; flex:none; }
     .side-foot { margin:0; flex-direction:row; align-items:center; }
     .side-foot .side-lbl, .side-foot .side-btn kbd { display:none; }
     .side-foot .side-btn { width:auto; padding:9px; }
@@ -5875,7 +5898,7 @@ function rbDue(p) {
 function updateRebalNav() {
   var b = $('navBadgeRebal');
   if (!b) return;
-  var due = rbDue();
+  var due = store.mode !== 'demo' && rbDue();   // 데모로 둘러볼 때는 경고처럼 보이지 않게
   b.textContent = due ? '!' : '';
   b.classList.toggle('show', due);
   b.title = due ? '리밸런싱 시점입니다' : '';
@@ -6531,7 +6554,7 @@ function rbDrawSpark() {
     var pts = rbSlice(data.pts, '1m', RB_TOTAL_PERIODS), prin = rbPrincipal(pts, data.flows);
     var chg = pts[pts.length - 1][1] - prin[prin.length - 1], rate = prin[prin.length - 1] ? chg / prin[prin.length - 1] * 100 : 0;
     box.innerHTML = rbChartSvg(pts, data.hasEvents ? prin : null, { mini: true, height: 50, asset: true }) +
-      '<div class="rb-spark-txt"><span>최근 1달</span><span class="delta ' + (chg > 0 ? 'up' : chg < 0 ? 'down' : '') + '">' +
+      '<div class="rb-spark-txt"><span>1달</span><span class="delta ' + (chg > 0 ? 'up' : chg < 0 ? 'down' : '') + '">' +
       (chg > 0 ? '+' : chg < 0 ? '−' : '') + rbNum(Math.abs(chg)) + '원 (' + (rate > 0 ? '+' : '') + rate.toFixed(2) + '%)</span></div>';
   }).catch(function (e) { console.warn(e); });
 }
@@ -7413,7 +7436,10 @@ function renderMonthBars(selKey, thisKey) {
              (sel ? 1 : 0.45) + '"/>';
       if (sel) {
         var ty = d.v >= 0 ? y - 5 : y + h + 12;
-        svg += '<text x="' + cx.toFixed(1) + '" y="' + ty.toFixed(1) + '" text-anchor="middle" font-size="10.5" ' +
+        // 양 끝 막대의 금액은 카드 밖으로 잘리지 않게 안쪽으로 붙인다
+        var lx = cx, la = 'middle';
+        if (cx + 32 > W) { lx = W - 1; la = 'end'; } else if (cx < 32) { lx = 1; la = 'start'; }
+        svg += '<text x="' + lx.toFixed(1) + '" y="' + ty.toFixed(1) + '" text-anchor="' + la + '" font-size="10.5" ' +
                'font-weight="700" fill="' + (d.v >= 0 ? cUp : cDown) + '">' + signedTxt(d.v) + '</text>';
       }
     }
@@ -7620,6 +7646,7 @@ function fgPaint(gaugeId, verdictBoxId, verdictTextId, prevId, maxPx) {
 
 // 대시보드 카드 — renderHome()에서 매번 불러, 폭에 맞게 다시 맞춘다
 function renderFgCard() {
+  document.querySelector('#view-home .dboard').classList.toggle('has-fg', !!fgData);
   if (!fgData) return;
   $('fgCard').style.display = '';
   fgPaint('fgcGauge', 'fgcVerdict', 'fgcVerdictText', 'fgcPrev', 60);
