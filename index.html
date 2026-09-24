@@ -222,15 +222,210 @@
   .t-goal { --tier:#f5b301; } .t-debtFree { --tier:#f5b301; } .t-eok { --tier:#9b5de5; }
   .t-chun { --tier:#f15bb5; } .t-pct { --tier:#14b8a6; } .t-debt { --tier:#3987e5; }
   .t-peak { --tier:#22c55e; } .t-day { --tier:#64748b; } .t-streak { --tier:#f97316; }
-  /* 끼워 넣은 페이지 — 화면 높이를 꽉 채운다 */
-  .embed-card { position:relative; padding:0; overflow:hidden; height:calc(100vh - 126px); min-height:520px; }
-  .embed-card iframe { display:block; width:100%; height:100%; border:0; background:var(--surface); }
-  .embed-loading {
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    color:var(--muted); font-size:.9rem; background:var(--surface); pointer-events:none;
-    transition:opacity .25s;
+  /* ── 연금 리밸런싱 ─────────────────── */
+  #view-rebal { container:rebal / inline-size; }
+  .rb-bar { display:flex; align-items:center; gap:10px 14px; flex-wrap:wrap; margin-bottom:16px; }
+  .rb-notice {
+    display:flex; align-items:center; gap:8px; min-width:0;
+    font-size:.84rem; font-weight:600; color:var(--ink-2);
+    padding:8px 14px; border-radius:11px; background:var(--surface); border:1px solid var(--border);
   }
-  .embed-loading.done { opacity:0; }
+  .rb-notice:empty { display:none; }
+  .rb-notice.due { color:var(--warn); background:color-mix(in srgb, var(--warn) 10%, var(--surface)); border-color:color-mix(in srgb, var(--warn) 35%, transparent); }
+  .rb-notice.err { color:var(--down); background:color-mix(in srgb, var(--down) 8%, var(--surface)); border-color:color-mix(in srgb, var(--down) 30%, transparent); }
+  .rb-notice .btn { margin-left:6px; }
+  .rb-pane { display:none; }
+  .rb-pane.on { display:block; }
+  .rb-empty { text-align:center; color:var(--muted); font-size:.9rem; line-height:1.7; padding:46px 16px; }
+  .rb-empty .btn { margin-top:14px; }
+
+  .rb-kpis { display:grid; grid-template-columns:minmax(0,2fr) repeat(3, minmax(0,1fr)); gap:12px; margin-bottom:16px; }
+  .rb-kpis .kpi { padding:16px 18px; }
+  .rb-kpis .kpi-v { margin-top:8px; font-size:1.45rem; }
+  .rb-kpis .kpi-v.warn { color:var(--warn); }
+  .rb-kpis .kpi-s { padding-top:6px; }
+  .rb-total { cursor:pointer; transition:border-color .15s, box-shadow .15s; }
+  .rb-total:hover, .rb-total:focus-visible { border-color:var(--baseline); box-shadow:0 8px 22px rgba(0,0,0,.06); outline:none; }
+  .rb-total .kpi-v { font-size:1.9rem; }
+  .rb-total-row { display:flex; gap:18px; align-items:flex-end; }
+  .rb-total-row > div:first-child { flex:none; }
+  .rb-spark { flex:1; min-width:0; }
+  .rb-spark svg { display:block; width:100%; height:50px; }
+  .rb-spark-txt { display:flex; justify-content:space-between; gap:8px; font-size:.72rem; color:var(--muted); margin-top:3px; white-space:nowrap; }
+  .rb-more { color:var(--accent-deep); font-weight:700; font-size:.74rem; margin-left:auto; }
+
+  .rb-main { display:grid; grid-template-columns:minmax(0,1fr) 410px; gap:16px; align-items:start; }
+  .rb-main.inv { grid-template-columns:380px minmax(0,1fr); }
+  /* 신규 투입의 왼쪽 패널은 짧아서 스크롤해도 따라온다 (계획 패널은 길어질 수 있어 고정하지 않는다) */
+  .rb-main.inv .rb-side { position:sticky; top:96px; }
+  .rb-legend { display:flex; gap:12px; font-size:.74rem; color:var(--muted); white-space:nowrap; }
+  .rb-legend i { display:inline-block; width:12px; height:8px; border-radius:3px; background:var(--accent); margin-right:5px; vertical-align:middle; }
+  .rb-legend i.tgt { width:2px; height:12px; border-radius:1px; background:var(--ink); }
+
+  /* 현재 · 목표 비중 누적 막대 */
+  .rb-alloc { display:grid; grid-template-columns:auto minmax(0,1fr); gap:7px 12px; align-items:center; margin-bottom:12px; font-size:.74rem; color:var(--muted); font-weight:600; }
+  .rb-stack { display:flex; height:14px; border-radius:6px; overflow:hidden; background:var(--hover); }
+  .rb-stack span { height:100%; min-width:0; border-right:1px solid var(--surface); }
+  .rb-stack span:last-child { border-right:none; }
+  .rb-stack .cash { background:repeating-linear-gradient(45deg, var(--grid), var(--grid) 4px, transparent 4px, transparent 8px); }
+
+  .rb-table-wrap { overflow-x:auto; margin:0 -8px; }
+  .rb-table { width:100%; border-collapse:collapse; font-size:.86rem; font-variant-numeric:tabular-nums; }
+  .rb-table th {
+    text-align:left; font-size:.72rem; font-weight:600; color:var(--muted);
+    padding:8px; border-bottom:1px solid var(--border); white-space:nowrap;
+  }
+  .rb-table td { padding:10px 8px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .rb-table tbody tr:last-child td { border-bottom:none; }
+  .rb-table tfoot td { border-top:1px solid var(--border); border-bottom:none; font-weight:700; }
+  .rb-table .num { text-align:right; white-space:nowrap; }
+  .rb-table th.num { text-align:right; }
+  .rb-table tr[data-code] { cursor:pointer; transition:background-color .12s; }
+  .rb-table tbody tr[data-code]:hover { background:var(--hover); }
+  .rb-table .muted { color:var(--muted); font-weight:500; }
+  .rb-etf { display:flex; align-items:center; gap:10px; min-width:0; }
+  .rb-etf > div { min-width:0; }
+  .rb-etf b { display:block; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:280px; }
+  .rb-etf small { display:block; font-size:.72rem; color:var(--muted); margin-top:1px; }
+  .rb-dot { width:10px; height:10px; border-radius:3px; flex:none; }
+  .rb-dot.cash { background:var(--grid); }
+  .rb-wcol { min-width:150px; }
+  .rb-wbar { position:relative; height:8px; border-radius:99px; background:var(--hover); }
+  .rb-wbar i { position:absolute; left:0; top:0; bottom:0; border-radius:99px; background:var(--accent); }
+  .rb-wbar s { position:absolute; top:-3px; bottom:-3px; width:2px; margin-left:-1px; border-radius:1px; background:var(--ink); }
+  .rb-wtxt { display:flex; justify-content:space-between; gap:8px; font-size:.74rem; color:var(--ink-2); margin-top:5px; white-space:nowrap; }
+  .rb-wtxt span { color:var(--muted); }
+  .rb-dev { color:var(--muted); }
+  .rb-dev.out { color:var(--warn); font-weight:700; }
+  .rb-tag {
+    display:inline-flex; align-items:center; font-size:.74rem; font-weight:700; white-space:nowrap;
+    padding:4px 9px; border-radius:99px; background:var(--hover); color:var(--muted);
+  }
+  .rb-tag.buy  { background:color-mix(in srgb, var(--kospi-up) 13%, transparent); color:var(--kospi-up); }
+  .rb-tag.sell { background:color-mix(in srgb, var(--kospi-down) 13%, transparent); color:var(--kospi-down); }
+  .rb-buy  { color:var(--kospi-up); }
+  .rb-sell { color:var(--kospi-down); }
+  .rb-stale { color:var(--down); font-weight:600; }
+
+  /* 계획 패널 */
+  .rb-meta { font-size:.76rem; color:var(--muted); margin:-6px 0 14px; }
+  .rb-kv { display:grid; grid-template-columns:auto minmax(0,1fr); gap:7px 14px; font-size:.84rem; padding:12px 14px; border-radius:12px; background:var(--bg); border:1px solid var(--border); margin:14px 0; }
+  .rb-kv span { color:var(--ink-2); }
+  .rb-kv b { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .rb-step { margin-top:16px; }
+  .rb-step h4 { display:flex; align-items:center; gap:8px; font-size:.84rem; font-weight:800; margin-bottom:6px; }
+  .rb-step h4 .rb-tag { margin-left:auto; }
+  .rb-trade { display:flex; gap:10px; align-items:center; padding:9px 0; border-top:1px solid var(--border); }
+  .rb-trade:first-of-type { border-top:none; }
+  .rb-trade .t-name { flex:1; min-width:0; }
+  .rb-trade .t-name b { display:block; font-size:.86rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rb-trade small { display:block; font-size:.72rem; color:var(--muted); margin-top:2px; font-variant-numeric:tabular-nums; }
+  .rb-trade .t-qty { text-align:right; flex:none; font-variant-numeric:tabular-nums; }
+  .rb-trade .t-qty b { font-size:.9rem; }
+  .rb-ok { padding:14px; border-radius:12px; text-align:center; font-size:.86rem; font-weight:600; color:var(--up); background:color-mix(in srgb, var(--up) 9%, transparent); }
+  .rb-hint { font-size:.76rem; color:var(--muted); line-height:1.6; margin-top:12px; }
+  .rb-holds { font-size:.78rem; color:var(--ink-2); line-height:1.7; }
+  .rb-warns:empty { display:none; }
+  .rb-warns { margin-top:12px; display:flex; flex-direction:column; gap:6px; }
+  .rb-warn { font-size:.78rem; color:var(--warn); background:color-mix(in srgb, var(--warn) 10%, transparent); border-radius:10px; padding:8px 11px; line-height:1.5; }
+  .rb-apply { margin-top:16px; }
+
+  /* 신규 투입 */
+  .rb-check { display:flex; align-items:center; gap:8px; font-size:.84rem; color:var(--ink-2); margin-top:14px; cursor:pointer; }
+  .rb-check input { width:16px; height:16px; accent-color:var(--accent); }
+  .rb-sum { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px; }
+  .rb-sum > div { padding:12px 14px; border-radius:12px; background:var(--bg); border:1px solid var(--border); min-width:0; }
+  .rb-sum label { display:block; font-size:.72rem; font-weight:600; color:var(--muted); }
+  .rb-sum b { display:block; font-size:1.12rem; font-weight:800; margin-top:4px; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rb-sum small { display:block; font-size:.72rem; color:var(--muted); margin-top:2px; }
+
+  /* 종목 · 설정 */
+  .rb-setup { display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:16px; align-items:start; }
+  .rb-setup-side { display:flex; flex-direction:column; gap:16px; min-width:0; }
+  .rb-search { position:relative; margin-bottom:12px; }
+  .rb-search .text-input { padding-left:34px; }
+  .rb-search svg { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none; }
+  .rb-results {
+    position:absolute; left:0; right:0; top:calc(100% + 6px); z-index:5;
+    max-height:360px; overflow-y:auto; padding:6px;
+    background:var(--surface); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow-pop);
+  }
+  .rb-ri { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:9px; cursor:pointer; font-size:.86rem; }
+  .rb-ri:hover, .rb-ri.on { background:var(--hover); }
+  .rb-ri .nm { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
+  .rb-ri .meta { flex:none; font-size:.74rem; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .rb-ri.added { opacity:.55; }
+  .rb-ri.none { cursor:default; color:var(--muted); }
+  #rbPane-setup { padding-bottom:64px; }
+  .rb-table .rb-in { width:96px; text-align:right; padding:7px 9px !important; font-variant-numeric:tabular-nums; }
+  .rb-del { border:none; background:none; color:var(--muted); cursor:pointer; width:30px; height:30px; border-radius:8px; font-size:.95rem; }
+  .rb-del:hover { background:rgba(208,59,59,.12); color:var(--down); }
+  .rb-wsum { margin-top:12px; padding:12px 14px; border-radius:12px; background:var(--bg); border:1px solid var(--border); font-size:.84rem; }
+  .rb-wsum-top { display:flex; justify-content:space-between; gap:10px; margin-bottom:8px; font-weight:700; }
+  .rb-wsum-top small { font-weight:500; color:var(--muted); }
+  .rb-wsum.bad { border-color:var(--down); }
+  .rb-wsum.bad .rb-wsum-top, .rb-wsum.bad .rb-wsum-top small { color:var(--down); }
+  .rb-wsum.bad .meter-fill { background:var(--down); }
+  .rb-fields { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .rb-fields .full { grid-column:1 / -1; }
+  .rb-fields .field small { display:block; font-size:.7rem; color:var(--muted); margin-top:5px; line-height:1.45; }
+  .rb-status { font-size:.82rem; line-height:1.75; color:var(--ink-2); }
+  .rb-status b { color:var(--ink); }
+  .rb-links { display:flex; flex-direction:column; gap:8px; }
+  .rb-links .btn { justify-content:flex-start; }
+
+  /* 기록 */
+  .rb-log-trades { font-size:.76rem; color:var(--muted); line-height:1.55; white-space:normal; }
+  .rb-log-type { font-weight:700; white-space:nowrap; }
+
+  /* 차트 모달 */
+  .rb-chart-head { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; font-size:1.7rem; font-weight:800; font-variant-numeric:tabular-nums; }
+  .rb-chart-head small { font-size:.9rem; font-weight:700; }
+  .rb-chart-head small.up { color:var(--kospi-up); }
+  .rb-chart-head small.down { color:var(--kospi-down); }
+  .rb-chart-head.asset small.up { color:var(--up); }
+  .rb-chart-head.asset small.down { color:var(--down); }
+  .rb-chart-top { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:10px 0 12px; }
+  .rb-chart-box svg { display:block; width:100%; height:280px; }
+  .rb-chart-stats { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; margin-top:14px; }
+  .rb-chart-stats > div { padding:10px 12px; border-radius:11px; background:var(--bg); border:1px solid var(--border); min-width:0; }
+  .rb-chart-stats label { display:block; font-size:.7rem; color:var(--muted); font-weight:600; }
+  .rb-chart-stats b { display:block; margin-top:3px; font-size:.95rem; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rb-chart-leg { display:flex; gap:14px; font-size:.74rem; color:var(--muted); margin-top:8px; }
+  .rb-chart-leg i { display:inline-block; width:16px; height:0; border-top:2px solid var(--up); vertical-align:middle; margin-right:5px; }
+  .rb-chart-leg i.dash { border-top:2px dashed var(--muted); }
+  .rb-ext { display:inline-block; margin-top:14px; font-size:.8rem; font-weight:700; color:var(--accent-deep); text-decoration:none; }
+  .rb-ext:hover { text-decoration:underline; }
+
+  @container rebal (max-width: 1180px) {
+    .rb-main { grid-template-columns:minmax(0,1fr) 350px; }
+    .rb-main.inv { grid-template-columns:330px minmax(0,1fr); }
+    .rb-setup { grid-template-columns:minmax(0,1fr) 310px; }
+  }
+  @container rebal (max-width: 900px) {
+    .rb-main, .rb-main.inv, .rb-setup { grid-template-columns:minmax(0,1fr); }
+    .rb-main.inv .rb-side { position:static; }
+    .rb-kpis { grid-template-columns:repeat(3, minmax(0,1fr)); }
+    .rb-kpis .rb-total { grid-column:1 / -1; }
+  }
+  @container rebal (max-width: 640px) {
+    .rb-kpis .kpi-v { font-size:1.2rem; }
+    .rb-c-price, .rb-c-qty, .rb-c-val { display:none; }
+    .rb-wcol { min-width:96px; }
+    .rb-etf b { max-width:150px; }
+    .rb-total-row { flex-direction:column; align-items:stretch; gap:6px; }
+    .rb-fields { grid-template-columns:minmax(0,1fr); }
+    .rb-chart-stats { grid-template-columns:repeat(2, minmax(0,1fr)); }
+  }
+  @container rebal (max-width: 440px) {
+    .rb-kpis { grid-template-columns:minmax(0,1fr); }
+    .rb-c-dev { display:none; }
+    .rb-wcol { min-width:64px; }
+    .rb-wtxt span { display:none; }
+    .rb-etf b { max-width:110px; }
+    .rb-table td, .rb-table th { padding-left:5px; padding-right:5px; }
+    .rb-tag { padding:3px 7px; }
+  }
   .side-nav .nav-badge.show + kbd { display:none; }
   .side-foot { margin-top:auto; display:flex; flex-direction:column; gap:8px; }
 
@@ -1168,7 +1363,6 @@
     .brand { flex:1; }
     .side-nav kbd, .brand-total { display:none; }
     .nav-sep { width:1px; height:auto; margin:6px 2px; }
-    .embed-card { height:calc(100vh - 190px); }
     .side-foot { margin:0; flex-direction:row; }
     .store-card { display:none; }
     .save-bar { bottom:12px; padding:0 12px; }
@@ -1211,7 +1405,7 @@
     <div class="nav-sep" role="separator"></div>
     <button data-view="rebal">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21.2 15.9A10 10 0 1 1 8 2.8"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
-      연금 리밸런싱<kbd>5</kbd>
+      연금 리밸런싱<span class="nav-badge" id="navBadgeRebal"></span><kbd>5</kbd>
     </button>
   </nav>
   <div class="side-foot">
@@ -1239,8 +1433,6 @@
     <div class="topbar-actions">
       <div class="seg" id="dashOwners" hidden role="group" aria-label="소유자별 보기"></div>
       <button class="btn btn-primary" id="btnTopAdd" hidden>＋ 새 자산</button>
-      <a class="btn btn-ghost" id="btnRebalOpen" hidden target="_blank" rel="noopener noreferrer"
-         href="https://iontiger.github.io/pension-etf-rebalancer/">새 창에서 열기 ↗</a>
     </div>
   </header>
 
@@ -1487,9 +1679,169 @@
 
   <!-- ── 연금 리밸런싱: 별도 앱을 그대로 끼워 넣는다 (처음 열 때 불러옴) ── -->
   <section class="view" id="view-rebal">
-    <div class="card embed-card">
-      <iframe id="rebalFrame" title="연금 ETF 리밸런싱" referrerpolicy="no-referrer"></iframe>
-      <div class="embed-loading" id="rebalLoading">불러오는 중…</div>
+    <div class="rb-bar">
+      <div class="seg" id="rbTabs" role="tablist" aria-label="리밸런싱 메뉴">
+        <button type="button" data-rbtab="plan" class="on">리밸런싱</button>
+        <button type="button" data-rbtab="invest">신규 투입</button>
+        <button type="button" data-rbtab="setup">종목 · 설정</button>
+        <button type="button" data-rbtab="log">기록</button>
+      </div>
+      <div class="rb-notice" id="rbNotice"></div>
+    </div>
+
+    <!-- 리밸런싱: 보유 현황(왼쪽) + 이번 계획(오른쪽) -->
+    <div class="rb-pane on" id="rbPane-plan">
+      <div class="card rb-empty" id="rbPlanEmpty" hidden>
+        등록된 ETF가 없습니다.<br>종목과 목표비중을 먼저 정하세요.<br>
+        <button type="button" class="btn btn-primary" data-rbgo="setup">종목 · 설정으로</button>
+      </div>
+      <div id="rbPlanBodyWrap">
+        <div class="rb-kpis" id="rbKpis"></div>
+        <div class="rb-main">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <div class="card-title">보유 종목</div>
+                <div class="card-sub">행을 누르면 가격 차트를 봅니다</div>
+              </div>
+              <div class="rb-legend"><span><i></i>현재 비중</span><span><i class="tgt"></i>목표</span></div>
+            </div>
+            <div class="rb-alloc" id="rbAlloc"></div>
+            <div class="rb-table-wrap"><table class="rb-table" id="rbHoldTable"></table></div>
+          </div>
+          <div class="card rb-side">
+            <div class="card-head">
+              <div class="card-title">이번 리밸런싱 계획</div>
+              <span class="rb-tag" id="rbPlanTag"></span>
+            </div>
+            <div class="rb-meta" id="rbPlanMeta"></div>
+            <div class="field">
+              <label for="rbContrib">함께 넣을 추가 투입금 (선택)</label>
+              <input id="rbContrib" class="amt-input" type="text" inputmode="numeric" placeholder="0" data-value="" data-info="rbContribInfo" autocomplete="off">
+              <div class="in-diff" id="rbContribInfo"></div>
+            </div>
+            <div id="rbPlanBody"></div>
+            <button type="button" class="btn btn-primary btn-block rb-apply" id="rbApply">거래 완료 → 보유수량 반영</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 신규 투입: 금액을 목표비중대로 나눠 살 수량 -->
+    <div class="rb-pane" id="rbPane-invest">
+      <div class="rb-main inv">
+        <div class="card rb-side">
+          <div class="card-head"><div class="card-title">투입 금액</div></div>
+          <div class="field">
+            <input id="rbInvAmt" class="amt-input goal-amt" type="text" inputmode="numeric" placeholder="0" data-value="" data-info="rbInvInfo" autocomplete="off">
+            <div class="in-diff" id="rbInvInfo"></div>
+          </div>
+          <div class="goal-presets" id="rbInvQuick">
+            <button type="button" data-add="1000000">+100만</button>
+            <button type="button" data-add="3000000">+300만</button>
+            <button type="button" data-add="5000000">+500만</button>
+            <button type="button" data-add="10000000">+1,000만</button>
+            <button type="button" data-add="0">지우기</button>
+          </div>
+          <label class="rb-check"><input type="checkbox" id="rbInvFill"> 남는 돈으로 부족한 종목부터 1주씩 더 사기</label>
+          <div class="rb-sum" id="rbInvSum"></div>
+          <div class="rb-warns" id="rbInvWarn"></div>
+          <button type="button" class="btn btn-primary btn-block rb-apply" id="rbInvApply">매수 완료 → 보유수량 반영</button>
+          <p class="rb-hint">전일 종가 기준 수량입니다. 반영하면 산 수량은 보유수량에, 남은 돈은 예수금에 더합니다.</p>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">종목별 매수 수량</div>
+              <div class="card-sub">목표비중대로 나눈 금액 ÷ 전일 종가 (1주 단위 내림)</div>
+            </div>
+          </div>
+          <div class="rb-table-wrap"><table class="rb-table" id="rbInvTable"></table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 종목 · 설정 -->
+    <div class="rb-pane" id="rbPane-setup">
+      <div class="rb-setup">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">종목 구성</div>
+              <div class="card-sub">목표비중 합계가 100%보다 작으면 나머지는 현금으로 둡니다</div>
+            </div>
+          </div>
+          <div class="rb-search">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input id="rbSearch" class="text-input" type="search" placeholder="ETF 이름이나 종목코드로 검색해 추가 (예: 나스닥, 360200)" autocomplete="off">
+            <div class="rb-results" id="rbResults" hidden></div>
+          </div>
+          <div class="rb-table-wrap"><table class="rb-table" id="rbItemsTable"></table></div>
+          <div class="rb-wsum" id="rbWsum"></div>
+        </div>
+        <div class="rb-setup-side">
+          <div class="card">
+            <div class="card-head"><div class="card-title">계좌 · 규칙</div></div>
+            <div class="rb-fields">
+              <div class="field full">
+                <label for="rbName">포트폴리오 이름</label>
+                <input id="rbName" type="text" maxlength="40">
+              </div>
+              <div class="field full">
+                <label for="rbCash">예수금 (현금)</label>
+                <input id="rbCash" class="amt-input" type="text" inputmode="numeric" placeholder="0" data-value="" data-info="rbCashInfo" autocomplete="off">
+                <div class="in-diff" id="rbCashInfo"></div>
+              </div>
+              <div class="field">
+                <label for="rbBand">리밸런싱 밴드 (%p)</label>
+                <input id="rbBand" type="number" min="0" max="50" step="0.5">
+                <small>목표와 차이가 이보다 작으면 거래 생략 (0 = 항상 맞춤)</small>
+              </div>
+              <div class="field">
+                <label for="rbMinTrade">최소 거래금액 (원)</label>
+                <input id="rbMinTrade" type="number" min="0" step="10000">
+                <small>이보다 작은 거래는 생략</small>
+              </div>
+              <div class="field">
+                <label for="rbCycle">리밸런싱 주기 (일)</label>
+                <input id="rbCycle" type="number" min="1" max="365" step="1">
+                <small>지나면 메뉴에 ! 표시</small>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">가격 데이터</div>
+              <button type="button" class="btn btn-ghost btn-sm" id="rbReloadPrices">다시 불러오기</button>
+            </div>
+            <div class="rb-status" id="rbStatus"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div class="card-title">알림 · 백업</div></div>
+            <div class="rb-links">
+              <button type="button" class="btn btn-ghost" id="rbIcs">📅 리밸런싱 알림 캘린더(.ics) 받기</button>
+              <button type="button" class="btn btn-ghost" id="rbExport">⬇ 포트폴리오 JSON 내보내기</button>
+              <button type="button" class="btn btn-ghost" id="rbImport">⬆ 포트폴리오 JSON 가져오기</button>
+              <button type="button" class="btn btn-danger" id="rbReset">기본 포트폴리오(9종목)로 초기화</button>
+              <input type="file" id="rbImportFile" accept=".json,application/json" hidden>
+            </div>
+            <p class="rb-hint">포트폴리오는 자산 데이터 파일(<code>asset-data.json</code>)의 <code>pension</code> 항목에 함께 저장됩니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 기록 -->
+    <div class="rb-pane" id="rbPane-log">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">리밸런싱 · 투입 기록</div>
+            <div class="card-sub" id="rbLogSub"></div>
+          </div>
+        </div>
+        <div class="rb-table-wrap"><table class="rb-table" id="rbLogTable"></table></div>
+      </div>
     </div>
   </section>
 
@@ -1517,6 +1869,25 @@
 <div class="toast" id="toast"></div>
 
 <!-- 입력 화면에서 금액을 바꾸면 아래에 떠오르는 저장 바 -->
+<!-- 연금 리밸런싱: 가격 · 총자산 차트 -->
+<div class="sheet-back" id="rbChartSheet">
+  <div class="sheet wide">
+    <div class="sheet-head">
+      <h2 id="rbChartTitle">차트</h2>
+      <button type="button" class="icon-btn" data-close="rbChartSheet" aria-label="닫기">✕</button>
+    </div>
+    <div id="rbChartBody"></div>
+  </div>
+</div>
+
+<div class="save-bar" id="rbSaveBar" hidden>
+  <div class="save-bar-inner">
+    <div class="sb-info" id="rbSaveInfo">종목 · 설정에 저장하지 않은 변경이 있습니다</div>
+    <button type="button" class="btn btn-ghost" id="rbDiscard">변경 취소</button>
+    <button type="button" class="btn btn-primary" id="rbSave">저장 <kbd>Ctrl+S</kbd></button>
+  </div>
+</div>
+
 <div class="save-bar" id="saveBar" hidden>
   <div class="save-bar-inner">
     <div class="sb-info"><b id="scCount">0</b>건 바뀜<span class="sb-sep">·</span>순자산 <b id="scDelta">—</b></div>
@@ -2048,7 +2419,8 @@ function serializeDb() {
   // head 는 "\n}" 로 끝난다 — 그 앞에 assets · badges 배열을 끼워 넣는다
   return head.slice(0, -2) + ',\n  "assets": [' +
     (lines.length ? '\n' + lines.join(',\n') + '\n  ' : '') + '],\n  "badges": [' +
-    (blines.length ? '\n' + blines.join(',\n') + '\n  ' : '') + ']\n}\n';
+    (blines.length ? '\n' + blines.join(',\n') + '\n  ' : '') + ']' +
+    (pension ? ',\n  "pension": ' + pensionJson(pension) : '') + '\n}\n';
 }
 
 function applyDb(obj) {
@@ -2067,6 +2439,11 @@ function applyDb(obj) {
   syncMarks();
   // 뱃지 기록 — 없으면(처음) 지난 기록에서 넘어선 마일스톤을 찾아 채운다
   badges = Array.isArray(obj.badges) ? normalizeBadges(obj.badges) : backfillBadges();
+  // 연금 리밸런싱 포트폴리오 — 없으면 처음 열 때 원래 리밸런서 페이지 기록(또는 기본값)으로 시작
+  pension = null;
+  if (obj.pension) {
+    try { pension = rbSanitize(obj.pension); rbFillNames(pension); } catch (e) { console.warn('pension', e); }
+  }
 }
 
 // ── 파일 읽기/쓰기 ──
@@ -2276,6 +2653,7 @@ function openLocal() {
     marks = null;
     syncMarks();
     badges = [];
+    pension = null;
   }
   setBanner('');
   setStoreState('loaded');
@@ -2294,6 +2672,7 @@ function openDemo() {
   marks = null;
   syncMarks();
   badges = backfillBadges();
+  pension = null;
   setBanner(FS_SUPPORTED
     ? '<span>지금은 <b>데모 데이터</b>입니다. 데이터 폴더를 고르면 이 PC에 <code>' + DATA_FILE +
       '</code> 파일을 만들어 기록을 관리합니다.</span>' +
@@ -4640,9 +5019,1168 @@ function demoRows() {
   return out;
 }
 
+/* ═══════════ 연금 리밸런싱 ═══════════
+   iontiger/pension-etf-rebalancer 를 PC 화면에 맞게 다시 만든 것.
+   계산(Rebalance)은 원본 모듈을 그대로 쓰고, 가격(전일 종가)과 차트 데이터는
+   원본 저장소가 매일 GitHub Pages 에 올리는 prices.json · history/{code}.json 을 읽는다.
+   포트폴리오는 자산 데이터 파일의 "pension" 항목에 저장한다. */
+var RB_BASE = 'https://iontiger.github.io/pension-etf-rebalancer/';
+var RB_LS_KEY = 'pension-etf-rebalancer-v1';   // 원래 리밸런서 페이지와 같은 키 (같은 사이트라 공유된다)
+var RB_DEFAULT_ITEMS = [['195920', 10], ['284430', 10], ['283580', 15], ['329200', 8], ['360200', 24], ['371160', 5], ['379810', 8], ['435420', 10], ['488500', 10]];
+var RB_COLORS = ['#2a78d6', '#1baf7a', '#eda100', '#9b5de5', '#e34948', '#00a0a8', '#f15bb5', '#8d6e3f', '#64748b', '#4a3aa7', '#84cc16', '#f97316'];
+
+var Rebalance = (function () {
+
+  var EPS = 1e-9;
+
+  function floorQty(v) {
+    return Math.max(0, Math.floor(v + EPS));
+  }
+  function num(v, d) {
+    var n = Number(v);
+    return isFinite(n) ? n : (d || 0);
+  }
+  function priceOf(prices, code) {
+    var p = prices ? prices[code] : null;
+    if (p && typeof p === 'object') p = p.price;
+    p = Number(p);
+    return isFinite(p) && p > 0 ? p : null;
+  }
+  function round2(v) {
+    return Math.round(v * 100) / 100;
+  }
+
+  /**
+   * 신규 투입 계산
+   * @param {Array<{code:string,name?:string,weight:number}>} items
+   * @param {Object} prices  { code: price } 또는 { code: {price} }
+   * @param {number} amount  투입금액(원)
+   * @param {{fillLeftover?:boolean}} [opts] fillLeftover: 잔여 현금으로 가장 부족한 종목부터 1주씩 추가 매수
+   */
+  function planInvest(items, prices, amount, opts) {
+    opts = opts || {};
+    amount = Math.max(0, Math.floor(num(amount)));
+    var warnings = [];
+    var weightSum = 0;
+    var rows = items.map(function (it) {
+      var weight = num(it.weight);
+      weightSum += weight;
+      var price = priceOf(prices, it.code);
+      var targetValue = amount * weight / 100;
+      var qty = price ? floorQty(targetValue / price) : 0;
+      if (!price) warnings.push(it.code + ' ' + (it.name || '') + ': 시세가 없어 계산에서 제외했습니다.');
+      return {
+        code: it.code, name: it.name || '', weight: weight, price: price,
+        targetValue: Math.round(targetValue), qty: qty, cost: price ? qty * price : 0,
+        priceMissing: !price
+      };
+    });
+    var invested = rows.reduce(function (s, r) { return s + r.cost; }, 0);
+    var leftover = amount - invested;
+
+    if (opts.fillLeftover) {
+      // 목표금액 대비 부족분이 가장 큰 종목부터, 살 수 있는 동안 1주씩 추가
+      for (var guard = 0; guard < 100000; guard++) {
+        var best = null, bestGap = 0;
+        for (var i = 0; i < rows.length; i++) {
+          var r = rows[i];
+          if (!r.price || r.price > leftover || r.weight <= 0) continue;
+          var gap = r.targetValue - r.cost; // 양수면 아직 부족
+          if (best === null || gap > bestGap) { best = r; bestGap = gap; }
+        }
+        if (!best) break;
+        best.qty += 1; best.cost += best.price; leftover -= best.price; invested += best.price;
+      }
+    }
+    rows.forEach(function (r) {
+      r.actualWeight = amount > 0 ? round2(r.cost / amount * 100) : 0;
+    });
+    if (weightSum > 100 + 1e-6) warnings.push('목표비중 합계가 100%를 초과합니다 (' + round2(weightSum) + '%).');
+    return {
+      amount: amount, rows: rows, invested: invested, leftover: leftover,
+      weightSum: round2(weightSum), cashWeight: round2(100 - weightSum), warnings: warnings
+    };
+  }
+
+  /**
+   * 정적 리밸런싱 계획
+   * @param {Object} p
+   * @param {Array<{code,name?,weight,qty}>} p.items
+   * @param {number} p.cash            현재 예수금(원)
+   * @param {number} [p.contribution]  이번에 추가 투입할 금액(원)
+   * @param {Object} p.prices          { code: price } 또는 { code: {price} }
+   * @param {number} [p.band]          리밸런싱 밴드(%p): |현재비중-목표비중| < band 이면 거래 생략 (0=항상)
+   * @param {number} [p.minTradeAmount] 최소 거래금액(원): 이보다 작은 거래는 생략
+   */
+  function planRebalance(p) {
+    var items = p.items || [];
+    var prices = p.prices || {};
+    var cashBefore = Math.max(0, num(p.cash));
+    var contribution = Math.max(0, Math.floor(num(p.contribution)));
+    var band = Math.max(0, num(p.band));
+    var minTrade = Math.max(0, num(p.minTradeAmount));
+    var warnings = [];
+
+    var rows = items.map(function (it) {
+      var price = priceOf(prices, it.code);
+      var qty = Math.max(0, Math.floor(num(it.qty)));
+      return {
+        code: it.code, name: it.name || '', weight: num(it.weight), qty: qty,
+        price: price, priceMissing: !price, value: price ? qty * price : 0,
+        delta: 0, reason: ''
+      };
+    });
+    var holdingsValue = rows.reduce(function (s, r) { return s + r.value; }, 0);
+    var total = cashBefore + contribution + holdingsValue;
+    var weightSum = rows.reduce(function (s, r) { return s + r.weight; }, 0);
+    if (weightSum > 100 + 1e-6) warnings.push('목표비중 합계가 100%를 초과합니다 (' + round2(weightSum) + '%). 100% 이하로 조정하세요.');
+
+    rows.forEach(function (r) {
+      r.curWeight = total > 0 ? round2(r.value / total * 100) : 0;
+      r.targetValue = Math.round(total * r.weight / 100);
+      r.deviation = round2(r.curWeight - r.weight);
+      if (r.priceMissing) {
+        r.targetQty = r.qty; r.reason = '시세 없음';
+        if (r.qty > 0 || r.weight > 0) warnings.push(r.code + ' ' + r.name + ': 시세를 가져오지 못해 거래를 계산하지 않았습니다.');
+        return;
+      }
+      r.targetQty = floorQty(r.targetValue / r.price);
+      var ideal = r.targetQty - r.qty;
+      if (ideal !== 0 && band > 0 && Math.abs(r.deviation) < band) {
+        r.reason = '밴드 이내 (±' + band + '%p)';
+      } else if (ideal !== 0 && minTrade > 0 && Math.abs(ideal) * r.price < minTrade) {
+        r.reason = '최소 거래금액 미만';
+      } else {
+        r.delta = ideal;
+      }
+    });
+
+    // 현금 제약: 매도대금 + 예수금 + 추가투입 범위 안에서만 매수
+    var proceeds = 0, wantTotal = 0;
+    rows.forEach(function (r) {
+      if (r.delta < 0) proceeds += -r.delta * r.price;
+      else if (r.delta > 0) wantTotal += r.delta * r.price;
+    });
+    var budget = cashBefore + contribution + proceeds;
+    var scaled = false;
+    if (wantTotal > budget + EPS) {
+      scaled = true;
+      var scale = budget / wantTotal;
+      rows.forEach(function (r) { if (r.delta > 0) r.delta = floorQty(r.delta * scale); });
+      var remaining = budget - rows.reduce(function (s, r) { return s + (r.delta > 0 ? r.delta * r.price : 0); }, 0);
+      for (var guard = 0; guard < 100000; guard++) {
+        var best = null, bestGap = -Infinity;
+        for (var i = 0; i < rows.length; i++) {
+          var r = rows[i];
+          if (r.priceMissing || r.delta < 0 || r.reason) continue;
+          if (r.qty + r.delta >= r.targetQty || r.price > remaining) continue;
+          var gap = r.targetValue - (r.qty + r.delta) * r.price;
+          if (gap > bestGap) { best = r; bestGap = gap; }
+        }
+        if (!best) break;
+        best.delta += 1; remaining -= best.price;
+      }
+      warnings.push('가용 현금이 부족하여 매수 수량을 예산에 맞게 줄였습니다.');
+    }
+
+    var buyTotal = 0, sellTotal = 0;
+    rows.forEach(function (r) {
+      r.action = r.delta > 0 ? 'BUY' : r.delta < 0 ? 'SELL' : 'HOLD';
+      r.tradeQty = Math.abs(r.delta);
+      r.tradeValue = r.priceMissing ? 0 : r.tradeQty * r.price;
+      if (r.delta > 0) buyTotal += r.tradeValue; else if (r.delta < 0) sellTotal += r.tradeValue;
+      r.afterQty = r.qty + r.delta;
+      r.afterValue = r.priceMissing ? 0 : r.afterQty * r.price;
+      r.afterWeight = total > 0 ? round2(r.afterValue / total * 100) : 0;
+      r.afterDeviation = round2(r.afterWeight - r.weight);
+    });
+    var cashAfter = cashBefore + contribution + sellTotal - buyTotal;
+    var sells = rows.filter(function (r) { return r.action === 'SELL'; }).sort(function (a, b) { return b.tradeValue - a.tradeValue; });
+    var buys = rows.filter(function (r) { return r.action === 'BUY'; }).sort(function (a, b) { return b.tradeValue - a.tradeValue; });
+    var maxDev = rows.reduce(function (m, r) { return Math.max(m, Math.abs(r.deviation || 0)); }, 0);
+
+    return {
+      total: total, holdingsValue: holdingsValue, cashBefore: cashBefore, contribution: contribution,
+      cashAfter: cashAfter, sellTotal: sellTotal, buyTotal: buyTotal, budgetScaled: scaled,
+      weightSum: round2(weightSum), cashWeight: round2(100 - weightSum),
+      cashWeightNow: total > 0 ? round2(cashBefore / total * 100) : 0,
+      cashWeightAfter: total > 0 ? round2(cashAfter / total * 100) : 0,
+      maxDeviation: round2(maxDev),
+      rows: rows, sells: sells, buys: buys,
+      tradeCount: sells.length + buys.length,
+      needsRebalance: sells.length + buys.length > 0,
+      warnings: warnings
+    };
+  }
+
+  /** 계획대로 체결됐다고 가정하고 포트폴리오 보유수량/예수금 갱신본을 반환 (원본 불변) */
+  function applyPlan(portfolio, plan) {
+    var deltaByCode = {};
+    plan.rows.forEach(function (r) { deltaByCode[r.code] = r.delta || 0; });
+    var items = (portfolio.items || []).map(function (it) {
+      var d = deltaByCode[it.code] || 0;
+      return Object.assign({}, it, { qty: Math.max(0, num(it.qty) + d) });
+    });
+    return Object.assign({}, portfolio, { items: items, cash: Math.max(0, Math.round(plan.cashAfter)) });
+  }
+
+  /** 마지막 리밸런싱 이후 경과일 (없으면 null) */
+  function daysSince(iso, now) {
+    if (!iso) return null;
+    var t = new Date(iso).getTime();
+    if (!isFinite(t)) return null;
+    return Math.floor(((now || Date.now()) - t) / 86400000);
+  }
+
+  return { planInvest: planInvest, planRebalance: planRebalance, applyPlan: applyPlan, daysSince: daysSince };
+})();
+
+var pension = null;   // 데이터 파일의 포트폴리오 (없으면 원래 페이지 기록 → 기본값 순으로 채운다)
+var rb = {
+  tab: 'plan',
+  prices: null, priceError: null, loading: null,
+  plan: null, investPlan: null,
+  draft: null, dirty: false,
+  chart: { mode: 'etf', code: null, name: '', period: '1m', cache: {} },
+  total: { key: '', data: null },
+  searchTm: 0
+};
+
+// ── 형식 ──
+function rbNum(n) { return n === null || n === undefined || !isFinite(n) ? '-' : Math.round(n).toLocaleString('ko-KR'); }
+function rbKRW(n) { return n === null || n === undefined || !isFinite(n) ? '-' : rbNum(n) + '원'; }
+function rbPct(n, d) { return n === null || n === undefined || !isFinite(n) ? '-' : Number(n).toFixed(d === undefined ? 1 : d) + '%'; }
+function rbSPct(n, d) { return n === null || n === undefined || !isFinite(n) ? '-' : (n > 0 ? '+' : '') + Number(n).toFixed(d === undefined ? 1 : d) + '%p'; }
+function rbDate(iso) {
+  var d = iso ? new Date(iso) : null;
+  return d && !isNaN(d) ? d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0') : '-';
+}
+function rbDateTime(iso) {
+  var d = iso ? new Date(iso) : null;
+  return d && !isNaN(d) ? rbDate(iso) + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') : '-';
+}
+function rbYmd(d) { return d.slice(0, 4) + '.' + d.slice(4, 6) + '.' + d.slice(6, 8); }
+function rbEsc(s) { return escapeHtml(s === null || s === undefined ? '' : String(s)); }
+
+// ── 포트폴리오 ──
+function rbDefault() {
+  return {
+    name: '연금저축 ETF 포트폴리오',
+    items: RB_DEFAULT_ITEMS.map(function (x) { return { code: x[0], name: '', weight: x[1], qty: 0 }; }),
+    cash: 0,
+    settings: { band: 0, minTradeAmount: 0, cycleDays: 30, autoPopup: true },
+    lastRebalancedAt: null, history: []
+  };
+}
+function rbSanitize(p) {
+  var base = rbDefault();
+  if (!p || typeof p !== 'object' || !Array.isArray(p.items)) throw new Error('포트폴리오 형식이 아닙니다');
+  var seen = {};
+  var items = p.items.map(function (it) {
+    var code = String(it.code || '').trim().toUpperCase();
+    if (!/^[0-9A-Z]{6}$/.test(code)) throw new Error('종목코드 오류: ' + it.code);
+    if (seen[code]) throw new Error('종목코드 중복: ' + code);
+    seen[code] = 1;
+    return { code: code, name: String(it.name || '').slice(0, 80),
+             weight: Math.min(100, Math.max(0, Number(it.weight) || 0)),
+             qty: Math.max(0, Math.floor(Number(it.qty) || 0)) };
+  });
+  var s = p.settings || {};
+  return {
+    name: String(p.name || base.name).slice(0, 40), items: items,
+    cash: Math.max(0, Math.floor(Number(p.cash) || 0)),
+    settings: {
+      band: Math.min(50, Math.max(0, Number(s.band) || 0)),
+      minTradeAmount: Math.max(0, Math.floor(Number(s.minTradeAmount) || 0)),
+      cycleDays: Math.min(365, Math.max(1, Math.floor(Number(s.cycleDays) || 30))),
+      autoPopup: s.autoPopup !== false
+    },
+    lastRebalancedAt: p.lastRebalancedAt ? String(p.lastRebalancedAt) : null,
+    history: Array.isArray(p.history) ? p.history.slice(-200) : []
+  };
+}
+function rbPf() {
+  if (!pension) {
+    var raw = lsGet(RB_LS_KEY);
+    try { pension = raw ? rbSanitize(JSON.parse(raw)) : null; } catch (e) { pension = null; }
+    if (!pension) pension = rbDefault();
+    rbFillNames(pension);
+  }
+  return pension;
+}
+function rbClone(p) { return JSON.parse(JSON.stringify(p)); }
+function rbFillNames(p) {
+  if (!rb.prices || !p) return;
+  p.items.forEach(function (it) { var m = rb.prices.items[it.code]; if (m && !it.name) it.name = m[0]; });
+}
+function rbItemName(it) {
+  var m = rb.prices && rb.prices.items[it.code];
+  return it.name || (m && m[0]) || it.code;
+}
+function rbPriceOf(code) {
+  var m = rb.prices && rb.prices.items[code];
+  return m && m[1] > 0 ? m[1] : null;
+}
+function rbPriceMap(p) {
+  var m = {};
+  p.items.forEach(function (it) { var v = rbPriceOf(it.code); if (v) m[it.code] = v; });
+  return m;
+}
+function rbColor(i) { return RB_COLORS[i % RB_COLORS.length]; }
+function rbHasHoldings(p) { return p.items.some(function (i) { return i.qty > 0; }) || p.cash > 0; }
+
+// 데이터 파일에 쓸 모양 — 종목 · 기록은 한 줄에 하나씩
+function pensionJson(p) {
+  var ind = '    ';
+  function list(a) {
+    return a.length ? '\n' + a.map(function (x) { return ind + '  ' + JSON.stringify(x); }).join(',\n') + '\n' + ind : '';
+  }
+  return '{\n' +
+    ind + '"name": ' + JSON.stringify(p.name) + ',\n' +
+    ind + '"cash": ' + JSON.stringify(p.cash) + ',\n' +
+    ind + '"settings": ' + JSON.stringify(p.settings) + ',\n' +
+    ind + '"lastRebalancedAt": ' + JSON.stringify(p.lastRebalancedAt) + ',\n' +
+    ind + '"items": [' + list(p.items) + '],\n' +
+    ind + '"history": [' + list(p.history || []) + ']\n  }';
+}
+
+// 저장: 데이터 파일(폴더/브라우저 모드) + 원래 리밸런서 페이지와 공유하는 localStorage
+function rbSave(next, okMsg) {
+  var prev = pension, clean;
+  try { clean = rbSanitize(next); } catch (e) { showToast('저장 실패: ' + e.message); return Promise.resolve(false); }
+  pension = clean;
+  rb.total.key = '';
+  var job = store.mode === 'demo' ? Promise.resolve() : persist();
+  return job.then(function () {
+    lsSet(RB_LS_KEY, JSON.stringify(pension));
+    if (okMsg) showToast(okMsg);
+    renderRebal();
+    updateRebalNav();
+    return true;
+  }, function (err) {
+    pension = prev;
+    renderRebal();
+    showToast('저장 실패: ' + err.message);
+    return false;
+  });
+}
+
+// ── 가격 (전일 종가) ──
+function rbLoadPrices(force) {
+  if (rb.loading && !force) return rb.loading;
+  if (force) { rb.prices = null; rb.priceError = null; renderRebal(); }
+  rb.loading = fetch(RB_BASE + 'prices.json?v=' + Date.now(), { cache: 'no-store' })
+    .then(function (res) { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
+    .then(function (d) {
+      if (!d || !d.items) throw new Error('형식 오류');
+      rb.prices = d;
+      rb.priceError = null;
+      rb.chart.cache = {};
+      rb.total.key = '';
+      rbFillNames(pension);
+      if (rb.draft) rbFillNames(rb.draft);
+    })
+    .catch(function (e) { rb.priceError = '가격 데이터를 불러오지 못했습니다 (' + e.message + ')'; })
+    .then(function () {
+      if (force && rb.prices) showToast('가격 데이터를 새로 불러왔습니다');
+      renderRebal();
+      if (currentView === 'rebal') renderTopbar();
+    });
+  return rb.loading;
+}
+function rbPriceDaysAgo() {
+  if (!rb.prices || !rb.prices.baseDate) return null;
+  return Math.floor((Date.now() - new Date(rb.prices.baseDate + 'T00:00:00').getTime()) / 86400000);
+}
+function rbTopbarSub() {
+  var p = rbPf();
+  if (rb.prices) return p.name + ' · 기준일 ' + rb.prices.baseDate + ' 종가 · 데이터 갱신 ' + rbDateTime(rb.prices.fetchedAt);
+  return p.name + ' · ' + (rb.priceError ? '가격 데이터 없음' : '가격 불러오는 중…');
+}
+
+// ── 리밸런싱 시점 ──
+function rbDue(p) {
+  p = p || rbPf();
+  var days = Rebalance.daysSince(p.lastRebalancedAt);
+  return days !== null && days >= (p.settings.cycleDays || 30) && rbHasHoldings(p);
+}
+function updateRebalNav() {
+  var b = $('navBadgeRebal');
+  if (!b) return;
+  var due = pension || lsGet(RB_LS_KEY) ? rbDue() : false;
+  b.textContent = due ? '!' : '';
+  b.classList.toggle('show', due);
+  b.title = due ? '리밸런싱 시점입니다' : '';
+}
+
+/* ── 그리기 ── */
+function renderRebal() {
+  if (!$('view-rebal')) return;
+  var p = rbPf();
+  document.querySelectorAll('#rbTabs button').forEach(function (b) { b.classList.toggle('on', b.dataset.rbtab === rb.tab); });
+  document.querySelectorAll('#view-rebal .rb-pane').forEach(function (s) { s.classList.toggle('on', s.id === 'rbPane-' + rb.tab); });
+  renderRbNotice(p);
+  if (rb.tab === 'plan') renderRbPlan();
+  else if (rb.tab === 'invest') renderRbInvest();
+  else if (rb.tab === 'setup') renderRbSetup();
+  else renderRbLog();
+  $('rbSaveBar').hidden = !(rb.dirty && currentView === 'rebal');
+}
+
+function renderRbNotice(p) {
+  var n = $('rbNotice');
+  n.className = 'rb-notice';
+  if (rb.priceError) {
+    n.classList.add('err');
+    n.innerHTML = '⚠ ' + rbEsc(rb.priceError) + ' <button type="button" class="btn btn-ghost btn-sm" data-rbact="reload">다시 시도</button>';
+    return;
+  }
+  if (!rb.prices) { n.textContent = '전일 종가를 불러오는 중…'; return; }
+  if (!p.items.length) { n.textContent = ''; return; }
+  var days = Rebalance.daysSince(p.lastRebalancedAt), cycle = p.settings.cycleDays || 30;
+  if (days === null) {
+    n.textContent = rbHasHoldings(p)
+      ? '리밸런싱 기록이 없습니다 — 오른쪽 계획대로 거래한 뒤 반영하세요'
+      : '보유수량이 없습니다 — "신규 투입"에서 첫 매수 수량을 계산하거나 "종목 · 설정"에서 보유수량을 입력하세요';
+    return;
+  }
+  var next = new Date(new Date(p.lastRebalancedAt).getTime() + cycle * 86400000);
+  var due = days >= cycle;
+  if (due) n.classList.add('due');
+  n.textContent = (due ? '⏰ 리밸런싱 시점입니다 · ' : '✅ ') + '마지막 ' + rbDate(p.lastRebalancedAt) +
+    ' (' + days + '일 전) · 다음 ' + rbDate(next.toISOString()) + (due ? ' 지남' : '');
+}
+
+function rbContribution() { return Number($('rbContrib').dataset.value) || 0; }
+function rbCurrentPlan(contribution) {
+  var p = rbPf(), s = p.settings;
+  return Rebalance.planRebalance({ items: p.items, cash: p.cash, contribution: contribution || 0,
+    prices: rbPriceMap(p), band: s.band, minTradeAmount: s.minTradeAmount });
+}
+
+function renderRbPlan() {
+  var p = rbPf(), empty = !p.items.length;
+  $('rbPlanEmpty').hidden = !empty;
+  $('rbPlanBodyWrap').hidden = empty;
+  if (empty) return;
+  var plan = rbCurrentPlan(rbContribution());
+  rb.plan = plan;
+  var s = p.settings;
+  var days = Rebalance.daysSince(p.lastRebalancedAt), cycle = s.cycleDays || 30;
+  var devOut = s.band > 0 ? plan.maxDeviation >= s.band : plan.needsRebalance;
+
+  // KPI
+  var cycTxt, cycSub;
+  if (days === null) { cycTxt = '기록 없음'; cycSub = cycle + '일 주기'; }
+  else if (days >= cycle) { cycTxt = (days - cycle) + '일 지남'; cycSub = '마지막 ' + rbDate(p.lastRebalancedAt) + ' · ' + cycle + '일 주기'; }
+  else { cycTxt = 'D-' + (cycle - days); cycSub = '마지막 ' + rbDate(p.lastRebalancedAt) + ' · ' + cycle + '일 주기'; }
+  $('rbKpis').innerHTML =
+    '<div class="card kpi rb-total" id="rbTotalCard" role="button" tabindex="0" title="총자산 추이 보기">' +
+      '<div class="kpi-l">총자산 (평가금액 + 예수금)<span class="rb-more">추이 ›</span></div>' +
+      '<div class="rb-total-row"><div><div class="kpi-v">' + rbKRW(plan.total - plan.contribution) + '</div>' +
+      '<div class="kpi-s">평가 ' + rbKRW(plan.holdingsValue) + ' · ' + p.items.length + '종목</div></div>' +
+      '<div class="rb-spark" id="rbSpark"></div></div>' +
+    '</div>' +
+    '<div class="card kpi"><div class="kpi-l">최대 이탈</div><div class="kpi-v' + (devOut && plan.maxDeviation > 0 ? ' warn' : '') + '">±' + plan.maxDeviation.toFixed(2) + '%p</div>' +
+      '<div class="kpi-s">' + (s.band > 0 ? '밴드 ±' + s.band + '%p' : '밴드 없음 · 항상 목표로') + '</div></div>' +
+    '<div class="card kpi"><div class="kpi-l">예수금</div><div class="kpi-v">' + rbKRW(p.cash) + '</div>' +
+      '<div class="kpi-s">현금 ' + rbPct(plan.cashWeightNow) + ' · 목표 ' + rbPct(Math.max(0, plan.cashWeight)) + '</div></div>' +
+    '<div class="card kpi"><div class="kpi-l">다음 리밸런싱</div><div class="kpi-v' + (days !== null && days >= cycle ? ' warn' : '') + '">' + cycTxt + '</div>' +
+      '<div class="kpi-s">' + cycSub + '</div></div>';
+  rbDrawSpark();
+
+  // 현재 · 목표 비중 막대
+  var tot = plan.total || 0;
+  var cur = plan.rows.map(function (r, i) {
+    var w = tot > 0 ? r.value / tot * 100 : 0;
+    return '<span style="width:' + w.toFixed(2) + '%;background:' + rbColor(i) + '" title="' + rbEsc(rbItemName(r)) + ' ' + rbPct(w) + '"></span>';
+  }).join('') + (tot > 0 && plan.cashBefore + plan.contribution > 0
+    ? '<span class="cash" style="width:' + ((plan.cashBefore + plan.contribution) / tot * 100).toFixed(2) + '%" title="현금"></span>' : '');
+  var tgt = plan.rows.map(function (r, i) {
+    return '<span style="width:' + r.weight + '%;background:' + rbColor(i) + '" title="' + rbEsc(rbItemName(r)) + ' ' + rbPct(r.weight) + '"></span>';
+  }).join('') + (plan.cashWeight > 0 ? '<span class="cash" style="width:' + plan.cashWeight + '%" title="현금"></span>' : '');
+  $('rbAlloc').innerHTML = '<span>현재</span><div class="rb-stack">' + cur + '</div><span>목표</span><div class="rb-stack">' + tgt + '</div>';
+
+  // 보유 종목 표
+  var maxW = 1;
+  plan.rows.forEach(function (r) { maxW = Math.max(maxW, r.curWeight, r.weight); });
+  maxW *= 1.12;
+  var body = plan.rows.map(function (r, i) {
+    var tag = r.action === 'BUY' ? '<span class="rb-tag buy">매수 ' + rbNum(r.tradeQty) + '주</span>'
+      : r.action === 'SELL' ? '<span class="rb-tag sell">매도 ' + rbNum(r.tradeQty) + '주</span>'
+      : '<span class="rb-tag">' + rbEsc(r.reason || '유지') + '</span>';
+    var out = s.band > 0 ? Math.abs(r.deviation) >= s.band : Math.abs(r.deviation) >= 1;
+    return '<tr data-code="' + rbEsc(r.code) + '" data-name="' + rbEsc(rbItemName(r)) + '">' +
+      '<td><div class="rb-etf"><i class="rb-dot" style="background:' + rbColor(i) + '"></i><div><b>' + rbEsc(rbItemName(r)) + '</b><small>' + rbEsc(r.code) + '</small></div></div></td>' +
+      '<td class="num rb-c-price">' + (r.priceMissing ? '<span class="rb-stale">없음</span>' : rbNum(r.price)) + '</td>' +
+      '<td class="num rb-c-qty">' + rbNum(r.qty) + '주</td>' +
+      '<td class="num rb-c-val">' + rbNum(r.value) + '</td>' +
+      '<td class="rb-wcol"><div class="rb-wbar"><i style="width:' + (r.curWeight / maxW * 100).toFixed(1) + '%;background:' + rbColor(i) + '"></i>' +
+        '<s style="left:' + (r.weight / maxW * 100).toFixed(1) + '%"></s></div>' +
+        '<div class="rb-wtxt">' + rbPct(r.curWeight) + '<span>목표 ' + rbPct(r.weight) + '</span></div></td>' +
+      '<td class="num rb-c-dev"><span class="rb-dev' + (out ? ' out' : '') + '">' + rbSPct(r.deviation, 2) + '</span></td>' +
+      '<td class="num">' + tag + '</td></tr>';
+  }).join('');
+  $('rbHoldTable').innerHTML =
+    '<thead><tr><th>종목</th><th class="num rb-c-price">종가</th><th class="num rb-c-qty">보유</th><th class="num rb-c-val">평가금액</th>' +
+    '<th>현재 비중 / 목표</th><th class="num rb-c-dev">차이</th><th class="num">제안</th></tr></thead><tbody>' + body + '</tbody>' +
+    '<tfoot><tr><td><div class="rb-etf"><i class="rb-dot cash"></i><div><b>예수금</b><small>현금</small></div></div></td>' +
+    '<td class="rb-c-price"></td><td class="rb-c-qty"></td><td class="num rb-c-val">' + rbNum(p.cash) + '</td>' +
+    '<td><div class="rb-wtxt">' + rbPct(plan.cashWeightNow) + '<span>목표 ' + rbPct(Math.max(0, plan.cashWeight)) + '</span></div></td>' +
+    '<td class="rb-c-dev"></td><td></td></tr></tfoot>';
+
+  // 계획 패널
+  $('rbPlanTag').className = 'rb-tag' + (plan.tradeCount ? ' buy' : '');
+  $('rbPlanTag').textContent = plan.tradeCount ? '거래 ' + plan.tradeCount + '건' : '거래 없음';
+  $('rbPlanMeta').textContent = (rb.prices ? '기준일 ' + rb.prices.baseDate + ' 종가' : '가격 없음') +
+    (s.band > 0 ? ' · 밴드 ±' + s.band + '%p' : '') + (s.minTradeAmount > 0 ? ' · 최소거래 ' + rbKRW(s.minTradeAmount) : '');
+  var h = '<div class="rb-kv">' +
+    '<span>총자산' + (plan.contribution ? ' (투입 포함)' : '') + '</span><b>' + rbKRW(plan.total) + '</b>' +
+    '<span>예수금 → 거래 후</span><b>' + rbKRW(plan.cashBefore + plan.contribution) + ' → ' + rbKRW(plan.cashAfter) + '</b>' +
+    '<span>매도 합계</span><b class="' + (plan.sellTotal ? 'rb-sell' : '') + '">' + rbKRW(plan.sellTotal) + '</b>' +
+    '<span>매수 합계</span><b class="' + (plan.buyTotal ? 'rb-buy' : '') + '">' + rbKRW(plan.buyTotal) + '</b></div>';
+  if (!rb.prices) h += '<div class="rb-hint">가격을 불러오면 계획을 계산합니다.</div>';
+  else if (plan.total <= 0) h += '<div class="rb-hint">보유수량과 예수금이 없습니다. 처음이라면 <b>신규 투입</b>에서 살 수량을 계산하거나, 위 칸에 투입금을 넣어 보세요.</div>' +
+    '<button type="button" class="btn btn-ghost btn-block" data-rbgo="invest" style="margin-top:10px">신규 투입 계산하기</button>';
+  else if (!plan.tradeCount) h += '<div class="rb-ok">✅ 현재 비중이 목표와 맞습니다. 거래가 필요 없습니다.</div>';
+  else {
+    h += '<div class="rb-step"><h4>1단계 · 매도<span class="rb-tag' + (plan.sells.length ? ' sell' : '') + '">' +
+      (plan.sells.length ? plan.sells.length + '종목 · ' + rbKRW(plan.sellTotal) : '없음') + '</span></h4>' + rbTradeRows(plan.sells, '매도', 'rb-sell') + '</div>';
+    h += '<div class="rb-step"><h4>2단계 · 매수<span class="rb-tag' + (plan.buys.length ? ' buy' : '') + '">' +
+      (plan.buys.length ? plan.buys.length + '종목 · ' + rbKRW(plan.buyTotal) : '없음') + '</span></h4>' + rbTradeRows(plan.buys, '매수', 'rb-buy') + '</div>';
+    h += '<p class="rb-hint">매도 대금이 들어온 뒤 매수하세요. 전일 종가 기준 수량이라 당일 시세에 따라 남는 현금이 조금 달라질 수 있습니다.</p>';
+  }
+  var holds = plan.rows.filter(function (r) { return r.action === 'HOLD' && r.reason; });
+  if (holds.length && rb.prices) {
+    h += '<div class="rb-step"><h4>유지</h4><div class="rb-holds">' + holds.map(function (r) {
+      return rbEsc(rbItemName(r)) + ' — ' + rbEsc(r.reason);
+    }).join('<br>') + '</div></div>';
+  }
+  h += '<div class="rb-warns">' + plan.warnings.map(function (w) { return '<div class="rb-warn">' + rbEsc(w) + '</div>'; }).join('') + '</div>';
+  $('rbPlanBody').innerHTML = h;
+  $('rbApply').disabled = !rb.prices || (!plan.tradeCount && !plan.contribution);
+  $('rbApply').textContent = plan.tradeCount ? '거래 완료 → 보유수량 반영' : plan.contribution ? '투입금만 예수금에 반영' : '거래할 것이 없습니다';
+}
+
+function rbTradeRows(rows, verb, cls) {
+  return rows.map(function (r) {
+    return '<div class="rb-trade"><div class="t-name"><b>' + rbEsc(rbItemName(r)) + '</b>' +
+      '<small>' + rbEsc(r.code) + ' · 종가 ' + rbNum(r.price) + ' · ' + rbNum(r.qty) + ' → ' + rbNum(r.afterQty) + '주</small>' +
+      '<small>비중 ' + rbPct(r.curWeight) + ' → ' + rbPct(r.afterWeight) + ' (목표 ' + rbPct(r.weight) + ')</small></div>' +
+      '<div class="t-qty"><b class="' + cls + '">' + verb + ' ' + rbNum(r.tradeQty) + '주</b><small>' + rbKRW(r.tradeValue) + '</small></div></div>';
+  }).join('');
+}
+
+function rbApplyPlan() {
+  var plan = rb.plan;
+  if (!plan || !rb.prices) return;
+  var msg = plan.tradeCount
+    ? '매도 ' + plan.sells.length + '종목 / 매수 ' + plan.buys.length + '종목을 체결한 것으로 보유수량과 예수금(' + rbKRW(plan.cashAfter) + ')을 갱신하고 오늘을 리밸런싱일로 기록합니다. 계속할까요?'
+    : '거래 없이 오늘을 리밸런싱일로 기록' + (plan.contribution ? '하고 투입금 ' + rbKRW(plan.contribution) + '을 예수금에 더' : '') + '합니다. 계속할까요?';
+  if (!confirm(msg)) return;
+  var next = Rebalance.applyPlan(rbPf(), plan);
+  next.lastRebalancedAt = new Date().toISOString();
+  next.history = (next.history || []).concat([{
+    at: next.lastRebalancedAt, type: 'rebalance', total: plan.total, contribution: plan.contribution,
+    cashAfter: plan.cashAfter, baseDate: rb.prices && rb.prices.baseDate,
+    trades: plan.sells.concat(plan.buys).map(function (r) { return { action: r.action, code: r.code, name: rbItemName(r), qty: r.tradeQty, price: r.price }; })
+  }]);
+  rbSave(next, '리밸런싱을 기록하고 보유수량을 갱신했습니다').then(function (ok) {
+    if (!ok) return;
+    var c = $('rbContrib');
+    c.dataset.value = '';
+    paintAmtInput(c);
+    renderRebal();
+  });
+}
+
+// ── 신규 투입 ──
+function renderRbInvest() {
+  var p = rbPf(), amount = Number($('rbInvAmt').dataset.value) || 0;
+  $('rbInvFill').checked = lsGet('asset_pc_rb_fill') === '1';
+  if (!p.items.length) {
+    $('rbInvTable').innerHTML = '<tbody><tr><td class="rb-empty">종목 · 설정에서 ETF를 먼저 등록하세요.</td></tr></tbody>';
+    $('rbInvSum').innerHTML = '';
+    $('rbInvWarn').innerHTML = '';
+    $('rbInvApply').disabled = true;
+    return;
+  }
+  var plan = Rebalance.planInvest(p.items, rbPriceMap(p), amount, { fillLeftover: $('rbInvFill').checked });
+  rb.investPlan = plan;
+  var totalQty = plan.rows.reduce(function (s, r) { return s + r.qty; }, 0);
+  $('rbInvSum').innerHTML =
+    '<div><label>매수 합계</label><b>' + rbKRW(plan.invested) + '</b><small>' + rbNum(totalQty) + '주 · 비중합 ' + rbPct(plan.weightSum) + '</small></div>' +
+    '<div><label>남는 돈</label><b>' + rbKRW(plan.leftover) + '</b><small>예수금으로 남음</small></div>';
+  $('rbInvTable').innerHTML =
+    '<thead><tr><th>종목</th><th class="num">목표비중</th><th class="num rb-c-price">종가</th><th class="num rb-c-val">배분 금액</th>' +
+    '<th class="num">매수 수량</th><th class="num">매수 금액</th><th class="num rb-c-qty">실제 비중</th></tr></thead><tbody>' +
+    plan.rows.map(function (r, i) {
+      return '<tr data-code="' + rbEsc(r.code) + '" data-name="' + rbEsc(rbItemName(r)) + '">' +
+        '<td><div class="rb-etf"><i class="rb-dot" style="background:' + rbColor(i) + '"></i><div><b>' + rbEsc(rbItemName(r)) + '</b><small>' + rbEsc(r.code) + '</small></div></div></td>' +
+        '<td class="num">' + rbPct(r.weight) + '</td>' +
+        '<td class="num rb-c-price">' + (r.priceMissing ? '<span class="rb-stale">없음</span>' : rbNum(r.price)) + '</td>' +
+        '<td class="num rb-c-val">' + rbNum(r.targetValue) + '</td>' +
+        '<td class="num">' + (r.qty ? '<span class="rb-tag buy">매수 ' + rbNum(r.qty) + '주</span>' : '<span class="muted">-</span>') + '</td>' +
+        '<td class="num">' + rbNum(r.cost) + '</td>' +
+        '<td class="num rb-c-qty">' + rbPct(r.actualWeight) + '</td></tr>';
+    }).join('') + '</tbody>' +
+    '<tfoot><tr><td>합계</td><td class="num">' + rbPct(plan.weightSum) + '</td><td class="rb-c-price"></td><td class="num rb-c-val">' + rbNum(amount) + '</td>' +
+    '<td class="num">' + rbNum(totalQty) + '주</td><td class="num">' + rbNum(plan.invested) + '</td><td class="rb-c-qty"></td></tr></tfoot>';
+  $('rbInvWarn').innerHTML = plan.warnings.map(function (w) { return '<div class="rb-warn">' + rbEsc(w) + '</div>'; }).join('');
+  $('rbInvApply').disabled = !(amount > 0 && plan.invested > 0);
+}
+
+function rbApplyInvest() {
+  var plan = rb.investPlan;
+  if (!plan || !plan.invested) return;
+  var qty = plan.rows.reduce(function (s, r) { return s + r.qty; }, 0);
+  if (!confirm('매수 ' + rbNum(qty) + '주(' + rbKRW(plan.invested) + ')를 보유수량에 더하고, 남는 ' + rbKRW(plan.leftover) + '을 예수금에 더합니다. 계속할까요?')) return;
+  var next = rbClone(rbPf());
+  plan.rows.forEach(function (r) {
+    var it = next.items.find(function (i) { return i.code === r.code; });
+    if (it) it.qty += r.qty;
+  });
+  next.cash = Math.round(next.cash + plan.leftover);
+  next.history.push({
+    at: new Date().toISOString(), type: 'invest', amount: plan.amount, total: plan.amount, cashAfter: next.cash,
+    baseDate: rb.prices && rb.prices.baseDate,
+    trades: plan.rows.filter(function (r) { return r.qty > 0; }).map(function (r) { return { action: 'BUY', code: r.code, name: rbItemName(r), qty: r.qty, price: r.price }; })
+  });
+  if (!next.lastRebalancedAt) next.lastRebalancedAt = new Date().toISOString();
+  rbSave(next, '매수 수량을 보유수량에 반영했습니다').then(function (ok) {
+    if (!ok) return;
+    var a = $('rbInvAmt');
+    a.dataset.value = '';
+    paintAmtInput(a);
+    rbSwitchTab('plan');
+  });
+}
+
+// ── 종목 · 설정 (저장 버튼을 눌러야 반영) ──
+function rbDraft() {
+  if (!rb.draft) { rb.draft = rbClone(rbPf()); rbFillNames(rb.draft); }
+  return rb.draft;
+}
+function rbSetDirty(on) {
+  rb.dirty = on;
+  if (!on) rb.draft = null;
+  $('rbSaveBar').hidden = !(on && currentView === 'rebal');
+}
+function renderRbSetup() {
+  if (!rb.dirty) rb.draft = null;   // 저장된 값에서 새로 시작
+  var d = rbDraft(), s = d.settings;
+  var ae = document.activeElement;
+  if (ae !== $('rbName')) $('rbName').value = d.name;
+  if (ae !== $('rbBand')) $('rbBand').value = s.band;
+  if (ae !== $('rbMinTrade')) $('rbMinTrade').value = s.minTradeAmount;
+  if (ae !== $('rbCycle')) $('rbCycle').value = s.cycleDays;
+  var c = $('rbCash');
+  if (ae !== c) { c.dataset.value = d.cash ? String(d.cash) : ''; paintAmtInput(c); }
+  renderRbItems();
+  renderRbStatus();
+}
+function renderRbItems() {
+  var d = rbDraft();
+  $('rbItemsTable').innerHTML = d.items.length
+    ? '<thead><tr><th>종목</th><th class="num rb-c-price">종가</th><th class="num">목표비중 (%)</th><th class="num">보유수량 (주)</th><th class="num rb-c-val">평가금액</th><th></th></tr></thead><tbody>' +
+      d.items.map(function (it, i) {
+        var price = rbPriceOf(it.code);
+        return '<tr data-idx="' + i + '">' +
+          '<td><div class="rb-etf"><i class="rb-dot" style="background:' + rbColor(i) + '"></i><div><b>' + rbEsc(rbItemName(it)) + '</b><small>' + rbEsc(it.code) + '</small></div></div></td>' +
+          '<td class="num rb-c-price">' + (price ? rbNum(price) : '<span class="rb-stale">없음</span>') + '</td>' +
+          '<td class="num"><input class="text-input rb-in" type="number" data-f="weight" min="0" max="100" step="0.5" value="' + it.weight + '" inputmode="decimal"></td>' +
+          '<td class="num"><input class="text-input rb-in" type="number" data-f="qty" min="0" step="1" value="' + it.qty + '" inputmode="numeric"></td>' +
+          '<td class="num rb-c-val" data-val>' + (price ? rbNum(price * it.qty) : '-') + '</td>' +
+          '<td class="num"><button type="button" class="rb-del" data-del="' + i + '" title="목록에서 빼기" aria-label="삭제">✕</button></td></tr>';
+      }).join('') + '</tbody>'
+    : '<tbody><tr><td class="rb-empty">위 검색창에서 ETF를 찾아 추가하세요.</td></tr></tbody>';
+  renderRbWsum();
+}
+function renderRbWsum() {
+  var d = rbDraft();
+  var sum = d.items.reduce(function (s, it) { return s + (Number(it.weight) || 0); }, 0), bad = sum > 100.0001;
+  var box = $('rbWsum');
+  box.className = 'rb-wsum' + (bad ? ' bad' : '');
+  box.innerHTML = '<div class="rb-wsum-top"><span>목표비중 합계</span><span>' + sum.toFixed(1) + '%' +
+    (bad ? ' <small>100%를 넘었습니다</small>' : sum < 99.999 ? ' <small>현금 ' + (100 - sum).toFixed(1) + '%</small>' : '') + '</span></div>' +
+    '<div class="meter"><div class="meter-fill" style="width:' + Math.min(100, sum).toFixed(1) + '%"></div></div>';
+}
+function renderRbStatus() {
+  var d = rb.prices, ago = rbPriceDaysAgo();
+  $('rbStatus').innerHTML = d
+    ? '<div>기준일 <b>' + rbEsc(d.baseDate) + '</b> 종가' + (ago !== null && ago > 5 ? ' <span class="rb-stale">(' + ago + '일 전)</span>' : '') + '</div>' +
+      '<div>데이터 갱신 <b>' + rbDateTime(d.fetchedAt) + '</b></div>' +
+      '<div>종목 수 <b>' + rbNum(d.count || Object.keys(d.items).length) + '</b> (ETF/ETN)</div>' +
+      '<p class="rb-hint">원본 저장소의 GitHub Actions 가 매 거래일 아침 NH 종목마스터에서 갱신합니다.</p>' +
+      '<a class="rb-ext" href="' + RB_BASE + '" target="_blank" rel="noopener noreferrer">원래 리밸런서 페이지 열기 ↗</a>'
+    : '<span class="rb-stale">' + rbEsc(rb.priceError || '불러오는 중…') + '</span>';
+}
+function rbReadField(t) {
+  var d = rbDraft();
+  if (t.id === 'rbName') d.name = t.value.trim() || d.name;
+  else if (t.id === 'rbCash') d.cash = Math.max(0, Math.floor(Number(t.dataset.value) || 0));
+  else if (t.id === 'rbBand') d.settings.band = Math.max(0, Number(t.value) || 0);
+  else if (t.id === 'rbMinTrade') d.settings.minTradeAmount = Math.max(0, Math.floor(Number(t.value) || 0));
+  else if (t.id === 'rbCycle') d.settings.cycleDays = Math.max(1, Math.floor(Number(t.value) || 30));
+  else if (t.dataset.f) {
+    var tr = t.closest('tr[data-idx]'), it = tr && d.items[Number(tr.dataset.idx)];
+    if (!it) return;
+    if (t.dataset.f === 'weight') it.weight = Math.max(0, Number(t.value) || 0);
+    else {
+      it.qty = Math.max(0, Math.floor(Number(t.value) || 0));
+      var price = rbPriceOf(it.code), cell = tr.querySelector('[data-val]');
+      if (cell) cell.textContent = price ? rbNum(price * it.qty) : '-';
+    }
+    if (t.dataset.f === 'weight') renderRbWsum();
+  } else return;
+  rbSetDirty(true);
+}
+function rbSaveDraft() {
+  var d = rbDraft();
+  var sum = d.items.reduce(function (s, it) { return s + it.weight; }, 0);
+  if (sum > 100.0001) { showToast('목표비중 합계가 100%를 넘습니다 (' + sum.toFixed(1) + '%)'); return; }
+  rbSave(d, '포트폴리오를 저장했습니다').then(function (ok) { if (ok) { rbSetDirty(false); renderRebal(); } });
+}
+function rbDiscardDraft() {
+  rbSetDirty(false);
+  renderRebal();
+  showToast('변경을 취소했습니다');
+}
+
+// ETF 검색 — prices.json 의 전 종목(ETF/ETN)
+function rbSearch() {
+  clearTimeout(rb.searchTm);
+  var q = $('rbSearch').value.trim().toLowerCase(), box = $('rbResults');
+  if (!q) { box.hidden = true; return; }
+  if (!rb.prices) {
+    box.innerHTML = '<div class="rb-ri none">' + rbEsc(rb.priceError || '가격 데이터를 불러오는 중입니다…') + '</div>';
+    box.hidden = false;
+    return;
+  }
+  rb.searchTm = setTimeout(function () {
+    var qn = q.replace(/\s+/g, ''), terms = q.split(/\s+/).filter(Boolean), hits = [];
+    Object.keys(rb.prices.items).forEach(function (code) {
+      var m = rb.prices.items[code], nn = m[0].toLowerCase().replace(/\s+/g, ''), c = code.toLowerCase(), score = -1;
+      if (c === qn) score = 100;
+      else if (c.indexOf(qn) === 0) score = 90;
+      else if (nn.indexOf(qn) === 0) score = 80;
+      else if (terms.every(function (t) { return nn.indexOf(t) >= 0; })) score = 60;
+      if (score >= 0) hits.push({ score: score + (m[2] === 'ETF' ? 5 : 0), code: code, m: m });
+    });
+    hits.sort(function (a, b) { return b.score - a.score || a.m[0].localeCompare(b.m[0], 'ko'); });
+    var d = rbDraft();
+    box.innerHTML = hits.length ? hits.slice(0, 30).map(function (h, i) {
+      var added = d.items.some(function (it) { return it.code === h.code; });
+      return '<div class="rb-ri' + (added ? ' added' : '') + (i === 0 ? ' on' : '') + '" data-code="' + h.code + '" data-name="' + rbEsc(h.m[0]) + '">' +
+        '<span class="nm">' + rbEsc(h.m[0]) + '</span><span class="meta">' + h.code + ' · ' + rbEsc(h.m[2]) + ' · ' + rbNum(h.m[1]) + '원' + (added ? ' · 추가됨' : '') + '</span></div>';
+    }).join('') : '<div class="rb-ri none">검색 결과 없음</div>';
+    box.hidden = false;
+  }, 100);
+}
+function rbAddItem(code, name) {
+  var d = rbDraft();
+  if (d.items.some(function (i) { return i.code === code; })) { showToast('이미 추가된 종목입니다'); return; }
+  d.items.push({ code: code, name: name || '', weight: 0, qty: 0 });
+  rbSetDirty(true);
+  renderRbItems();
+  $('rbSearch').value = '';
+  $('rbResults').hidden = true;
+  var ins = document.querySelectorAll('#rbItemsTable input[data-f="weight"]');
+  if (ins.length) { ins[ins.length - 1].focus(); ins[ins.length - 1].select(); }
+}
+function rbRemoveItem(idx) {
+  var d = rbDraft(), it = d.items[idx];
+  if (!it) return;
+  if (it.qty > 0 && !confirm(rbItemName(it) + ' 은(는) 보유수량이 ' + it.qty + '주입니다. 목록에서 뺄까요?')) return;
+  d.items.splice(idx, 1);
+  rbSetDirty(true);
+  renderRbItems();
+}
+
+function rbDownload(name, text, type) {
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: type }));
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+}
+function rbExport() {
+  rbDownload('pension-etf-portfolio-' + fmtDateStr(new Date()) + '.json', JSON.stringify(rbPf(), null, 2), 'application/json');
+}
+function rbImport(file) {
+  var fr = new FileReader();
+  fr.onload = function () {
+    var next;
+    try { next = rbSanitize(JSON.parse(fr.result)); } catch (e) { showToast('가져오기 실패: ' + e.message); return; }
+    if (!confirm('"' + next.name + '" (' + next.items.length + '종목)으로 지금 포트폴리오를 바꿉니다. 계속할까요?')) return;
+    rbFillNames(next);
+    rbSave(next, '포트폴리오를 가져왔습니다').then(function (ok) { if (ok) { rbSetDirty(false); renderRebal(); } });
+  };
+  fr.readAsText(file);
+}
+function rbReset() {
+  if (!confirm('보유수량 · 예수금 · 기록을 모두 지우고 기본 포트폴리오(9종목)로 되돌립니다. 계속할까요?')) return;
+  var next = rbDefault();
+  rbFillNames(next);
+  rbSave(next, '기본 포트폴리오로 초기화했습니다').then(function (ok) { if (ok) { rbSetDirty(false); renderRebal(); } });
+}
+function rbIcs() {
+  var p = rbPf(), cycle = p.settings.cycleDays || 30;
+  var start = p.lastRebalancedAt ? new Date(new Date(p.lastRebalancedAt).getTime() + cycle * 86400000) : new Date();
+  if (start < new Date()) start = new Date();
+  start.setHours(9, 0, 0, 0);
+  var pad = function (n) { return String(n).padStart(2, '0'); };
+  var dt = function (d) { return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + 'T' + pad(d.getHours()) + pad(d.getMinutes()) + '00'; };
+  var rrule = cycle % 30 === 0 || cycle === 31 ? 'FREQ=MONTHLY;INTERVAL=' + Math.max(1, Math.round(cycle / 30)) : 'FREQ=DAILY;INTERVAL=' + cycle;
+  var ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//asset-pc//pension-rebalancer//KO', 'BEGIN:VEVENT',
+    'UID:' + Date.now() + '@asset-pc', 'DTSTAMP:' + dt(new Date()) + 'Z', 'DTSTART;TZID=Asia/Seoul:' + dt(start),
+    'DURATION:PT30M', 'RRULE:' + rrule, 'SUMMARY:' + p.name + ' 리밸런싱',
+    'DESCRIPTION:자산 현황 → 연금 리밸런싱에서 매수/매도 수량을 확인하세요. ' + location.href.split(/[?#]/)[0],
+    'BEGIN:VALARM', 'TRIGGER:-PT0M', 'ACTION:DISPLAY', 'DESCRIPTION:연금 ETF 리밸런싱', 'END:VALARM',
+    'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+  rbDownload('rebalance-reminder.ics', ics, 'text/calendar;charset=utf-8');
+}
+
+// ── 기록 ──
+function renderRbLog() {
+  var p = rbPf(), h = (p.history || []).slice().reverse();
+  $('rbLogSub').textContent = h.length ? '최근 ' + h.length + '건 (최대 200건 보관)' : '';
+  $('rbLogTable').innerHTML = h.length
+    ? '<thead><tr><th>일시</th><th>구분</th><th class="num">투입</th><th class="num rb-c-val">총자산</th><th class="rb-c-price">기준일</th><th>거래</th></tr></thead><tbody>' +
+      h.map(function (x) {
+        var trades = (x.trades || []).map(function (t) {
+          return '<span class="' + (t.action === 'BUY' ? 'rb-buy' : 'rb-sell') + '">' + (t.action === 'BUY' ? '매수' : '매도') + '</span> ' +
+            rbEsc(t.name || t.code) + ' ' + rbNum(t.qty) + '주';
+        }).join(' · ');
+        var inflow = x.type === 'invest' ? x.amount : x.contribution;
+        return '<tr><td style="white-space:nowrap">' + rbDateTime(x.at) + '</td>' +
+          '<td><span class="rb-log-type">' + (x.type === 'invest' ? '신규 투입' : '리밸런싱') + '</span></td>' +
+          '<td class="num">' + (inflow ? rbKRW(inflow) : '<span class="muted">-</span>') + '</td>' +
+          '<td class="num rb-c-val">' + rbKRW(x.total) + '</td>' +
+          '<td class="rb-c-price" style="white-space:nowrap">' + rbEsc(x.baseDate || '-') + '</td>' +
+          '<td class="rb-log-trades">' + (trades || '거래 없음') + '</td></tr>';
+      }).join('') + '</tbody>'
+    : '<tbody><tr><td class="rb-empty">아직 기록이 없습니다.<br>리밸런싱이나 신규 투입을 반영하면 여기에 쌓입니다.</td></tr></tbody>';
+}
+
+/* ── 차트 (history/{code}.json, 일별 종가) ── */
+var RB_PERIODS = [['1w', '1주', 7], ['1m', '1달', 30], ['3m', '3달', 91], ['1y', '1년', 365]];
+var RB_TOTAL_PERIODS = RB_PERIODS.concat([['all', '전체', 100000]]);
+
+function rbLoadHistory(code) {
+  if (rb.chart.cache[code]) return Promise.resolve(rb.chart.cache[code]);
+  var v = rb.prices ? encodeURIComponent(rb.prices.fetchedAt || rb.prices.baseDate) : Date.now();
+  return fetch(RB_BASE + 'history/' + code + '.json?v=' + v).then(function (res) {
+    if (!res.ok) throw new Error(res.status === 404 ? '이 종목의 차트 데이터가 아직 없습니다. 다음 가격 갱신 때 추가됩니다.' : 'HTTP ' + res.status);
+    return res.json();
+  }).then(function (h) {
+    var baseYmd = rb.prices && rb.prices.baseDate ? rb.prices.baseDate.replace(/-/g, '') : '99999999';
+    // 가격표(prices.json)와 같은 기준일까지만 — 숫자가 어긋나지 않게
+    var pts = h.d.map(function (d, i) { return [d, h.c[i]]; }).filter(function (x) { return x[1] > 0 && x[0] <= baseYmd; });
+    rb.chart.cache[code] = pts;
+    return pts;
+  });
+}
+
+function rbChartSvg(pts, secondary, opts) {
+  opts = opts || {};
+  var W = 900, H = opts.height || 280, L = 8, Rr = 8, T = opts.mini ? 4 : 18, B = opts.mini ? 4 : 26, n = pts.length;
+  var cs = pts.map(function (p) { return p[1]; });
+  var min = Math.min.apply(null, cs), max = Math.max.apply(null, cs);
+  if (secondary && secondary.length) { min = Math.min(min, Math.min.apply(null, secondary)); max = Math.max(max, Math.max.apply(null, secondary)); }
+  if (max === min) { max += 1; min -= 1; }
+  var pad = (max - min) * 0.06; min -= pad; max += pad;
+  var x = function (i) { return L + (n === 1 ? (W - L - Rr) / 2 : i / (n - 1) * (W - L - Rr)); };
+  var y = function (c) { return T + (max - c) / (max - min) * (H - T - B); };
+  var d = pts.map(function (p, i) { return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(p[1]).toFixed(1); }).join(' ');
+  var up = cs[n - 1] >= cs[0];
+  var col = opts.asset ? (up ? 'var(--up)' : 'var(--down)') : (up ? 'var(--kospi-up)' : 'var(--kospi-down)');
+  var gid = 'rbg' + (opts.mini ? 'm' : 'f');
+  var area = '<path d="' + d + ' L' + x(n - 1).toFixed(1) + ' ' + (H - B) + ' L' + x(0).toFixed(1) + ' ' + (H - B) + ' Z" fill="url(#' + gid + ')"/>';
+  var defs = '<defs><linearGradient id="' + gid + '" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="' + col + '" stop-opacity=".22"/><stop offset="1" stop-color="' + col + '" stop-opacity="0"/></linearGradient></defs>';
+  var sec = secondary && secondary.length === n
+    ? '<path d="' + secondary.map(function (v, i) { return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1); }).join(' ') +
+      '" fill="none" stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"/>' : '';
+  var line = '<path d="' + d + '" fill="none" stroke="' + col + '" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
+  if (opts.mini) return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + defs + area + sec + line + '</svg>';
+  var grid = [0.25, 0.5, 0.75].map(function (f) {
+    var yy = (T + f * (H - T - B)).toFixed(1);
+    return '<line x1="' + L + '" x2="' + (W - Rr) + '" y1="' + yy + '" y2="' + yy + '" stroke="var(--grid)" stroke-dasharray="3 4"/>';
+  }).join('');
+  var iMax = cs.indexOf(Math.max.apply(null, cs)), iMin = cs.indexOf(Math.min.apply(null, cs));
+  var lbl = function (i, c, above) {
+    var xx = x(i), anchor = xx < 90 ? 'start' : xx > W - 90 ? 'end' : 'middle';
+    return '<text x="' + xx.toFixed(1) + '" y="' + (y(c) + (above ? -7 : 15)).toFixed(1) + '" font-size="12" text-anchor="' + anchor + '" fill="var(--ink-2)">' + rbNum(c) + '</text>';
+  };
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + defs + grid + area + sec + line +
+    '<circle cx="' + x(n - 1).toFixed(1) + '" cy="' + y(cs[n - 1]).toFixed(1) + '" r="4" fill="' + col + '"/>' +
+    lbl(iMax, cs[iMax], true) + lbl(iMin, cs[iMin], false) +
+    '<text x="' + L + '" y="' + (H - 6) + '" font-size="12" fill="var(--muted)">' + rbYmd(pts[0][0]) + '</text>' +
+    '<text x="' + (W - Rr) + '" y="' + (H - 6) + '" font-size="12" text-anchor="end" fill="var(--muted)">' + rbYmd(pts[n - 1][0]) + '</text></svg>';
+}
+function rbSlice(all, key, periods) {
+  var P = (periods || RB_PERIODS).find(function (p) { return p[0] === key; }) || RB_PERIODS[1];
+  if (P[2] >= 100000) return all.slice();
+  var last = all[all.length - 1][0];
+  var start = new Date(new Date(+last.slice(0, 4), +last.slice(4, 6) - 1, +last.slice(6, 8)).getTime() - P[2] * 86400000);
+  var sd = start.getFullYear() + String(start.getMonth() + 1).padStart(2, '0') + String(start.getDate()).padStart(2, '0');
+  var pts = all.filter(function (p) { return p[0] >= sd; });
+  return pts.length < 2 ? all.slice(-2) : pts;
+}
+function rbPeriodSeg(periods) {
+  return '<div class="seg" id="rbPeriods">' + periods.map(function (p) {
+    return '<button type="button" data-period="' + p[0] + '"' + (p[0] === rb.chart.period ? ' class="on"' : '') + '>' + p[1] + '</button>';
+  }).join('') + '</div>';
+}
+function rbOpenChart(code, name) {
+  if (!code) return;
+  rb.chart.mode = 'etf';
+  rb.chart.code = code;
+  rb.chart.name = name || code;
+  if (!RB_PERIODS.some(function (p) { return p[0] === rb.chart.period; })) rb.chart.period = '1m';
+  $('rbChartTitle').textContent = rb.chart.name + ' (' + code + ')';
+  $('rbChartBody').innerHTML = '<div class="rb-empty">차트 불러오는 중…</div>';
+  openSheet('rbChartSheet');
+  rbLoadHistory(code).then(function (all) {
+    if (rb.chart.code === code) rbRenderChart();
+  }, function (e) {
+    if (rb.chart.code !== code) return;
+    $('rbChartBody').innerHTML = '<div class="rb-warn">' + rbEsc(e.message) + '</div>' +
+      '<a class="rb-ext" href="https://m.stock.naver.com/domestic/stock/' + encodeURIComponent(code) + '/total" target="_blank" rel="noopener noreferrer">네이버 금융에서 차트 보기 ↗</a>';
+  });
+}
+function rbRenderChart() {
+  var all = rb.chart.cache[rb.chart.code];
+  if (!all || !all.length) { $('rbChartBody').innerHTML = '<div class="rb-warn">차트 데이터가 없습니다.</div>'; return; }
+  var pts = rbSlice(all, rb.chart.period), cs = pts.map(function (p) { return p[1]; });
+  var first = cs[0], last = cs[cs.length - 1], chg = last - first, rate = first ? chg / first * 100 : 0;
+  var it = rbPf().items.find(function (i) { return i.code === rb.chart.code; });
+  $('rbChartBody').innerHTML =
+    '<div class="rb-chart-head">' + rbNum(last) + '원<small class="' + (chg > 0 ? 'up' : chg < 0 ? 'down' : '') + '">' +
+      (chg > 0 ? '▲ ' : chg < 0 ? '▼ ' : '') + rbNum(Math.abs(chg)) + ' (' + (rate > 0 ? '+' : '') + rate.toFixed(2) + '%)</small></div>' +
+    '<div class="rb-chart-top"><div class="card-sub">' + rbYmd(pts[0][0]) + ' ~ ' + rbYmd(pts[pts.length - 1][0]) + ' 종가 · ' + pts.length + '거래일</div>' + rbPeriodSeg(RB_PERIODS) + '</div>' +
+    '<div class="rb-chart-box">' + rbChartSvg(pts) + '</div>' +
+    '<div class="rb-chart-stats"><div><label>기간 시작</label><b>' + rbNum(first) + '</b></div>' +
+      '<div><label>최고</label><b>' + rbNum(Math.max.apply(null, cs)) + '</b></div>' +
+      '<div><label>최저</label><b>' + rbNum(Math.min.apply(null, cs)) + '</b></div>' +
+      '<div><label>내 보유</label><b>' + (it && it.qty ? rbNum(it.qty) + '주 · ' + rbKRW(it.qty * last) : '-') + '</b></div></div>' +
+    '<a class="rb-ext" href="https://m.stock.naver.com/domestic/stock/' + encodeURIComponent(rb.chart.code) + '/total" target="_blank" rel="noopener noreferrer">네이버 금융에서 자세히 보기 ↗</a>';
+}
+
+/* ── 총자산 추이: 거래 기록으로 날짜별 보유상태를 되짚고 × 일별 종가 ── */
+function rbKstYmd(iso) {
+  var d = new Date(iso);
+  if (isNaN(d)) return null;
+  var k = new Date(d.getTime() + 9 * 3600000);
+  return k.getUTCFullYear() + String(k.getUTCMonth() + 1).padStart(2, '0') + String(k.getUTCDate()).padStart(2, '0');
+}
+function rbBuildTotal() {
+  var pf = rbPf(), codes = pf.items.map(function (i) { return i.code; });
+  var key = JSON.stringify([codes, pf.items.map(function (i) { return i.qty; }), pf.cash, (pf.history || []).length, rb.prices && rb.prices.baseDate]);
+  if (rb.total.key === key && rb.total.data) return Promise.resolve(rb.total.data);
+  if (!codes.length) return Promise.resolve({ pts: [], flows: {}, hasEvents: false, note: '등록된 ETF가 없습니다.' });
+  return Promise.all(codes.map(function (c) { return rbLoadHistory(c).catch(function () { return []; }); })).then(function (hists) {
+    var priceMaps = {}, dateSet = {};
+    codes.forEach(function (c, i) { var m = {}; hists[i].forEach(function (p) { m[p[0]] = p[1]; dateSet[p[0]] = 1; }); priceMaps[c] = m; });
+    var dates = Object.keys(dateSet).sort();
+    if (!dates.length) return { pts: [], flows: {}, hasEvents: false, note: '가격 기록이 없습니다.' };
+    var events = (pf.history || []).map(function (h) { return { date: rbKstYmd(h.at), h: h }; })
+      .filter(function (e) { return e.date; })
+      .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    // 지금 상태에서 거래를 거꾸로 되돌리며 구간별 보유상태를 구한다
+    var after = { qty: {}, cash: pf.cash };
+    pf.items.forEach(function (i) { after.qty[i.code] = i.qty; });
+    var segs = [];
+    for (var k = events.length - 1; k >= 0; k--) {
+      var ev = events[k].h, before = { qty: Object.assign({}, after.qty), cash: after.cash }, buy = 0, sell = 0;
+      (ev.trades || []).forEach(function (t) {
+        var q = Number(t.qty) || 0, pr = Number(t.price) || 0;
+        if (t.action === 'BUY') { before.qty[t.code] = (before.qty[t.code] || 0) - q; buy += q * pr; }
+        else { before.qty[t.code] = (before.qty[t.code] || 0) + q; sell += q * pr; }
+      });
+      var contrib = ev.type === 'invest' ? (Number(ev.amount) || 0) : (Number(ev.contribution) || 0);
+      before.cash = Math.max(0, after.cash - contrib - sell + buy);
+      segs.unshift({ from: events[k].date, qty: after.qty, cash: after.cash, contrib: contrib });
+      after = before;
+    }
+    segs.unshift({ from: '00000000', qty: after.qty, cash: after.cash, contrib: 0 });
+    var last = {}, pts = [], si = 0;
+    dates.forEach(function (d) {
+      while (si + 1 < segs.length && segs[si + 1].from <= d) si++;
+      var s = segs[si], total = s.cash;
+      codes.forEach(function (c) {
+        var p = priceMaps[c][d];
+        if (p) last[c] = p;
+        var q = Math.max(0, s.qty[c] || 0);
+        if (q && last[c]) total += q * last[c];
+      });
+      pts.push([d, Math.round(total)]);
+    });
+    var first = -1;
+    for (var i = 0; i < pts.length; i++) { if (pts[i][1] > 0) { first = i; break; } }
+    pts = first < 0 ? [] : pts.slice(first);
+    var flows = {};
+    segs.slice(1).forEach(function (s) { flows[s.from] = (flows[s.from] || 0) + s.contrib; });
+    var data = { pts: pts, flows: flows, hasEvents: events.length > 0, note: pts.length ? '' : '보유수량과 예수금이 없어 추이를 계산할 수 없습니다.' };
+    rb.total = { key: key, data: data };
+    return data;
+  });
+}
+// 기간 시작 평가액 + 이후 순투입 = 투입 원금선
+function rbPrincipal(pts, flows) {
+  var acc = pts[0][1], out = [];
+  for (var i = 0; i < pts.length; i++) {
+    if (i > 0) {
+      var prev = pts[i - 1][0], cur = pts[i][0];
+      Object.keys(flows).forEach(function (d) { if (d > prev && d <= cur) acc += flows[d]; });
+    }
+    out.push(acc);
+  }
+  return out;
+}
+function rbDrawSpark() {
+  if (!rb.prices) return;
+  rbBuildTotal().then(function (data) {
+    var box = $('rbSpark');
+    if (!box) return;
+    if (data.pts.length < 2) { box.innerHTML = ''; return; }
+    var pts = rbSlice(data.pts, '1m', RB_TOTAL_PERIODS), prin = rbPrincipal(pts, data.flows);
+    var chg = pts[pts.length - 1][1] - prin[prin.length - 1], rate = prin[prin.length - 1] ? chg / prin[prin.length - 1] * 100 : 0;
+    box.innerHTML = rbChartSvg(pts, data.hasEvents ? prin : null, { mini: true, height: 50, asset: true }) +
+      '<div class="rb-spark-txt"><span>최근 1달</span><span class="delta ' + (chg > 0 ? 'up' : chg < 0 ? 'down' : '') + '">' +
+      (chg > 0 ? '+' : chg < 0 ? '−' : '') + rbNum(Math.abs(chg)) + '원 (' + (rate > 0 ? '+' : '') + rate.toFixed(2) + '%)</span></div>';
+  }).catch(function (e) { console.warn(e); });
+}
+function rbOpenTotalChart() {
+  rb.chart.mode = 'total';
+  rb.chart.code = '__total__';
+  if (!RB_TOTAL_PERIODS.some(function (p) { return p[0] === rb.chart.period; })) rb.chart.period = '1m';
+  $('rbChartTitle').textContent = '총자산 추이 · ' + rbPf().name;
+  $('rbChartBody').innerHTML = '<div class="rb-empty">계산 중…</div>';
+  openSheet('rbChartSheet');
+  rbBuildTotal().then(function (data) {
+    rb.chart.cache.__total__ = data;
+    if (rb.chart.code === '__total__') rbRenderTotalChart();
+  }, function (e) { $('rbChartBody').innerHTML = '<div class="rb-warn">' + rbEsc(e.message) + '</div>'; });
+}
+function rbRenderTotalChart() {
+  var data = rb.chart.cache.__total__;
+  if (!data || data.pts.length < 2) {
+    $('rbChartBody').innerHTML = '<div class="rb-warn">' + rbEsc((data && data.note) || '추이를 그릴 데이터가 부족합니다.') + '</div>';
+    return;
+  }
+  var pts = rbSlice(data.pts, rb.chart.period, RB_TOTAL_PERIODS), prin = rbPrincipal(pts, data.flows);
+  var lastV = pts[pts.length - 1][1], prinLast = prin[prin.length - 1], pnl = lastV - prinLast, rate = prinLast ? pnl / prinLast * 100 : 0;
+  var inflow = prinLast - pts[0][1], vals = pts.map(function (p) { return p[1]; });
+  $('rbChartBody').innerHTML =
+    '<div class="rb-chart-head asset">' + rbKRW(lastV) + '<small class="' + (pnl > 0 ? 'up' : pnl < 0 ? 'down' : '') + '">' +
+      (pnl > 0 ? '▲ ' : pnl < 0 ? '▼ ' : '') + rbNum(Math.abs(pnl)) + '원 (' + (rate > 0 ? '+' : '') + rate.toFixed(2) + '%)</small></div>' +
+    '<div class="rb-chart-top"><div class="card-sub">' + rbYmd(pts[0][0]) + ' ~ ' + rbYmd(pts[pts.length - 1][0]) + ' · ' + pts.length +
+      '거래일 · 손익은 기간 시작 평가액 + 순투입 대비</div>' + rbPeriodSeg(RB_TOTAL_PERIODS) + '</div>' +
+    '<div class="rb-chart-box">' + rbChartSvg(pts, data.hasEvents ? prin : null, { asset: true }) + '</div>' +
+    (data.hasEvents ? '<div class="rb-chart-leg"><span><i></i>총자산</span><span><i class="dash"></i>투입 원금</span></div>' : '') +
+    '<div class="rb-chart-stats"><div><label>기간 시작 평가액</label><b>' + rbKRW(pts[0][1]) + '</b></div>' +
+      '<div><label>기간 순투입</label><b>' + rbKRW(inflow) + '</b></div>' +
+      '<div><label>기간 최고</label><b>' + rbKRW(Math.max.apply(null, vals)) + '</b></div>' +
+      '<div><label>기간 최저</label><b>' + rbKRW(Math.min.apply(null, vals)) + '</b></div></div>' +
+    '<p class="rb-hint">' + (data.hasEvents
+      ? '기록된 거래(신규 투입 · 리밸런싱)로 날짜별 보유수량을 되짚어 계산합니다. 설정에서 수량을 직접 고친 부분은 반영되지 않을 수 있습니다.'
+      : '거래 기록이 없어 지금 보유수량을 과거 종가로 환산한 추이입니다.') + '</p>';
+}
+
+// ── 탭 · 이벤트 ──
+function rbSwitchTab(t) {
+  rb.tab = t;
+  $('rbResults').hidden = true;
+  renderRebal();
+  window.scrollTo(0, 0);
+}
+$('rbTabs').addEventListener('click', function (e) {
+  var b = e.target.closest('button[data-rbtab]');
+  if (b) rbSwitchTab(b.dataset.rbtab);
+});
+$('view-rebal').addEventListener('click', function (e) {
+  var t = e.target;
+  var go = t.closest('[data-rbgo]');
+  if (go) { rbSwitchTab(go.dataset.rbgo); return; }
+  if (t.closest('[data-rbact="reload"]')) { rbLoadPrices(true); return; }
+  if (t.closest('#rbTotalCard')) { rbOpenTotalChart(); return; }
+  var del = t.closest('[data-del]');
+  if (del) { rbRemoveItem(Number(del.dataset.del)); return; }
+  var ri = t.closest('.rb-ri[data-code]');
+  if (ri) { rbAddItem(ri.dataset.code, ri.dataset.name); return; }
+  if (!t.closest('.rb-search')) $('rbResults').hidden = true;
+  var q = t.closest('#rbInvQuick button[data-add]');
+  if (q) {
+    var a = $('rbInvAmt'), add = Number(q.dataset.add);
+    a.dataset.value = add ? String((Number(a.dataset.value) || 0) + add) : '';
+    paintAmtInput(a);
+    renderRbInvest();
+    return;
+  }
+  var tr = t.closest('#rbHoldTable tr[data-code], #rbInvTable tr[data-code]');
+  if (tr) rbOpenChart(tr.dataset.code, tr.dataset.name);
+});
+$('view-rebal').addEventListener('keydown', function (e) {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.id === 'rbTotalCard') { e.preventDefault(); rbOpenTotalChart(); }
+  if (e.target.id === 'rbSearch') {
+    var box = $('rbResults'), items = Array.prototype.slice.call(box.querySelectorAll('.rb-ri[data-code]'));
+    var i = items.findIndex(function (x) { return x.classList.contains('on'); });
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      if (!items.length) return;
+      e.preventDefault();
+      if (i >= 0) items[i].classList.remove('on');
+      i = (i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+      items[i].classList.add('on');
+      items[i].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter' && !box.hidden && i >= 0) {
+      e.preventDefault();
+      rbAddItem(items[i].dataset.code, items[i].dataset.name);
+    } else if (e.key === 'Escape' && !box.hidden) {
+      e.stopPropagation();
+      box.hidden = true;
+    }
+  }
+});
+$('view-rebal').addEventListener('input', function (e) {
+  var t = e.target;
+  if (t.classList.contains('amt-input')) { onAmtInput(t); paintAmtInput(t); }
+  if (t.id === 'rbContrib') renderRbPlan();
+  else if (t.id === 'rbInvAmt') renderRbInvest();
+  else if (t.id === 'rbSearch') rbSearch();
+  else if (t.closest('#rbPane-setup')) rbReadField(t);
+});
+$('view-rebal').addEventListener('focusin', function (e) {
+  if (e.target.classList && (e.target.classList.contains('amt-input') || e.target.classList.contains('rb-in'))) e.target.select();
+});
+$('rbInvFill').addEventListener('change', function () {
+  lsSet('asset_pc_rb_fill', this.checked ? '1' : '0');
+  renderRbInvest();
+});
+$('rbApply').addEventListener('click', rbApplyPlan);
+$('rbInvApply').addEventListener('click', rbApplyInvest);
+$('rbSave').addEventListener('click', rbSaveDraft);
+$('rbDiscard').addEventListener('click', rbDiscardDraft);
+$('rbReloadPrices').addEventListener('click', function () { rbLoadPrices(true); });
+$('rbIcs').addEventListener('click', rbIcs);
+$('rbExport').addEventListener('click', rbExport);
+$('rbImport').addEventListener('click', function () { $('rbImportFile').click(); });
+$('rbImportFile').addEventListener('change', function () { if (this.files[0]) rbImport(this.files[0]); this.value = ''; });
+$('rbReset').addEventListener('click', rbReset);
+$('rbChartBody').addEventListener('click', function (e) {
+  var b = e.target.closest('#rbPeriods button[data-period]');
+  if (!b) return;
+  rb.chart.period = b.dataset.period;
+  if (rb.chart.mode === 'total') rbRenderTotalChart(); else rbRenderChart();
+});
+window.addEventListener('beforeunload', function (e) {
+  if (rb.dirty) { e.preventDefault(); e.returnValue = ''; }
+});
+
 /* ═══════════ 화면 전환 · 공통 ═══════════ */
 var VIEW_TITLES = { home: '대시보드', list: '자산', input: '입력', badges: '뱃지', rebal: '연금 리밸런싱' };
-var REBAL_URL = 'https://iontiger.github.io/pension-etf-rebalancer/';
 
 function renderTopbar() {
   $('viewTitle').textContent = VIEW_TITLES[currentView];
@@ -4655,13 +6193,12 @@ function renderTopbar() {
   } else if (currentView === 'badges') {
     sub = '그동안 넘어선 마일스톤 ' + (badges || []).length + '개 — 카드를 누르면 그때의 축하를 다시 볼 수 있어요';
   } else if (currentView === 'rebal') {
-    sub = '연금 ETF 리밸런싱 계산기 — iontiger.github.io/pension-etf-rebalancer';
+    sub = rbTopbarSub();
   } else {
     sub = '바뀐 금액만 고치고 저장하세요 — 입력 안 한 자산은 직전 값이 그대로 이어집니다';
   }
   $('viewSub').textContent = sub;
   $('btnTopAdd').hidden = currentView !== 'list' && currentView !== 'input';
-  $('btnRebalOpen').hidden = currentView !== 'rebal';
   renderDashOwners();
 }
 
@@ -4678,8 +6215,9 @@ function switchView(v) {
   updateSaveBar();
   if (v === 'home') renderHome();
   if (v === 'list') drawDetailChart();
-  // 리밸런서는 처음 열 때만 불러온다 (앱 시작을 느리게 하지 않게)
-  if (v === 'rebal' && !$('rebalFrame').getAttribute('src')) $('rebalFrame').src = REBAL_URL;
+  // 가격(전일 종가)은 리밸런싱 화면을 처음 열 때 불러온다 (앱 시작을 느리게 하지 않게)
+  if (v === 'rebal') { if (!rb.prices && !rb.loading) rbLoadPrices(); renderRebal(); }
+  $('rbSaveBar').hidden = !(rb.dirty && v === 'rebal');
   if (v === 'badges') { renderBadges(); updateBadgeNav(); }
   window.scrollTo(0, 0);
 }
@@ -4690,6 +6228,8 @@ function renderAll() {
   renderInput();
   renderBadges();
   updateBadgeNav();
+  renderRebal();
+  updateRebalNav();
   renderTopbar();
 }
 
@@ -4728,9 +6268,6 @@ $('ranges').addEventListener('click', function (e) {
 })();
 
 $('btnTopAdd').addEventListener('click', openNewAsset);
-$('rebalFrame').addEventListener('load', function () {
-  if (this.getAttribute('src')) $('rebalLoading').classList.add('done');
-});
 
 // 로고 선택
 $('naLogoPick').addEventListener('click', function () { openLogoSheet('naLogo'); });
@@ -4926,6 +6463,7 @@ document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape' && top) { closeSheet(top.id); return; }
   if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 's') {
     e.preventDefault();
+    if (!top && currentView === 'rebal' && rb.dirty) { rbSaveDraft(); return; }
     if (!top && collectEntries().length) saveEntries();
     return;
   }
