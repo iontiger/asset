@@ -250,7 +250,7 @@
   .rb-empty { text-align:center; color:var(--muted); font-size:.9rem; line-height:1.7; padding:46px 16px; }
   .rb-empty .btn { margin-top:14px; }
 
-  .rb-kpis { display:grid; grid-template-columns:minmax(0,2fr) repeat(3, minmax(0,1fr)); gap:12px; margin-bottom:16px; }
+  .rb-kpis { display:grid; grid-template-columns:minmax(0,2.3fr) repeat(3, minmax(0,1fr)); gap:12px; margin-bottom:16px; }
   .rb-kpis .kpi { padding:16px 18px; }
   .rb-kpis .kpi-v { margin-top:8px; font-size:1.45rem; }
   .rb-kpis .kpi-v.warn { color:var(--warn); }
@@ -263,6 +263,7 @@
   .rb-spark { flex:1; min-width:0; }
   .rb-spark svg { display:block; width:100%; height:50px; }
   .rb-spark-txt { display:flex; justify-content:space-between; gap:8px; font-size:.72rem; color:var(--muted); margin-top:3px; white-space:nowrap; }
+  .rb-spark-txt span:first-child { min-width:0; overflow:hidden; text-overflow:ellipsis; }
   .rb-more { color:var(--accent-deep); font-weight:700; font-size:.74rem; margin-left:auto; }
 
   .rb-main { display:grid; grid-template-columns:minmax(0,1fr) 410px; gap:16px; align-items:start; }
@@ -408,12 +409,18 @@
   .rb-ext { display:inline-block; margin-top:14px; font-size:.8rem; font-weight:700; color:var(--accent-deep); text-decoration:none; }
   .rb-ext:hover { text-decoration:underline; }
 
+  @container rebal (max-width: 1320px) {
+    #rbHoldTable .rb-c-price { display:none; }
+    .rb-etf b { max-width:220px; }
+  }
   @container rebal (max-width: 1180px) {
     .rb-main { grid-template-columns:minmax(0,1fr) 350px; }
     .rb-main.inv { grid-template-columns:330px minmax(0,1fr); }
     .rb-setup { grid-template-columns:minmax(0,1fr) 310px; }
+    #rbHoldTable .rb-c-qty { display:none; }
+    .rb-etf b { max-width:190px; }
   }
-  @container rebal (max-width: 900px) {
+  @container rebal (max-width: 1100px) {
     .rb-main, .rb-main.inv, .rb-setup { grid-template-columns:minmax(0,1fr); }
     .rb-main.inv .rb-side { position:static; }
     .rb-kpis { grid-template-columns:repeat(3, minmax(0,1fr)); }
@@ -428,9 +435,13 @@
     .rb-fields { grid-template-columns:minmax(0,1fr); }
     .rb-chart-stats { grid-template-columns:repeat(2, minmax(0,1fr)); }
   }
+  @container rebal (max-width: 520px) {
+    .rb-c-dev { display:none; }
+    .rb-table .rb-in { width:80px; }
+  }
   @container rebal (max-width: 440px) {
     .rb-kpis { grid-template-columns:minmax(0,1fr); }
-    .rb-c-dev { display:none; }
+    .rb-table .rb-in { width:66px; }
     .rb-wcol { min-width:64px; }
     .rb-wtxt span { display:none; }
     .rb-etf b { max-width:110px; }
@@ -438,6 +449,33 @@
     .rb-tag { padding:3px 7px; }
   }
   .side-nav .nav-badge.show + kbd { display:none; }
+  /* ── 도움말 툴팁 ── */
+  .tipbox {
+    position:fixed; left:-9999px; top:0; z-index:60; max-width:300px;
+    background:var(--ink); color:var(--bg); border-radius:11px; padding:9px 12px;
+    font-size:.78rem; line-height:1.55; white-space:pre-line; pointer-events:none;
+    box-shadow:0 8px 22px rgba(0,0,0,.2);
+    opacity:0; transform:translateY(-3px); transition:opacity .14s, transform .14s;
+  }
+  .tipbox.on { opacity:1; transform:none; }
+  .tipbox b { display:block; font-weight:800; margin-bottom:2px; }
+  .tipbox span { display:block; opacity:.85; }
+  .tipbox::before {
+    content:''; position:absolute; left:var(--ax, 50%); bottom:100%; transform:translateX(-50%);
+    border:6px solid transparent; border-bottom-color:var(--ink);
+  }
+  .tipbox.above::before { bottom:auto; top:100%; border-bottom-color:transparent; border-top-color:var(--ink); }
+  .tipbox.right::before { left:auto; right:100%; bottom:auto; top:var(--ay, 50%); transform:translateY(-50%); border-bottom-color:transparent; border-right-color:var(--ink); }
+  /* 카드 제목 옆 ? — 마우스를 올리면 그 카드 설명 */
+  .qm {
+    display:inline-flex; align-items:center; justify-content:center; flex:none;
+    width:17px; height:17px; margin-left:6px; border-radius:50%; vertical-align:1px;
+    border:1.5px solid var(--baseline); color:var(--muted);
+    font-size:.66rem; font-weight:800; line-height:1; cursor:help; outline:none;
+    transition:color .15s, border-color .15s, background-color .15s;
+  }
+  .qm:hover, .qm:focus-visible { color:var(--accent-deep); border-color:var(--accent); background:var(--accent-wash); }
+  .no-tips .qm { display:none; }
   .side-foot { margin-top:auto; display:flex; flex-direction:column; gap:8px; }
 
   /* 데이터 파일 상태 카드 */
@@ -1397,36 +1435,40 @@
     </div>
   </div>
   <nav class="side-nav" id="sideNav">
-    <button data-view="home" class="on">
+    <button data-view="home" data-tip-side="right" data-tip-t="대시보드 · 1" data-tip="순자산 · 목표 달성률 · 추이 · 미래 예상을 한눈에 봅니다." class="on">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="9" rx="1.8"/><rect x="13.5" y="3" width="7.5" height="5.5" rx="1.8"/><rect x="13.5" y="11.5" width="7.5" height="9.5" rx="1.8"/><rect x="3" y="15" width="7.5" height="6" rx="1.8"/></svg>
       대시보드<kbd>1</kbd>
     </button>
-    <button data-view="list">
+    <button data-view="list" data-tip-side="right" data-tip-t="자산 · 2" data-tip="자산별 최신 금액 목록입니다.
+행을 누르면 오른쪽에 기록과 차트가 나오고, 이름 · 그룹 · 로고를 고치거나 지난 기록을 수정할 수 있습니다.">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="3.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="3.5" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg>
       자산<kbd>2</kbd>
     </button>
-    <button data-view="input">
+    <button data-view="input" data-tip-side="right" data-tip-t="입력 · 3" data-tip="바뀐 금액만 고치고 저장(Ctrl+S)하세요. 안 고친 자산은 직전 금액이 그대로 이어집니다.
+파란 숫자 = 오늘 아직 입력하지 않은 자산 수">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
       입력<span class="nav-badge" id="navBadge"></span><kbd>3</kbd>
     </button>
-    <button data-view="badges">
+    <button data-view="badges" data-tip-side="right" data-tip-t="뱃지 · 4" data-tip="억 돌파 · 최고치 경신 · 대출 감소 같은 마일스톤을 모아 둡니다. 카드를 누르면 그때의 축하를 다시 봅니다.">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.48 12.89 17 22l-5-3-5 3 1.52-9.11"/></svg>
       뱃지<span class="nav-badge new" id="navBadgeNew"></span><kbd>4</kbd>
     </button>
     <div class="nav-sep" role="separator"></div>
-    <button data-view="rebal">
+    <button data-view="rebal" data-tip-side="right" data-tip-t="연금 리밸런싱 · 5" data-tip="연금 ETF를 목표비중대로 맞추려면 무엇을 몇 주 사고팔지 계산합니다.
+빨간 ! = 리밸런싱 주기가 지남">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21.2 15.9A10 10 0 1 1 8 2.8"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
       연금 리밸런싱<span class="nav-badge due" id="navBadgeRebal"></span><kbd>5</kbd>
     </button>
   </nav>
   <div class="side-foot">
-    <div class="store-card" id="storeCard"></div>
-    <div class="seg theme-seg" id="themeSeg" role="group" aria-label="화면 테마">
+    <div class="store-card" id="storeCard" data-tip-side="right" data-tip-t="데이터 파일" data-tip="기록은 이 PC의 폴더에 asset-data.json 파일 하나로 저장됩니다 (서버 · 계정 없음).
+폴더를 연결하면 매일 backups 폴더에 자동 백업도 남깁니다."></div>
+    <div class="seg theme-seg" id="themeSeg" role="group" aria-label="화면 테마" data-tip-side="right" data-tip-t="화면 테마" data-tip="자동은 윈도우의 밝게/어둡게 설정을 따릅니다.">
       <button type="button" data-theme="auto" title="윈도우 설정 따르기">자동</button>
       <button type="button" data-theme="light" title="밝은 화면">밝게</button>
       <button type="button" data-theme="dark" title="어두운 화면">어둡게</button>
     </div>
-    <button class="side-btn" id="btnSettings">
+    <button class="side-btn" id="btnSettings" data-tip-side="right" data-tip-t="설정" data-tip="데이터 폴더 바꾸기 · 백업/가져오기 · 소유자 관리 · 축하 효과 · 도움말 툴팁 켜고 끄기">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       설정 · 데이터 파일
     </button>
@@ -1442,8 +1484,8 @@
       <div class="topbar-sub" id="viewSub"></div>
     </div>
     <div class="topbar-actions">
-      <div class="seg" id="dashOwners" hidden role="group" aria-label="소유자별 보기"></div>
-      <button class="btn btn-primary" id="btnTopAdd" hidden>＋ 새 자산</button>
+      <div class="seg" id="dashOwners" hidden role="group" aria-label="소유자별 보기" data-tip-t="소유자별 보기" data-tip="대시보드 숫자를 한 사람 것만 모아 봅니다."></div>
+      <button class="btn btn-primary" id="btnTopAdd" hidden data-tip-t="새 자산 추가 · N" data-tip="처음 기록하는 계좌 · 부동산 · 대출을 추가합니다. 이미 있는 자산의 금액은 &quot;입력&quot; 화면에서 고칩니다.">＋ 새 자산</button>
     </div>
   </header>
 
@@ -1455,7 +1497,8 @@
     <div class="dboard">
       <div class="card kpi hero">
         <div class="hero-main">
-          <div class="kpi-l" id="heroLabel">총 자산</div>
+          <div class="kpi-l"><span id="heroLabel">총 자산</span><span class="qm" tabindex="0" data-tip-t="순자산" data-tip="모든 자산의 최신 금액에서 부채를 뺀 금액입니다. 아래 ▲▼는 직전 기록 대비 변화.
+오른쪽 원은 목표 달성률 — 누르면 목표 금액을 바꿀 수 있습니다.">?</span></div>
           <div class="kpi-v" id="heroValue">—</div>
           <div class="kpi-s">
             <div class="delta" id="heroDelta" style="display:none"></div>
@@ -1484,17 +1527,17 @@
       </div>
 
       <div class="kpi-stack">
-        <div class="card kpi sm">
+        <div class="card kpi sm" data-tip-t="자산 합계" data-tip="부채를 빼기 전, 모든 자산의 최신 금액을 더한 값입니다.">
           <div class="kpi-l"><span class="kpi-dot" style="background:var(--accent)"></span>자산 합계<svg class="spark" id="spkGross" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true"></svg></div>
           <div class="kpi-v" id="kpiGross">—</div>
           <div class="kpi-s" id="kpiGrossSub"></div>
         </div>
-        <div class="card kpi sm">
+        <div class="card kpi sm" data-tip-t="부채 합계" data-tip="대출 등 부채 잔액의 합입니다. 천만원 단위로 줄 때마다 축하해 드려요.">
           <div class="kpi-l"><span class="kpi-dot" style="background:var(--grp5)"></span>부채 합계<svg class="spark" id="spkDebt" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true"></svg></div>
           <div class="kpi-v" id="kpiDebt">—</div>
           <div class="kpi-s" id="kpiDebtSub"></div>
         </div>
-        <div class="card kpi sm">
+        <div class="card kpi sm" data-tip-t="이번 달 증감" data-tip="지난달 말 순자산과 비교한 이번 달 변화입니다.">
           <div class="kpi-l"><span class="kpi-dot" style="background:var(--grp2)"></span><span id="kpiMonthL">이번 달 증감</span><svg class="spark" id="spkMonth" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true"></svg></div>
           <div class="kpi-v" id="kpiMonth">—</div>
           <div class="kpi-s" id="kpiMonthSub"></div>
@@ -1503,7 +1546,7 @@
 
       <div class="card comp-card" id="compCard" style="display:none">
         <div class="comp-head">
-          <div class="card-title">자산 구성</div>
+          <div class="card-title">자산 구성<span class="qm" tabindex="0" data-tip-t="자산 구성" data-tip="최신 금액 기준으로 그룹(부동산 · 증권 · 예금 · 장기)별 비중을 보여 줍니다. 그룹에 연동된 대출은 빼고 계산합니다.">?</span></div>
           <div class="card-sub" id="compSub"></div>
         </div>
         <div class="comp-bar" id="compBar"></div>
@@ -1513,12 +1556,13 @@
       <div class="card chart-card">
         <div class="card-head">
           <div>
-            <div class="card-title">순자산 추이</div>
+            <div class="card-title">순자산 추이<span class="qm" tabindex="0" data-tip-t="순자산 추이" data-tip="기록한 날마다의 순자산을 이은 선입니다. 선 위에 마우스를 올리면 그날 금액이 나옵니다.
+&quot;목표 · 예상&quot;을 켜면 목표선과 앞으로의 예상선이 함께 그려지고, 오른쪽 버튼으로 기간을 바꿉니다.">?</span></div>
             <div class="card-sub" id="chartSub"></div>
           </div>
           <div class="chart-tools">
             <button type="button" class="tgl" id="projToggle" aria-pressed="false"
-                    title="목표선과 미래 예상선을 차트에 함께 표시">목표 · 예상</button>
+                    data-tip="목표선과 미래 예상선을 차트에 함께 표시">목표 · 예상</button>
             <div class="seg" id="ranges">
               <button data-range="7">1주</button>
               <button data-range="30">1개월</button>
@@ -1537,7 +1581,8 @@
       <!-- 미래 자산 예상 — 세로로 길게, 12개월을 한눈에 -->
       <div class="card forecast-card" id="forecastCard">
         <div class="card-head">
-          <div class="card-title">미래 자산 예상</div>
+          <div class="card-title">미래 자산 예상<span class="qm" tabindex="0" data-tip-t="미래 자산 예상" data-tip="지금 순자산에 매달 적립액을 더하고 연 수익률(월 복리)을 붙여 계산한 예상치입니다.
+아래 ＋ − 로 적립액과 수익률을 바꿔 보세요. 값은 데이터 파일에 저장됩니다.">?</span></div>
           <div class="seg" id="fcModes">
             <button data-mode="month" class="on">월별</button>
             <button data-mode="year">연도별</button>
@@ -1569,7 +1614,7 @@
       <div class="card ms-card" id="msCard" style="display:none">
         <div class="ms-head">
           <div class="ms-head-l">
-            <div class="card-title" id="msTitle">이번 달 요약</div>
+            <div class="card-title" id="msTitle">이번 달 요약</div><span class="qm" tabindex="0" data-tip-t="월간 요약" data-tip="한 달 동안 순자산이 어떻게 변했는지, 어떤 자산이 가장 많이 늘고 줄었는지 보여 줍니다. ‹ › 로 지난달을 넘겨 봅니다.">?</span>
             <span class="ms-range" id="msRange"></span>
           </div>
           <div class="ms-nav">
@@ -1586,7 +1631,7 @@
          href="https://edition.cnn.com/markets/fear-and-greed"
          target="_blank" rel="noopener noreferrer">
         <div class="card-head">
-          <div class="card-title">공포 · 탐욕 지수</div>
+          <div class="card-title">공포 · 탐욕 지수<span class="qm" tabindex="0" data-tip-t="공포 · 탐욕 지수" data-tip="CNN이 발표하는 미국 증시 심리 지수(0~100)입니다. 낮을수록 시장이 겁먹은 상태예요. 카드를 누르면 CNN 페이지가 열립니다.">?</span></div>
           <span class="fg-go">CNN에서 보기 ›</span>
         </div>
         <div class="fg-verdict" id="fgcVerdict"><span id="fgcVerdictText">관망</span></div>
@@ -1599,7 +1644,7 @@
   <!-- ── 자산 ─────────────────────────── -->
   <section class="view" id="view-list">
     <div class="list-toolbar">
-      <div class="seg" id="ownerChips"></div>
+      <div class="seg" id="ownerChips" data-tip-t="소유자" data-tip="한 사람 자산만 골라 봅니다. 소유자 추가 · 이름 변경은 설정에서."></div>
       <label class="search">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input type="search" id="listSearch" placeholder="자산 이름 검색" autocomplete="off">
@@ -1676,7 +1721,7 @@
   <section class="view" id="view-badges">
     <div class="bdg-top">
       <div class="bdg-stats" id="bdgStats"></div>
-      <div class="seg" id="bdgFilter" role="group" aria-label="뱃지 종류">
+      <div class="seg" id="bdgFilter" role="group" aria-label="뱃지 종류" data-tip-t="뱃지 종류" data-tip="자산 · 목표 · 부채 등 종류별로 골라 봅니다.">
         <button type="button" data-f="all" class="on">전체</button>
         <button type="button" data-f="big">큰 성과</button>
         <button type="button" data-f="asset">순자산</button>
@@ -1692,10 +1737,10 @@
   <section class="view" id="view-rebal">
     <div class="rb-bar">
       <div class="seg" id="rbTabs" role="tablist" aria-label="리밸런싱 메뉴">
-        <button type="button" data-rbtab="plan" class="on">리밸런싱</button>
-        <button type="button" data-rbtab="invest">신규 투입</button>
-        <button type="button" data-rbtab="setup">종목 · 설정</button>
-        <button type="button" data-rbtab="log">기록</button>
+        <button type="button" data-rbtab="plan" data-tip="지금 보유 현황과, 목표비중으로 돌아가는 매도 · 매수 계획" class="on">리밸런싱</button>
+        <button type="button" data-rbtab="invest" data-tip="새로 넣을 돈으로 종목별로 몇 주를 살지 계산">신규 투입</button>
+        <button type="button" data-rbtab="setup" data-tip="종목 · 목표비중 · 보유수량 · 예수금 · 규칙 설정 (처음이면 여기부터)">종목 · 설정</button>
+        <button type="button" data-rbtab="log" data-tip="반영한 리밸런싱 · 신규 투입 내역">기록</button>
       </div>
       <div class="rb-notice" id="rbNotice"></div>
     </div>
@@ -1712,7 +1757,8 @@
           <div class="card">
             <div class="card-head">
               <div>
-                <div class="card-title">보유 종목</div>
+                <div class="card-title">보유 종목<span class="qm" tabindex="0" data-tip-t="보유 종목" data-tip="색 막대 = 지금 비중, 검은 눈금 = 목표비중입니다. 차이가 밴드를 넘으면 주황색으로 표시돼요.
+행을 누르면 그 ETF의 가격 차트가 열립니다.">?</span></div>
                 <div class="card-sub">행을 누르면 가격 차트를 봅니다</div>
               </div>
               <div class="rb-legend"><span><i></i>현재 비중</span><span><i class="tgt"></i>목표</span></div>
@@ -1722,17 +1768,19 @@
           </div>
           <div class="card rb-side">
             <div class="card-head">
-              <div class="card-title">이번 리밸런싱 계획</div>
+              <div class="card-title">이번 리밸런싱 계획<span class="qm" tabindex="0" data-tip-t="사용 순서" data-tip="① 전일 종가로 계산한 수량을 확인합니다.
+② 증권사 앱에서 1단계 매도 → (대금이 들어오면) 2단계 매수를 주문합니다.
+③ &quot;거래 완료 → 보유수량 반영&quot;을 누르면 보유수량 · 예수금이 바뀌고 오늘이 리밸런싱일로 기록됩니다.">?</span></div>
               <span class="rb-tag" id="rbPlanTag"></span>
             </div>
             <div class="rb-meta" id="rbPlanMeta"></div>
             <div class="field">
               <label for="rbContrib">함께 넣을 추가 투입금 (선택)</label>
-              <input id="rbContrib" class="amt-input" type="text" inputmode="numeric" placeholder="0" data-value="" data-info="rbContribInfo" autocomplete="off">
+              <input id="rbContrib" data-tip-t="추가 투입금" data-tip="이번에 계좌에 더 넣을 돈이 있으면 적으세요. 그 돈까지 합쳐 목표비중을 맞추도록 매수 수량이 늘어납니다." class="amt-input" type="text" inputmode="numeric" placeholder="0" data-value="" data-info="rbContribInfo" autocomplete="off">
               <div class="in-diff" id="rbContribInfo"></div>
             </div>
             <div id="rbPlanBody"></div>
-            <button type="button" class="btn btn-primary btn-block rb-apply" id="rbApply">거래 완료 → 보유수량 반영</button>
+            <button type="button" class="btn btn-primary btn-block rb-apply" id="rbApply" data-tip-t="실제로 주문한 뒤 누르세요" data-tip="보유수량과 예수금을 계획대로 바꾸고 오늘을 리밸런싱일로 기록합니다. 다음 리밸런싱까지 남은 날도 여기서부터 셉니다.">거래 완료 → 보유수량 반영</button>
           </div>
         </div>
       </div>
@@ -1742,7 +1790,8 @@
     <div class="rb-pane" id="rbPane-invest">
       <div class="rb-main inv">
         <div class="card rb-side">
-          <div class="card-head"><div class="card-title">투입 금액</div></div>
+          <div class="card-head"><div class="card-title">투입 금액<span class="qm" tabindex="0" data-tip-t="신규 투입" data-tip="새로 넣을 돈을 목표비중대로 나눠 종목별 매수 수량을 계산합니다. 첫 매수라면 여기서 시작하세요.
+증권사에서 산 뒤 &quot;매수 완료 → 보유수량 반영&quot;을 누르면 수량이 더해집니다.">?</span></div></div>
           <div class="field">
             <input id="rbInvAmt" class="amt-input goal-amt" type="text" inputmode="numeric" placeholder="0" data-value="" data-info="rbInvInfo" autocomplete="off">
             <div class="in-diff" id="rbInvInfo"></div>
@@ -1778,7 +1827,10 @@
         <div class="card">
           <div class="card-head">
             <div>
-              <div class="card-title">종목 구성</div>
+              <div class="card-title">종목 구성<span class="qm" tabindex="0" data-tip-t="종목 구성" data-tip="① 검색창에서 ETF를 찾아 추가합니다.
+② 목표비중(%)과 지금 가진 수량을 적습니다.
+③ 아래 저장 바에서 저장(Ctrl+S)합니다.
+비중 합이 100%보다 작으면 나머지는 현금으로 둡니다.">?</span></div>
               <div class="card-sub">목표비중 합계가 100%보다 작으면 나머지는 현금으로 둡니다</div>
             </div>
           </div>
@@ -1792,7 +1844,9 @@
         </div>
         <div class="rb-setup-side">
           <div class="card">
-            <div class="card-head"><div class="card-title">계좌 · 규칙</div></div>
+            <div class="card-head"><div class="card-title">계좌 · 규칙<span class="qm" tabindex="0" data-tip-t="규칙" data-tip="밴드: 목표와 차이가 이보다 작은 종목은 거래하지 않아 잦은 매매를 줄입니다.
+최소 거래금액: 이보다 작은 주문은 생략합니다.
+주기: 마지막 리밸런싱 후 이 날수가 지나면 메뉴에 빨간 ! 가 뜹니다.">?</span></div></div>
             <div class="rb-fields">
               <div class="field full">
                 <label for="rbName">포트폴리오 이름</label>
@@ -2104,6 +2158,11 @@
             <button type="button" class="btn btn-ghost btn-sm" data-fx="fireworks">🎆 폭죽</button>
             <button type="button" class="btn btn-ghost btn-sm" data-fx="zoom">🔢 숫자</button>
           </div>
+        </div>
+        <div class="set-sec">
+          <h3>도움말</h3>
+          <p>메뉴 · 버튼 · 카드 제목 옆 <span class="qm" style="cursor:default">?</span> 에 마우스를 올리면 사용법 설명이 뜹니다. 익숙해지면 꺼 두세요.</p>
+          <label class="switch-row"><input type="checkbox" id="setTips"> 도움말 툴팁 보기</label>
         </div>
       </div>
     </div>
@@ -5523,17 +5582,17 @@ function renderRbPlan() {
   else if (days >= cycle) { cycTxt = days === cycle ? '오늘' : (days - cycle) + '일 지남'; cycSub = '마지막 ' + rbDate(p.lastRebalancedAt) + ' · ' + cycle + '일 주기'; }
   else { cycTxt = 'D-' + (cycle - days); cycSub = '마지막 ' + rbDate(p.lastRebalancedAt) + ' · ' + cycle + '일 주기'; }
   $('rbKpis').innerHTML =
-    '<div class="card kpi rb-total" id="rbTotalCard" role="button" tabindex="0" title="총자산 추이 보기">' +
+    '<div class="card kpi rb-total" id="rbTotalCard" role="button" tabindex="0" data-tip-t="총자산" data-tip="보유 ETF 평가금액(전일 종가) + 예수금입니다. 누르면 기간별 추이와 투입 원금선을 봅니다.">' +
       '<div class="kpi-l">총자산 (평가금액 + 예수금)<span class="rb-more">추이 ›</span></div>' +
       '<div class="rb-total-row"><div><div class="kpi-v">' + rbKRW(plan.total - plan.contribution) + '</div>' +
       '<div class="kpi-s">평가 ' + rbKRW(plan.holdingsValue) + ' · ' + p.items.length + '종목</div></div>' +
       '<div class="rb-spark" id="rbSpark"></div></div>' +
     '</div>' +
-    '<div class="card kpi"><div class="kpi-l">최대 이탈</div><div class="kpi-v' + (devOut && plan.maxDeviation > 0 ? ' warn' : '') + '">±' + plan.maxDeviation.toFixed(2) + '%p</div>' +
+    '<div class="card kpi" data-tip-t="최대 이탈" data-tip="지금 비중이 목표비중에서 가장 많이 벗어난 종목의 차이(%p)입니다. 밴드를 넘으면 주황색."><div class="kpi-l">최대 이탈</div><div class="kpi-v' + (devOut && plan.maxDeviation > 0 ? ' warn' : '') + '">±' + plan.maxDeviation.toFixed(2) + '%p</div>' +
       '<div class="kpi-s">' + (s.band > 0 ? '밴드 ±' + s.band + '%p' : '밴드 없음 · 항상 목표로') + '</div></div>' +
-    '<div class="card kpi"><div class="kpi-l">예수금</div><div class="kpi-v">' + rbKRW(p.cash) + '</div>' +
+    '<div class="card kpi" data-tip-t="예수금" data-tip="계좌에 남아 있는 현금입니다. 종목 · 설정에서 증권사 앱의 예수금과 맞춰 두세요."><div class="kpi-l">예수금</div><div class="kpi-v">' + rbKRW(p.cash) + '</div>' +
       '<div class="kpi-s">현금 ' + rbPct(plan.cashWeightNow) + ' · 목표 ' + rbPct(Math.max(0, plan.cashWeight)) + '</div></div>' +
-    '<div class="card kpi"><div class="kpi-l">다음 리밸런싱</div><div class="kpi-v' + (days !== null && days >= cycle ? ' warn' : '') + '">' + cycTxt + '</div>' +
+    '<div class="card kpi" data-tip-t="다음 리밸런싱" data-tip="마지막 리밸런싱일 + 주기(종목 · 설정에서 변경)입니다. 지나면 메뉴에 빨간 ! 가 뜹니다."><div class="kpi-l">다음 리밸런싱</div><div class="kpi-v' + (days !== null && days >= cycle ? ' warn' : '') + '">' + cycTxt + '</div>' +
       '<div class="kpi-s">' + cycSub + '</div></div>';
   rbDrawSpark();
 
@@ -5896,7 +5955,7 @@ function renderRbLog() {
   var p = rbPf(), h = (p.history || []).slice().reverse();
   $('rbLogSub').textContent = h.length ? '최근 ' + h.length + '건 (최대 200건 보관)' : '';
   $('rbLogTable').innerHTML = h.length
-    ? '<thead><tr><th>일시</th><th>구분</th><th class="num">투입</th><th class="num rb-c-val">총자산</th><th class="rb-c-price">기준일</th><th>거래</th></tr></thead><tbody>' +
+    ? '<thead><tr><th>일시</th><th>구분</th><th class="num rb-c-dev">투입</th><th class="num rb-c-val">총자산</th><th class="rb-c-price">기준일</th><th>거래</th></tr></thead><tbody>' +
       h.map(function (x) {
         var trades = (x.trades || []).map(function (t) {
           return '<span class="' + (t.action === 'BUY' ? 'rb-buy' : 'rb-sell') + '">' + (t.action === 'BUY' ? '매수' : '매도') + '</span> ' +
@@ -5905,7 +5964,7 @@ function renderRbLog() {
         var inflow = x.type === 'invest' ? x.amount : x.contribution;
         return '<tr><td style="white-space:nowrap">' + rbDateTime(x.at) + '</td>' +
           '<td><span class="rb-log-type">' + (x.type === 'invest' ? '신규 투입' : '리밸런싱') + '</span></td>' +
-          '<td class="num">' + (inflow ? rbKRW(inflow) : '<span class="muted">-</span>') + '</td>' +
+          '<td class="num rb-c-dev">' + (inflow ? rbKRW(inflow) : '<span class="muted">-</span>') + '</td>' +
           '<td class="num rb-c-val">' + rbKRW(x.total) + '</td>' +
           '<td class="rb-c-price" style="white-space:nowrap">' + rbEsc(x.baseDate || '-') + '</td>' +
           '<td class="rb-log-trades">' + (trades || '거래 없음') + '</td></tr>';
@@ -7226,6 +7285,81 @@ applyTheme(false);
 
 renderStoreCard();
 renderTopbar();
+/* ═══════════ 도움말 툴팁 ═══════════
+   data-tip(설명) · data-tip-t(제목)가 붙은 요소에 마우스를 올리거나 키보드로 들어오면 뜬다.
+   data-tip-side="right" 는 오른쪽에 (사이드바 메뉴). 설정에서 끌 수 있다. */
+var TIPS_KEY = 'asset_pc_tips';
+var tipBox = el('div', 'tipbox');
+tipBox.setAttribute('role', 'tooltip');
+document.body.appendChild(tipBox);
+var tipFor = null, tipTm = 0;
+function tipsOn() { return lsGet(TIPS_KEY) !== '0'; }
+function applyTipsPref() {
+  document.documentElement.classList.toggle('no-tips', !tipsOn());
+  $('setTips').checked = tipsOn();
+}
+function hideTip() {
+  clearTimeout(tipTm);
+  tipFor = null;
+  tipBox.classList.remove('on');
+}
+function showTip(t) {
+  var body = t.getAttribute('data-tip');
+  if (!tipsOn() || !body || !document.body.contains(t)) return;
+  var title = t.getAttribute('data-tip-t');
+  tipBox.innerHTML = (title ? '<b>' + escapeHtml(title) + '</b>' : '') + '<span>' + escapeHtml(body) + '</span>';
+  var r = t.getBoundingClientRect(), w = tipBox.offsetWidth, h = tipBox.offsetHeight;
+  var left, top, side;
+  if (t.dataset.tipSide === 'right' && r.right + 12 + w <= innerWidth - 8) {
+    side = 'right';
+    left = r.right + 12;
+    top = Math.max(8, Math.min(innerHeight - h - 8, r.top + r.height / 2 - h / 2));
+    tipBox.style.setProperty('--ay', (r.top + r.height / 2 - top) + 'px');
+  } else {
+    side = r.bottom + 10 + h <= innerHeight - 8 || r.top - 10 - h < 8 ? 'below' : 'above';
+    top = side === 'below' ? r.bottom + 10 : r.top - 10 - h;
+    var cx = r.left + r.width / 2;
+    left = Math.max(8, Math.min(innerWidth - w - 8, cx - w / 2));
+    tipBox.style.setProperty('--ax', Math.max(14, Math.min(w - 14, cx - left)) + 'px');
+  }
+  tipBox.style.left = left + 'px';
+  tipBox.style.top = top + 'px';
+  tipBox.classList.toggle('above', side === 'above');
+  tipBox.classList.toggle('right', side === 'right');
+  tipBox.classList.add('on');
+}
+document.addEventListener('pointerover', function (e) {
+  if (e.pointerType === 'touch') return;
+  var t = e.target.closest && e.target.closest('[data-tip]');
+  if (t === tipFor) return;
+  hideTip();
+  if (!t) return;
+  tipFor = t;
+  // ? 는 바로, 나머지(메뉴 · 버튼)는 잠깐 머물렀을 때만 — 지나가기만 해도 뜨면 성가시다
+  tipTm = setTimeout(function () { if (tipFor === t) showTip(t); }, t.classList.contains('qm') ? 60 : 550);
+});
+document.addEventListener('pointerout', function (e) {
+  if (tipFor && !(e.relatedTarget && tipFor.contains(e.relatedTarget))) hideTip();
+});
+document.addEventListener('focusin', function (e) {
+  var t = e.target.closest && e.target.closest('[data-tip]');
+  if (!t || !e.target.matches(':focus-visible')) return;
+  hideTip();
+  tipFor = t;
+  showTip(t);
+});
+document.addEventListener('focusout', hideTip);
+document.addEventListener('pointerdown', hideTip, true);
+document.addEventListener('keydown', function (e) { if (e.key !== 'Tab') hideTip(); }, true);
+window.addEventListener('scroll', hideTip, true);
+window.addEventListener('blur', hideTip);
+$('setTips').addEventListener('change', function () {
+  lsSet(TIPS_KEY, this.checked ? '1' : '0');
+  applyTipsPref();
+  showToast(this.checked ? '도움말 툴팁을 켰습니다' : '도움말 툴팁을 껐습니다 — 설정에서 다시 켤 수 있어요');
+});
+applyTipsPref();
+
 initStore();
 </script>
 </body>
