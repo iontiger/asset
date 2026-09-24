@@ -177,6 +177,64 @@
   .side-nav .nav-badge.show { display:inline-flex; }
   .side-nav kbd { margin-left:auto; }
   .nav-sep { height:1px; background:var(--border); margin:8px 6px; }
+  .side-nav .nav-badge.new { background:#f15bb5; }
+
+  /* ── 뱃지 ─────────────────────────── */
+  .bdg-top { display:flex; align-items:center; justify-content:space-between; gap:12px 16px; flex-wrap:wrap; margin-bottom:18px; }
+  .bdg-stats { display:flex; gap:8px; flex-wrap:wrap; }
+  .bdg-stat {
+    display:flex; align-items:baseline; gap:6px; padding:8px 14px; border-radius:12px;
+    background:var(--surface); border:1px solid var(--border); font-size:.8rem; color:var(--ink-2);
+  }
+  .bdg-stat b { font-size:1.15rem; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .bdg-h { font-size:.92rem; font-weight:800; margin:4px 2px 10px; display:flex; align-items:center; gap:8px; }
+  .bdg-h .cnt { font-size:.74rem; font-weight:600; color:var(--muted); }
+  .bdg-month { margin-top:26px; }
+  .badge-grid {
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(196px, 1fr)); gap:12px;
+    grid-auto-flow:dense;
+  }
+  .bdg {
+    --tier:#94a3b8;
+    position:relative; overflow:hidden; text-align:left; font:inherit; color:inherit; cursor:pointer;
+    background:var(--surface); border:1px solid var(--border); border-radius:18px;
+    padding:16px 16px 13px; display:flex; flex-direction:column;
+    transition:transform .16s cubic-bezier(.2,1.4,.4,1), box-shadow .16s;
+  }
+  .bdg::before { content:''; position:absolute; inset:0 0 auto 0; height:4px; background:var(--tier); }
+  .bdg:hover:not(.locked) { transform:translateY(-3px); box-shadow:0 12px 26px rgba(0,0,0,.10); }
+  .bdg:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .bdg:active:not(.locked) { transform:scale(.97); }
+  .bdg.big { grid-column:span 2; background:linear-gradient(135deg, color-mix(in srgb, var(--tier) 14%, var(--surface)), var(--surface) 70%); }
+  .bdg-medal {
+    width:50px; height:50px; border-radius:50%; flex:none;
+    display:flex; align-items:center; justify-content:center; font-size:1.6rem;
+    background:color-mix(in srgb, var(--tier) 16%, transparent);
+    box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--tier) 50%, transparent);
+  }
+  .bdg.big .bdg-medal { width:60px; height:60px; font-size:2rem; }
+  .bdg-title { margin-top:12px; font-size:1.08rem; font-weight:800; letter-spacing:-.01em; }
+  .bdg.big .bdg-title { font-size:1.45rem; }
+  .bdg-sub { margin-top:3px; font-size:.78rem; color:var(--ink-2); font-variant-numeric:tabular-nums; }
+  .bdg-foot {
+    margin-top:auto; padding-top:12px; display:flex; justify-content:space-between; align-items:center;
+    font-size:.72rem; color:var(--muted); font-variant-numeric:tabular-nums;
+  }
+  .bdg-play { opacity:0; color:var(--accent-deep); font-weight:700; transition:opacity .15s; }
+  .bdg:hover .bdg-play, .bdg:focus-visible .bdg-play { opacity:1; }
+  .bdg-auto { font-size:.64rem; font-weight:700; color:var(--muted); background:var(--hover); border-radius:5px; padding:1px 5px; white-space:nowrap; }
+  .bdg-foot > span:first-child { white-space:nowrap; }
+  .bdg-play { white-space:nowrap; }
+  .bdg.locked { cursor:default; border-style:dashed; background:transparent; }
+  .bdg.locked::before { opacity:.35; }
+  .bdg.locked .bdg-medal { filter:grayscale(1); opacity:.55; }
+  .bdg.locked .bdg-title { color:var(--ink-2); }
+  .bdg-prog { margin-top:10px; height:6px; border-radius:99px; background:var(--hover); overflow:hidden; }
+  .bdg-prog span { display:block; height:100%; border-radius:99px; background:var(--tier); }
+  .bdg-empty { text-align:center; color:var(--muted); font-size:.88rem; line-height:1.7; padding:40px 16px; }
+  .t-goal { --tier:#f5b301; } .t-debtFree { --tier:#f5b301; } .t-eok { --tier:#9b5de5; }
+  .t-chun { --tier:#f15bb5; } .t-pct { --tier:#14b8a6; } .t-debt { --tier:#3987e5; }
+  .t-peak { --tier:#22c55e; } .t-day { --tier:#64748b; } .t-streak { --tier:#f97316; }
   /* 끼워 넣은 페이지 — 화면 높이를 꽉 채운다 */
   .embed-card { position:relative; padding:0; overflow:hidden; height:calc(100vh - 126px); min-height:520px; }
   .embed-card iframe { display:block; width:100%; height:100%; border:0; background:var(--surface); }
@@ -1157,10 +1215,14 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
       입력<span class="nav-badge" id="navBadge"></span><kbd>3</kbd>
     </button>
+    <button data-view="badges">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.48 12.89 17 22l-5-3-5 3 1.52-9.11"/></svg>
+      뱃지<span class="nav-badge new" id="navBadgeNew"></span><kbd>4</kbd>
+    </button>
     <div class="nav-sep" role="separator"></div>
     <button data-view="rebal">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21.2 15.9A10 10 0 1 1 8 2.8"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
-      연금 리밸런싱<kbd>4</kbd>
+      연금 리밸런싱<kbd>5</kbd>
     </button>
   </nav>
   <div class="side-foot">
@@ -1416,6 +1478,24 @@
         </div>
       </aside>
     </div>
+  </section>
+
+  <!-- ── 뱃지: 그동안 넘어선 마일스톤 ── -->
+  <section class="view" id="view-badges">
+    <div class="bdg-top">
+      <div class="bdg-stats" id="bdgStats"></div>
+      <div class="seg" id="bdgFilter" role="group" aria-label="뱃지 종류">
+        <button type="button" data-f="all" class="on">전체</button>
+        <button type="button" data-f="big">큰 성과</button>
+        <button type="button" data-f="asset">순자산</button>
+        <button type="button" data-f="goal">목표</button>
+        <button type="button" data-f="debt">대출</button>
+        <button type="button" data-f="habit">기록 습관</button>
+      </div>
+    </div>
+    <h3 class="bdg-h">다음 뱃지</h3>
+    <div class="badge-grid" id="bdgNext"></div>
+    <div id="bdgList"></div>
   </section>
 
   <!-- ── 연금 리밸런싱: 별도 앱을 그대로 끼워 넣는다 (처음 열 때 불러옴) ── -->
@@ -1976,9 +2056,12 @@ function serializeDb() {
     return '    ' + JSON.stringify({ date: r.date, name: r.name, amount: r.amount,
                                     group: r.group, owner: r.owner, logo: r.logo });
   });
-  // head 는 "\n}" 로 끝난다 — 그 앞에 assets 배열을 끼워 넣는다
+  var blines = (badges || []).slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; })
+    .map(function (b) { return '    ' + JSON.stringify(b); });
+  // head 는 "\n}" 로 끝난다 — 그 앞에 assets · badges 배열을 끼워 넣는다
   return head.slice(0, -2) + ',\n  "assets": [' +
-    (lines.length ? '\n' + lines.join(',\n') + '\n  ' : '') + ']\n}\n';
+    (lines.length ? '\n' + lines.join(',\n') + '\n  ' : '') + '],\n  "badges": [' +
+    (blines.length ? '\n' + blines.join(',\n') + '\n  ' : '') + ']\n}\n';
 }
 
 function applyDb(obj) {
@@ -1995,6 +2078,8 @@ function applyDb(obj) {
   // 축하 기준선 — 없으면(처음 쓰는 파일) 지금 값을 기준으로 삼고 지난 기록은 축하하지 않는다
   marks = st.marks && typeof st.marks === 'object' ? Object.assign({}, st.marks) : null;
   syncMarks();
+  // 뱃지 기록 — 없으면(처음) 지난 기록에서 넘어선 마일스톤을 찾아 채운다
+  badges = Array.isArray(obj.badges) ? normalizeBadges(obj.badges) : backfillBadges();
 }
 
 // ── 파일 읽기/쓰기 ──
@@ -2030,6 +2115,7 @@ async function readFolder() {
     rows = [];
     marks = null;
     syncMarks();
+    badges = [];
     store.locked = false;
     await writeDataFile(serializeDb());
     showToast(DATA_FILE + ' 파일을 새로 만들었습니다');
@@ -2202,6 +2288,7 @@ function openLocal() {
     rows = []; OWNERS = DEFAULT_OWNERS.slice();
     marks = null;
     syncMarks();
+    badges = [];
   }
   setBanner('');
   setStoreState('loaded');
@@ -2219,6 +2306,7 @@ function openDemo() {
   rows = normalizeRows(demoRows());
   marks = null;
   syncMarks();
+  badges = backfillBadges();
   setBanner(FS_SUPPORTED
     ? '<span>지금은 <b>데모 데이터</b>입니다. 데이터 폴더를 고르면 이 PC에 <code>' + DATA_FILE +
       '</code> 파일을 만들어 기록을 관리합니다.</span>' +
@@ -2443,6 +2531,12 @@ function importFiles(fileList) {
         if (isFinite(inSettings.fcRate)) fcRate = Math.round(inSettings.fcRate * 10) / 10;
       }
       syncMarks(true);
+      var auto = backfillBadges();
+      var autoKeys = {};
+      auto.forEach(function (b) { autoKeys[b.t + '|' + (b.n || '')] = true; });
+      badges = auto.concat((badges || []).filter(function (b) {
+        return !b.auto && !autoKeys[b.t + '|' + (b.n || '')];
+      }));
     }, '가져오기 완료 — 기록 ' + inRows.length + '건').then(function () {
       renderOwnerManageList();
       renderSettingsInfo();
@@ -4048,6 +4142,7 @@ function evaluateMilestones(pre) {
     }
   }
   ev.forEach(function (e) { e.net = st.net; e.debt = st.debt; });
+  recordBadges(ev);
   return ev.sort(function (a, b) { return b.p - a.p; });
 }
 
@@ -4079,49 +4174,275 @@ function celebrate(ev, baseMsg) {
     return;
   }
   if (baseMsg) showToast(baseMsg);
-  var W = window.innerWidth, H = window.innerHeight;
-  switch (top.t) {
-    case 'goal':
-      FX.fireworks(9, 380); FX.rain(260);
-      showFxCard({ emoji: '🏆', title: '목표 달성!', sub: fmtHeaderTotal(goalAmount) + '원 — 해냈어요!', lines: rest, ms: 5200 });
-      break;
-    case 'debtFree':
-      FX.fireworks(6); FX.rain(200, 'cool');
-      showFxCard({ emoji: '🕊️', title: '부채 제로!', sub: '모든 대출을 갚았어요', lines: rest, ms: 4600 });
-      break;
-    case 'eok':
-      FX.fireworks(5); FX.burst(W / 2, H * .62, 90);
-      showFxCard({ emoji: '🎆', title: top.n + '억 돌파!', sub: '순자산 ' + fmtHeaderTotal(top.net) + '원', lines: rest, ms: 4200 });
-      break;
-    case 'pct':
-      FX.rain(220);
-      showFxCard({ emoji: '🎯', title: '목표의 ' + top.n + '%', size: 'mid', lines: rest, ms: 3600,
-                   sub: '목표 ' + fmtHeaderTotal(goalAmount) + '원까지 ' + fmtHeaderTotal(goalAmount - top.net) + '원 남았어요' });
-      break;
-    case 'chun':
-      FX.rain(170);
-      showFxCard({ emoji: '🌸', title: fmtCompact(top.n * 1e7) + ' 돌파', size: 'mid', lines: rest, ms: 3200,
-                   sub: '다음 ' + fmtCompact((top.n + 1) * 1e7) + '까지 ' + fmtCompact((top.n + 1) * 1e7 - top.net) + '원' });
-      break;
-    case 'debt':
-      FX.rain(150, 'cool');
-      showFxCard({ emoji: '💪', title: '대출 ' + fmtCompact(top.n * 1e7) + '대', size: 'mid', lines: rest, ms: 3200,
-                   sub: '잔액 ' + fmtHeaderTotal(top.debt) + '원으로 줄었어요' });
-      break;
+  eventFx(top, rest, false);
+}
+
+// 이벤트 하나의 카드 문구 — replay 면 '그때' 기준 (뱃지 다시 보기)
+function eventCard(e, replay) {
+  var g = e.goal || goalAmount;
+  switch (e.t) {
+    case 'goal': return { emoji: '🏆', title: '목표 달성!', sub: fmtHeaderTotal(g) + '원 — 해냈어요!' };
+    case 'debtFree': return { emoji: '🕊️', title: '부채 제로!', sub: '모든 대출을 갚았어요' };
+    case 'eok': return { emoji: '🎆', title: e.n + '억 돌파!', sub: '순자산 ' + fmtHeaderTotal(e.net) + '원' };
+    case 'pct': return { emoji: '🎯', title: '목표의 ' + e.n + '%', size: 'mid',
+      sub: replay ? '목표 ' + fmtHeaderTotal(g) + '원 기준 · 순자산 ' + fmtHeaderTotal(e.net) + '원'
+                  : '목표 ' + fmtHeaderTotal(g) + '원까지 ' + fmtHeaderTotal(g - e.net) + '원 남았어요' };
+    case 'chun': return { emoji: '🌸', title: fmtCompact(e.n * 1e7) + ' 돌파', size: 'mid',
+      sub: replay ? '순자산 ' + fmtHeaderTotal(e.net) + '원'
+                  : '다음 ' + fmtCompact((e.n + 1) * 1e7) + '까지 ' + fmtCompact((e.n + 1) * 1e7 - e.net) + '원' };
+    case 'debt': return { emoji: '💪', title: '대출 ' + fmtCompact(e.n * 1e7) + '대', size: 'mid',
+      sub: '잔액 ' + fmtHeaderTotal(e.debt) + '원으로 줄었어요' };
+    case 'peak': return { emoji: '✨', title: '순자산 신기록', size: 'mid', sub: fmtHeaderTotal(e.net) + '원' };
+    case 'streak': return { emoji: '🔥', title: e.n + '주 연속 기록', size: 'mid', sub: '꾸준함이 쌓이고 있어요' };
+    case 'day': return { emoji: '✅', title: '하루 기록 완료', size: 'mid', sub: '모든 자산을 오늘 기록했어요' };
   }
+  return { emoji: '🏅', title: '마일스톤', size: 'mid' };
+}
+
+// 이벤트 연출 — 폭죽 · 꽃가루 · 카드. 뱃지를 누르면 replay=true 로 다시 튼다
+function eventFx(e, rest, replay, fromEl) {
+  var W = window.innerWidth, H = window.innerHeight;
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var c = eventCard(e, replay);
+  var ms = { goal: 5200, debtFree: 4600, eok: 4200, pct: 3600 }[e.t] || 3200;
+  if (!reduced) {
+    switch (e.t) {
+      case 'goal': FX.fireworks(9, 380); FX.rain(260); break;
+      case 'debtFree': FX.fireworks(6); FX.rain(200, 'cool'); break;
+      case 'eok': FX.fireworks(5); FX.burst(W / 2, H * .62, 90); break;
+      case 'pct': FX.rain(220); break;
+      case 'chun': FX.rain(170); break;
+      case 'debt': FX.rain(150, 'cool'); break;
+      default:
+        if (fromEl) {
+          var r = fromEl.getBoundingClientRect();
+          FX.burst(r.left + r.width / 2, r.top + r.height / 2, 50);
+          FX.sparkle(fromEl);
+        }
+    }
+  }
+  showFxCard({ emoji: c.emoji, title: c.title, sub: c.sub + (replay && e.date ? ' · ' + fmtBadgeDate(e.date) : ''),
+               size: c.size, lines: rest || [], ms: ms });
+}
+
+/* ═══════════ 뱃지 — 마일스톤 기록 ═══════════
+   { date, t, n?, net, debt, goal, auto? } — auto 는 지난 기록에서 찾아 채운 것 */
+var badges = [];
+var BADGE_BIG = { goal: 1, debtFree: 1, eok: 1 };
+var BADGE_GROUP = { goal: 'goal', pct: 'goal', eok: 'asset', chun: 'asset', peak: 'asset',
+                    debt: 'debt', debtFree: 'debt', day: 'habit', streak: 'habit' };
+function normalizeBadges(list) {
+  return list.filter(function (b) {
+    return b && typeof b === 'object' && BADGE_GROUP[b.t] && /^\d{4}-\d{2}-\d{2}$/.test(String(b.date));
+  }).map(function (b) {
+    var o = { date: b.date, t: b.t };
+    if (b.n != null) o.n = Number(b.n);
+    ['net', 'debt', 'goal'].forEach(function (k) { if (isFinite(b[k])) o[k] = Number(b[k]); });
+    if (b.auto) o.auto = true;
+    return o;
+  });
+}
+function recordBadges(ev) {
+  var today = fmtDateStr(new Date());
+  ev.forEach(function (e) {
+    // 신기록은 하루에 하나만 (그날의 최고치로 갱신)
+    if (e.t === 'peak') badges = badges.filter(function (b) { return !(b.t === 'peak' && b.date === today); });
+    var o = { date: today, t: e.t, net: e.net, debt: e.debt, goal: goalAmount };
+    if (e.n != null) o.n = e.n;
+    badges.push(o);
+  });
+}
+// 지난 기록을 날짜순으로 훑어 넘어선 마일스톤을 찾는다 — 첫 기록 수준이 출발선
+function backfillBadges() {
+  var ser = totalSeries();
+  if (ser.length < 2) return [];
+  var byName = buildByName();
+  function debtAt(d) {
+    var t = 0;
+    Object.keys(byName).forEach(function (k) {
+      var last = lastAtOrBefore(byName[k], d);
+      if (last && isDebtRow(last)) t += last.amount;
+    });
+    return t;
+  }
+  var out = [], peak = ser[0].total, minDebt = debtAt(ser[0].date);
+  var pct = pctStepOf(peak), goalHit = peak >= goalAmount;
+  for (var i = 1; i < ser.length; i++) {
+    var d = ser[i].date, net = ser[i].total, debt = debtAt(d);
+    var base = { date: d, net: net, debt: debt, goal: goalAmount, auto: true };
+    if (net > peak) {
+      var e8a = Math.floor(peak / 1e8), e8b = Math.floor(net / 1e8);
+      var e7a = Math.floor(peak / 1e7), e7b = Math.floor(net / 1e7);
+      if (!goalHit && net >= goalAmount) { out.push(Object.assign({ t: 'goal' }, base)); goalHit = true; }
+      if (e8b > e8a && e8b >= 1) out.push(Object.assign({ t: 'eok', n: e8b }, base));
+      else if (e7b > e7a && e7b >= 1) out.push(Object.assign({ t: 'chun', n: e7b }, base));
+      var ps = pctStepOf(net);
+      if (ps > pct && ps >= 1 && ps < 10) out.push(Object.assign({ t: 'pct', n: ps * 10 }, base));
+      pct = Math.max(pct, ps);
+      peak = net;
+    }
+    if (debt < minDebt) {
+      if (debt === 0) out.push(Object.assign({ t: 'debtFree' }, base));
+      else if (Math.floor(debt / 1e7) < Math.floor(minDebt / 1e7)) out.push(Object.assign({ t: 'debt', n: Math.floor(debt / 1e7) }, base));
+      minDebt = debt;
+    }
+  }
+  return out;
+}
+function fmtBadgeDate(ds) {
+  var d = parseDate(ds);
+  return d.getFullYear() + '. ' + (d.getMonth() + 1) + '. ' + d.getDate() + ' (' + WEEKDAYS[d.getDay()] + ')';
+}
+
+var badgeFilter = 'all';
+function badgeCard(b, i) {
+  var c = eventCard(b, true);
+  var btn = el('button', 'bdg t-' + b.t + (BADGE_BIG[b.t] ? ' big' : ''));
+  btn.type = 'button';
+  btn.dataset.i = i;
+  btn.title = '눌러서 그때의 축하 다시 보기';
+  btn.appendChild(el('div', 'bdg-medal', c.emoji));
+  btn.appendChild(el('div', 'bdg-title', c.title.replace(/!$/, '')));
+  btn.appendChild(el('div', 'bdg-sub', c.sub));
+  var foot = el('div', 'bdg-foot');
+  var left = el('span', '', fmtBadgeDate(b.date));
+  if (b.auto) { left.appendChild(document.createTextNode(' ')); left.appendChild(el('span', 'bdg-auto', '지난 기록')); }
+  foot.appendChild(left);
+  foot.appendChild(el('span', 'bdg-play', '▶ 다시 보기'));
+  btn.appendChild(foot);
+  return btn;
+}
+// 아직 잠긴 다음 뱃지 — 남은 금액과 진행률
+function nextBadges() {
+  var st = netStats(), out = [];
+  if (!st.has) return out;
+  var peak = Math.max(marks ? marks.peakNet : st.net, st.net);
+  var c7 = (Math.floor(peak / 1e7) + 1) * 1e7;
+  var c8 = (Math.floor(peak / 1e8) + 1) * 1e8;
+  if (c7 === c8) c7 += 1e7;   // 다음 천만원이 곧 다음 억이면 그다음 단계를 보여 준다
+  out.push({ t: 'chun', emoji: '🌸', title: fmtCompact(c7) + ' 돌파', left: c7 - st.net, prog: 1 - (c7 - st.net) / 1e7 });
+  out.push({ t: 'eok', emoji: '🎆', title: (c8 / 1e8) + '억 돌파', left: c8 - st.net, prog: 1 - (c8 - st.net) / 1e8 });
+  var ps = marks ? marks.pctStep : pctStepOf(st.net);
+  if (ps < 9) {
+    var tgt = goalAmount * (ps + 1) / 10;
+    out.push({ t: 'pct', emoji: '🎯', title: '목표의 ' + (ps + 1) * 10 + '%', left: tgt - st.net, prog: st.net / tgt });
+  }
+  if (st.net < goalAmount) {
+    out.push({ t: 'goal', emoji: '🏆', title: '목표 ' + fmtCompact(goalAmount) + ' 달성', left: goalAmount - st.net, prog: st.net / goalAmount });
+  }
+  if (st.debt > 0) {
+    var minD = Math.min(marks ? marks.minDebt : st.debt, st.debt);
+    var step = Math.floor(minD / 1e7) * 1e7;
+    if (step >= minD) step -= 1e7;
+    if (step > 0) {
+      out.push({ t: 'debt', emoji: '💪', title: '대출 ' + fmtCompact(step) + '대', left: st.debt - step + 1,
+                 prog: 1 - (st.debt - step) / 1e7 });
+    } else {
+      out.push({ t: 'debtFree', emoji: '🕊️', title: '부채 제로', left: st.debt, prog: 1 - st.debt / Math.max(st.debt, 1e7) });
+    }
+  }
+  return out;
+}
+function renderBadges() {
+  var list = (badges || []).map(function (b, i) { return { b: b, i: i }; })
+    .sort(function (x, y) {
+      if (x.b.date !== y.b.date) return x.b.date < y.b.date ? 1 : -1;
+      var P = { goal: 9, debtFree: 8, eok: 7, pct: 6, chun: 5, debt: 4, peak: 3, streak: 2, day: 1 };
+      return (P[y.b.t] || 0) - (P[x.b.t] || 0);
+    });
+  // 요약
+  var thisKey = monthKeyOf(new Date());
+  var nMonth = list.filter(function (x) { return x.b.date.slice(0, 7) === thisKey; }).length;
+  var nBig = list.filter(function (x) { return BADGE_BIG[x.b.t]; }).length;
+  var stats = $('bdgStats');
+  stats.innerHTML = '';
+  [['🏅', '모은 뱃지', list.length], ['📅', '이번 달', nMonth], ['🎆', '큰 성과', nBig]].forEach(function (a) {
+    var d = el('div', 'bdg-stat');
+    d.appendChild(document.createTextNode(a[0] + ' ' + a[1] + ' '));
+    d.appendChild(el('b', '', a[2]));
+    stats.appendChild(d);
+  });
+  // 다음 뱃지
+  var nx = $('bdgNext');
+  nx.innerHTML = '';
+  nextBadges().forEach(function (n) {
+    var c = el('div', 'bdg locked t-' + n.t);
+    c.appendChild(el('div', 'bdg-medal', n.emoji));
+    c.appendChild(el('div', 'bdg-title', n.title));
+    c.appendChild(el('div', 'bdg-sub', fmtHeaderTotal(Math.max(0, n.left)) + '원 남음'));
+    var pg = el('div', 'bdg-prog');
+    var f = el('span');
+    f.style.width = Math.max(2, Math.min(100, n.prog * 100)).toFixed(1) + '%';
+    pg.appendChild(f);
+    c.appendChild(pg);
+    nx.appendChild(c);
+  });
+  // 모은 뱃지 — 달별로
+  var box = $('bdgList');
+  box.innerHTML = '';
+  var shown = list.filter(function (x) {
+    if (badgeFilter === 'all') return true;
+    if (badgeFilter === 'big') return BADGE_BIG[x.b.t];
+    return BADGE_GROUP[x.b.t] === badgeFilter;
+  });
+  if (!shown.length) {
+    box.appendChild(el('div', 'bdg-empty', list.length
+      ? '이 종류의 뱃지는 아직 없어요.'
+      : '아직 모은 뱃지가 없어요. 금액을 입력해 순자산이 천만원 단위로 새 기록을 세우면 첫 뱃지를 받아요!'));
+    return;
+  }
+  var cur = null, grid = null;
+  shown.forEach(function (x) {
+    var mk = x.b.date.slice(0, 7);
+    if (mk !== cur) {
+      cur = mk;
+      var sec = el('div', 'bdg-month');
+      var n = shown.filter(function (y) { return y.b.date.slice(0, 7) === mk; }).length;
+      var h = el('h3', 'bdg-h', mk.slice(0, 4) + '년 ' + Number(mk.slice(5)) + '월');
+      h.appendChild(el('span', 'cnt', n + '개'));
+      sec.appendChild(h);
+      grid = el('div', 'badge-grid');
+      sec.appendChild(grid);
+      box.appendChild(sec);
+    }
+    grid.appendChild(badgeCard(x.b, x.i));
+  });
+}
+$('bdgList').addEventListener('click', function (e) {
+  var btn = e.target.closest('.bdg[data-i]');
+  if (!btn) return;
+  var b = badges[Number(btn.dataset.i)];
+  if (b) eventFx(b, [], true, btn);
+});
+$('bdgFilter').addEventListener('click', function (e) {
+  var btn = e.target.closest('button');
+  if (!btn) return;
+  badgeFilter = btn.dataset.f;
+  document.querySelectorAll('#bdgFilter button').forEach(function (x) { x.classList.toggle('on', x === btn); });
+  renderBadges();
+});
+// 사이드바: 마지막으로 뱃지 화면을 본 뒤 새로 받은 개수
+var BADGE_SEEN_KEY = 'asset_pc_badge_seen';
+function updateBadgeNav() {
+  var seen = Number(lsGet(BADGE_SEEN_KEY) || 0);
+  var n = Math.max(0, (badges || []).length - seen);
+  if (currentView === 'badges') { lsSet(BADGE_SEEN_KEY, String((badges || []).length)); n = 0; }
+  var nb = $('navBadgeNew');
+  nb.textContent = n;
+  nb.classList.toggle('show', n > 0 && store.mode !== 'demo');
 }
 
 // 저장 전 상태를 기억해 두었다가, 저장이 끝나면 넘어선 마일스톤을 축하한다
 function commitWithMilestones(mutate, okMsg) {
   var pre = { save: true, allToday: allRecordedToday(),
               weekHad: rows.some(function (r) { return weekKeyOf(r.date) === weekKeyOf(fmtDateStr(new Date())); }) };
-  var snapMarks = JSON.stringify(marks), ev = [];
+  var snapMarks = JSON.stringify(marks), snapBadges = JSON.stringify(badges), ev = [];
   return commit(function () {
     mutate();
     ev = evaluateMilestones(pre);     // 기준선 변경이 같은 저장에 함께 실린다
   }, null).then(function (ok) {
     if (ok) celebrate(ev, okMsg);
-    else marks = JSON.parse(snapMarks);
+    else { marks = JSON.parse(snapMarks); badges = JSON.parse(snapBadges); }
     return ok;
   });
 }
@@ -4394,7 +4715,7 @@ function demoRows() {
 }
 
 /* ═══════════ 화면 전환 · 공통 ═══════════ */
-var VIEW_TITLES = { home: '대시보드', list: '자산', input: '입력', rebal: '연금 리밸런싱' };
+var VIEW_TITLES = { home: '대시보드', list: '자산', input: '입력', badges: '뱃지', rebal: '연금 리밸런싱' };
 var REBAL_URL = 'https://iontiger.github.io/pension-etf-rebalancer/';
 
 function renderTopbar() {
@@ -4405,6 +4726,8 @@ function renderTopbar() {
   } else if (currentView === 'list') {
     var n = Object.keys(buildByName()).length;
     sub = '자산 ' + n + '개 · 기록 ' + rows.length + '건 — 행을 고르면 오른쪽에서 기록을 보고 고칠 수 있습니다';
+  } else if (currentView === 'badges') {
+    sub = '그동안 넘어선 마일스톤 ' + (badges || []).length + '개 — 카드를 누르면 그때의 축하를 다시 볼 수 있어요';
   } else if (currentView === 'rebal') {
     sub = '연금 ETF 리밸런싱 계산기 — iontiger.github.io/pension-etf-rebalancer';
   } else {
@@ -4431,6 +4754,7 @@ function switchView(v) {
   if (v === 'list') drawDetailChart();
   // 리밸런서는 처음 열 때만 불러온다 (앱 시작을 느리게 하지 않게)
   if (v === 'rebal' && !$('rebalFrame').getAttribute('src')) $('rebalFrame').src = REBAL_URL;
+  if (v === 'badges') { renderBadges(); updateBadgeNav(); }
   window.scrollTo(0, 0);
 }
 
@@ -4438,6 +4762,8 @@ function renderAll() {
   renderHome();
   renderList();
   renderInput();
+  renderBadges();
+  updateBadgeNav();
   renderTopbar();
 }
 
@@ -4684,7 +5010,8 @@ document.addEventListener('keydown', function (e) {
   else if (e.key === '1') switchView('home');
   else if (e.key === '2') switchView('list');
   else if (e.key === '3') switchView('input');
-  else if (e.key === '4') switchView('rebal');
+  else if (e.key === '4') switchView('badges');
+  else if (e.key === '5') switchView('rebal');
 });
 
 /* ═══════════ 설정 ═══════════ */
