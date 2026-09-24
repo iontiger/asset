@@ -200,7 +200,7 @@
 
   /* ── 메인 ─────────────────────────── */
   .main { margin-left:var(--side-w); min-height:100vh; }
-  .main-inner { max-width:1500px; margin:0 auto; padding:0 32px 56px; }
+  .main-inner { max-width:1500px; margin:0 auto; padding:0 32px 56px; container:main / inline-size; }
   .topbar {
     position:sticky; top:0; z-index:6;
     display:flex; align-items:center; justify-content:space-between; gap:16px;
@@ -531,9 +531,9 @@
     display:grid; grid-template-columns:minmax(0,1fr) minmax(360px, 430px);
     gap:16px; align-items:start;
   }
-  .a-table { padding:4px 0 10px; }
+  .a-table { padding:4px 0 10px; container:atable / inline-size; }
   .a-row {
-    display:grid; grid-template-columns:90px minmax(0,1.6fr) 92px 96px 76px minmax(130px,1fr) 12px;
+    display:grid; grid-template-columns:90px minmax(120px,1.6fr) 92px 96px 76px minmax(max-content,1fr) 12px;
     gap:14px; align-items:center; padding:9px 20px;
   }
   .a-row.head {
@@ -616,7 +616,7 @@
     gap:16px; align-items:start;
   }
   .input-side { position:sticky; top:100px; display:flex; flex-direction:column; gap:16px; }
-  .in-table { padding:4px 0 10px; }
+  .in-table { padding:4px 0 10px; container:intable / inline-size; }
   .in-row {
     display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 230px minmax(0,1.15fr);
     gap:16px; align-items:center; padding:9px 20px;
@@ -803,15 +803,84 @@
   .toast.show { opacity:1; }
 
   /* ── 좁은 화면 대응 ───────────────── */
-  @media (max-width: 1280px) {
+  /* 창 폭이 아니라 실제로 쓸 수 있는 폭(컨테이너)에 맞춘다 — 사이드바 폭과 무관하게 동작 */
+  @container main (max-width: 1100px) {
     .kpis { grid-template-columns:repeat(2, minmax(0,1fr)); }
     .kpi.hero { grid-column:1 / -1; }
   }
-  @media (max-width: 1100px) {
-    .dash, .list-layout, .input-layout { grid-template-columns:minmax(0,1fr); }
-    .detail, .input-side { position:static; max-height:none; }
-    .input-side { order:-1; }
+  @container main (max-width: 900px) {
+    .dash { grid-template-columns:minmax(0,1fr); }
     .fc-top { grid-template-columns:minmax(0,1fr); }
+  }
+  /* 자산 · 입력: 오른쪽 패널을 아래(입력은 위)로 내린다 */
+  @container main (max-width: 1040px) {
+    .list-layout, .input-layout { grid-template-columns:minmax(0,1fr); }
+    .detail { position:static; max-height:none; }
+    /* 저장 카드는 표 위, 새 자산 추가는 표 아래로 */
+    .input-side { display:contents; }
+    .save-card { order:-1; }
+    .add-form { order:1; }
+  }
+  @container main (max-width: 560px) {
+  }
+
+  /* 자산 표 — 좁으면 소유 · 최근 입력 · 증감을 이름 아래 한 줄로 */
+  @container atable (max-width: 780px) {
+    .a-row.head { display:none; }
+    .a-item {
+      grid-template-columns:80px max-content max-content minmax(0,1fr) max-content 12px;
+      grid-template-areas:"logo name name name amt chev" "logo owner date delta amt chev";
+      column-gap:10px; row-gap:4px; padding:10px 16px;
+    }
+    .a-item > :nth-child(1), .a-item > :nth-child(1) > * { grid-area:logo; }   /* 로고 칸은 display:contents 래퍼 */
+    .a-item > :nth-child(2) { grid-area:name; }
+    .a-item > :nth-child(3) { grid-area:owner; }
+    .a-item > :nth-child(4) { grid-area:date; }
+    .a-item > :nth-child(5) { grid-area:delta; text-align:left; }
+    .a-item > :nth-child(6) { grid-area:amt; }
+    .a-item > :nth-child(7) { grid-area:chev; }
+    .a-item .logo-wide, .a-item .logo-wide-fb { width:80px; height:38px; }
+    .a-group { padding-left:16px; padding-right:16px; }
+  }
+  @container atable (max-width: 440px) {
+    .a-item {
+      grid-template-columns:max-content max-content minmax(0,1fr) max-content;
+      grid-template-areas:"name name name amt" "owner date delta amt";
+    }
+    .a-item > :nth-child(1), .a-item > :nth-child(7) { display:none; }
+    .a-group .g-share { display:none; }
+  }
+
+  /* 입력 표 — 좁으면 변동을 금액 칸 아래로, 더 좁으면 마지막 기록을 이름 아래로 */
+  @container intable (max-width: 760px) {
+    .in-row {
+      grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 210px;
+      grid-template-areas:"name last input" "name last diff";
+      column-gap:14px; row-gap:4px;
+    }
+    .in-row.head { grid-template-areas:"name last input"; }
+    .in-row > :nth-child(1) { grid-area:name; }
+    .in-row > :nth-child(2) { grid-area:last; }
+    .in-row > :nth-child(3) { grid-area:input; }
+    .in-row > :nth-child(4) { grid-area:diff; text-align:right; }
+    .in-row.head > :nth-child(4) { display:none; }
+    .in-row .in-revert { margin-left:4px; }
+  }
+  @container intable (max-width: 520px) {
+    .in-row {
+      grid-template-columns:minmax(0,1fr) minmax(150px, 180px);
+      grid-template-areas:"name input" "last diff";
+      padding-left:16px; padding-right:16px;
+    }
+    .in-row.head { grid-template-areas:"name input"; }
+    .in-row.head > :nth-child(2) { display:none; }
+    .in-last { display:flex; flex-wrap:wrap; column-gap:8px; align-items:baseline; padding-left:47px; }
+    .in-last .d { white-space:nowrap; }
+    .in-last .d { margin-top:0; }
+    .in-group { padding-left:16px; }
+  }
+  @container intable (max-width: 400px) {
+    .in-last { padding-left:0; }
   }
   @media (max-width: 760px) {
     :root { --side-w: 0px; }
@@ -819,18 +888,14 @@
       position:static; width:auto; flex-direction:row; flex-wrap:wrap; align-items:center;
       gap:10px; padding:12px 14px; border-right:none; border-bottom:1px solid var(--border);
     }
-    .side-nav { flex-direction:row; flex:1; }
+    .side-nav { flex-direction:row; order:3; flex:1 1 100%; }
+    .side-nav button { flex:1; justify-content:center; white-space:nowrap; padding:9px 8px; gap:8px; }
+    .brand { flex:1; }
     .side-nav kbd, .brand-total { display:none; }
     .side-foot { margin:0; flex-direction:row; }
     .store-card { display:none; }
     .main-inner { padding:0 16px 40px; }
     .topbar { margin:0 -16px; padding:16px; }
-    .kpis { grid-template-columns:minmax(0,1fr); }
-    .fc-list { columns:1; }
-    .a-row { grid-template-columns:70px minmax(0,1fr) minmax(100px,auto); }
-    .a-row > :nth-child(3), .a-row > :nth-child(4), .a-row > :nth-child(5), .a-row > :nth-child(7) { display:none; }
-    .in-row { grid-template-columns:minmax(0,1fr) 150px; }
-    .in-row > :nth-child(2), .in-row > :nth-child(4) { display:none; }
     .settings-grid, .form-grid { grid-template-columns:minmax(0,1fr); }
     .logo-grid { grid-template-columns:repeat(3, 1fr); }
   }
