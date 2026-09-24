@@ -190,6 +190,7 @@
   .bdg-h { font-size:.92rem; font-weight:800; margin:4px 2px 10px; display:flex; align-items:center; gap:8px; }
   .bdg-h .cnt { font-size:.74rem; font-weight:600; color:var(--muted); }
   .bdg-month { margin-top:26px; }
+  .bdg-month:first-child { margin-top:0; }
   .badge-grid {
     display:grid; grid-template-columns:repeat(auto-fill, minmax(196px, 1fr)); gap:12px;
     grid-auto-flow:dense;
@@ -202,9 +203,9 @@
     transition:transform .16s cubic-bezier(.2,1.4,.4,1), box-shadow .16s;
   }
   .bdg::before { content:''; position:absolute; inset:0 0 auto 0; height:4px; background:var(--tier); }
-  .bdg:hover:not(.locked) { transform:translateY(-3px); box-shadow:0 12px 26px rgba(0,0,0,.10); }
+  .bdg:hover { transform:translateY(-3px); box-shadow:0 12px 26px rgba(0,0,0,.10); }
   .bdg:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
-  .bdg:active:not(.locked) { transform:scale(.97); }
+  .bdg:active { transform:scale(.97); }
   .bdg.big { grid-column:span 2; background:linear-gradient(135deg, color-mix(in srgb, var(--tier) 14%, var(--surface)), var(--surface) 70%); }
   .bdg-medal {
     width:50px; height:50px; border-radius:50%; flex:none;
@@ -218,6 +219,7 @@
   .bdg-sub { margin-top:3px; font-size:.78rem; color:var(--ink-2); font-variant-numeric:tabular-nums; }
   .bdg-foot {
     margin-top:auto; padding-top:12px; display:flex; justify-content:space-between; align-items:center;
+    flex-wrap:wrap; gap:4px 8px;
     font-size:.72rem; color:var(--muted); font-variant-numeric:tabular-nums;
   }
   .bdg-play { opacity:0; color:var(--accent-deep); font-weight:700; transition:opacity .15s; }
@@ -225,12 +227,6 @@
   .bdg-auto { font-size:.64rem; font-weight:700; color:var(--muted); background:var(--hover); border-radius:5px; padding:1px 5px; white-space:nowrap; }
   .bdg-foot > span:first-child { white-space:nowrap; }
   .bdg-play { white-space:nowrap; }
-  .bdg.locked { cursor:default; border-style:dashed; background:transparent; }
-  .bdg.locked::before { opacity:.35; }
-  .bdg.locked .bdg-medal { filter:grayscale(1); opacity:.55; }
-  .bdg.locked .bdg-title { color:var(--ink-2); }
-  .bdg-prog { margin-top:10px; height:6px; border-radius:99px; background:var(--hover); overflow:hidden; }
-  .bdg-prog span { display:block; height:100%; border-radius:99px; background:var(--tier); }
   .bdg-empty { text-align:center; color:var(--muted); font-size:.88rem; line-height:1.7; padding:40px 16px; }
   .t-goal { --tier:#f5b301; } .t-debtFree { --tier:#f5b301; } .t-eok { --tier:#9b5de5; }
   .t-chun { --tier:#f15bb5; } .t-pct { --tier:#14b8a6; } .t-debt { --tier:#3987e5; }
@@ -1493,8 +1489,6 @@
         <button type="button" data-f="habit">기록 습관</button>
       </div>
     </div>
-    <h3 class="bdg-h">다음 뱃지</h3>
-    <div class="badge-grid" id="bdgNext"></div>
     <div id="bdgList"></div>
   </section>
 
@@ -4312,37 +4306,6 @@ function badgeCard(b, i) {
   btn.appendChild(foot);
   return btn;
 }
-// 아직 잠긴 다음 뱃지 — 남은 금액과 진행률
-function nextBadges() {
-  var st = netStats(), out = [];
-  if (!st.has) return out;
-  var peak = Math.max(marks ? marks.peakNet : st.net, st.net);
-  var c7 = (Math.floor(peak / 1e7) + 1) * 1e7;
-  var c8 = (Math.floor(peak / 1e8) + 1) * 1e8;
-  if (c7 === c8) c7 += 1e7;   // 다음 천만원이 곧 다음 억이면 그다음 단계를 보여 준다
-  out.push({ t: 'chun', emoji: '🌸', title: fmtCompact(c7) + ' 돌파', left: c7 - st.net, prog: 1 - (c7 - st.net) / 1e7 });
-  out.push({ t: 'eok', emoji: '🎆', title: (c8 / 1e8) + '억 돌파', left: c8 - st.net, prog: 1 - (c8 - st.net) / 1e8 });
-  var ps = marks ? marks.pctStep : pctStepOf(st.net);
-  if (ps < 9) {
-    var tgt = goalAmount * (ps + 1) / 10;
-    out.push({ t: 'pct', emoji: '🎯', title: '목표의 ' + (ps + 1) * 10 + '%', left: tgt - st.net, prog: st.net / tgt });
-  }
-  if (st.net < goalAmount) {
-    out.push({ t: 'goal', emoji: '🏆', title: '목표 ' + fmtCompact(goalAmount) + ' 달성', left: goalAmount - st.net, prog: st.net / goalAmount });
-  }
-  if (st.debt > 0) {
-    var minD = Math.min(marks ? marks.minDebt : st.debt, st.debt);
-    var step = Math.floor(minD / 1e7) * 1e7;
-    if (step >= minD) step -= 1e7;
-    if (step > 0) {
-      out.push({ t: 'debt', emoji: '💪', title: '대출 ' + fmtCompact(step) + '대', left: st.debt - step + 1,
-                 prog: 1 - (st.debt - step) / 1e7 });
-    } else {
-      out.push({ t: 'debtFree', emoji: '🕊️', title: '부채 제로', left: st.debt, prog: 1 - st.debt / Math.max(st.debt, 1e7) });
-    }
-  }
-  return out;
-}
 function renderBadges() {
   var list = (badges || []).map(function (b, i) { return { b: b, i: i }; })
     .sort(function (x, y) {
@@ -4361,21 +4324,6 @@ function renderBadges() {
     d.appendChild(document.createTextNode(a[0] + ' ' + a[1] + ' '));
     d.appendChild(el('b', '', a[2]));
     stats.appendChild(d);
-  });
-  // 다음 뱃지
-  var nx = $('bdgNext');
-  nx.innerHTML = '';
-  nextBadges().forEach(function (n) {
-    var c = el('div', 'bdg locked t-' + n.t);
-    c.appendChild(el('div', 'bdg-medal', n.emoji));
-    c.appendChild(el('div', 'bdg-title', n.title));
-    c.appendChild(el('div', 'bdg-sub', fmtHeaderTotal(Math.max(0, n.left)) + '원 남음'));
-    var pg = el('div', 'bdg-prog');
-    var f = el('span');
-    f.style.width = Math.max(2, Math.min(100, n.prog * 100)).toFixed(1) + '%';
-    pg.appendChild(f);
-    c.appendChild(pg);
-    nx.appendChild(c);
   });
   // 모은 뱃지 — 달별로
   var box = $('bdgList');
