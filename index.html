@@ -449,6 +449,128 @@
     .rb-tag { padding:3px 7px; }
   }
   .side-nav .nav-badge.show + kbd { display:none; }
+  /* ── 자산 지층 (순자산 추이 카드의 '지층' 보기) ── */
+  .strata-wrap { position:relative; }
+  .strata-wrap svg { display:block; width:100%; }
+  .strata-legend { display:flex; flex-wrap:wrap; gap:6px 14px; font-size:.74rem; color:var(--ink-2); margin-top:10px; }
+  .strata-legend span { display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
+  .strata-legend i { width:10px; height:10px; border-radius:3px; flex:none; }
+  .strata-legend i.net { width:16px; height:0; border-top:2px dashed var(--ink); border-radius:0; }
+  .strata-legend b { font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .tooltip .st-row { display:flex; align-items:center; gap:6px; font-size:.74rem; color:var(--ink-2); font-variant-numeric:tabular-nums; }
+  .tooltip .st-row i { width:8px; height:8px; border-radius:2px; flex:none; }
+  .tooltip .st-row span { flex:1; }
+  .tooltip .st-row b { font-weight:700; color:var(--ink); margin-left:10px; }
+  .tooltip .st-sep { border-top:1px solid var(--border); margin:5px 0 4px; }
+
+  /* ── 기록 잔디 달력 ── */
+  .dboard > .heat-card { grid-area:heat; }
+  .heat-card .card-head { flex-wrap:wrap; }
+  .heat-stats { display:flex; flex-wrap:wrap; gap:6px 18px; font-size:.78rem; color:var(--muted); margin:-4px 0 14px; }
+  .heat-stats b { color:var(--ink); font-weight:800; font-variant-numeric:tabular-nums; }
+  .heat-scroll { overflow-x:auto; padding-bottom:4px; }
+  .heat { display:grid; gap:3px; grid-template-columns:22px repeat(var(--weeks), minmax(10px, 1fr)); min-width:calc(22px + var(--weeks) * 13px); }
+  .heat .hm { grid-row:1; font-size:.66rem; color:var(--muted); white-space:nowrap; line-height:14px; }
+  .heat .hd { grid-column:1; font-size:.62rem; color:var(--muted); align-self:center; line-height:1; }
+  .heat .c { aspect-ratio:1 / 1; border-radius:3px; background:var(--hover); outline:none; }
+  .heat .c.out { background:transparent; }
+  .heat .c.rec { cursor:pointer; }
+  .heat .c.z  { background:color-mix(in srgb, var(--muted) 40%, transparent); }
+  .heat .c.u1 { background:color-mix(in srgb, var(--up) 28%, transparent); }
+  .heat .c.u2 { background:color-mix(in srgb, var(--up) 50%, transparent); }
+  .heat .c.u3 { background:color-mix(in srgb, var(--up) 74%, transparent); }
+  .heat .c.u4 { background:var(--up); }
+  .heat .c.d1 { background:color-mix(in srgb, var(--down) 28%, transparent); }
+  .heat .c.d2 { background:color-mix(in srgb, var(--down) 50%, transparent); }
+  .heat .c.d3 { background:color-mix(in srgb, var(--down) 74%, transparent); }
+  .heat .c.d4 { background:var(--down); }
+  .heat .c.today { box-shadow:0 0 0 1.5px var(--ink); }
+  .heat .c.rec:hover, .heat .c:focus-visible { box-shadow:0 0 0 1.5px var(--accent); }
+  .heat-legend { display:flex; align-items:center; justify-content:flex-end; gap:4px; font-size:.7rem; color:var(--muted); margin-top:10px; flex-wrap:wrap; }
+  .heat-legend .c { width:11px; height:11px; border-radius:3px; display:inline-block; }
+  .heat-legend .c.z { background:color-mix(in srgb, var(--muted) 40%, transparent); }
+  .heat-legend .c.u2 { background:color-mix(in srgb, var(--up) 50%, transparent); } .heat-legend .c.u4 { background:var(--up); }
+  .heat-legend .c.d2 { background:color-mix(in srgb, var(--down) 50%, transparent); } .heat-legend .c.d4 { background:var(--down); }
+  .heat-legend .gap { width:10px; }
+
+  /* ── 이번 달 자산 날씨 ── */
+  .ms-weather {
+    display:flex; align-items:center; gap:12px; margin-bottom:14px; padding:10px 14px; border-radius:14px;
+    background:linear-gradient(110deg, var(--wx-bg, var(--hover)), transparent 85%);
+  }
+  .ms-weather .mw-ico { font-size:2rem; line-height:1; flex:none; filter:drop-shadow(0 2px 4px rgba(0,0,0,.12)); }
+  .ms-weather .mw-t { font-size:.9rem; font-weight:800; }
+  .ms-weather .mw-s { font-size:.78rem; color:var(--ink-2); margin-top:2px; line-height:1.45; }
+  .ms-weather.wx-sun   { --wx-bg:rgba(245,179,1,.20); }
+  .ms-weather.wx-fair  { --wx-bg:rgba(245,179,1,.13); }
+  .ms-weather.wx-cloud { --wx-bg:rgba(137,135,129,.14); }
+  .ms-weather.wx-rain  { --wx-bg:rgba(42,120,214,.14); }
+  .ms-weather.wx-storm { --wx-bg:rgba(74,58,167,.20); }
+
+  /* ── 목표까지 등산 지도 ── */
+  .mtn-card { padding:0; overflow:hidden; margin-bottom:18px; }
+  .mtn-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:18px 22px 0; flex-wrap:wrap; }
+  .mtn-head .card-sub { font-size:.8rem; }
+  .mtn-svg { display:block; width:100%; height:auto; }
+  .mtn-svg text { font-family:inherit; }
+  .mtn-me { animation:mtnBob 2.4s ease-in-out infinite; transform-box:fill-box; transform-origin:center bottom; }
+  .mtn-pulse { animation:mtnPulse 2s ease-out infinite; transform-box:fill-box; transform-origin:center; }
+  @keyframes mtnBob { 50% { transform:translateY(-4px); } }
+  @keyframes mtnPulse { 0% { transform:scale(.6); opacity:.7; } 100% { transform:scale(2.2); opacity:0; } }
+  @media (prefers-reduced-motion: reduce) { .mtn-me, .mtn-pulse { animation:none; } }
+  #mountainSheet .sheet { max-width:1000px; padding:0; overflow:hidden; }
+  #mountainSheet .mtn-card { margin:0; border:none; border-radius:0; }
+  .fc-mtn { margin-top:8px; font-size:.78rem; font-weight:700; color:var(--accent-deep); background:none; border:none; cursor:pointer; padding:0; }
+  .fc-mtn:hover { text-decoration:underline; }
+
+  /* ── 연말 결산 (Wrapped) ── */
+  .wr-ov {
+    position:fixed; inset:0; z-index:40; display:none; align-items:center; justify-content:center;
+    background:#0e0c1d; color:#fff; overflow:hidden; user-select:none;
+  }
+  .wr-ov.open { display:flex; }
+  .wr-bg { position:absolute; background:var(--wr-g) !important; inset:-20%; background:var(--wr-g, linear-gradient(135deg,#1c1b4b,#6b2fa3 55%,#e5588f)); transition:background .6s; filter:saturate(1.1); }
+  .wr-bg::after { content:''; position:absolute; inset:0; background:radial-gradient(circle at 70% 20%, rgba(255,255,255,.18), transparent 45%), radial-gradient(circle at 15% 85%, rgba(0,0,0,.35), transparent 50%); }
+  .wr-bars { position:absolute; top:18px; left:50%; transform:translateX(-50%); width:min(560px, calc(100% - 40px)); display:flex; gap:5px; z-index:3; }
+  .wr-bars i { flex:1; height:3px; border-radius:2px; background:rgba(255,255,255,.28); overflow:hidden; }
+  .wr-bars i.done, .wr-bars i.cur { background:#fff; }
+  .wr-x { position:absolute; top:30px; right:24px; z-index:4; width:40px; height:40px; border-radius:50%; border:none; cursor:pointer; background:rgba(255,255,255,.14); color:#fff; font-size:1.1rem; }
+  .wr-x:hover { background:rgba(255,255,255,.26); }
+  .wr-stage { position:relative; z-index:2; width:min(560px, calc(100% - 40px)); min-height:min(640px, calc(100vh - 120px)); display:flex; flex-direction:column; justify-content:center; text-align:center; }
+  .wr-slide { animation:wrIn .55s cubic-bezier(.22,1,.36,1); }
+  @keyframes wrIn { from { opacity:0; transform:translateY(24px) scale(.98); } to { opacity:1; transform:none; } }
+  .wr-kick { font-size:.95rem; font-weight:700; letter-spacing:.08em; opacity:.8; text-transform:uppercase; }
+  .wr-big { font-size:clamp(2.6rem, 9vw, 4.6rem); font-weight:900; letter-spacing:-.03em; line-height:1.05; margin:14px 0 10px; font-variant-numeric:tabular-nums; }
+  .wr-mid { font-size:clamp(1.5rem, 5vw, 2.2rem); font-weight:800; letter-spacing:-.02em; line-height:1.2; margin:10px 0; }
+  .wr-p { font-size:1.02rem; line-height:1.65; opacity:.9; }
+  .wr-p b { font-weight:800; }
+  .wr-emoji { font-size:4.2rem; line-height:1; margin-bottom:6px; animation:wrPop .7s cubic-bezier(.2,1.6,.4,1) .15s both; }
+  @keyframes wrPop { from { transform:scale(0) rotate(-20deg); } to { transform:none; } }
+  .wr-list { display:flex; flex-direction:column; gap:10px; margin:22px auto 0; width:100%; max-width:420px; text-align:left; }
+  .wr-list div { display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:14px; background:rgba(255,255,255,.12); backdrop-filter:blur(6px); }
+  .wr-list span { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:700; }
+  .wr-list b { font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .wr-list em { font-style:normal; width:26px; text-align:center; font-size:1.15rem; }
+  .wr-badges { display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin:22px auto 0; max-width:420px; }
+  .wr-badges div { padding:12px 6px; border-radius:14px; background:rgba(255,255,255,.12); font-size:.72rem; font-weight:700; line-height:1.3; }
+  .wr-badges div i { display:block; font-style:normal; font-size:1.7rem; margin-bottom:4px; }
+  .wr-spark { width:100%; height:120px; margin-top:18px; }
+  .wr-ring { width:180px; height:180px; margin:10px auto 6px; display:block; transform:rotate(-90deg); }
+  .wr-years { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:26px; }
+  .wr-years button, .wr-btn {
+    border:1px solid rgba(255,255,255,.4); background:rgba(255,255,255,.1); color:#fff; cursor:pointer;
+    font:inherit; font-size:.88rem; font-weight:700; padding:9px 16px; border-radius:99px;
+  }
+  .wr-years button.on, .wr-btn.pri { background:#fff; color:#2a1650; border-color:#fff; }
+  .wr-years button:hover, .wr-btn:hover { background:rgba(255,255,255,.22); }
+  .wr-years button.on:hover, .wr-btn.pri:hover { background:#f1ecff; }
+  .wr-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:28px; }
+  .wr-hint { position:absolute; bottom:18px; left:0; right:0; text-align:center; font-size:.76rem; opacity:.6; z-index:2; }
+  .wr-nav { position:absolute; top:0; bottom:0; z-index:1; cursor:pointer; }
+  .wr-nav.prev { left:0; width:30%; }
+  .wr-nav.next { right:0; width:70%; }
+  @media (prefers-reduced-motion: reduce) { .wr-slide, .wr-emoji { animation:none; } }
+
   /* ── 클라우드 연동 (설정) ── */
   .cloud-seg { display:flex; width:100%; margin:4px 0 12px; }
   .cloud-seg button { flex:1 1 0; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:6px 8px; }
@@ -779,7 +901,8 @@
       "hero  kpi   fc"
       "comp  kpi   fc"
       "chart chart fc"
-      "ms    ms    fg";
+      "ms    ms    fg"
+      "heat  heat  heat";
   }
   .dboard > .hero { grid-area:hero; }
   .dboard > .kpi-stack { grid-area:kpi; align-self:stretch; }
@@ -870,6 +993,9 @@
   }
   .ms-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; }
   .ms-head-l { min-width:0; }
+  .ms-head-l > .card-title { display:inline; }
+  .ms-head-l > .qm { margin-left:4px; }
+  .ms-head-l > .ms-range { display:block; }
   .ms-range { display:block; font-size:.74rem; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; margin-top:2px; }
   .ms-nav { display:flex; gap:5px; flex:none; }
   .ms-nav button {
@@ -1374,7 +1500,8 @@
         "kpi   fc"
         "comp  fc"
         "chart fc"
-        "ms    fg";
+        "ms    fg"
+        "heat  heat";
     }
     .kpi-stack { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
   }
@@ -1382,7 +1509,7 @@
   @container main (max-width: 780px) {
     .dboard {
       grid-template-columns:minmax(0,1fr);
-      grid-template-areas:"hero" "kpi" "comp" "chart" "fc" "ms" "fg";
+      grid-template-areas:"hero" "kpi" "comp" "chart" "fc" "ms" "fg" "heat";
     }
   }
   /* 자산: 휴대폰 폭에서만 상세 패널을 아래로 내린다 */
@@ -1557,6 +1684,7 @@
     </div>
     <div class="topbar-actions">
       <div class="seg" id="dashOwners" hidden role="group" aria-label="소유자별 보기" data-tip-t="소유자별 보기" data-tip="대시보드 숫자를 한 사람 것만 모아 봅니다."></div>
+      <button class="btn btn-ghost" id="btnWrapped" hidden data-tip-t="연간 결산" data-tip="올해의 자산 이야기를 슬라이드로 돌아봅니다.">🎁 <span id="btnWrappedY"></span> 결산</button>
       <button class="btn btn-primary" id="btnTopAdd" hidden data-tip-t="새 자산 추가 · N" data-tip="처음 기록하는 계좌 · 부동산 · 대출을 추가합니다. 이미 있는 자산의 금액은 &quot;입력&quot; 화면에서 고칩니다.">＋ 새 자산</button>
     </div>
   </header>
@@ -1629,11 +1757,16 @@
       <div class="card chart-card">
         <div class="card-head">
           <div>
-            <div class="card-title">순자산 추이<span class="qm" tabindex="0" data-tip-t="순자산 추이" data-tip="기록한 날마다의 순자산을 이은 선입니다. 선 위에 마우스를 올리면 그날 금액이 나옵니다.
+            <div class="card-title" id="chartTitle">순자산 추이<span class="qm" tabindex="0" data-tip-t="순자산 추이" data-tip="기록한 날마다의 순자산을 이은 선입니다. 선 위에 마우스를 올리면 그날 금액이 나옵니다.
 &quot;목표 · 예상&quot;을 켜면 목표선과 앞으로의 예상선이 함께 그려지고, 오른쪽 버튼으로 기간을 바꿉니다.">?</span></div>
             <div class="card-sub" id="chartSub"></div>
           </div>
           <div class="chart-tools">
+            <div class="seg" id="chartMode" role="group" aria-label="차트 보기" data-tip-t="선 · 지층" data-tip="선: 순자산 한 줄로 보기
+지층: 부동산 · 증권 · 예금 · 장기 자산을 땅의 지층처럼 쌓아 보기 (점선 = 부채를 뺀 순자산)">
+              <button type="button" data-mode="line">선</button>
+              <button type="button" data-mode="strata">지층</button>
+            </div>
             <button type="button" class="tgl" id="projToggle" aria-pressed="false"
                     data-tip="목표선과 미래 예상선을 차트에 함께 표시">목표 · 예상</button>
             <div class="seg" id="ranges">
@@ -1649,6 +1782,11 @@
           <div class="chart-empty">데이터가 없습니다</div>
           <div class="tooltip" id="tooltip"><div class="t-date"></div><div class="t-val"></div><div class="t-diff"></div></div>
         </div>
+        <div class="strata-wrap" id="strataWrap" hidden>
+          <div class="chart-empty"></div>
+          <div class="tooltip"></div>
+        </div>
+        <div class="strata-legend" id="strataLegend" hidden></div>
       </div>
 
       <!-- 미래 자산 예상 — 세로로 길게, 12개월을 한눈에 -->
@@ -1711,6 +1849,15 @@
         <div class="fg-gauge" id="fgcGauge"></div>
         <div class="fg-meta"><span class="dash"></span><span id="fgcPrev"></span></div>
       </a>
+      <div class="card heat-card" id="heatCard" style="display:none">
+        <div class="card-head">
+          <div class="card-title">기록 잔디<span class="qm" tabindex="0" data-tip-t="기록 잔디" data-tip="기록한 날을 한 칸씩 칠한 달력입니다. 초록은 그날 순자산이 오른 날, 빨강은 내린 날 — 진할수록 크게 움직였어요. 칸을 누르면 그달 요약이 열립니다.">?</span></div>
+          <div class="seg" id="heatRange" role="group" aria-label="기간"></div>
+        </div>
+        <div class="heat-stats" id="heatStats"></div>
+        <div class="heat-scroll" id="heatScroll"><div class="heat" id="heat"></div></div>
+        <div class="heat-legend"><span>내림</span><i class="c d4"></i><i class="c d2"></i><i class="c z"></i><i class="c u2"></i><i class="c u4"></i><span>오름</span><span class="gap"></span><i class="c" style="background:var(--hover)"></i><span>기록 없음</span></div>
+      </div>
     </div>
   </section>
 
@@ -1792,8 +1939,10 @@
 
   <!-- ── 뱃지: 그동안 넘어선 마일스톤 ── -->
   <section class="view" id="view-badges">
+    <div class="card mtn-card" id="bdgMountain" hidden></div>
     <div class="bdg-top">
       <div class="bdg-stats" id="bdgStats"></div>
+      <button type="button" class="btn btn-ghost" id="btnWrappedB" data-tip-t="연간 결산" data-tip="한 해의 자산 이야기를 슬라이드로 돌아봅니다 — 가장 빛난 달 · 성장 주역 · 꾸준함 · 뱃지 · 목표. 마지막 장에서 이미지로 저장할 수 있어요.">🎁 연간 결산</button>
       <div class="seg" id="bdgFilter" role="group" aria-label="뱃지 종류" data-tip-t="뱃지 종류" data-tip="자산 · 목표 · 부채 등 종류별로 골라 봅니다.">
         <button type="button" data-f="all" class="on">전체</button>
         <button type="button" data-f="big">큰 성과</button>
@@ -2004,6 +2153,22 @@
 <div class="toast" id="toast"></div>
 
 <!-- 입력 화면에서 금액을 바꾸면 아래에 떠오르는 저장 바 -->
+<!-- 목표까지 등산 지도 -->
+<div class="sheet-back" id="mountainSheet">
+  <div class="sheet wide">
+    <div class="card mtn-card" id="mountainBody"></div>
+  </div>
+</div>
+
+<!-- 연말 결산 -->
+<div class="wr-ov" id="wrOv" role="dialog" aria-label="연간 결산">
+  <div class="wr-bg"></div>
+  <div class="wr-bars" id="wrBars"></div>
+  <button type="button" class="wr-x" aria-label="닫기">✕</button>
+  <div class="wr-stage" id="wrStage"></div>
+  <div class="wr-hint" id="wrHint"></div>
+</div>
+
 <!-- 사용법 · 단축키 (? 키) -->
 <div class="sheet-back" id="helpSheet">
   <div class="sheet wide">
@@ -3222,10 +3387,13 @@ function renderHomeInner() {
     $('heroGoal').hidden = true;
     $('chartSub').textContent = '';
     drawLineChart($('chartWrap'), [], CHART_H);
+    drawStrata([]);
+    syncChartMode();
     renderComposition();
     renderForecast();
     renderMonthCard();
     renderFgCard();
+    renderHeat();
     return;
   }
   var last = series[series.length - 1];
@@ -3257,11 +3425,14 @@ function renderHomeInner() {
     deltaEl.style.display = 'none';
     $('chartSub').textContent = rangeLabel();
   }
-  drawLineChart($('chartWrap'), fs, CHART_H,
+  syncChartMode();
+  if (chartMode === 'strata') drawStrata(fs);
+  else drawLineChart($('chartWrap'), fs, CHART_H,
     chartProj && fs.length ? { proj: projectionSeries(fs), goal: goalAmount } : null);
   renderForecast();
   renderMonthCard();
   renderFgCard();
+  renderHeat();
 }
 
 // 차트와 같은 기간의 시작 날짜 (전체면 null)
@@ -3443,6 +3614,10 @@ function renderForecastInner() {
     etaShort = gd.getFullYear() + '년 ' + (gd.getMonth() + 1) + '월 예상';
   }
   gb.appendChild(el('div', 'goal-eta', '현재 ' + pct.toFixed(1) + '% 달성 · ' + etaText));
+  var mb = el('button', 'fc-mtn', '⛰ 등산 지도로 보기 ›');
+  mb.type = 'button';
+  mb.dataset.mtnOpen = '1';
+  gb.appendChild(mb);
   renderHeroGoal(pct, etaShort);
 
   // ── 타임라인 ──
@@ -4939,6 +5114,7 @@ function badgeCard(b, i) {
   return btn;
 }
 function renderBadges() {
+  renderMountain($('bdgMountain'));
   var list = (badges || []).map(function (b, i) { return { b: b, i: i }; })
     .sort(function (x, y) {
       if (x.b.date !== y.b.date) return x.b.date < y.b.date ? 1 : -1;
@@ -6505,6 +6681,9 @@ function renderTopbar() {
   }
   $('viewSub').textContent = sub;
   $('btnTopAdd').hidden = currentView !== 'list' && currentView !== 'input';
+  var mo = new Date().getMonth(), wy = rows.length ? wrDefaultYear() : null;
+  $('btnWrapped').hidden = !(currentView === 'home' && wy && (mo === 11 || mo === 0));
+  $('btnWrappedY').textContent = wy || '';
   renderDashOwners();
 }
 
@@ -6555,6 +6734,28 @@ document.querySelectorAll('#sideNav button').forEach(function (b) {
   b.addEventListener('click', function () { switchView(b.dataset.view); });
 });
 
+$('chartMode').addEventListener('click', function (e) {
+  var b = e.target.closest('button[data-mode]');
+  if (!b || b.dataset.mode === chartMode) return;
+  chartMode = b.dataset.mode;
+  lsSet('asset_pc_chart_mode', chartMode);
+  renderHome();
+});
+$('heatRange').addEventListener('click', function (e) {
+  var b = e.target.closest('button[data-r]');
+  if (!b) return;
+  heatRange = b.dataset.r;
+  lsSet('asset_pc_heat', heatRange);
+  withDashRows(renderHeat);
+});
+function heatOpen(t) {
+  var c = t.closest && t.closest('#heat .c[data-d]');
+  if (c && !openMonthSheet(c.dataset.d.slice(0, 7))) showToast('그달 요약을 만들 기록이 부족합니다');
+}
+$('heat').addEventListener('click', function (e) { heatOpen(e.target); });
+$('heat').addEventListener('keydown', function (e) { if (e.key === 'Enter') heatOpen(e.target); });
+$('btnWrapped').addEventListener('click', function () { openWrapped(); });
+$('btnWrappedB').addEventListener('click', function () { openWrapped(); });
 $('ranges').addEventListener('click', function (e) {
   var btn = e.target.closest('button');
   if (!btn) return;
@@ -7096,6 +7297,7 @@ function paintMonthSummary(body, s) {
   body.innerHTML = '';
   var main = el('div', 'ms-main');
   body.appendChild(main);
+  main.appendChild(weatherNode(s));
 
   // ── 이번 달 증감 ──
   main.appendChild(el('div', 'ms-hero-l', '순자산 증감'));
@@ -7494,6 +7696,588 @@ applyTheme(false);
 
 renderStoreCard();
 renderTopbar();
+/* ═══════════ 자산 지층 — 순자산 추이 카드의 '지층' 보기 ═══════════
+   그룹별 자산(부채 제외)을 땅의 지층처럼 쌓고, 점선으로 순자산(부채 차감)을 겹친다 */
+var chartMode = lsGet('asset_pc_chart_mode') === 'strata' ? 'strata' : 'line';
+var STRATA_ORDER = ['부동산', '장기', '예금', '증권', '기타'];   // 아래(단단한 층) → 위
+var STRATA_VAR = { '부동산': '--grp1', '장기': '--grp4', '예금': '--grp3', '증권': '--grp2', '기타': '--baseline' };
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function strataSeries(dates) {
+  var byName = buildByName(), names = Object.keys(byName);
+  return dates.map(function (d) {
+    var o = { date: d, net: 0, gross: 0, g: {} };
+    STRATA_ORDER.forEach(function (g) { o.g[g] = 0; });
+    names.forEach(function (k) {
+      var last = lastAtOrBefore(byName[k], d);
+      if (!last) return;
+      o.net += signedAmount(last);
+      if (isDebtRow(last)) return;
+      var g = assetGroupOf(last);
+      if (STRATA_ORDER.indexOf(g) < 0) g = '기타';
+      var v = Math.max(0, last.amount);
+      o.g[g] += v;
+      o.gross += v;
+    });
+    return o;
+  });
+}
+function syncChartMode() {
+  document.querySelectorAll('#chartMode button').forEach(function (b) { b.classList.toggle('on', b.dataset.mode === chartMode); });
+  var strata = chartMode === 'strata';
+  $('chartWrap').hidden = strata;
+  $('strataWrap').hidden = !strata;
+  $('strataLegend').hidden = !strata;
+  $('projToggle').hidden = strata;
+  $('chartTitle').firstChild.nodeValue = strata ? '자산 지층' : '순자산 추이';
+}
+function drawStrata(fs) {
+  var wrap = $('strataWrap');
+  var old = wrap.querySelector('svg'); if (old) old.remove();
+  var empty = wrap.querySelector('.chart-empty'), tip = wrap.querySelector('.tooltip');
+  var legend = $('strataLegend');
+  if (fs.length < 2) {
+    empty.style.display = 'block';
+    empty.textContent = '기록이 2건 이상 쌓이면 지층이 그려집니다';
+    legend.innerHTML = '';
+    return;
+  }
+  empty.style.display = 'none';
+  var data = strataSeries(fs.map(function (p) { return p.date; }));
+  var groups = STRATA_ORDER.filter(function (g) { return data.some(function (o) { return o.g[g] > 0; }); });
+  var W = wrap.clientWidth || 320, H = CHART_H, padL = 8, padR = 14, padT = 16, padB = 28;
+  var max = 0, min = 0;
+  data.forEach(function (o) { max = Math.max(max, o.gross, o.net); min = Math.min(min, o.net); });
+  if (max === min) max = min + 1;
+  max += (max - min) * 0.06;
+  var rawStep = (max - min) / 5, mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  var step = [1, 2, 2.5, 5, 10].map(function (m) { return m * mag; }).find(function (s) { return s >= rawStep; }) || rawStep;
+  var t0 = parseDate(data[0].date).getTime(), t1 = parseDate(data[data.length - 1].date).getTime();
+  if (t0 === t1) t1 = t0 + 1;
+  var X = function (d) { return padL + (parseDate(d).getTime() - t0) / (t1 - t0) * (W - padL - padR); };
+  var Y = function (v) { return padT + (1 - (v - min) / (max - min)) * (H - padT - padB); };
+  var NS = 'http://www.w3.org/2000/svg';
+  var svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('width', W); svg.setAttribute('height', H); svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  function sv(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    (parent || svg).appendChild(e);
+    return e;
+  }
+  var cGrid = cssVar('--grid'), cMuted = cssVar('--muted'), cInk = cssVar('--ink'), cSurface = cssVar('--surface');
+  var fsz = W > 500 ? 11 : 10;
+  // 바위결 무늬 — 층마다 가는 가로줄
+  var defs = sv('defs', {});
+  var pat = sv('pattern', { id: 'strataTex', width: 8, height: 6, patternUnits: 'userSpaceOnUse' }, defs);
+  sv('path', { d: 'M0 5.5 H8', stroke: '#fff', 'stroke-opacity': 0.14, 'stroke-width': 1 }, pat);
+  var yTicks = [];
+  for (var v = Math.ceil(min / step) * step; v <= max; v += step) {
+    yTicks.push(v);
+    sv('line', { x1: padL, x2: W - padR, y1: Y(v), y2: Y(v), stroke: cGrid, 'stroke-width': 1 });
+  }
+  // 층 쌓기
+  var base = data.map(function () { return 0; });
+  var labels = [];
+  groups.forEach(function (g) {
+    var top = data.map(function (o, i) { return base[i] + o.g[g]; });
+    var d = '';
+    data.forEach(function (o, i) { d += (i ? ' L' : 'M') + X(o.date).toFixed(1) + ' ' + Y(top[i]).toFixed(1); });
+    for (var i = data.length - 1; i >= 0; i--) d += ' L' + X(data[i].date).toFixed(1) + ' ' + Y(base[i]).toFixed(1);
+    d += ' Z';
+    var col = cssVar(STRATA_VAR[g]);
+    sv('path', { d: d, fill: col, 'fill-opacity': 0.82, stroke: cSurface, 'stroke-width': 1.2, 'stroke-linejoin': 'round' });
+    sv('path', { d: d, fill: 'url(#strataTex)' });
+    var li = data.length - 1, thick = Y(base[li]) - Y(top[li]);
+    if (thick >= 18) labels.push({ g: g, y: (Y(base[li]) + Y(top[li])) / 2 });
+    base = top;
+  });
+  labels.forEach(function (l) {
+    var t = sv('text', { x: W - padR - 6, y: l.y + 4, 'text-anchor': 'end', 'font-size': fsz + 1, 'font-weight': 700, fill: '#fff' });
+    t.setAttribute('style', 'paint-order:stroke; stroke:rgba(0,0,0,.28); stroke-width:3px');
+    t.textContent = l.g;
+  });
+  yTicks.forEach(function (v) {
+    if (!v) return;
+    var tx = sv('text', { x: padL + 4, y: Y(v) - 5, 'font-size': fsz, fill: cInk });
+    tx.setAttribute('style', 'paint-order:stroke; stroke:' + cSurface + '; stroke-width:3px; opacity:.75');
+    tx.textContent = fmtAxis(v, step);
+  });
+  // 순자산(부채 차감) 점선
+  var nd = '';
+  data.forEach(function (o, i) { nd += (i ? ' L' : 'M') + X(o.date).toFixed(1) + ' ' + Y(o.net).toFixed(1); });
+  sv('path', { d: nd, fill: 'none', stroke: cInk, 'stroke-width': 1.8, 'stroke-dasharray': '5 4', 'stroke-linejoin': 'round' });
+  // x 라벨
+  var nLab = Math.max(2, Math.min(data.length, Math.max(4, Math.floor(W / 120))));
+  var longRange = t1 - t0 > 200 * 864e5, used = {};
+  for (var k = 0; k < nLab; k++) {
+    var idx = Math.round(k * (data.length - 1) / (nLab - 1));
+    if (used[idx]) continue;
+    used[idx] = true;
+    var dd = parseDate(data[idx].date);
+    var xl = sv('text', { x: X(data[idx].date), y: H - 8, 'text-anchor': k === 0 ? 'start' : k === nLab - 1 ? 'end' : 'middle', 'font-size': fsz, fill: cMuted });
+    xl.textContent = longRange ? String(dd.getFullYear()).slice(2) + '.' + (dd.getMonth() + 1) : (dd.getMonth() + 1) + '.' + dd.getDate();
+  }
+  // 마우스를 올리면 그날의 층별 금액
+  var guide = sv('line', { x1: 0, x2: 0, y1: padT, y2: H - padB, stroke: cInk, 'stroke-opacity': 0.35, 'stroke-width': 1, visibility: 'hidden' });
+  var hit = sv('rect', { x: padL, y: padT, width: W - padL - padR, height: H - padT - padB, fill: 'transparent' });
+  hit.addEventListener('mousemove', function (e) {
+    var r = svg.getBoundingClientRect(), mx = e.clientX - r.left, bi = 0, bd = Infinity;
+    data.forEach(function (o, i) { var dx = Math.abs(X(o.date) - mx); if (dx < bd) { bd = dx; bi = i; } });
+    var o = data[bi], x = X(o.date);
+    guide.setAttribute('x1', x); guide.setAttribute('x2', x); guide.setAttribute('visibility', 'visible');
+    var h = '<div class="t-date">' + o.date + '</div>';
+    groups.slice().reverse().forEach(function (g) {
+      if (!o.g[g]) return;
+      h += '<div class="st-row"><i style="background:var(' + STRATA_VAR[g] + ')"></i><span>' + g + '</span><b>' + fmtHeaderTotal(o.g[g]) + '</b></div>';
+    });
+    h += '<div class="st-sep"></div><div class="st-row"><span>자산 합계</span><b>' + fmtHeaderTotal(o.gross) + '</b></div>';
+    if (o.gross !== o.net) h += '<div class="st-row"><span>부채 차감</span><b>−' + fmtHeaderTotal(o.gross - o.net) + '</b></div>';
+    h += '<div class="st-row"><span>순자산</span><b>' + fmtHeaderTotal(o.net) + '원</b></div>';
+    tip.innerHTML = h;
+    tip.style.display = 'block';
+    var tw = tip.offsetWidth;
+    tip.style.left = Math.max(0, Math.min(W - tw, x + (x > W / 2 ? -tw - 12 : 12))) + 'px';
+  });
+  hit.addEventListener('mouseleave', function () { tip.style.display = 'none'; guide.setAttribute('visibility', 'hidden'); });
+  wrap.insertBefore(svg, wrap.firstChild);
+  // 범례 — 마지막 날 기준 금액과 비중
+  var last = data[data.length - 1];
+  legend.innerHTML = groups.slice().reverse().map(function (g) {
+    return '<span><i style="background:var(' + STRATA_VAR[g] + ')"></i>' + g + ' <b>' + (last.gross ? Math.round(last.g[g] / last.gross * 100) : 0) + '%</b></span>';
+  }).join('') + '<span><i class="net"></i>순자산 (부채 차감)</span>';
+}
+
+/* ═══════════ 기록 잔디 달력 ═══════════
+   기록한 날을 칸으로 칠하고, 색으로 그날 순자산이 오르고 내린 정도를 보여 준다 */
+var heatRange = lsGet('asset_pc_heat') || 'recent';
+function renderHeat() {
+  var card = $('heatCard');
+  var series = totalSeries();
+  if (!series.length) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  var info = {}, prev = null;
+  series.forEach(function (p) {
+    info[p.date] = { net: p.total, change: prev === null ? null : p.total - prev };
+    prev = p.total;
+  });
+  var years = Array.from(new Set(series.map(function (p) { return p.date.slice(0, 4); }))).sort().reverse().slice(0, 4);
+  if (heatRange !== 'recent' && years.indexOf(heatRange) < 0) heatRange = 'recent';
+  $('heatRange').innerHTML = '<button type="button" data-r="recent">최근 1년</button>' +
+    years.map(function (y) { return '<button type="button" data-r="' + y + '">' + y + '</button>'; }).join('');
+  $('heatRange').querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.r === heatRange); });
+
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var todayStr = fmtDateStr(today), start, end;
+  if (heatRange === 'recent') { end = new Date(today); start = new Date(today); start.setDate(start.getDate() - 364); }
+  else { start = new Date(+heatRange, 0, 1); end = new Date(+heatRange, 11, 31); }
+  var startStr = fmtDateStr(start), endStr = fmtDateStr(end);
+  var gridStart = new Date(start); gridStart.setDate(gridStart.getDate() - (gridStart.getDay() + 6) % 7);   // 월요일부터
+  // 칸 색 단계 — 이 기간 변동 크기의 사분위로
+  var mags = Object.keys(info).filter(function (d) { return d >= startStr && d <= endStr && info[d].change; })
+    .map(function (d) { return Math.abs(info[d].change); }).sort(function (a, b) { return a - b; });
+  function q(f) { return mags.length ? mags[Math.min(mags.length - 1, Math.floor(mags.length * f))] : 0; }
+  var q1 = q(.25), q2 = q(.5), q3 = q(.75);
+  var html = '', col = 1, weeks = 0, lastMonth = -1, recDays = 0, best = null, weekHas = [], d = new Date(gridStart);
+  while (fmtDateStr(d) <= endStr || (d.getDay() + 6) % 7 !== 0) {
+    var dow = (d.getDay() + 6) % 7;
+    if (dow === 0) { col++; weeks++; weekHas.push(false); }
+    var ds = fmtDateStr(d), inRange = ds >= startStr && ds <= endStr && ds <= todayStr;
+    if (dow === 0 && inRange && d.getMonth() !== lastMonth && d.getDate() <= 7 || (weeks === 1 && dow === 0 && inRange)) {
+      lastMonth = d.getMonth();
+      html += '<div class="hm" style="grid-column:' + col + ' / span 3">' + (d.getMonth() + 1) + '월</div>';
+    }
+    var cls = 'c', tipT = '', tipB = '', it = info[ds];
+    if (!inRange) cls += ' out';
+    else {
+      tipT = (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + WEEKDAYS[d.getDay()] + ')';
+      if (it) {
+        recDays++;
+        weekHas[weekHas.length - 1] = true;
+        cls += ' rec';
+        var ch = it.change;
+        if (!ch) cls += ' z';
+        else {
+          var a = Math.abs(ch), lv = a <= q1 ? 1 : a <= q2 ? 2 : a <= q3 ? 3 : 4;
+          cls += (ch > 0 ? ' u' : ' d') + lv;
+          if (ch > 0 && (!best || ch > best.change)) best = { date: ds, change: ch };
+        }
+        tipB = '순자산 ' + fmtHeaderTotal(it.net) + '원\n' + (ch === null ? '첫 기록' : ch ? (ch > 0 ? '▲ +' : '▼ −') + fmtCompact(Math.abs(ch)) + '원 (직전 기록 대비)' : '변동 없음') + '\n누르면 그달 요약';
+      } else tipB = '기록 없음';
+      if (ds === todayStr) cls += ' today';
+    }
+    html += '<div class="' + cls + '" style="grid-column:' + col + ';grid-row:' + (dow + 2) + '"' +
+      (inRange ? ' data-tip-fast="1" data-tip-t="' + escapeHtml(tipT) + '" data-tip="' + escapeHtml(tipB) + '"' : '') +
+      (it && inRange ? ' data-d="' + ds + '" tabindex="0"' : '') + '></div>';
+    d.setDate(d.getDate() + 1);
+  }
+  ['월', '수', '금'].forEach(function (t, i) { html += '<div class="hd" style="grid-row:' + (i * 2 + 2) + '">' + t + '</div>'; });
+  var box = $('heat');
+  box.style.setProperty('--weeks', weeks);
+  box.innerHTML = html;
+  // 가장 긴 연속 기록 주
+  var run = 0, longest = 0;
+  weekHas.forEach(function (h) { run = h ? run + 1 : 0; longest = Math.max(longest, run); });
+  $('heatStats').innerHTML = '기록한 날 <b>' + recDays + '일</b>' +
+    '<span>가장 긴 연속 기록 <b>' + longest + '주</b></span>' +
+    (best ? '<span>가장 크게 오른 날 <b>' + (+best.date.slice(5, 7)) + '월 ' + (+best.date.slice(8)) + '일 +' + fmtCompact(best.change) + '</b></span>' : '');
+  // 최근 1년은 오른쪽(오늘) 끝이 보이게
+  var sc = $('heatScroll');
+  if (heatRange === 'recent') sc.scrollLeft = sc.scrollWidth;
+}
+
+/* ═══════════ 이번 달 자산 날씨 ═══════════ */
+function monthWeather(s) {
+  var p = s.pct === null ? (s.change > 0 ? 1 : s.change < 0 ? -1 : 0) : s.pct;
+  var W = p >= 3 ? ['☀️', '쨍쨍한 맑음', 'wx-sun', ['순자산이 쑥쑥 자란 화창한 달이에요', '햇볕 좋은 달 — 이 기세 그대로!']]
+    : p >= 1 ? ['🌤️', '맑음', 'wx-fair', ['기분 좋게 맑은 달이에요', '꾸준히 오른, 산책하기 좋은 날씨']]
+    : p > 0.1 ? ['⛅', '구름 조금', 'wx-fair', ['조금씩이지만 앞으로 가고 있어요', '구름 사이로 해가 보여요']]
+    : p >= -0.1 ? ['☁️', '흐림', 'wx-cloud', ['큰 변화 없이 잔잔한 달이에요', '고요한 날씨 — 쉬어 가는 달']]
+    : p > -1 ? ['🌦️', '소나기', 'wx-rain', ['살짝 비가 왔지만 금방 갤 거예요', '지나가는 소나기예요']]
+    : p > -3 ? ['🌧️', '비', 'wx-rain', ['비 오는 달 — 우산 쓰고 버텨요', '비가 그치면 땅이 더 단단해져요']]
+    : ['⛈️', '폭풍우', 'wx-storm', ['거센 폭풍이 지나갔어요. 폭풍 뒤엔 맑은 날이 와요', '험한 날씨였지만, 버틴 것만으로 충분해요']];
+  var h = 0;
+  for (var i = 0; i < s.key.length; i++) h = (h * 31 + s.key.charCodeAt(i)) >>> 0;
+  var line = W[3][h % W[3].length];
+  var c = s.contributors[0];
+  if (c && s.change) line += ' · ' + (s.change > 0 === c.change > 0 ? (s.change > 0 ? '일등 공신은 ' : '가장 큰 영향은 ') + c.name : '');
+  var ongoing = s.key === monthKeyOf(new Date());
+  return { ico: W[0], title: (ongoing ? '지금까지 ' : '') + W[1], cls: W[2], line: line.replace(/ · $/, '') };
+}
+function weatherNode(s) {
+  var w = monthWeather(s);
+  var box = el('div', 'ms-weather ' + w.cls);
+  box.appendChild(el('div', 'mw-ico', w.ico));
+  var t = el('div');
+  t.appendChild(el('div', 'mw-t', s.label + ' 자산 날씨 · ' + w.title));
+  t.appendChild(el('div', 'mw-s', w.line));
+  box.appendChild(t);
+  return box;
+}
+
+/* ═══════════ 목표까지 등산 지도 ═══════════
+   정상 = 목표 금액, 등산로 위 내 위치 = 지금 순자산. 10%마다 깃발(넘어선 날짜와 함께) */
+function mtnTrail() {
+  var pts = [], N = 360;
+  for (var i = 0; i <= N; i++) {
+    var t = i / N, halfW = 400 * (1 - t);
+    pts.push([560 + 0.62 * halfW * Math.sin(Math.PI * 4.5 * t - Math.PI / 2), 392 - t * 322]);
+  }
+  var cum = [0];
+  for (var j = 1; j < pts.length; j++) cum.push(cum[j - 1] + Math.hypot(pts[j][0] - pts[j - 1][0], pts[j][1] - pts[j - 1][1]));
+  return { pts: pts, cum: cum, len: cum[cum.length - 1] };
+}
+function mtnAt(tr, f) {
+  var target = Math.max(0, Math.min(1, f)) * tr.len, i = 1;
+  while (i < tr.cum.length - 1 && tr.cum[i] < target) i++;
+  var a = tr.pts[i - 1], b = tr.pts[i], seg = tr.cum[i] - tr.cum[i - 1] || 1, k = (target - tr.cum[i - 1]) / seg;
+  return { x: a[0] + (b[0] - a[0]) * k, y: a[1] + (b[1] - a[1]) * k, i: i };
+}
+var mtnSeq = 0;
+function renderMountain(box) {
+  var st = netStats();
+  if (!st.has) { box.innerHTML = ''; box.hidden = true; return; }
+  box.hidden = false;
+  var net = st.net, goal = goalAmount, frac = Math.max(0, Math.min(1, net / goal));
+  var tr = mtnTrail(), me = mtnAt(tr, frac);
+  var pctDate = {};
+  (badges || []).forEach(function (b) {
+    if (b.t === 'pct' && (!b.goal || b.goal === goal)) pctDate[b.n] = pctDate[b.n] && pctDate[b.n] < b.date ? pctDate[b.n] : b.date;
+    if (b.t === 'goal') pctDate[100] = b.date;
+  });
+  function path(from, to) {
+    var s = '';
+    for (var i = 0; i < tr.pts.length; i++) {
+      var f = tr.cum[i] / tr.len;
+      if (f < from || f > to) continue;
+      s += (s ? ' L' : 'M') + tr.pts[i][0].toFixed(1) + ' ' + tr.pts[i][1].toFixed(1);
+    }
+    return s;
+  }
+  var uid = 'm' + (++mtnSeq);   // 같은 지도가 두 곳(뱃지 화면 · 창)에 있어 id 가 겹치지 않게
+  var mtn = 'M20 410 L150 330 L215 300 L270 262 L330 228 L385 180 L440 142 L492 104 L530 82 L560 64 L592 86 L640 116 L700 160 L760 200 L815 244 L880 300 L940 350 L1000 392 L1000 420 L0 420 Z';
+  var snow = 'M492 104 L530 82 L560 64 L592 86 L626 108 L604 118 L584 106 L560 124 L536 108 L514 118 Z';
+  var svg = '<svg class="mtn-svg" viewBox="0 0 1000 420" role="img" aria-label="목표까지 등산 지도">' +
+    '<defs><linearGradient id="' + uid + 'Sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--accent-wash)"/><stop offset="1" style="stop-color:var(--surface)"/></linearGradient>' +
+    '<linearGradient id="' + uid + 'Rock" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:color-mix(in srgb, var(--grp2) 45%, var(--surface))"/><stop offset="1" style="stop-color:color-mix(in srgb, var(--grp2) 18%, var(--surface))"/></linearGradient></defs>' +
+    '<rect width="1000" height="420" fill="url(#' + uid + 'Sky)"/>' +
+    '<circle cx="880" cy="70" r="30" style="fill:color-mix(in srgb, #f5b301 55%, var(--surface))"/>' +
+    '<g style="fill:var(--surface)" opacity=".75"><ellipse cx="170" cy="92" rx="54" ry="14"/><ellipse cx="206" cy="80" rx="34" ry="14"/><ellipse cx="760" cy="128" rx="46" ry="11"/></g>' +
+    '<path d="M0 420 L0 300 L120 250 L230 290 L330 240 L420 280 L470 260 L470 420 Z" style="fill:color-mix(in srgb, var(--grp4) 16%, var(--surface))"/>' +
+    '<path d="M560 420 L640 250 L760 210 L860 250 L1000 220 L1000 420 Z" style="fill:color-mix(in srgb, var(--grp4) 14%, var(--surface))"/>' +
+    '<path d="' + mtn + '" fill="url(#' + uid + 'Rock)" style="stroke:color-mix(in srgb, var(--grp2) 55%, var(--surface))" stroke-width="1.5"/>' +
+    '<path d="' + snow + '" fill="#f4f7fc" opacity=".9"/>' +
+    '<path d="' + path(0, 1) + '" fill="none" style="stroke:var(--muted)" stroke-width="2.2" stroke-dasharray="3 6" stroke-linecap="round"/>' +
+    '<path d="' + path(0, frac) + '" fill="none" style="stroke:var(--accent)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
+  // 10% 깃발
+  for (var k = 1; k <= 10; k++) {
+    var f = k / 10, p = mtnAt(tr, f), reached = net >= goal * f, right = p.x >= 560 || k === 10;
+    var amt = fmtHeaderTotal(goal * f) + '원', date = pctDate[k * 10];
+    var fc = reached ? (k === 10 ? '#f5b301' : 'var(--up)') : 'var(--baseline)';
+    var near = Math.hypot(p.x - me.x, p.y - me.y) < 70 && k !== 10;
+    svg += '<g>' +
+      '<line x1="' + p.x.toFixed(1) + '" y1="' + p.y.toFixed(1) + '" x2="' + p.x.toFixed(1) + '" y2="' + (p.y - 26).toFixed(1) + '" style="stroke:var(--ink-2)" stroke-width="1.6"/>' +
+      '<path d="M' + p.x.toFixed(1) + ' ' + (p.y - 26).toFixed(1) + ' l' + (right ? 16 : -16) + ' 5 l' + (right ? -16 : 16) + ' 5 Z" style="fill:' + fc + '"/>' +
+      (near ? '' : '<text x="' + (p.x + (right ? 20 : -20)).toFixed(1) + '" y="' + (p.y - 17).toFixed(1) + '" text-anchor="' + (right ? 'start' : 'end') + '" font-size="13" font-weight="800" style="fill:' + (reached ? 'var(--ink)' : 'var(--muted)') + '">' +
+        (k === 10 ? '🏆 ' : '') + amt + '</text>') +
+      (reached && date && !near ? '<text x="' + (p.x + (right ? 20 : -20)).toFixed(1) + '" y="' + (p.y - 3).toFixed(1) + '" text-anchor="' + (right ? 'start' : 'end') + '" font-size="11" style="fill:var(--muted)">' + date.replace(/-/g, '.') + '</text>' : '') +
+      '</g>';
+  }
+  // 출발점 · 나
+  svg += '<text x="' + (tr.pts[0][0] - 14).toFixed(1) + '" y="408" text-anchor="end" font-size="12" style="fill:var(--muted)">출발 0원</text>';
+  var bubbleW = 170, bx = Math.max(10, Math.min(990 - bubbleW, me.x - bubbleW / 2)), by = me.y + 18 > 350 ? me.y - 86 : me.y + 16;
+  svg += '<g><circle class="mtn-pulse" cx="' + me.x.toFixed(1) + '" cy="' + me.y.toFixed(1) + '" r="11" style="fill:var(--accent)" opacity=".5"/>' +
+    '<circle cx="' + me.x.toFixed(1) + '" cy="' + me.y.toFixed(1) + '" r="8" style="fill:var(--accent);stroke:var(--surface)" stroke-width="3"/>' +
+    '<text class="mtn-me" x="' + me.x.toFixed(1) + '" y="' + (me.y - 14).toFixed(1) + '" text-anchor="middle" font-size="26">' + (frac >= 1 ? '🙌' : '🧗') + '</text>' +
+    '<g transform="translate(' + bx.toFixed(1) + ' ' + by.toFixed(1) + ')"><rect width="' + bubbleW + '" height="44" rx="12" style="fill:var(--ink)"/>' +
+    '<text x="' + bubbleW / 2 + '" y="19" text-anchor="middle" font-size="13" font-weight="800" style="fill:var(--bg)">지금 ' + fmtHeaderTotal(net) + '원</text>' +
+    '<text x="' + bubbleW / 2 + '" y="35" text-anchor="middle" font-size="11" style="fill:var(--bg)" opacity=".8">목표의 ' + (net / goal * 100).toFixed(1) + '% 지점</text></g></g>';
+  svg += '</svg>';
+  var months = monthsToGoal(net);
+  box.innerHTML = '<div class="mtn-head"><div><div class="card-title">⛰ 목표까지 등산 지도</div>' +
+    '<div class="card-sub">정상 ' + fmtHeaderTotal(goal) + '원 · ' + (net >= goal ? '정상에 올랐어요! 🎉' : '남은 거리 ' + fmtHeaderTotal(goal - net) + '원 · ' + goalEtaText(months)) + '</div></div>' +
+    '<button type="button" class="btn btn-ghost btn-sm" data-mtn-goal>목표 바꾸기</button></div>' + svg;
+}
+function openMountain() {
+  renderMountain($('mountainBody'));
+  openSheet('mountainSheet');
+}
+document.addEventListener('click', function (e) {
+  if (e.target.closest('[data-mtn-open]')) { openMountain(); return; }
+  if (e.target.closest('[data-mtn-goal]')) {
+    document.querySelectorAll('.sheet-back.open').forEach(function (s) { closeSheet(s.id); });
+    openGoalSheet();
+  }
+});
+
+/* ═══════════ 연말 결산 (Wrapped) ═══════════
+   한 해를 슬라이드로 넘겨 본다 — ← → · 클릭 · Esc. 마지막 장에서 이미지로 저장 */
+var wr = { year: null, i: 0, slides: [], stats: null };
+var WR_BG = [
+  'linear-gradient(135deg,#1c1b4b,#6b2fa3 55%,#e5588f)', 'linear-gradient(135deg,#0b3d91,#1baf7a)',
+  'linear-gradient(135deg,#ff8a3d,#e5388b 60%,#6b2fa3)', 'linear-gradient(135deg,#0f5132,#1baf7a 55%,#c8e65a)',
+  'linear-gradient(135deg,#3a1c71,#d76d77 55%,#ffaf7b)', 'linear-gradient(135deg,#1e3c72,#2a78d6 55%,#6dd5ed)',
+  'linear-gradient(135deg,#42275a,#734b6d)', 'linear-gradient(135deg,#141e30,#243b55 45%,#f5b301)'
+];
+function wrYears() {
+  return Array.from(new Set(rows.map(function (r) { return r.date.slice(0, 4); }))).sort().reverse();
+}
+function wrDefaultYear() {
+  var ys = wrYears(), now = new Date(), y = String(now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear());
+  return ys.indexOf(y) >= 0 ? y : ys[0];
+}
+function yearStats(Y) {
+  var recs = rows.filter(function (r) { return r.date.slice(0, 4) === Y; });
+  if (!recs.length) return null;
+  var byName = buildByName(), todayStr = fmtDateStr(new Date());
+  var startDate = (+Y - 1) + '-12-31', endDate = Y + '-12-31';
+  if (endDate > todayStr) endDate = todayStr;
+  var startNet = netAt(byName, startDate), startLabel = (+Y - 1) + '년 말';
+  var firstDate = recs.reduce(function (m, r) { return r.date < m ? r.date : m; }, '9999');
+  if (startNet === null) { startNet = netAt(byName, firstDate); startLabel = '첫 기록 (' + (+firstDate.slice(5, 7)) + '월)'; startDate = firstDate; }
+  var endNet = netAt(byName, endDate);
+  // 달마다
+  var months = [];
+  for (var m = 1; m <= 12; m++) {
+    var key = Y + '-' + String(m).padStart(2, '0');
+    if (key > todayStr.slice(0, 7)) break;
+    var s = monthSummary(key);
+    if (s) months.push(s);
+  }
+  var bestM = null, worstM = null;
+  months.forEach(function (s) {
+    if (!bestM || s.change > bestM.change) bestM = s;
+    if (!worstM || s.change < worstM.change) worstM = s;
+  });
+  if (worstM && worstM.change >= 0) worstM = null;
+  // 자산별 성장 · 대출 상환
+  var growth = [], paid = [];
+  Object.keys(byName).forEach(function (k) {
+    var a = lastAtOrBefore(byName[k], startDate), b = lastAtOrBefore(byName[k], endDate);
+    if (!b) return;
+    if (isDebtRow(b)) { var dp = (a ? a.amount : 0) - b.amount; if (dp > 0) paid.push({ name: k, v: dp }); return; }
+    var g = b.amount - (a && !isDebtRow(a) ? a.amount : 0);
+    if (g > 0) growth.push({ name: k, v: g, isNew: !a });
+  });
+  growth.sort(function (x, y) { return y.v - x.v; });
+  paid.sort(function (x, y) { return y.v - x.v; });
+  // 기록 습관
+  var days = Array.from(new Set(recs.map(function (r) { return r.date; }))).sort();
+  var wk = {}, dow = [0, 0, 0, 0, 0, 0, 0];
+  days.forEach(function (d) { wk[weekKeyOf(d)] = 1; dow[parseDate(d).getDay()]++; });
+  var run = 0, longest = 0, w = parseDate(weekKeyOf(days[0])), lastW = weekKeyOf(days[days.length - 1]);
+  while (fmtDateStr(w) <= lastW) { run = wk[fmtDateStr(w)] ? run + 1 : 0; longest = Math.max(longest, run); w.setDate(w.getDate() + 7); }
+  var favDow = dow.indexOf(Math.max.apply(null, dow));
+  // 뱃지 · 목표
+  var yb = (badges || []).filter(function (b) { return b.date.slice(0, 4) === Y; });
+  var P = { goal: 9, debtFree: 8, eok: 7, pct: 6, chun: 5, debt: 4, peak: 3, streak: 2, day: 1 };
+  yb.sort(function (a, b) { return (P[b.t] || 0) - (P[a.t] || 0) || (a.date < b.date ? 1 : -1); });
+  // 올해 추이 (스파크라인)
+  var spark = [{ date: startDate, total: startNet }].concat(totalSeries().filter(function (p) { return p.date > startDate && p.date <= endDate; }));
+  return {
+    year: Y, ongoing: endDate === todayStr && Y === todayStr.slice(0, 4), startNet: startNet, startLabel: startLabel, endNet: endNet,
+    change: endNet - startNet, pct: startNet ? (endNet - startNet) / Math.abs(startNet) * 100 : null,
+    bestM: bestM, worstM: worstM, growth: growth.slice(0, 3), paid: paid[0] || null,
+    days: days.length, weeks: Object.keys(wk).length, longest: longest, favDow: favDow, records: recs.length,
+    badges: yb, goal: goalAmount, spark: spark
+  };
+}
+function wrSpark(pts) {
+  if (pts.length < 2) return '';
+  var W = 520, H = 120, vs = pts.map(function (p) { return p.total; });
+  var min = Math.min.apply(null, vs), max = Math.max.apply(null, vs);
+  if (max === min) { max += 1; min -= 1; }
+  var t0 = parseDate(pts[0].date).getTime(), t1 = parseDate(pts[pts.length - 1].date).getTime() || t0 + 1;
+  var d = pts.map(function (p, i) {
+    var x = 8 + (parseDate(p.date).getTime() - t0) / Math.max(1, t1 - t0) * (W - 16), y = 10 + (1 - (p.total - min) / (max - min)) * (H - 20);
+    return (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1);
+  }).join(' ');
+  return '<svg class="wr-spark" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none"><path d="' + d + ' L' + (W - 8) + ' ' + H + ' L8 ' + H + ' Z" fill="rgba(255,255,255,.14)"/>' +
+    '<path d="' + d + '" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>';
+}
+function wrSigned(n) { return (n > 0 ? '+' : n < 0 ? '−' : '') + fmtHeaderTotal(Math.abs(n)) + '원'; }
+function wrBuild(s) {
+  var e = escapeHtml, sl = [], Y = s.year;
+  var years = wrYears();
+  sl.push('<div class="wr-kick">' + (s.ongoing ? '올해 지금까지' : '한 해 결산') + '</div><div class="wr-big">' + Y + '</div>' +
+    '<div class="wr-mid">자산 이야기</div><p class="wr-p">기록 <b>' + s.days + '일</b> · 뱃지 <b>' + s.badges.length + '개</b><br>한 해 동안 쌓은 것들을 돌아봐요</p>' +
+    (years.length > 1 ? '<div class="wr-years">' + years.slice(0, 6).map(function (y) { return '<button type="button" data-wr-year="' + y + '"' + (y === Y ? ' class="on"' : '') + '>' + y + '</button>'; }).join('') + '</div>' : '') +
+    '<div class="wr-actions"><button type="button" class="wr-btn pri" data-wr-go="1">시작하기 →</button></div>');
+  sl.push('<div class="wr-kick">' + Y + '년 순자산은</div><div class="wr-big">' + wrSigned(s.change) + '</div>' +
+    '<p class="wr-p">' + e(s.startLabel) + ' <b>' + fmtHeaderTotal(s.startNet) + '원</b> → ' + (s.ongoing ? '지금' : '연말') + ' <b>' + fmtHeaderTotal(s.endNet) + '원</b>' +
+    (s.pct !== null ? '<br>' + (s.pct >= 0 ? '+' : '−') + Math.abs(s.pct).toFixed(1) + '% ' + (s.change >= 0 ? '자랐어요 🌱' : '줄었어요 — 내년엔 다시!') : '') + '</p>' + wrSpark(s.spark));
+  if (s.bestM) {
+    var bw = monthWeather(s.bestM), ww = s.worstM ? monthWeather(s.worstM) : null;
+    sl.push('<div class="wr-emoji">' + bw.ico + '</div><div class="wr-kick">가장 빛난 달</div><div class="wr-big">' + s.bestM.label + '</div>' +
+      '<p class="wr-p">순자산 <b>' + wrSigned(s.bestM.change) + '</b>' + (s.bestM.contributors[0] ? '<br>일등 공신은 <b>' + e(s.bestM.contributors[0].name) + '</b>' : '') + '</p>' +
+      (ww ? '<div class="wr-list"><div><em>' + ww.ico + '</em><span>가장 힘들었던 달 · ' + s.worstM.label + '</span><b>' + wrSigned(s.worstM.change) + '</b></div></div>' : ''));
+  }
+  if (s.growth.length || s.paid) {
+    var medals = ['🥇', '🥈', '🥉'];
+    sl.push('<div class="wr-emoji">🌳</div><div class="wr-kick">올해의 성장 주역</div>' +
+      (s.growth[0] ? '<div class="wr-mid">' + e(s.growth[0].name) + '</div><p class="wr-p">혼자서 <b>' + wrSigned(s.growth[0].v) + '</b>' + (s.growth[0].isNew ? ' (올해 새로 시작)' : '') + '</p>' : '') +
+      '<div class="wr-list">' + s.growth.map(function (g, i) { return '<div><em>' + medals[i] + '</em><span>' + e(g.name) + '</span><b>' + wrSigned(g.v) + '</b></div>'; }).join('') +
+      (s.paid ? '<div><em>💪</em><span>가장 많이 갚은 대출 · ' + e(s.paid.name) + '</span><b>−' + fmtHeaderTotal(s.paid.v) + '원</b></div>' : '') + '</div>');
+  }
+  sl.push('<div class="wr-emoji">🔥</div><div class="wr-kick">꾸준함</div><div class="wr-big">' + s.days + '일</div>' +
+    '<p class="wr-p">기록을 남겼어요 · 기록 ' + s.records + '건</p><div class="wr-list">' +
+    '<div><em>📅</em><span>기록한 주</span><b>' + s.weeks + '주</b></div>' +
+    '<div><em>🔗</em><span>가장 긴 연속 기록</span><b>' + s.longest + '주</b></div>' +
+    '<div><em>⭐</em><span>가장 자주 기록한 요일</span><b>' + WEEKDAYS[s.favDow] + '요일</b></div></div>');
+  sl.push('<div class="wr-emoji">🏅</div><div class="wr-kick">올해 모은 뱃지</div><div class="wr-big">' + s.badges.length + '개</div>' +
+    (s.badges.length ? '<div class="wr-badges">' + s.badges.slice(0, 8).map(function (b) { var c = eventCard(b, true); return '<div><i>' + c.emoji + '</i>' + e(c.title.replace(/!$/, '')) + '</div>'; }).join('') + '</div>'
+      : '<p class="wr-p">내년엔 첫 뱃지를 받아 봐요!</p>'));
+  var p0 = Math.max(0, Math.min(100, s.startNet / s.goal * 100)), p1 = Math.max(0, Math.min(100, s.endNet / s.goal * 100)), C = 2 * Math.PI * 76;
+  sl.push('<div class="wr-kick">목표 ' + fmtHeaderTotal(s.goal) + '원까지</div>' +
+    '<svg class="wr-ring" viewBox="0 0 180 180"><circle cx="90" cy="90" r="76" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="14"/>' +
+    '<circle cx="90" cy="90" r="76" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="14" stroke-dasharray="' + (C * p0 / 100).toFixed(1) + ' ' + C.toFixed(1) + '"/>' +
+    '<circle cx="90" cy="90" r="76" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-dasharray="' + (C * p1 / 100).toFixed(1) + ' ' + C.toFixed(1) + '"/></svg>' +
+    '<div class="wr-big">' + p1.toFixed(1) + '%</div><p class="wr-p">올해 <b>' + (p1 - p0 >= 0 ? '+' : '−') + Math.abs(p1 - p0).toFixed(1) + '%p</b> 다가갔어요<br>' + e(goalEtaText(monthsToGoal(s.endNet))) + '</p>');
+  sl.push('<div class="wr-emoji">🎉</div><div class="wr-kick">' + Y + ' 자산 결산</div><div class="wr-big">' + wrSigned(s.change) + '</div>' +
+    '<div class="wr-list">' +
+    (s.bestM ? '<div><em>☀️</em><span>가장 빛난 달</span><b>' + s.bestM.label + '</b></div>' : '') +
+    (s.growth[0] ? '<div><em>🌳</em><span>성장 주역</span><b>' + e(s.growth[0].name) + '</b></div>' : '') +
+    '<div><em>🔥</em><span>기록한 날</span><b>' + s.days + '일</b></div>' +
+    '<div><em>🏅</em><span>모은 뱃지</span><b>' + s.badges.length + '개</b></div></div>' +
+    '<div class="wr-actions"><button type="button" class="wr-btn pri" data-wr-save="1">🖼 이미지로 저장</button><button type="button" class="wr-btn" data-wr-restart="1">처음부터</button><button type="button" class="wr-btn" data-wr-close="1">닫기</button></div>');
+  return sl;
+}
+function openWrapped(year) {
+  var Y = year || wrDefaultYear();
+  if (!Y) { showToast('결산할 기록이 없습니다'); return; }
+  var s = yearStats(Y);
+  if (!s) { showToast(Y + '년 기록이 없습니다'); return; }
+  wr.year = Y; wr.stats = s; wr.slides = wrBuild(s); wr.i = 0;
+  $('wrOv').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  wrShow();
+}
+function wrShow() {
+  var n = wr.slides.length;
+  $('wrBars').innerHTML = wr.slides.map(function (_, i) { return '<i class="' + (i < wr.i ? 'done' : i === wr.i ? 'cur' : '') + '"></i>'; }).join('');
+  $('wrStage').innerHTML = '<div class="wr-slide">' + wr.slides[wr.i] + '</div>';
+  $('wrOv').style.setProperty('--wr-g', WR_BG[wr.i % WR_BG.length]);
+  $('wrHint').textContent = wr.i === 0 ? '화면을 누르거나 → 키로 넘겨요 · Esc 닫기' : (wr.i + 1) + ' / ' + n;
+  if (wr.i === n - 1 && fxEnabled()) { FX.fireworks(4); FX.rain(160); }
+}
+function wrStep(d) {
+  var j = wr.i + d;
+  if (j < 0 || j >= wr.slides.length) return;
+  wr.i = j;
+  wrShow();
+}
+function closeWrapped() {
+  $('wrOv').classList.remove('open');
+  document.body.style.overflow = '';
+}
+$('wrOv').addEventListener('click', function (e) {
+  var t = e.target;
+  if (t.closest('[data-wr-close]') || t.closest('.wr-x')) { closeWrapped(); return; }
+  var y = t.closest('[data-wr-year]');
+  if (y) { openWrapped(y.dataset.wrYear); return; }
+  if (t.closest('[data-wr-go]')) { wrStep(1); return; }
+  if (t.closest('[data-wr-restart]')) { wr.i = 0; wrShow(); return; }
+  if (t.closest('[data-wr-save]')) { wrSaveImage(); return; }
+  if (t.closest('button')) return;
+  var r = $('wrOv').getBoundingClientRect();
+  wrStep(e.clientX - r.left < r.width * 0.3 ? -1 : 1);
+});
+document.addEventListener('keydown', function (e) {
+  if (!$('wrOv').classList.contains('open')) return;
+  if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); closeWrapped(); }
+  else if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') { e.preventDefault(); e.stopImmediatePropagation(); wrStep(1); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); e.stopImmediatePropagation(); wrStep(-1); }
+  else e.stopImmediatePropagation();   // 결산을 보는 동안 다른 단축키는 쉬게
+}, true);
+// 한 장짜리 요약 이미지 (1080×1350)
+function wrSaveImage() {
+  var s = wr.stats, W = 1080, H = 1350;
+  var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  var g = cv.getContext('2d');
+  var bg = g.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, '#1c1b4b'); bg.addColorStop(0.55, '#6b2fa3'); bg.addColorStop(1, '#e5588f');
+  g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  var glow = g.createRadialGradient(W * 0.75, H * 0.15, 10, W * 0.75, H * 0.15, 600);
+  glow.addColorStop(0, 'rgba(255,255,255,.22)'); glow.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = glow; g.fillRect(0, 0, W, H);
+  var F = '"Pretendard Variable", Pretendard, "Malgun Gothic", sans-serif';
+  function txt(t, x, y, size, weight, align, alpha) {
+    g.font = (weight || 700) + ' ' + size + 'px ' + F;
+    g.textAlign = align || 'left';
+    g.fillStyle = 'rgba(255,255,255,' + (alpha == null ? 1 : alpha) + ')';
+    g.fillText(t, x, y);
+  }
+  txt((s.ongoing ? '올해 지금까지 · ' : '') + s.year + ' 자산 결산', 90, 150, 44, 800, 'left', 0.85);
+  txt('순자산', 90, 290, 40, 700, 'left', 0.75);
+  txt(wrSigned(s.change), 90, 400, 120, 900);
+  txt(fmtHeaderTotal(s.startNet) + '원 → ' + fmtHeaderTotal(s.endNet) + '원' + (s.pct !== null ? '  (' + (s.pct >= 0 ? '+' : '−') + Math.abs(s.pct).toFixed(1) + '%)' : ''), 90, 470, 38, 600, 'left', 0.85);
+  var boxes = [
+    ['☀️ 가장 빛난 달', s.bestM ? s.bestM.label + ' ' + wrSigned(s.bestM.change) : '-'],
+    ['🌳 성장 주역', s.growth[0] ? s.growth[0].name : '-'],
+    ['🔥 기록한 날', s.days + '일 · ' + s.longest + '주 연속'],
+    ['🏅 모은 뱃지', s.badges.length + '개']
+  ];
+  boxes.forEach(function (b, i) {
+    var x = 90 + (i % 2) * 460, y = 560 + Math.floor(i / 2) * 230;
+    g.fillStyle = 'rgba(255,255,255,.13)';
+    if (g.roundRect) { g.beginPath(); g.roundRect(x, y, 440, 200, 28); g.fill(); } else g.fillRect(x, y, 440, 200);
+    txt(b[0], x + 34, y + 70, 32, 700, 'left', 0.8);
+    var v = b[1];
+    g.font = '800 44px ' + F;
+    while (g.measureText(v).width > 380 && v.length > 2) v = v.slice(0, -2) + '…';
+    txt(v, x + 34, y + 145, 44, 800);
+  });
+  var p1 = Math.max(0, Math.min(1, s.endNet / s.goal));
+  txt('목표 ' + fmtHeaderTotal(s.goal) + '원까지 ' + (p1 * 100).toFixed(1) + '%', 90, 1100, 36, 700, 'left', 0.85);
+  g.fillStyle = 'rgba(255,255,255,.2)'; g.fillRect(90, 1130, 900, 22);
+  g.fillStyle = '#fff'; g.fillRect(90, 1130, 900 * p1, 22);
+  txt('자산 현황', 90, 1260, 30, 700, 'left', 0.6);
+  var a = document.createElement('a');
+  a.href = cv.toDataURL('image/png');
+  a.download = 'asset-wrapped-' + s.year + '.png';
+  document.body.appendChild(a); a.click(); a.remove();
+  showToast('결산 이미지를 저장했습니다');
+}
+
 /* ═══════════ 클라우드 연동 (Supabase · Google Sheet) ═══════════
    기본 저장소는 PC 폴더의 JSON 파일. 설정에서 Supabase 나 구글 시트 중 "한 곳"을 저장소로 바꿀 수 있다.
    - Supabase: 예전 모바일 버전과 같은 owners · assets 테이블 + app_state(설정 · 뱃지 · 연금) — 바뀐 행만 보낸다
@@ -7930,7 +8714,10 @@ var HELP = {
     '<li><b>순자산</b> — 자산 합계 − 부채 합계. 오른쪽 원을 누르면 목표 금액을 바꿉니다.</li>' +
     '<li><b>순자산 추이</b> — 선에 마우스를 올리면 그날 금액. <b>목표 · 예상</b>을 켜면 목표선과 예상선이 함께 그려집니다.</li>' +
     '<li><b>미래 자산 예상</b> — 월 적립액 · 연 수익률을 ＋ − 로 바꿔 보며 목표 도달 시점을 가늠합니다.</li>' +
-    '<li><b>월간 요약</b> — 막대를 눌러 달을 고르면 그 달 가장 많이 늘고 준 자산이 나옵니다.</li>' +
+    '<li><b>월간 요약</b> — 막대를 눌러 달을 고르면 그 달 가장 많이 늘고 준 자산과 <b>자산 날씨</b>(☀️ 맑음 ~ ⛈ 폭풍우)가 나옵니다.</li>' +
+    '<li><b>선 · 지층</b> — 순자산 추이 카드에서 "지층"을 고르면 부동산 · 증권 · 예금 · 장기 자산이 층으로 쌓인 모습을 봅니다 (점선 = 부채를 뺀 순자산).</li>' +
+    '<li><b>기록 잔디</b> — 기록한 날을 칠한 1년 달력. 초록은 오른 날, 빨강은 내린 날이고 칸을 누르면 그달 요약이 열립니다.</li>' +
+    '<li><b>⛰ 등산 지도</b> — 미래 자산 예상 카드의 "등산 지도로 보기"에서, 목표를 정상으로 한 내 위치를 봅니다.</li>' +
     '<li>오른쪽 위 소유자 버튼으로 한 사람 것만 모아 볼 수 있습니다.</li></ul>',
     keys: HELP_KEYS_COMMON },
   list: { t: '자산', main:
@@ -7952,7 +8739,9 @@ var HELP = {
   badges: { t: '뱃지', main:
     '<h3>이 화면에서</h3><ul>' +
     '<li>그동안 넘어선 마일스톤이 카드로 쌓입니다. 카드를 누르면 그때의 축하를 다시 봅니다.</li>' +
-    '<li>위 버튼으로 자산 · 목표 · 부채 등 종류별로 골라 봅니다.</li></ul>' +
+    '<li>위 버튼으로 자산 · 목표 · 부채 등 종류별로 골라 봅니다.</li>' +
+    '<li>맨 위 <b>⛰ 등산 지도</b>는 목표를 정상으로, 10%마다 깃발(넘어선 날짜)을 꽂아 보여 줍니다.</li>' +
+    '<li><b>🎁 연간 결산</b> — 한 해를 슬라이드로 돌아보고 마지막 장에서 이미지로 저장합니다 (← → · 클릭으로 넘기기, Esc 닫기). 12월 · 1월에는 대시보드 위에도 버튼이 나와요.</li></ul>' +
     '<h3>이럴 때 받아요</h3><ul>' +
     '<li>순자산이 천만원 단위로 새 최고치를 넘을 때, 억 단위를 돌파할 때</li>' +
     '<li>목표의 10%씩 다가갈 때, 목표를 달성할 때</li>' +
@@ -8066,7 +8855,7 @@ document.addEventListener('pointerover', function (e) {
   if (!t) return;
   tipFor = t;
   // ? 는 바로, 나머지(메뉴 · 버튼)는 잠깐 머물렀을 때만 — 지나가기만 해도 뜨면 성가시다
-  tipTm = setTimeout(function () { if (tipFor === t) showTip(t); }, t.classList.contains('qm') ? 60 : 550);
+  tipTm = setTimeout(function () { if (tipFor === t) showTip(t); }, t.classList.contains('qm') || t.dataset.tipFast ? 60 : 550);
 });
 document.addEventListener('pointerout', function (e) {
   if (tipFor && !(e.relatedTarget && tipFor.contains(e.relatedTarget))) hideTip();
