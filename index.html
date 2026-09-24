@@ -176,6 +176,16 @@
   }
   .side-nav .nav-badge.show { display:inline-flex; }
   .side-nav kbd { margin-left:auto; }
+  .nav-sep { height:1px; background:var(--border); margin:8px 6px; }
+  /* 끼워 넣은 페이지 — 화면 높이를 꽉 채운다 */
+  .embed-card { position:relative; padding:0; overflow:hidden; height:calc(100vh - 126px); min-height:520px; }
+  .embed-card iframe { display:block; width:100%; height:100%; border:0; background:var(--surface); }
+  .embed-loading {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    color:var(--muted); font-size:.9rem; background:var(--surface); pointer-events:none;
+    transition:opacity .25s;
+  }
+  .embed-loading.done { opacity:0; }
   .side-nav .nav-badge.show + kbd { display:none; }
   .side-foot { margin-top:auto; display:flex; flex-direction:column; gap:8px; }
 
@@ -233,6 +243,7 @@
     border:1px solid transparent; white-space:nowrap;
     transition:background-color .15s, transform .12s, filter .15s;
   }
+  a.btn { text-decoration:none; }
   .btn:active:not(:disabled) { transform:scale(.97); }
   .btn:disabled { opacity:.45; cursor:default; }
   .btn-primary { background:var(--accent); color:#fff; }
@@ -328,7 +339,7 @@
   /* ── 대시보드 본문 ─────────────────── */
   /* 테마 전환 */
   .theme-seg { display:flex; }
-  .theme-seg button { flex:1; padding:5px 6px; font-size:.74rem; }
+  .theme-seg button { flex:1; padding:5px 6px; font-size:.74rem; white-space:nowrap; }
 
   /* 순자산 카드 — 오른쪽에 목표 달성률 링 */
   .kpi.hero { flex-direction:row; align-items:stretch; gap:22px; container:hero / inline-size; }
@@ -1058,6 +1069,8 @@
     .side-nav button { flex:1; justify-content:center; white-space:nowrap; padding:9px 8px; gap:8px; }
     .brand { flex:1; }
     .side-nav kbd, .brand-total { display:none; }
+    .nav-sep { width:1px; height:auto; margin:6px 2px; }
+    .embed-card { height:calc(100vh - 190px); }
     .side-foot { margin:0; flex-direction:row; }
     .store-card { display:none; }
     .save-bar { bottom:12px; padding:0 12px; }
@@ -1093,6 +1106,11 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
       입력<span class="nav-badge" id="navBadge"></span><kbd>3</kbd>
     </button>
+    <div class="nav-sep" role="separator"></div>
+    <button data-view="rebal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21.2 15.9A10 10 0 1 1 8 2.8"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+      연금 리밸런싱<kbd>4</kbd>
+    </button>
   </nav>
   <div class="side-foot">
     <div class="store-card" id="storeCard"></div>
@@ -1119,6 +1137,8 @@
     <div class="topbar-actions">
       <div class="seg" id="dashOwners" hidden role="group" aria-label="소유자별 보기"></div>
       <button class="btn btn-primary" id="btnTopAdd" hidden>＋ 새 자산</button>
+      <a class="btn btn-ghost" id="btnRebalOpen" hidden target="_blank" rel="noopener noreferrer"
+         href="https://iontiger.github.io/pension-etf-rebalancer/">새 창에서 열기 ↗</a>
     </div>
   </header>
 
@@ -1344,6 +1364,14 @@
           </div>
         </div>
       </aside>
+    </div>
+  </section>
+
+  <!-- ── 연금 리밸런싱: 별도 앱을 그대로 끼워 넣는다 (처음 열 때 불러옴) ── -->
+  <section class="view" id="view-rebal">
+    <div class="card embed-card">
+      <iframe id="rebalFrame" title="연금 ETF 리밸런싱" referrerpolicy="no-referrer"></iframe>
+      <div class="embed-loading" id="rebalLoading">불러오는 중…</div>
     </div>
   </section>
 
@@ -3932,7 +3960,8 @@ function demoRows() {
 }
 
 /* ═══════════ 화면 전환 · 공통 ═══════════ */
-var VIEW_TITLES = { home: '대시보드', list: '자산', input: '입력' };
+var VIEW_TITLES = { home: '대시보드', list: '자산', input: '입력', rebal: '연금 리밸런싱' };
+var REBAL_URL = 'https://iontiger.github.io/pension-etf-rebalancer/';
 
 function renderTopbar() {
   $('viewTitle').textContent = VIEW_TITLES[currentView];
@@ -3942,11 +3971,14 @@ function renderTopbar() {
   } else if (currentView === 'list') {
     var n = Object.keys(buildByName()).length;
     sub = '자산 ' + n + '개 · 기록 ' + rows.length + '건 — 행을 고르면 오른쪽에서 기록을 보고 고칠 수 있습니다';
+  } else if (currentView === 'rebal') {
+    sub = '연금 ETF 리밸런싱 계산기 — iontiger.github.io/pension-etf-rebalancer';
   } else {
     sub = '바뀐 금액만 고치고 저장하세요 — 입력 안 한 자산은 직전 값이 그대로 이어집니다';
   }
   $('viewSub').textContent = sub;
-  $('btnTopAdd').hidden = currentView === 'home';
+  $('btnTopAdd').hidden = currentView !== 'list' && currentView !== 'input';
+  $('btnRebalOpen').hidden = currentView !== 'rebal';
   renderDashOwners();
 }
 
@@ -3963,6 +3995,8 @@ function switchView(v) {
   updateSaveBar();
   if (v === 'home') renderHome();
   if (v === 'list') drawDetailChart();
+  // 리밸런서는 처음 열 때만 불러온다 (앱 시작을 느리게 하지 않게)
+  if (v === 'rebal' && !$('rebalFrame').getAttribute('src')) $('rebalFrame').src = REBAL_URL;
   window.scrollTo(0, 0);
 }
 
@@ -4008,6 +4042,9 @@ $('ranges').addEventListener('click', function (e) {
 })();
 
 $('btnTopAdd').addEventListener('click', openNewAsset);
+$('rebalFrame').addEventListener('load', function () {
+  if (this.getAttribute('src')) $('rebalLoading').classList.add('done');
+});
 
 // 로고 선택
 $('naLogoPick').addEventListener('click', function () { openLogoSheet('naLogo'); });
@@ -4212,6 +4249,7 @@ document.addEventListener('keydown', function (e) {
   else if (e.key === '1') switchView('home');
   else if (e.key === '2') switchView('list');
   else if (e.key === '3') switchView('input');
+  else if (e.key === '4') switchView('rebal');
 });
 
 /* ═══════════ 설정 ═══════════ */
