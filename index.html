@@ -333,17 +333,39 @@
   /* 순자산 카드 — 오른쪽에 목표 달성률 링 */
   .kpi.hero { flex-direction:row; align-items:stretch; gap:22px; container:hero / inline-size; }
   .hero-main { flex:1; min-width:0; display:flex; flex-direction:column; }
-  .hero-goal {
-    position:relative; flex:none; display:flex; align-items:center; gap:14px;
-    padding-left:22px; border-left:1px solid var(--border);
+  .hero-goal { flex:none; display:flex; align-items:center; padding-left:12px; border-left:1px solid var(--border); }
+  .hg-btn {
+    position:relative; display:flex; align-items:center; gap:14px; cursor:pointer;
+    padding:8px 12px 8px 10px; border-radius:14px; outline:none;
+    transition:background-color .15s;
   }
+  .hg-btn:hover, .hg-btn:focus-visible { background:var(--hover); }
+  .hg-btn:focus-visible { box-shadow:0 0 0 2px var(--accent); }
+  .hg-edit { color:var(--accent-deep); opacity:0; transition:opacity .15s; }
+  .hg-btn:hover .hg-edit, .hg-btn:focus-visible .hg-edit { opacity:1; }
+  /* 툴팁 — 링 아래에 뜬다 (위쪽은 상단바와 겹쳐서) */
+  .hg-tip {
+    position:absolute; top:calc(100% + 8px); left:50%; z-index:5;
+    transform:translate(-50%, -4px); opacity:0; pointer-events:none;
+    transition:opacity .15s, transform .15s;
+    background:var(--ink); color:var(--bg); border-radius:10px;
+    padding:8px 12px; white-space:nowrap; text-align:center;
+    font-size:.78rem; line-height:1.45; box-shadow:0 6px 18px rgba(0,0,0,.18);
+  }
+  .hg-tip::before {
+    content:''; position:absolute; bottom:100%; left:50%; transform:translateX(-50%);
+    border:6px solid transparent; border-bottom-color:var(--ink);
+  }
+  .hg-tip b { display:block; font-weight:700; }
+  .hg-tip span { display:block; opacity:.75; font-size:.72rem; }
+  .hg-btn:hover .hg-tip, .hg-btn:focus-visible .hg-tip { opacity:1; transform:translate(-50%, 0); }
   .ring { width:84px; height:84px; transform:rotate(-90deg); flex:none; }
   .ring circle { fill:none; stroke-width:8; }
   .ring-bg { stroke:var(--accent-wash); }
   .ring-fg { stroke:var(--accent); stroke-linecap:round; transition:stroke-dashoffset .7s cubic-bezier(.22,1,.36,1); }
   .ring-fg.done { stroke:var(--up); }
   .ring-pct {
-    position:absolute; left:22px; top:50%; width:84px; transform:translateY(-50%);
+    position:absolute; left:10px; top:50%; width:84px; transform:translateY(-50%);
     text-align:center; font-size:.95rem; font-weight:800; font-variant-numeric:tabular-nums;
   }
   .hg-l { font-size:.72rem; color:var(--muted); font-weight:600; }
@@ -471,11 +493,6 @@
     font-size:.86rem; font-weight:700; padding:5px 10px; border-radius:9px;
   }
   .goal-val:hover { filter:brightness(.97); }
-  .goal-input {
-    width:110px; font-size:.86rem; font-weight:700; text-align:right;
-    color:var(--ink); background:var(--bg);
-    border:1px solid var(--accent); border-radius:9px; padding:5px 8px; outline:none;
-  }
   .meter { height:8px; border-radius:99px; background:var(--accent-wash); overflow:hidden; }
   .meter-fill { height:100%; border-radius:99px; background:var(--accent); }
   .goal-eta { font-size:.76rem; color:var(--ink-2); margin-top:8px; }
@@ -783,6 +800,20 @@
     background:rgba(208,59,59,.08); border-radius:10px; padding:9px 12px; margin-top:14px;
   }
   .na-actions { margin-top:18px; }
+  .goal-amt { font-size:1.15rem !important; }
+  .goal-presets { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
+  .goal-presets button {
+    border:1px solid var(--border); background:var(--bg); color:var(--ink-2); cursor:pointer;
+    font-size:.8rem; font-weight:700; padding:6px 12px; border-radius:99px;
+  }
+  .goal-presets button:hover { border-color:var(--accent); color:var(--accent-deep); }
+  .goal-presets button.on { background:var(--accent-wash); color:var(--accent-deep); border-color:transparent; }
+  .goal-preview {
+    margin-top:14px; padding:12px 14px; border-radius:12px; background:var(--bg);
+    border:1px solid var(--border); font-size:.82rem; line-height:1.7; color:var(--ink-2);
+  }
+  .goal-preview b { color:var(--ink); }
+  .goal-preview .meter { margin:6px 0 4px; }
   .empty-note .btn { margin-top:14px; }
   .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .form-grid .full { grid-column:1 / -1; }
@@ -1093,15 +1124,22 @@
           </div>
         </div>
         <div class="hero-goal" id="heroGoal" hidden>
-          <svg class="ring" viewBox="0 0 84 84" aria-hidden="true">
-            <circle class="ring-bg" cx="42" cy="42" r="35"/>
-            <circle class="ring-fg" id="ringFg" cx="42" cy="42" r="35"/>
-          </svg>
-          <div class="ring-pct" id="ringPct"></div>
-          <div class="hg-t">
-            <div class="hg-l">목표 자산</div>
-            <div class="hg-v" id="hgGoal"></div>
-            <div class="hg-s" id="hgEta"></div>
+          <div class="hg-btn js-edit-goal" role="button" tabindex="0" aria-describedby="hgTip"
+               aria-label="목표 자산 금액 수정">
+            <svg class="ring" viewBox="0 0 84 84" aria-hidden="true">
+              <circle class="ring-bg" cx="42" cy="42" r="35"/>
+              <circle class="ring-fg" id="ringFg" cx="42" cy="42" r="35"/>
+            </svg>
+            <div class="ring-pct" id="ringPct"></div>
+            <div class="hg-t">
+              <div class="hg-l">목표 자산 <span class="hg-edit" aria-hidden="true">✎</span></div>
+              <div class="hg-v" id="hgGoal"></div>
+              <div class="hg-s" id="hgEta"></div>
+            </div>
+            <div class="hg-tip" id="hgTip" role="tooltip">
+              <b>목표 자산 금액을 입력하세요</b>
+              <span id="hgTipSub"></span>
+            </div>
           </div>
         </div>
       </div>
@@ -1328,6 +1366,35 @@
 </div>
 
 <!-- ═════════════ 모달 ═════════════ -->
+<!-- 목표 자산 설정 -->
+<div class="sheet-back" id="goalSheet">
+  <form class="sheet" id="goalForm" novalidate autocomplete="off" style="max-width:460px">
+    <div class="sheet-head">
+      <h2>목표 자산 설정</h2>
+      <button type="button" class="icon-btn" data-close="goalSheet" aria-label="닫기">✕</button>
+    </div>
+    <p>이루고 싶은 순자산 금액을 입력하세요. 달성률과 도달 예상 시점, 차트의 목표선이 이 금액으로 바뀝니다.</p>
+    <div class="field">
+      <label for="goalInput">목표 자산 (원)</label>
+      <input id="goalInput" class="amt-input goal-amt" type="text" inputmode="numeric" placeholder="0" data-value="" data-info="goalInfo">
+      <div class="in-diff" id="goalInfo"></div>
+    </div>
+    <div class="goal-presets" id="goalPresets">
+      <button type="button" data-eok="10">10억</button>
+      <button type="button" data-eok="20">20억</button>
+      <button type="button" data-eok="30">30억</button>
+      <button type="button" data-eok="50">50억</button>
+      <button type="button" data-eok="100">100억</button>
+    </div>
+    <div class="goal-preview" id="goalPreview"></div>
+    <div class="na-error" id="goalError" hidden></div>
+    <div class="btn-row na-actions">
+      <button type="button" class="btn btn-ghost" data-close="goalSheet">취소</button>
+      <button type="submit" class="btn btn-primary">저장</button>
+    </div>
+  </form>
+</div>
+
 <!-- 새 자산 추가 — 금액 입력과 따로, 추가하면 바로 저장된다 -->
 <div class="sheet-back" id="newAssetSheet">
   <form class="sheet" id="newAssetForm" novalidate autocomplete="off">
@@ -2473,14 +2540,22 @@ function projValueAt(base, months) {
   return v;
 }
 // 목표까지 몇 개월 — 이미 달성이면 0, 100년 안에 못 닿으면 null
-function monthsToGoal(base) {
-  if (base >= goalAmount) return 0;
+function monthsToGoal(base, goal) {
+  if (goal === undefined) goal = goalAmount;
+  if (base >= goal) return 0;
   var r = fcRate / 100 / 12, v = base;
   for (var m = 1; m <= 1200; m++) {
     v = v * (1 + r) + fcMonthly;
-    if (v >= goalAmount) return m;
+    if (v >= goal) return m;
   }
   return null;
+}
+function goalEtaText(months) {
+  if (months === 0) return '이미 달성했어요 🎉';
+  if (months === null) return '지금 적립액·수익률로는 100년 안에 닿지 않아요';
+  var gd = etaDate(months), yy = Math.floor(months / 12), mm = months % 12;
+  return gd.getFullYear() + '년 ' + (gd.getMonth() + 1) + '월 도달 예상 (' +
+    ((yy ? yy + '년 ' : '') + (mm ? mm + '개월' : '')).trim() + ' 후)';
 }
 function etaDate(months) {
   var now = new Date();
@@ -2581,6 +2656,7 @@ function renderHeroGoal(pct, etaShort) {
   $('ringPct').textContent = Math.max(0, pct).toFixed(pct >= 100 ? 0 : 1) + '%';
   $('hgGoal').textContent = parseFloat((goalAmount / 1e8).toFixed(2)) + '억원';
   $('hgEta').textContent = etaShort;
+  $('hgTipSub').textContent = '지금 ' + fmtHeaderTotal(goalAmount) + '원 · 누르면 바꿀 수 있어요';
 }
 
 // 차트 오른쪽으로 이어지는 예상선 — 보고 있는 기간만큼 앞으로 (전체면 기록 기간만큼, 최대 10년)
@@ -3450,7 +3526,7 @@ function paintAmtInput(inp) {
   var dirty = init !== undefined && v !== '' && v !== init;
   inp.classList.toggle('dirty', dirty);
   var row = inp.closest('.in-row');
-  var box = row ? row.querySelector('.in-diff') : $('naInfo');
+  var box = row ? row.querySelector('.in-diff') : $(inp.dataset.info || 'naInfo');
   box.innerHTML = '';
   if (dirty) {
     var d = Number(v) - Number(init);
@@ -3983,35 +4059,90 @@ $('listBody').addEventListener('click', function (e) {
 });
 
 // 목표 금액 수정: 값을 누르면 억 단위 숫자 입력으로 전환
-$('goalBox').addEventListener('click', function (e) {
-  var btn = e.target.closest('#goalVal');
-  if (!btn) return;
-  var inp = document.createElement('input');
-  inp.type = 'number';
-  inp.step = '0.1';
-  inp.min = '0';
-  inp.className = 'goal-input';
-  inp.value = String(parseFloat((goalAmount / 1e8).toFixed(2)));
-  btn.replaceWith(inp);
-  inp.focus();
-  inp.select();
-  var done = false;
-  function commitGoal() {
-    if (done) return;
-    done = true;
-    var v = parseFloat(inp.value);
-    if (!isNaN(v) && v > 0 && Math.round(v * 1e8) !== goalAmount) {
-      goalAmount = Math.round(v * 1e8);
-      persistQuiet();
-    }
-    renderHome();  // goalBox를 다시 그리면서 버튼도 복원되고, 차트 목표선도 바뀐다
-  }
-  inp.addEventListener('blur', commitGoal);
-  inp.addEventListener('keydown', function (ev) {
-    if (ev.key === 'Enter') inp.blur();
-    if (ev.key === 'Escape') { ev.stopPropagation(); inp.value = ''; inp.blur(); }
+/* ═══════════ 목표 자산 설정 창 ═══════════
+   순자산 카드의 목표 링, 미래 예상 카드의 목표 금액 버튼 어디서든 연다. */
+function goalBase() {
+  return withDashRows(function () {
+    var ser = totalSeries();
+    return ser.length ? ser[ser.length - 1].total : 0;
   });
+}
+function paintGoalPreview() {
+  var v = Number($('goalInput').dataset.value || 0);
+  document.querySelectorAll('#goalPresets button').forEach(function (b) {
+    b.classList.toggle('on', Number(b.dataset.eok) * 1e8 === v);
+  });
+  var box = $('goalPreview');
+  if (!v) { box.innerHTML = '<span>금액을 입력하면 달성률과 도달 시점을 미리 보여 드려요.</span>'; return; }
+  var base = goalBase();
+  var pct = base / v * 100;
+  box.innerHTML = '';
+  var l1 = el('div');
+  l1.appendChild(document.createTextNode((dashOwner === 'all' ? '현재 순자산 ' : ownerName(dashOwner) + ' 순자산 ')));
+  l1.appendChild(el('b', '', fmtHeaderTotal(base) + '원'));
+  l1.appendChild(document.createTextNode(' · 달성률 '));
+  l1.appendChild(el('b', '', Math.max(0, pct).toFixed(1) + '%'));
+  box.appendChild(l1);
+  var meter = el('div', 'meter');
+  var fill = el('div', 'meter-fill');
+  fill.style.width = Math.max(0, Math.min(100, pct)) + '%';
+  meter.appendChild(fill);
+  box.appendChild(meter);
+  box.appendChild(el('div', '', goalEtaText(monthsToGoal(base, v)) +
+    ' — 매달 ' + fmtCompact(fcMonthly) + '원 · 연 ' + fcRate.toFixed(1) + '% 기준'));
+}
+function openGoalSheet() {
+  if (document.querySelector('.sheet-back.open')) return;
+  var inp = $('goalInput');
+  inp.dataset.value = String(goalAmount);
+  paintAmtInput(inp);
+  $('goalError').hidden = true;
+  paintGoalPreview();
+  openSheet('goalSheet');
+  setTimeout(function () { inp.focus(); inp.select(); }, 60);
+}
+$('goalInput').addEventListener('input', function () {
+  onAmtInput(this);
+  paintAmtInput(this);
+  $('goalError').hidden = true;
+  paintGoalPreview();
 });
+$('goalPresets').addEventListener('click', function (e) {
+  var b = e.target.closest('button');
+  if (!b) return;
+  var inp = $('goalInput');
+  inp.dataset.value = String(Number(b.dataset.eok) * 1e8);
+  paintAmtInput(inp);
+  $('goalError').hidden = true;
+  paintGoalPreview();
+  inp.focus();
+});
+$('goalForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var v = Number($('goalInput').dataset.value || 0);
+  if (!v) {
+    $('goalError').textContent = '목표 금액을 입력하세요.';
+    $('goalError').hidden = false;
+    $('goalInput').focus();
+    return;
+  }
+  closeSheet('goalSheet');
+  if (v === goalAmount) return;
+  goalAmount = v;
+  renderHome();   // 링 · 미래 예상 · 차트 목표선이 함께 바뀐다
+  persistQuiet();
+  showToast('목표 자산을 ' + fmtHeaderTotal(v) + '원으로 바꿨습니다');
+});
+document.addEventListener('click', function (e) {
+  if (e.target.closest('.js-edit-goal, #goalVal')) openGoalSheet();
+});
+document.addEventListener('keydown', function (e) {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('.js-edit-goal')) {
+    e.preventDefault();
+    openGoalSheet();
+  }
+});
+
 
 // 자산 수정/삭제
 $('btnEdSave').addEventListener('click', saveEdit);
