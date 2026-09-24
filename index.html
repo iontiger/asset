@@ -178,6 +178,17 @@
   .side-nav kbd { margin-left:auto; }
   .nav-sep { height:1px; background:var(--border); margin:8px 6px; }
   .side-nav .nav-badge.new { background:#f15bb5; }
+  /* 리밸런싱 주기가 지났을 때 — 빨간 ! 가 살짝 맥박친다 */
+  .side-nav .nav-badge.due {
+    min-width:20px; padding:0; background:#e5383b; font-size:.78rem; font-weight:800;
+    animation:dueRing 1.8s ease-out infinite;
+  }
+  @keyframes dueRing {
+    0%   { box-shadow:0 0 0 0 rgba(229,56,59,.55); }
+    70%  { box-shadow:0 0 0 7px rgba(229,56,59,0); }
+    100% { box-shadow:0 0 0 0 rgba(229,56,59,0); }
+  }
+  @media (prefers-reduced-motion: reduce) { .side-nav .nav-badge.due { animation:none; } }
 
   /* ── 뱃지 ─────────────────────────── */
   .bdg-top { display:flex; align-items:center; justify-content:space-between; gap:12px 16px; flex-wrap:wrap; margin-bottom:18px; }
@@ -1405,7 +1416,7 @@
     <div class="nav-sep" role="separator"></div>
     <button data-view="rebal">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21.2 15.9A10 10 0 1 1 8 2.8"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
-      연금 리밸런싱<span class="nav-badge" id="navBadgeRebal"></span><kbd>5</kbd>
+      연금 리밸런싱<span class="nav-badge due" id="navBadgeRebal"></span><kbd>5</kbd>
     </button>
   </nav>
   <div class="side-foot">
