@@ -14,7 +14,8 @@ JavaScript가 윈도우 PC의 폴더에 `asset-data.json` 파일을 직접 만�
 | `index.html` | 앱 본체 (HTML + CSS + JS 단일 파일) |
 | `icon-192.png` `icon-512.png` `apple-touch-icon.png` | 앱 아이콘 (탭 아이콘은 `icon-192.png`) |
 | `.gitignore` | 저장소 폴더를 데이터 폴더로 써도 `asset-data.json`·`backups/` 가 커밋되지 않게 |
-| `.github/workflows/pages.yml` | 기본 브랜치에 푸시하면 GitHub Pages로 자동 배포 |
+| `.github/workflows/pages.yml` | 기본 브랜치에 푸시하면 GitHub Pages로 자동 배포 (`logos.json` 자동 생성) |
+| `logos/` | 로고 이미지 폴더 — 웹 주소로 쓸 때 로고가 여기서 나온다 |
 
 ## 웹 주소로 열기 — https://iontiger.github.io/asset/
 
@@ -153,7 +154,9 @@ JavaScript가 윈도우 PC의 폴더에 `asset-data.json` 파일을 직접 만�
 
 - 데이터에 로고를 적을 때 확장자는 생략해도 됩니다 (`parkrio2` → `parkrio2.png`, `.jpg` … 자동 탐색)
 - 데이터 폴더에 없는 로고는 `index.html` 옆 `logos/` 폴더에서 찾습니다
-  (웹에 올려 쓸 때는 기존 `logos.json` 도 그대로 읽습니다)
+- **웹 주소(GitHub Pages)로 쓸 때**: 이 저장소의 `logos/` 폴더에 이미지를 올리고 푸시하면
+  함께 배포되고, 로고 선택 창이 읽는 `logos.json` 목록도 배포 때 자동으로 만들어집니다
+  (GitHub 웹에서 `logos` 폴더 → **Add file → Upload files** 로 올려도 됩니다)
 
 ## 단축키
 

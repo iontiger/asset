@@ -1,4 +1,4 @@
-# index.html 과 아이콘(있으면 logos/, logos.json 도)을 GitHub Pages에 올린다.
+# index.html · 아이콘 · logos/ 이미지를 GitHub Pages에 올리고 logos.json 목록을 만든다.
 # → https://iontiger.github.io/asset/
 # 처음 한 번: 저장소 Settings → Pages → Source 를 "GitHub Actions" 로 바꿔야 한다.
 name: Deploy to GitHub Pages
@@ -31,8 +31,13 @@ jobs:
         run: |
           mkdir _site
           cp index.html icon-192.png icon-512.png apple-touch-icon.png _site/
-          [ -d logos ] && cp -r logos _site/ || true
-          [ -f logos.json ] && cp logos.json _site/ || true
+          # logos/ 의 이미지를 올리고, 로고 선택 창이 읽을 logos.json 목록을 자동으로 만든다
+          mkdir -p _site/logos
+          if [ -d logos ]; then
+            find logos -maxdepth 1 -type f -iregex '.*\.\(png\|jpe?g\|gif\|webp\|svg\)' -exec cp {} _site/logos/ \;
+          fi
+          ( cd _site/logos && ls -1 | LC_ALL=C sort ) | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()], ensure_ascii=False))' > _site/logos.json
+          echo "logos.json:"; cat _site/logos.json
           ls -la _site
 
       - uses: actions/configure-pages@v5
