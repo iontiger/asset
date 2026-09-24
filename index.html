@@ -634,7 +634,7 @@
   .owner-summary { margin-left:auto; font-size:.88rem; color:var(--ink-2); }
   .owner-summary b { color:var(--ink); font-variant-numeric:tabular-nums; }
   .list-layout {
-    display:grid; grid-template-columns:minmax(0,1fr) minmax(360px, 430px);
+    display:grid; grid-template-columns:minmax(0,1fr) clamp(320px, 36%, 430px);
     gap:16px; align-items:start;
   }
   .a-table { padding:4px 0 10px; container:atable / inline-size; }
@@ -661,7 +661,7 @@
   .a-item.sel { background:var(--accent-wash); box-shadow:inset 3px 0 0 var(--accent); }
   @keyframes rowIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
   .a-item.row-in { animation:rowIn .3s cubic-bezier(.22,1,.36,1) backwards; }
-  .a-name { font-size:.92rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .a-name { font-size:.92rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
   .a-date { font-size:.8rem; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
   .a-date.today { color:var(--chip3-fg); font-weight:700; }
   .a-delta { font-size:.76rem; font-weight:700; text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
@@ -673,7 +673,12 @@
   .empty-note { text-align:center; color:var(--muted); font-size:.88rem; line-height:1.7; padding:56px 20px; }
 
   /* 상세 패널 */
-  .detail { position:sticky; top:100px; max-height:calc(100vh - 116px); overflow-y:auto; padding:22px; }
+  .detail { position:sticky; top:100px; max-height:calc(100vh - 116px); overflow-y:auto; padding:22px; container:detail / inline-size; }
+  /* 좁은 상세 패널: 수정 칸을 한 줄씩 */
+  @container detail (max-width: 330px) {
+    .detail .form-grid { grid-template-columns:minmax(0,1fr); }
+    .dt-amt { font-size:1.6rem; }
+  }
   .detail-empty { color:var(--muted); font-size:.86rem; text-align:center; line-height:1.7; padding:60px 10px; }
   .dt-head { display:flex; align-items:center; gap:14px; }
   .dt-head-t { min-width:0; }
@@ -690,7 +695,7 @@
   .dt-actions { margin-top:14px; }
   .hist { border:1px solid var(--border); border-radius:12px; max-height:300px; overflow-y:auto; }
   .hist-row {
-    display:grid; grid-template-columns:92px minmax(0,1fr) 104px 26px; gap:8px; align-items:center;
+    display:grid; grid-template-columns:max-content minmax(0,1fr) max-content 24px; gap:10px; align-items:center;
     padding:5px 8px 5px 12px; font-size:.82rem; font-variant-numeric:tabular-nums;
   }
   .hist-row + .hist-row { border-top:1px solid var(--border); }
@@ -964,8 +969,8 @@
       grid-template-areas:"hero" "kpi" "comp" "chart" "fc" "ms" "fg";
     }
   }
-  /* 자산: 오른쪽 상세 패널을 아래로 내린다 */
-  @container main (max-width: 1040px) {
+  /* 자산: 휴대폰 폭에서만 상세 패널을 아래로 내린다 */
+  @container main (max-width: 540px) {
     .list-layout { grid-template-columns:minmax(0,1fr); }
     .detail { position:static; max-height:none; }
   }
@@ -999,8 +1004,17 @@
       grid-template-columns:max-content max-content minmax(0,1fr) max-content;
       grid-template-areas:"name name name amt" "owner date delta amt";
     }
-    .a-item > :nth-child(1), .a-item > :nth-child(7) { display:none; }
+    /* 로고 칸은 인라인 display:contents 래퍼라 안쪽 이미지까지 숨긴다 */
+    .a-item > :nth-child(1), .a-item > :nth-child(1) > *, .a-item > :nth-child(7) { display:none; }
     .a-group .g-share { display:none; }
+  }
+  /* 아주 좁을 때: 이름 · 소유 · 금액만 (날짜·증감은 오른쪽 상세에서) */
+  @container atable (max-width: 320px) {
+    .a-item { padding-left:12px; padding-right:12px; column-gap:6px; }
+    .a-item > :nth-child(4), .a-item > :nth-child(5) { display:none; }
+    .a-item .a-amt { font-size:.88rem; }
+    .a-group { padding-left:12px; padding-right:12px; }
+    .a-group .g-count { display:none; }
   }
 
   /* 입력 표 — 좁으면 변동을 금액 칸 아래로, 더 좁으면 마지막 기록을 이름 아래로 */
@@ -3225,12 +3239,18 @@ function renderListTable() {
 }
 
 function selectAsset(name) {
-  if (name === selectedName) return;
-  selectedName = name;
-  document.querySelectorAll('#listBody .a-item').forEach(function (r) {
-    r.classList.toggle('sel', r.dataset.name === name);
-  });
-  renderDetail();
+  if (name !== selectedName) {
+    selectedName = name;
+    document.querySelectorAll('#listBody .a-item').forEach(function (r) {
+      r.classList.toggle('sel', r.dataset.name === name);
+    });
+    renderDetail();
+  }
+  // 상세가 목록 아래에 있는 좁은 화면이면 그쪽으로 스크롤
+  var pane = $('detailPane');
+  if (pane.getBoundingClientRect().left < $('listBody').getBoundingClientRect().right - 1) {
+    pane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 /* ═══════════ 자산 상세 · 수정 · 삭제 ═══════════ */
