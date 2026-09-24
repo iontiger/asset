@@ -611,11 +611,13 @@
   .hist-del:hover { background:rgba(208,59,59,.12); color:var(--down); }
 
   /* ── 입력 ─────────────────────────── */
-  .input-layout {
-    display:grid; grid-template-columns:minmax(0,1fr) minmax(320px, 370px);
-    gap:16px; align-items:start;
+  .in-info {
+    display:flex; align-items:center; justify-content:space-between; gap:12px 20px; flex-wrap:wrap;
+    margin-bottom:12px; padding:0 4px;
   }
-  .input-side { position:sticky; top:100px; display:flex; flex-direction:column; gap:16px; }
+  .in-date { display:flex; align-items:center; gap:8px; font-size:.95rem; font-weight:800; color:var(--accent-deep); }
+  .in-date-note { font-size:.8rem; font-weight:500; color:var(--muted); margin-left:4px; }
+  .in-keys { font-size:.74rem; color:var(--muted); }
   .in-table { padding:4px 0 10px; container:intable / inline-size; }
   .in-row {
     display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 230px minmax(0,1.15fr);
@@ -662,19 +664,37 @@
   .in-group { display:flex; align-items:center; gap:9px; padding:18px 20px 6px; font-size:.84rem; font-weight:700; color:var(--ink-2); }
   .in-group .g-count { color:var(--muted); font-weight:500; font-size:.78rem; }
 
-  .save-card .sc-date { display:flex; align-items:center; gap:10px; font-size:1rem; font-weight:800; color:var(--accent-deep); }
-  .save-card .sc-note { font-size:.76rem; color:var(--ink-2); margin-top:4px; }
-  .sc-stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:16px 0; }
-  .sc-stat { background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:10px 12px; min-width:0; }
-  .sc-stat .l { font-size:.72rem; color:var(--muted); }
-  .sc-stat .v { font-size:1.1rem; font-weight:800; margin-top:3px; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .sc-stat .v.up { color:var(--up); }
-  .sc-stat .v.down { color:var(--down); }
-  .save-card .btn + .btn { margin-top:8px; }
-  .sc-keys { font-size:.72rem; color:var(--muted); margin-top:14px; line-height:2; }
+  /* 저장 바 — 입력 화면에서 바뀐 금액이 있을 때만 아래에 뜬다 */
+  .save-bar {
+    position:fixed; left:var(--side-w); right:0; bottom:22px; z-index:9;
+    display:flex; justify-content:center; padding:0 24px; pointer-events:none;
+  }
+  .save-bar:not([hidden]) .save-bar-inner { animation:barIn .28s cubic-bezier(.22,1,.36,1); }
+  @keyframes barIn { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+  .save-bar-inner {
+    pointer-events:auto; width:100%; max-width:660px;
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:10px 10px 10px 20px; box-shadow:var(--shadow-pop);
+  }
+  .sb-info { flex:1; min-width:0; font-size:.9rem; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sb-info b { color:var(--ink); font-variant-numeric:tabular-nums; }
+  .sb-info b.up { color:var(--up); }
+  .sb-info b.down { color:var(--down); }
+  .sb-sep { margin:0 8px; color:var(--baseline); }
+  body.has-savebar .main-inner { padding-bottom:120px; }
+  body.has-savebar .toast { bottom:100px; }
 
-  .add-form h3 { font-size:.95rem; margin-bottom:14px; }
-  .add-form .hint { font-size:.74rem; color:var(--muted); margin-top:12px; line-height:1.5; }
+  /* 방금 추가한 자산 표시 */
+  @keyframes rowFlash { 0%, 40% { background:var(--accent-wash); } 100% { background:transparent; } }
+  .flash { animation:rowFlash 2.2s ease-out; }
+
+  .na-error {
+    font-size:.82rem; font-weight:600; color:var(--down);
+    background:rgba(208,59,59,.08); border-radius:10px; padding:9px 12px; margin-top:14px;
+  }
+  .na-actions { margin-top:18px; }
+  .empty-note .btn { margin-top:14px; }
   .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .form-grid .full { grid-column:1 / -1; }
   .field { min-width:0; }
@@ -812,16 +832,17 @@
     .dash { grid-template-columns:minmax(0,1fr); }
     .fc-top { grid-template-columns:minmax(0,1fr); }
   }
-  /* 자산 · 입력: 오른쪽 패널을 아래(입력은 위)로 내린다 */
+  /* 자산: 오른쪽 상세 패널을 아래로 내린다 */
   @container main (max-width: 1040px) {
-    .list-layout, .input-layout { grid-template-columns:minmax(0,1fr); }
+    .list-layout { grid-template-columns:minmax(0,1fr); }
     .detail { position:static; max-height:none; }
-    /* 저장 카드는 표 위, 새 자산 추가는 표 아래로 */
-    .input-side { display:contents; }
-    .save-card { order:-1; }
-    .add-form { order:1; }
+  }
+  @container main (max-width: 700px) {
+    .in-keys { display:none; }
   }
   @container main (max-width: 560px) {
+    .kpis { grid-template-columns:minmax(0,1fr); }
+    .fc-list { columns:1; }
   }
 
   /* 자산 표 — 좁으면 소유 · 최근 입력 · 증감을 이름 아래 한 줄로 */
@@ -894,6 +915,8 @@
     .side-nav kbd, .brand-total { display:none; }
     .side-foot { margin:0; flex-direction:row; }
     .store-card { display:none; }
+    .save-bar { bottom:12px; padding:0 12px; }
+    .save-bar-inner { padding-left:14px; }
     .main-inner { padding:0 16px 40px; }
     .topbar { margin:0 -16px; padding:16px; }
     .settings-grid, .form-grid { grid-template-columns:minmax(0,1fr); }
@@ -1138,75 +1161,22 @@
     </div>
   </section>
 
-  <!-- ── 입력 ─────────────────────────── -->
+  <!-- ── 입력: 기존 자산의 오늘 금액만 ── -->
   <section class="view" id="view-input">
-    <div class="input-layout">
-      <div class="card in-table">
-        <div class="in-row head">
-          <span>자산</span><span>마지막 기록</span><span class="r">오늘 금액 (원)</span><span>변동</span>
-        </div>
-        <div id="inputList"></div>
+    <div class="in-info">
+      <div class="in-date">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <span id="todayLabel"></span><span class="in-date-note">저장하면 이 날짜로 기록됩니다</span>
       </div>
-
-      <aside class="input-side">
-        <div class="card save-card">
-          <div class="sc-date">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            <span id="todayLabel"></span>
-          </div>
-          <div class="sc-note">저장하면 날짜는 자동으로 오늘로 기록됩니다</div>
-          <div class="sc-stats">
-            <div class="sc-stat"><div class="l">바뀐 항목</div><div class="v"><span id="scCount">0</span>건</div></div>
-            <div class="sc-stat"><div class="l">순자산 변화</div><div class="v" id="scDelta">—</div></div>
-          </div>
-          <button class="btn btn-primary btn-block" id="btnSave" disabled>오늘 날짜로 저장 <kbd>Ctrl+S</kbd></button>
-          <button class="btn btn-ghost btn-block" id="btnDiscard" disabled>입력 취소</button>
-          <div class="sc-keys">
-            <kbd>Enter</kbd> <kbd>↓</kbd> 다음 자산 &nbsp;·&nbsp; <kbd>Shift</kbd>+<kbd>Enter</kbd> <kbd>↑</kbd> 이전<br>
-            <kbd>Esc</kbd> 그 칸 되돌리기
-          </div>
-        </div>
-
-        <div class="card add-form" id="addForm">
-          <h3>＋ 새 자산 추가</h3>
-          <div class="form-grid">
-            <div class="field full">
-              <label for="naName">이름</label>
-              <input id="naName" type="text" placeholder="예: 국민은행 예금" autocomplete="off">
-            </div>
-            <div class="field">
-              <label for="naGroup">그룹</label>
-              <select id="naGroup">
-                <option>부동산</option><option>증권</option><option>예금</option><option>장기</option><option>부채</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="naOwner">소유</label>
-              <select id="naOwner"></select>
-            </div>
-            <div class="field full" id="naDebtOfField" style="display:none">
-              <label for="naDebtOf">부채 대상 (연동 자산)</label>
-              <select id="naDebtOf">
-                <option>부동산</option><option>증권</option><option>예금</option><option>장기</option>
-              </select>
-            </div>
-            <div class="field full">
-              <label>로고 (선택)</label>
-              <button type="button" class="logo-pick" id="naLogoPick">
-                <span class="lp-name empty">로고 선택</span>
-                <span class="lp-caret">›</span>
-              </button>
-              <input id="naLogo" type="hidden" value="">
-            </div>
-            <div class="field full">
-              <label for="naAmount">평가금액 (원)</label>
-              <input id="naAmount" class="amt-input" type="text" inputmode="numeric" autocomplete="off" placeholder="0" data-value="">
-              <div class="in-diff" id="naInfo"></div>
-            </div>
-          </div>
-          <p class="hint">이름과 금액을 입력하면 저장 목록에 함께 들어갑니다. 부채는 잔액을 양수로 입력하세요.</p>
-        </div>
-      </aside>
+      <div class="in-keys">
+        <kbd>Enter</kbd> 다음 · <kbd>Shift</kbd>+<kbd>Enter</kbd> 이전 · <kbd>Esc</kbd> 되돌리기 · <kbd>Ctrl</kbd>+<kbd>S</kbd> 저장
+      </div>
+    </div>
+    <div class="card in-table">
+      <div class="in-row head">
+        <span>자산</span><span>마지막 기록</span><span class="r">오늘 금액 (원)</span><span>변동</span>
+      </div>
+      <div id="inputList"></div>
     </div>
   </section>
 </div>
@@ -1214,7 +1184,67 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- 입력 화면에서 금액을 바꾸면 아래에 떠오르는 저장 바 -->
+<div class="save-bar" id="saveBar" hidden>
+  <div class="save-bar-inner">
+    <div class="sb-info"><b id="scCount">0</b>건 바뀜<span class="sb-sep">·</span>순자산 <b id="scDelta">—</b></div>
+    <button class="btn btn-ghost" id="btnDiscard">입력 취소</button>
+    <button class="btn btn-primary" id="btnSave">오늘 날짜로 저장 <kbd>Ctrl+S</kbd></button>
+  </div>
+</div>
+
 <!-- ═════════════ 모달 ═════════════ -->
+<!-- 새 자산 추가 — 금액 입력과 따로, 추가하면 바로 저장된다 -->
+<div class="sheet-back" id="newAssetSheet">
+  <form class="sheet" id="newAssetForm" novalidate autocomplete="off">
+    <div class="sheet-head">
+      <h2>새 자산 추가</h2>
+      <button type="button" class="icon-btn" data-close="newAssetSheet" aria-label="닫기">✕</button>
+    </div>
+    <p>처음 등록하는 자산의 정보와 현재 금액을 입력하세요. 추가하면 오늘 날짜로 첫 기록이 저장됩니다.</p>
+    <div class="form-grid">
+      <div class="field full">
+        <label for="naName">이름</label>
+        <input id="naName" type="text" placeholder="예: 국민은행 예금">
+      </div>
+      <div class="field">
+        <label for="naGroup">그룹</label>
+        <select id="naGroup">
+          <option>부동산</option><option>증권</option><option>예금</option><option>장기</option><option>부채</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="naOwner">소유</label>
+        <select id="naOwner"></select>
+      </div>
+      <div class="field full" id="naDebtOfField" style="display:none">
+        <label for="naDebtOf">부채 대상 (연동 자산)</label>
+        <select id="naDebtOf">
+          <option>부동산</option><option>증권</option><option>예금</option><option>장기</option>
+        </select>
+      </div>
+      <div class="field full">
+        <label>로고 (선택)</label>
+        <button type="button" class="logo-pick" id="naLogoPick">
+          <span class="lp-name empty">로고 선택</span>
+          <span class="lp-caret">›</span>
+        </button>
+        <input id="naLogo" type="hidden" value="">
+      </div>
+      <div class="field full">
+        <label for="naAmount" id="naAmountLabel">현재 금액 (원)</label>
+        <input id="naAmount" class="amt-input" type="text" inputmode="numeric" placeholder="0" data-value="">
+        <div class="in-diff" id="naInfo"></div>
+      </div>
+    </div>
+    <div class="na-error" id="naError" hidden></div>
+    <div class="btn-row na-actions">
+      <button type="button" class="btn btn-ghost" data-close="newAssetSheet">취소</button>
+      <button type="submit" class="btn btn-primary" id="btnNaAdd">추가</button>
+    </div>
+  </form>
+</div>
+
 <div class="sheet-back" id="logoSheet">
   <div class="sheet wide" style="max-width:640px">
     <div class="sheet-head">
@@ -2672,10 +2702,10 @@ function renderListTable() {
   }
 
   if (!assets.length) {
-    var note = el('div', 'card empty-note');
-    note.innerHTML = !rows.length ? '아직 자산이 없습니다.<br>입력 탭의 "새 자산 추가"에서 첫 자산을 등록하세요.'
-      : q ? '"' + escapeHtml(listQuery.trim()) + '" 와(과) 일치하는 자산이 없습니다.'
-      : '해당 소유자의 자산이 없습니다.';
+    var note = !rows.length ? emptyWithAdd('아직 자산이 없습니다. 첫 자산을 등록하세요.')
+      : el('div', 'empty-note', q ? '"' + listQuery.trim() + '" 와(과) 일치하는 자산이 없습니다.'
+                                  : '해당 소유자의 자산이 없습니다.');
+    note.classList.add('card');
     view.appendChild(note);
     selectedName = null;
     return before !== selectedName;
@@ -2947,7 +2977,6 @@ function amtInputs() {
 }
 
 function renderInput() {
-  renderOwnerSelectOptions('naOwner', false);
   var today = new Date();
   var todayStr = fmtDateStr(today);
   // 다시 그려도(파일 다시 읽기 등) 아직 저장 안 한 입력은 이름별로 살려 둔다
@@ -2957,14 +2986,14 @@ function renderInput() {
   });
   var ae = document.activeElement;
   var focusName = ae && ae.classList && ae.classList.contains('amt-input') && ae.dataset.name;
-  $('todayLabel').textContent = '오늘 ' + today.getFullYear() + '년 ' +
-    (today.getMonth() + 1) + '월 ' + today.getDate() + '일 (' + WEEKDAYS[today.getDay()] + ')';
+  $('todayLabel').textContent = '오늘 ' + (today.getMonth() + 1) + '월 ' + today.getDate() + '일 (' +
+    WEEKDAYS[today.getDay()] + ')';
 
   var wrap = $('inputList');
   wrap.innerHTML = '';
   var assets = Object.values(latestByName());
   if (!assets.length) {
-    wrap.appendChild(el('div', 'empty-note', '아직 자산이 없습니다. 오른쪽 "새 자산 추가"에서 첫 자산을 등록하세요.'));
+    wrap.appendChild(emptyWithAdd('아직 자산이 없습니다. 첫 자산을 등록하세요.'));
   }
 
   GROUPS.concat(['기타']).forEach(function (g) {
@@ -3095,20 +3124,6 @@ function collectEntries() {
       logo: meta.logo || ''
     });
   });
-  // 새 자산
-  var naName = $('naName').value.trim();
-  var naAmt = $('naAmount').dataset.value || '';
-  if (naName && naAmt !== '') {
-    var naIsDebt = $('naGroup').value === '부채';
-    entries = entries.filter(function (en) { return en.name !== naName; });
-    entries.push({
-      name: naName,
-      amount: Number(naAmt),
-      group: encodeGroup($('naGroup').value, naIsDebt, $('naDebtOf').value),
-      owner: $('naOwner').value,
-      logo: $('naLogo').value.trim()
-    });
-  }
   return entries;
 }
 
@@ -3124,9 +3139,12 @@ function updateSaveBar() {
   $('scCount').textContent = n;
   var sd = $('scDelta');
   sd.textContent = n ? signedTxt(delta) : '—';
-  sd.className = 'v ' + (n ? dirClass(delta) : '');
+  sd.className = n ? dirClass(delta) : '';
   $('btnSave').disabled = !n || saving;
-  $('btnDiscard').disabled = !n;
+  // 저장 바는 입력 화면에서 바뀐 금액이 있을 때만
+  var show = n > 0 && currentView === 'input';
+  $('saveBar').hidden = !show;
+  document.body.classList.toggle('has-savebar', show);
   var badge = $('navBadge');
   badge.textContent = n;
   badge.classList.toggle('show', n > 0);
@@ -3146,19 +3164,8 @@ function saveEntries() {
     });
   }, entries.length + '건 저장 완료').then(function (ok) {
     saving = false;
-    if (ok) clearNewAssetForm();
     updateSaveBar();
   });
-}
-
-function clearNewAssetForm() {
-  $('naName').value = '';
-  $('naLogo').value = '';
-  $('naAmount').dataset.value = '';
-  paintAmtInput($('naAmount'));
-  $('naGroup').value = '부동산';
-  syncDebtOf('naGroup', 'naDebtOfField');
-  refreshLogoPick('naLogoPick', '');
 }
 
 function discardEntries() {
@@ -3166,7 +3173,6 @@ function discardEntries() {
     inp.dataset.value = inp.dataset.initial;
     paintAmtInput(inp);
   });
-  clearNewAssetForm();
   updateSaveBar();
 }
 
@@ -3216,19 +3222,107 @@ $('inputList').addEventListener('click', function (e) {
   revertAmt(inp);
   inp.focus();
 });
+$('btnSave').addEventListener('click', saveEntries);
+$('btnDiscard').addEventListener('click', discardEntries);
+
+/* ═══════════ 새 자산 추가 ═══════════
+   금액 입력(여러 자산을 한꺼번에 고쳐 저장)과 흐름을 나눈다 — 새 자산은 창에서
+   정보와 현재 금액을 넣고 "추가"를 누르면 그 자리에서 바로 저장된다. */
+function emptyWithAdd(text) {
+  var box = el('div', 'empty-note');
+  box.appendChild(el('div', '', text));
+  var b = el('button', 'btn btn-primary js-new-asset', '＋ 새 자산 추가');
+  b.type = 'button';
+  box.appendChild(b);
+  return box;
+}
+document.addEventListener('click', function (e) {
+  if (e.target.closest('.js-new-asset')) openNewAsset();
+});
+
+function clearNewAssetForm() {
+  $('naName').value = '';
+  $('naLogo').value = '';
+  $('naAmount').dataset.value = '';
+  paintAmtInput($('naAmount'));
+  $('naGroup').value = '부동산';
+  syncDebtOf('naGroup', 'naDebtOfField');
+  $('naAmountLabel').textContent = '현재 금액 (원)';
+  refreshLogoPick('naLogoPick', '');
+  $('naError').hidden = true;
+}
+
+function openNewAsset() {
+  if (document.querySelector('.sheet-back.open')) return;
+  clearNewAssetForm();
+  renderOwnerSelectOptions('naOwner', false);
+  // 자산 목록에서 소유자로 걸러 보는 중이면 그 소유자를 기본값으로
+  if (currentView === 'list' && listOwner !== 'all') $('naOwner').value = listOwner;
+  openSheet('newAssetSheet');
+  setTimeout(function () { $('naName').focus(); }, 60);
+}
+
+function naFail(msg, fieldId) {
+  $('naError').textContent = msg;
+  $('naError').hidden = false;
+  if (fieldId) $(fieldId).focus();
+}
+
+function submitNewAsset() {
+  var name = $('naName').value.trim();
+  var amt = $('naAmount').dataset.value || '';
+  if (!name) return naFail('이름을 입력하세요.', 'naName');
+  if (rows.some(function (r) { return r.name === name; })) {
+    return naFail('"' + name + '" 은(는) 이미 있는 자산입니다. 금액은 입력 화면에서 고치세요.', 'naName');
+  }
+  if (amt === '') return naFail('현재 금액을 입력하세요.', 'naAmount');
+  var isDebt = $('naGroup').value === '부채';
+  var row = {
+    date: fmtDateStr(new Date()),
+    name: name,
+    amount: Number(amt),
+    group: encodeGroup($('naGroup').value, isDebt, $('naDebtOf').value),
+    owner: $('naOwner').value,
+    logo: $('naLogo').value.trim()
+  };
+  var btn = $('btnNaAdd');
+  btn.disabled = true;
+  commit(function () {
+    rows.push(row);
+    selectedName = name;
+  }, '"' + name + '" 을(를) 추가했습니다').then(function (ok) {
+    btn.disabled = false;
+    if (!ok) return;
+    closeSheet('newAssetSheet');
+    // 방금 추가한 행을 보여 준다
+    var sel = currentView === 'input' ? '#inputList .in-item' : currentView === 'list' ? '#listBody .a-item' : null;
+    if (!sel) return;
+    var target = Array.prototype.find.call(document.querySelectorAll(sel), function (r) {
+      var key = r.dataset.name || (r.querySelector('.amt-input') || {}).dataset.name;
+      return key === name;
+    });
+    if (target) {
+      target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      target.classList.add('flash');
+    }
+  });
+}
+
+$('newAssetForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  submitNewAsset();
+});
 $('naAmount').addEventListener('input', function () {
   onAmtInput($('naAmount'));
   paintAmtInput($('naAmount'));
-  updateSaveBar();
+  $('naError').hidden = true;
 });
-$('naAmount').addEventListener('keydown', function (e) {
-  if (e.key === 'Enter') { e.preventDefault(); if (!$('btnSave').disabled) saveEntries(); }
+$('naName').addEventListener('input', function () { $('naError').hidden = true; });
+$('naGroup').addEventListener('change', function () {
+  syncDebtOf('naGroup', 'naDebtOfField');
+  // 부채는 잔액을 양수로 적는다
+  $('naAmountLabel').textContent = $('naGroup').value === '부채' ? '현재 잔액 (원, 양수로)' : '현재 금액 (원)';
 });
-$('naName').addEventListener('input', updateSaveBar);
-$('naGroup').addEventListener('change', function () { syncDebtOf('naGroup', 'naDebtOfField'); updateSaveBar(); });
-$('naDebtOf').addEventListener('change', updateSaveBar);
-$('btnSave').addEventListener('click', saveEntries);
-$('btnDiscard').addEventListener('click', discardEntries);
 
 /* ═══════════ 로고 선택 ═══════════ */
 var logoPickTarget = null;   // 값을 넣을 hidden input의 id
@@ -3315,7 +3409,6 @@ function chooseLogo(file) {
   if (logoPickTarget) {
     $(logoPickTarget).value = file;
     refreshLogoPick(logoPickTarget + 'Pick', file);
-    if (logoPickTarget === 'naLogo') updateSaveBar();
   }
   closeSheet('logoSheet');
 }
@@ -3392,7 +3485,7 @@ function renderTopbar() {
     sub = '바뀐 금액만 고치고 저장하세요 — 입력 안 한 자산은 직전 값이 그대로 이어집니다';
   }
   $('viewSub').textContent = sub;
-  $('btnTopAdd').hidden = currentView !== 'list';
+  $('btnTopAdd').hidden = currentView === 'home';
 }
 
 function switchView(v) {
@@ -3405,6 +3498,7 @@ function switchView(v) {
     b.classList.toggle('on', b.dataset.view === v);
   });
   renderTopbar();
+  updateSaveBar();
   if (v === 'home') renderHome();
   if (v === 'list') drawDetailChart();
   window.scrollTo(0, 0);
@@ -3451,10 +3545,7 @@ $('ranges').addEventListener('click', function (e) {
   document.querySelectorAll('#ranges button').forEach(function (x) { x.classList.toggle('on', x === btn); });
 })();
 
-$('btnTopAdd').addEventListener('click', function () {
-  switchView('input');
-  $('naName').focus();
-});
+$('btnTopAdd').addEventListener('click', openNewAsset);
 
 // 로고 선택
 $('naLogoPick').addEventListener('click', function () { openLogoSheet('naLogo'); });
@@ -3579,7 +3670,8 @@ document.addEventListener('keydown', function (e) {
   if (top || e.ctrlKey || e.metaKey || e.altKey) return;
   var t = e.target;
   if (t && t.closest && t.closest('input, select, textarea, [contenteditable="true"]')) return;
-  if (e.key === '1') switchView('home');
+  if (e.key === 'n' || e.key === 'N' || e.key === 'ㅜ') { e.preventDefault(); openNewAsset(); }
+  else if (e.key === '1') switchView('home');
   else if (e.key === '2') switchView('list');
   else if (e.key === '3') switchView('input');
 });
