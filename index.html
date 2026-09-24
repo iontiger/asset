@@ -1882,7 +1882,8 @@ function applyDb(obj) {
   OWNERS = Array.isArray(obj.owners) ? normalizeOwners(obj.owners) : DEFAULT_OWNERS.slice();
   rows = normalizeRows(obj.assets || []);
   var st = obj.settings || {};
-  if (isFinite(st.goal) && st.goal > 0) goalAmount = Math.round(st.goal);
+  // 예전 기본값(35억)이 그대로 저장돼 있으면 손대지 않은 값으로 보고 새 기본값(20억)을 쓴다
+  goalAmount = isFinite(st.goal) && st.goal > 0 && st.goal !== 3500000000 ? Math.round(st.goal) : GOAL_DEFAULT;
   // 예전 기본값(월 1,000만원 · 수익률 0%)이 그대로 저장돼 있으면 손대지 않은 값으로 보고 새 기본값을 쓴다
   var oldDefault = st.fcMonthly === 10000000 && !st.fcRate;
   fcMonthly = !oldDefault && isFinite(st.fcMonthly) ? Math.round(st.fcMonthly) : FC_DEFAULT_MONTHLY;
@@ -2526,7 +2527,8 @@ var FC_DEFAULT_RATE = 4;                      // 기본: 연 4%
 var fcMonthly = FC_DEFAULT_MONTHLY;           // (데이터 파일에 저장)
 var FC_STEP = 1000000;                        // ± 100만원
 var fcMode = 'month';
-var goalAmount = 3500000000;                  // 기본 목표: 35억 (데이터 파일에 저장)
+var GOAL_DEFAULT = 2000000000;                // 기본 목표: 20억
+var goalAmount = GOAL_DEFAULT;                // (데이터 파일에 저장)
 var fcRate = FC_DEFAULT_RATE;                 // 연 수익률(%) — 월 복리로 계산 (데이터 파일에 저장)
 var FC_RATE_STEP = 0.5;
 
