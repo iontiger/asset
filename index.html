@@ -2441,6 +2441,7 @@ function applyDb(obj) {
   badges = Array.isArray(obj.badges) ? normalizeBadges(obj.badges) : backfillBadges();
   // 연금 리밸런싱 포트폴리오 — 없으면 처음 열 때 원래 리밸런서 페이지 기록(또는 기본값)으로 시작
   pension = null;
+  rbResetState();
   if (obj.pension) {
     try { pension = rbSanitize(obj.pension); rbFillNames(pension); } catch (e) { console.warn('pension', e); }
   }
@@ -2654,6 +2655,7 @@ function openLocal() {
     syncMarks();
     badges = [];
     pension = null;
+    rbResetState();
   }
   setBanner('');
   setStoreState('loaded');
@@ -2673,6 +2675,7 @@ function openDemo() {
   syncMarks();
   badges = backfillBadges();
   pension = null;
+  rbResetState();
   setBanner(FS_SUPPORTED
     ? '<span>지금은 <b>데모 데이터</b>입니다. 데이터 폴더를 고르면 이 PC에 <code>' + DATA_FILE +
       '</code> 파일을 만들어 기록을 관리합니다.</span>' +
@@ -5029,6 +5032,21 @@ var RB_LS_KEY = 'pension-etf-rebalancer-v1';   // 원래 리밸런서 페이지�
 var RB_DEFAULT_ITEMS = [['195920', 10], ['284430', 10], ['283580', 15], ['329200', 8], ['360200', 24], ['371160', 5], ['379810', 8], ['435420', 10], ['488500', 10]];
 var RB_COLORS = ['#2a78d6', '#1baf7a', '#eda100', '#9b5de5', '#e34948', '#00a0a8', '#f15bb5', '#8d6e3f', '#64748b', '#4a3aa7', '#84cc16', '#f97316'];
 
+// 데모 포트폴리오 — 3월에 3,000만원으로 시작해 매달 100만원씩 넣고 8월에 리밸런싱한 기록 (실제 종가 기준)
+var RB_DEMO = {
+  qty: {"195920":104,"284430":175,"283580":359,"329200":710,"360200":328,"371160":261,"379810":109,"435420":259,"488500":282},
+  cash: 38771,
+  lastRebalancedAt: '2026-08-25T00:30:00.000Z',
+  history: [
+    {"at":"2026-03-25T00:30:00.000Z","type":"invest","amount":30000000,"total":30000000,"cashAfter":86349,"baseDate":"2026-03-24","trades":[{"action":"BUY","code":"195920","name":"TIGER 일본TOPIX(합성 H)","qty":98,"price":30380},{"action":"BUY","code":"284430","name":"KODEX 200미국채혼합50","qty":153,"price":19540},{"action":"BUY","code":"283580","name":"KODEX 차이나CSI300","qty":292,"price":15405},{"action":"BUY","code":"329200","name":"TIGER 리츠부동산인프라","qty":545,"price":4399},{"action":"BUY","code":"360200","name":"ACE 미국S&P500","qty":293,"price":24509},{"action":"BUY","code":"371160","name":"TIGER 차이나항셍테크","qty":192,"price":7808},{"action":"BUY","code":"379810","name":"KODEX 미국나스닥100","qty":100,"price":23814},{"action":"BUY","code":"435420","name":"TIGER 미국나스닥100채권혼합50","qty":226,"price":13253},{"action":"BUY","code":"488500","name":"TIGER 미국S&P500동일가중","qty":249,"price":12025}]},
+    {"at":"2026-04-25T00:30:00.000Z","type":"invest","amount":1000000,"total":1000000,"cashAfter":131932,"baseDate":"2026-04-24","trades":[{"action":"BUY","code":"195920","name":"TIGER 일본TOPIX(합성 H)","qty":3,"price":31825},{"action":"BUY","code":"284430","name":"KODEX 200미국채혼합50","qty":4,"price":20886},{"action":"BUY","code":"283580","name":"KODEX 차이나CSI300","qty":9,"price":16543},{"action":"BUY","code":"329200","name":"TIGER 리츠부동산인프라","qty":16,"price":4779},{"action":"BUY","code":"360200","name":"ACE 미국S&P500","qty":9,"price":26386},{"action":"BUY","code":"371160","name":"TIGER 차이나항셍테크","qty":6,"price":7953},{"action":"BUY","code":"379810","name":"KODEX 미국나스닥100","qty":3,"price":26405},{"action":"BUY","code":"435420","name":"TIGER 미국나스닥100채권혼합50","qty":7,"price":13919},{"action":"BUY","code":"488500","name":"TIGER 미국S&P500동일가중","qty":7,"price":12601}]},
+    {"at":"2026-05-25T00:30:00.000Z","type":"invest","amount":1000000,"total":1000000,"cashAfter":210005,"baseDate":"2026-05-24","trades":[{"action":"BUY","code":"195920","name":"TIGER 일본TOPIX(합성 H)","qty":3,"price":33140},{"action":"BUY","code":"284430","name":"KODEX 200미국채혼합50","qty":4,"price":23055},{"action":"BUY","code":"283580","name":"KODEX 차이나CSI300","qty":8,"price":17233},{"action":"BUY","code":"329200","name":"TIGER 리츠부동산인프라","qty":19,"price":4150},{"action":"BUY","code":"360200","name":"ACE 미국S&P500","qty":8,"price":28341},{"action":"BUY","code":"371160","name":"TIGER 차이나항셍테크","qty":6,"price":8083},{"action":"BUY","code":"379810","name":"KODEX 미국나스닥100","qty":2,"price":29555},{"action":"BUY","code":"435420","name":"TIGER 미국나스닥100채권혼합50","qty":6,"price":14642},{"action":"BUY","code":"488500","name":"TIGER 미국S&P500동일가중","qty":7,"price":13055}]},
+    {"at":"2026-06-25T00:30:00.000Z","type":"invest","amount":1000000,"total":1000000,"cashAfter":304283,"baseDate":"2026-06-24","trades":[{"action":"BUY","code":"195920","name":"TIGER 일본TOPIX(합성 H)","qty":2,"price":33970},{"action":"BUY","code":"284430","name":"KODEX 200미국채혼합50","qty":4,"price":24616},{"action":"BUY","code":"283580","name":"KODEX 차이나CSI300","qty":8,"price":17933},{"action":"BUY","code":"329200","name":"TIGER 리츠부동산인프라","qty":20,"price":3924},{"action":"BUY","code":"360200","name":"ACE 미국S&P500","qty":8,"price":28471},{"action":"BUY","code":"371160","name":"TIGER 차이나항셍테크","qty":6,"price":7555},{"action":"BUY","code":"379810","name":"KODEX 미국나스닥100","qty":2,"price":30109},{"action":"BUY","code":"435420","name":"TIGER 미국나스닥100채권혼합50","qty":6,"price":14812},{"action":"BUY","code":"488500","name":"TIGER 미국S&P500동일가중","qty":7,"price":13598}]},
+    {"at":"2026-07-25T00:30:00.000Z","type":"invest","amount":1000000,"total":1000000,"cashAfter":417366,"baseDate":"2026-07-24","trades":[{"action":"BUY","code":"195920","name":"TIGER 일본TOPIX(합성 H)","qty":2,"price":34595},{"action":"BUY","code":"284430","name":"KODEX 200미국채혼합50","qty":4,"price":21029},{"action":"BUY","code":"283580","name":"KODEX 차이나CSI300","qty":9,"price":16296},{"action":"BUY","code":"329200","name":"TIGER 리츠부동산인프라","qty":20,"price":3974},{"action":"BUY","code":"360200","name":"ACE 미국S&P500","qty":8,"price":27194},{"action":"BUY","code":"371160","name":"TIGER 차이나항셍테크","qty":6,"price":7415},{"action":"BUY","code":"379810","name":"KODEX 미국나스닥100","qty":2,"price":27516},{"action":"BUY","code":"435420","name":"TIGER 미국나스닥100채권혼합50","qty":7,"price":14114},{"action":"BUY","code":"488500","name":"TIGER 미국S&P500동일가중","qty":7,"price":13085}]},
+    {"at":"2026-08-25T00:30:00.000Z","type":"rebalance","total":36256896,"contribution":1000000,"cashAfter":38771,"baseDate":"2026-08-24","trades":[{"action":"SELL","code":"195920","name":"TIGER 일본TOPIX(합성 H)","qty":4,"price":34810},{"action":"BUY","code":"284430","name":"KODEX 200미국채혼합50","qty":6,"price":20705},{"action":"BUY","code":"283580","name":"KODEX 차이나CSI300","qty":33,"price":15120},{"action":"BUY","code":"329200","name":"TIGER 리츠부동산인프라","qty":90,"price":4084},{"action":"BUY","code":"360200","name":"ACE 미국S&P500","qty":2,"price":26520},{"action":"BUY","code":"371160","name":"TIGER 차이나항셍테크","qty":45,"price":6935},{"action":"BUY","code":"435420","name":"TIGER 미국나스닥100채권혼합50","qty":7,"price":13960},{"action":"BUY","code":"488500","name":"TIGER 미국S&P500동일가중","qty":5,"price":12850}]}
+  ]
+};
+
 var Rebalance = (function () {
 
   var EPS = 1e-9;
@@ -5299,7 +5317,25 @@ function rbSanitize(p) {
     history: Array.isArray(p.history) ? p.history.slice(-200) : []
   };
 }
+function rbDemo() {
+  return rbSanitize({
+    name: '연금저축 ETF 포트폴리오 (데모)',
+    items: RB_DEFAULT_ITEMS.map(function (x) { return { code: x[0], name: '', weight: x[1], qty: RB_DEMO.qty[x[0]] || 0 }; }),
+    cash: RB_DEMO.cash,
+    settings: { band: 0, minTradeAmount: 0, cycleDays: 30 },
+    lastRebalancedAt: RB_DEMO.lastRebalancedAt,
+    history: JSON.parse(JSON.stringify(RB_DEMO.history))
+  });
+}
+// 데이터를 새로 불러오거나 데모로 바꿀 때 — 이전 화면의 편집 중인 값 · 계산 캐시를 버린다
+function rbResetState() {
+  rb.draft = null;
+  rb.dirty = false;
+  rb.total.key = '';
+  if ($('rbSaveBar')) $('rbSaveBar').hidden = true;
+}
 function rbPf() {
+  if (!pension && store.mode === 'demo') { pension = rbDemo(); rbFillNames(pension); }
   if (!pension) {
     var raw = lsGet(RB_LS_KEY);
     try { pension = raw ? rbSanitize(JSON.parse(raw)) : null; } catch (e) { pension = null; }
@@ -5352,8 +5388,9 @@ function rbSave(next, okMsg) {
   rb.total.key = '';
   var job = store.mode === 'demo' ? Promise.resolve() : persist();
   return job.then(function () {
-    lsSet(RB_LS_KEY, JSON.stringify(pension));
-    if (okMsg) showToast(okMsg);
+    // 데모는 새로고침하면 사라진다 — 원래 리밸런서 페이지의 기록도 건드리지 않는다
+    if (store.mode !== 'demo') lsSet(RB_LS_KEY, JSON.stringify(pension));
+    if (okMsg) showToast(okMsg + (store.mode === 'demo' ? ' (데모 — 새로고침하면 사라짐)' : ''));
     renderRebal();
     updateRebalNav();
     return true;
@@ -5407,7 +5444,7 @@ function rbDue(p) {
 function updateRebalNav() {
   var b = $('navBadgeRebal');
   if (!b) return;
-  var due = pension || lsGet(RB_LS_KEY) ? rbDue() : false;
+  var due = rbDue();
   b.textContent = due ? '!' : '';
   b.classList.toggle('show', due);
   b.title = due ? '리밸런싱 시점입니다' : '';
@@ -5472,7 +5509,7 @@ function renderRbPlan() {
   // KPI
   var cycTxt, cycSub;
   if (days === null) { cycTxt = '기록 없음'; cycSub = cycle + '일 주기'; }
-  else if (days >= cycle) { cycTxt = (days - cycle) + '일 지남'; cycSub = '마지막 ' + rbDate(p.lastRebalancedAt) + ' · ' + cycle + '일 주기'; }
+  else if (days >= cycle) { cycTxt = days === cycle ? '오늘' : (days - cycle) + '일 지남'; cycSub = '마지막 ' + rbDate(p.lastRebalancedAt) + ' · ' + cycle + '일 주기'; }
   else { cycTxt = 'D-' + (cycle - days); cycSub = '마지막 ' + rbDate(p.lastRebalancedAt) + ' · ' + cycle + '일 주기'; }
   $('rbKpis').innerHTML =
     '<div class="card kpi rb-total" id="rbTotalCard" role="button" tabindex="0" title="총자산 추이 보기">' +
