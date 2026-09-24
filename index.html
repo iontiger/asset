@@ -200,7 +200,7 @@
 
   /* ── 메인 ─────────────────────────── */
   .main { margin-left:var(--side-w); min-height:100vh; }
-  .main-inner { max-width:1500px; margin:0 auto; padding:0 32px 56px; container:main / inline-size; }
+  .main-inner { max-width:1640px; margin:0 auto; padding:0 32px 56px; container:main / inline-size; }
   .topbar {
     position:sticky; top:0; z-index:6;
     display:flex; align-items:center; justify-content:space-between; gap:16px;
@@ -279,11 +279,16 @@
   .seg button.on.p7 { background:var(--own7-bg); color:var(--own7-fg); box-shadow:none; }
 
   /* ── 대시보드: KPI ────────────────── */
-  .kpis {
-    display:grid; grid-template-columns:minmax(0,1.75fr) repeat(3, minmax(0,1fr));
-    gap:16px; margin-bottom:16px;
-  }
   .kpi { display:flex; flex-direction:column; padding:20px 22px; }
+  /* 작은 KPI — 자산 합계 · 부채 합계 · 이번 달 증감 */
+  .kpi-stack { display:flex; flex-direction:column; gap:12px; min-width:0; container:kpis / inline-size; }
+  .kpi.sm { flex:1; padding:14px 16px; justify-content:center; }
+  .kpi.sm .kpi-v { margin-top:6px; font-size:1.3rem; }
+  @container kpis (max-width: 520px) and (min-width: 300px) {
+    .kpi.sm { padding:12px 13px; }
+    .kpi.sm .kpi-v { font-size:1.08rem; }
+  }
+  .kpi.sm .kpi-s { margin-top:4px; padding-top:0; font-size:.72rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .kpi-l {
     display:flex; align-items:center; gap:7px;
     font-size:.8rem; font-weight:600; color:var(--ink-2);
@@ -309,26 +314,43 @@
   .delta .period { color:var(--muted); font-weight:500; }
 
   /* ── 대시보드 본문 ─────────────────── */
-  .dash {
-    display:grid; grid-template-columns:minmax(0,1fr) minmax(330px, 390px);
-    gap:16px; align-items:start;
+  /* 대시보드 그리드 — 넓을 때:
+       순자산      | 작은 KPI | 미래 예상
+       자산 구성   | 작은 KPI | (세로로 길게)
+       순자산 추이 (2칸)      |
+       월간 요약 (2칸)        | 공포·탐욕 */
+  .dboard {
+    display:grid; gap:16px; align-items:start;
+    grid-template-columns:minmax(0,1fr) 210px 340px;
+    grid-template-areas:
+      "hero  kpi   fc"
+      "comp  kpi   fc"
+      "chart chart fc"
+      "ms    ms    fg";
   }
-  .dash-col { display:flex; flex-direction:column; gap:16px; min-width:0; }
+  .dboard > .hero { grid-area:hero; }
+  .dboard > .kpi-stack { grid-area:kpi; align-self:stretch; }
+  .dboard > .comp-card { grid-area:comp; }
+  .dboard > .chart-card { grid-area:chart; }
+  .dboard > .forecast-card { grid-area:fc; align-self:stretch; }
+  .dboard > .ms-card { grid-area:ms; align-self:stretch; }
+  .dboard > .fg-card { grid-area:fg; align-self:stretch; }
 
   /* 자산 구성 */
   .comp-bar { display:flex; gap:2px; height:14px; border-radius:99px; overflow:hidden; }
   .comp-bar span { display:block; height:100%; }
-  .comp-legend { margin-top:14px; }
+  .comp-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:12px; }
+  .comp-legend { margin-top:12px; display:flex; flex-wrap:wrap; gap:6px 30px; }
   .comp-item {
-    display:grid; grid-template-columns:10px minmax(0,1fr) auto 52px; gap:10px; align-items:center;
-    padding:7px 0; font-size:.84rem; color:var(--ink-2);
+    display:grid; grid-template-columns:10px auto auto; gap:4px 8px; align-items:center;
+    padding:4px 0; font-size:.82rem; color:var(--ink-2);
   }
-  .comp-item + .comp-item { border-top:1px solid var(--border); }
   .comp-item .dot { width:10px; height:10px; border-radius:3px; }
-  .comp-item .amt { font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .comp-item .amt { grid-column:2 / -1; font-size:.76rem; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; margin-top:-3px; }
   .comp-item .pct { text-align:right; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
 
   /* 차트 */
+  .chart-card .card-head { flex-wrap:wrap; }
   .chart-wrap { position:relative; }
   .chart-wrap svg { display:block; width:100%; }
   .chart-empty { padding:80px 12px; text-align:center; color:var(--muted); font-size:.86rem; }
@@ -345,14 +367,10 @@
   .tooltip .t-diff.down { color:var(--down); }
 
   /* 미래 자산 예상 */
-  .fc-top {
-    display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:22px; align-items:center;
-    margin-bottom:12px;
-  }
   .stepper {
     display:flex; align-items:center; justify-content:space-between; gap:10px;
     background:var(--bg); border:1px solid var(--border); border-radius:12px;
-    padding:7px 9px;
+    padding:7px 9px; margin:14px 0 8px;
   }
   .stepper button {
     width:38px; height:38px; flex:none; cursor:pointer;
@@ -365,10 +383,10 @@
   .st-mid .st-val { font-size:1rem; font-weight:700; font-variant-numeric:tabular-nums; }
   .st-mid .st-val.minus { color:var(--down); }
   .st-mid .st-cap { font-size:.68rem; color:var(--muted); margin-top:2px; }
-  .fc-list { columns:2; column-gap:36px; column-rule:1px solid var(--border); }
+  .fc-list { margin-top:4px; }
   .fc-row {
-    break-inside:avoid; display:flex; justify-content:space-between; align-items:baseline;
-    padding:9px 4px; border-bottom:1px solid var(--border);
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:7px 4px; border-bottom:1px solid var(--border);
   }
   /* 월별 타임라인에서 연도가 바뀌는 지점 — 로즈 색상 구분선 */
   .fc-row.year-break { border-top:2px solid var(--own1-fg); }
@@ -397,6 +415,11 @@
   .goal-eta { font-size:.76rem; color:var(--ink-2); margin-top:8px; }
 
   /* ── 월간 요약 ────────────────────── */
+  .ms-card { container:ms / inline-size; }
+  @container ms (min-width: 620px) {
+    .ms-body { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:0 32px; align-items:start; }
+    .ms-body .ms-contrib { margin-top:0; }
+  }
   .ms-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; }
   .ms-head-l { min-width:0; }
   .ms-range { display:block; font-size:.74rem; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; margin-top:2px; }
@@ -464,7 +487,7 @@
   }
   .fg-gauge { width:100%; }
   .fg-gauge svg { display:block; width:100%; height:auto; }
-  .fg-card .fg-gauge { max-width:320px; margin:0 auto; }
+  .fg-card .fg-gauge { max-width:240px; margin:0 auto; }
   .fg-meta {
     display:flex; align-items:center; justify-content:center; gap:7px;
     font-size:.76rem; color:var(--ink-2); margin:2px 0 18px;
@@ -824,13 +847,25 @@
 
   /* ── 좁은 화면 대응 ───────────────── */
   /* 창 폭이 아니라 실제로 쓸 수 있는 폭(컨테이너)에 맞춘다 — 사이드바 폭과 무관하게 동작 */
-  @container main (max-width: 1100px) {
-    .kpis { grid-template-columns:repeat(2, minmax(0,1fr)); }
-    .kpi.hero { grid-column:1 / -1; }
+  /* 중간 폭: 작은 KPI를 순자산 아래 한 줄로 */
+  @container main (max-width: 1080px) {
+    .dboard {
+      grid-template-columns:minmax(0,1fr) 320px;
+      grid-template-areas:
+        "hero  fc"
+        "kpi   fc"
+        "comp  fc"
+        "chart fc"
+        "ms    fg";
+    }
+    .kpi-stack { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
   }
-  @container main (max-width: 900px) {
-    .dash { grid-template-columns:minmax(0,1fr); }
-    .fc-top { grid-template-columns:minmax(0,1fr); }
+  /* 좁은 폭: 한 열 */
+  @container main (max-width: 780px) {
+    .dboard {
+      grid-template-columns:minmax(0,1fr);
+      grid-template-areas:"hero" "kpi" "comp" "chart" "fc" "ms" "fg";
+    }
   }
   /* 자산: 오른쪽 상세 패널을 아래로 내린다 */
   @container main (max-width: 1040px) {
@@ -841,8 +876,7 @@
     .in-keys { display:none; }
   }
   @container main (max-width: 560px) {
-    .kpis { grid-template-columns:minmax(0,1fr); }
-    .fc-list { columns:1; }
+    .kpi-stack { grid-template-columns:minmax(0,1fr); }
   }
 
   /* 자산 표 — 좁으면 소유 · 최근 입력 · 증감을 이름 아래 한 줄로 */
@@ -975,7 +1009,8 @@
 
   <!-- ── 대시보드 ─────────────────────── -->
   <section class="view on" id="view-home">
-    <div class="kpis">
+    <!-- 한 장의 그리드: 영역 배치는 CSS(grid-template-areas)가 폭에 따라 바꾼다 -->
+    <div class="dboard">
       <div class="card kpi hero">
         <div class="kpi-l" id="heroLabel">총 자산</div>
         <div class="kpi-v" id="heroValue">—</div>
@@ -984,104 +1019,102 @@
           <div id="heroUpdated"></div>
         </div>
       </div>
-      <div class="card kpi">
-        <div class="kpi-l"><span class="kpi-dot" style="background:var(--accent)"></span>자산 합계</div>
-        <div class="kpi-v" id="kpiGross">—</div>
-        <div class="kpi-s" id="kpiGrossSub"></div>
-      </div>
-      <div class="card kpi">
-        <div class="kpi-l"><span class="kpi-dot" style="background:var(--grp5)"></span>부채 합계</div>
-        <div class="kpi-v" id="kpiDebt">—</div>
-        <div class="kpi-s" id="kpiDebtSub"></div>
-      </div>
-      <div class="card kpi">
-        <div class="kpi-l"><span class="kpi-dot" style="background:var(--grp2)"></span><span id="kpiMonthL">이번 달 증감</span></div>
-        <div class="kpi-v" id="kpiMonth">—</div>
-        <div class="kpi-s" id="kpiMonthSub"></div>
-      </div>
-    </div>
 
-    <div class="dash">
-      <div class="dash-col">
-        <div class="card chart-card">
-          <div class="card-head">
-            <div>
-              <div class="card-title">순자산 추이</div>
-              <div class="card-sub" id="chartSub"></div>
-            </div>
-            <div class="seg" id="ranges">
-              <button data-range="7">1주</button>
-              <button data-range="30">1개월</button>
-              <button data-range="91" class="on">3개월</button>
-              <button data-range="365">1년</button>
-              <button data-range="all">전체</button>
-            </div>
-          </div>
-          <div class="chart-wrap" id="chartWrap">
-            <div class="chart-empty">데이터가 없습니다</div>
-            <div class="tooltip" id="tooltip"><div class="t-date"></div><div class="t-val"></div><div class="t-diff"></div></div>
-          </div>
+      <div class="kpi-stack">
+        <div class="card kpi sm">
+          <div class="kpi-l"><span class="kpi-dot" style="background:var(--accent)"></span>자산 합계</div>
+          <div class="kpi-v" id="kpiGross">—</div>
+          <div class="kpi-s" id="kpiGrossSub"></div>
         </div>
-
-        <!-- 미래 자산 예상 -->
-        <div class="card forecast-card" id="forecastCard">
-          <div class="card-head">
-            <div class="card-title">미래 자산 예상</div>
-            <div class="seg" id="fcModes">
-              <button data-mode="month" class="on">월별</button>
-              <button data-mode="year">연도별</button>
-            </div>
-          </div>
-          <div class="fc-top">
-            <div id="goalBox"></div>
-            <div class="stepper">
-              <button id="fcMinus" aria-label="100만원 감액" title="100만원 감액">−</button>
-              <div class="st-mid">
-                <div class="st-val" id="fcMonthly"></div>
-                <div class="st-cap">매달 더해지는 금액 (±100만원)</div>
-              </div>
-              <button id="fcPlus" aria-label="100만원 증액" title="100만원 증액">＋</button>
-            </div>
-          </div>
-          <div class="fc-list" id="fcList"></div>
+        <div class="card kpi sm">
+          <div class="kpi-l"><span class="kpi-dot" style="background:var(--grp5)"></span>부채 합계</div>
+          <div class="kpi-v" id="kpiDebt">—</div>
+          <div class="kpi-s" id="kpiDebtSub"></div>
+        </div>
+        <div class="card kpi sm">
+          <div class="kpi-l"><span class="kpi-dot" style="background:var(--grp2)"></span><span id="kpiMonthL">이번 달 증감</span></div>
+          <div class="kpi-v" id="kpiMonth">—</div>
+          <div class="kpi-s" id="kpiMonthSub"></div>
         </div>
       </div>
 
-      <div class="dash-col">
-        <div class="card comp-card" id="compCard" style="display:none">
-          <div class="card-head"><div class="card-title">자산 구성</div></div>
-          <div class="comp-bar" id="compBar"></div>
-          <div class="comp-legend" id="compLegend"></div>
+      <div class="card comp-card" id="compCard" style="display:none">
+        <div class="comp-head">
+          <div class="card-title">자산 구성</div>
+          <div class="card-sub" id="compSub"></div>
         </div>
-
-        <!-- 월간 요약 -->
-        <div class="card ms-card" id="msCard" style="display:none">
-          <div class="ms-head">
-            <div class="ms-head-l">
-              <div class="card-title" id="msTitle">이번 달 요약</div>
-              <span class="ms-range" id="msRange"></span>
-            </div>
-            <div class="ms-nav">
-              <button type="button" id="msPrev" aria-label="이전 달" title="이전 달">‹</button>
-              <button type="button" id="msNext" aria-label="다음 달" title="다음 달">›</button>
-            </div>
-          </div>
-          <div class="ms-body" id="msBody"></div>
-        </div>
-
-        <!-- 공포·탐욕 지수 -->
-        <a class="card fg-card" id="fgCard" style="display:none"
-           href="https://edition.cnn.com/markets/fear-and-greed"
-           target="_blank" rel="noopener noreferrer">
-          <div class="card-head">
-            <div class="card-title">공포 · 탐욕 지수</div>
-            <span class="fg-go">CNN에서 보기 ›</span>
-          </div>
-          <div class="fg-verdict" id="fgcVerdict"><span id="fgcVerdictText">관망</span></div>
-          <div class="fg-gauge" id="fgcGauge"></div>
-          <div class="fg-meta"><span class="dash"></span><span id="fgcPrev"></span></div>
-        </a>
+        <div class="comp-bar" id="compBar"></div>
+        <div class="comp-legend" id="compLegend"></div>
       </div>
+
+      <div class="card chart-card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">순자산 추이</div>
+            <div class="card-sub" id="chartSub"></div>
+          </div>
+          <div class="seg" id="ranges">
+            <button data-range="7">1주</button>
+            <button data-range="30">1개월</button>
+            <button data-range="91" class="on">3개월</button>
+            <button data-range="365">1년</button>
+            <button data-range="all">전체</button>
+          </div>
+        </div>
+        <div class="chart-wrap" id="chartWrap">
+          <div class="chart-empty">데이터가 없습니다</div>
+          <div class="tooltip" id="tooltip"><div class="t-date"></div><div class="t-val"></div><div class="t-diff"></div></div>
+        </div>
+      </div>
+
+      <!-- 미래 자산 예상 — 세로로 길게, 12개월을 한눈에 -->
+      <div class="card forecast-card" id="forecastCard">
+        <div class="card-head">
+          <div class="card-title">미래 자산 예상</div>
+          <div class="seg" id="fcModes">
+            <button data-mode="month" class="on">월별</button>
+            <button data-mode="year">연도별</button>
+          </div>
+        </div>
+        <div id="goalBox"></div>
+        <div class="stepper">
+          <button id="fcMinus" aria-label="100만원 감액" title="100만원 감액">−</button>
+          <div class="st-mid">
+            <div class="st-val" id="fcMonthly"></div>
+            <div class="st-cap">매달 더해지는 금액 (±100만원)</div>
+          </div>
+          <button id="fcPlus" aria-label="100만원 증액" title="100만원 증액">＋</button>
+        </div>
+        <div class="fc-list" id="fcList"></div>
+      </div>
+
+      <!-- 월간 요약 -->
+      <div class="card ms-card" id="msCard" style="display:none">
+        <div class="ms-head">
+          <div class="ms-head-l">
+            <div class="card-title" id="msTitle">이번 달 요약</div>
+            <span class="ms-range" id="msRange"></span>
+          </div>
+          <div class="ms-nav">
+            <button type="button" id="msPrev" aria-label="이전 달" title="이전 달">‹</button>
+            <button type="button" id="msNext" aria-label="다음 달" title="다음 달">›</button>
+          </div>
+        </div>
+        <div class="ms-body" id="msBody"></div>
+      </div>
+
+      <!-- 공포·탐욕 지수 -->
+      <a class="card fg-card" id="fgCard" style="display:none"
+         href="https://edition.cnn.com/markets/fear-and-greed"
+         target="_blank" rel="noopener noreferrer">
+        <div class="card-head">
+          <div class="card-title">공포 · 탐욕 지수</div>
+          <span class="fg-go">CNN에서 보기 ›</span>
+        </div>
+        <div class="fg-verdict" id="fgcVerdict"><span id="fgcVerdictText">관망</span></div>
+        <div class="fg-gauge" id="fgcGauge"></div>
+        <div class="fg-meta"><span class="dash"></span><span id="fgcPrev"></span></div>
+      </a>
     </div>
   </section>
 
@@ -1371,7 +1404,7 @@ var GROUP_COLOR = {
   '부동산': 'var(--grp1)', '증권': 'var(--grp2)', '예금': 'var(--grp3)',
   '장기': 'var(--grp4)', '부채': 'var(--grp5)', '기타': 'var(--baseline)'
 };
-var CHART_H = 320;
+var CHART_H = 300;
 
 var rows = [];          // {date:'yyyy-mm-dd', name, amount, group, owner, logo}
 var currentRange = 91;  // 기본 3개월
@@ -2196,11 +2229,13 @@ function renderKpis() {
   }
   $('kpiGross').textContent = fmtHeaderTotal(gross) + '원';
   $('kpiGross').title = comma(gross) + '원';
-  $('kpiGrossSub').textContent = '자산 ' + nA + '개 · ' + comma(gross) + '원';
+  $('kpiGrossSub').textContent = '자산 ' + nA + '개';
+  $('kpiGrossSub').title = comma(gross) + '원';
   $('kpiDebt').textContent = debt ? '−' + fmtHeaderTotal(debt) + '원' : '0원';
+  $('kpiDebt').title = debt ? '−' + comma(debt) + '원' : '';
   $('kpiDebt').className = 'kpi-v' + (debt ? ' down' : '');
   $('kpiDebtSub').textContent = debt
-    ? '부채 ' + nD + '건 · 자산 대비 ' + (gross ? (debt / gross * 100).toFixed(1) : '—') + '%'
+    ? nD + '건 · 자산의 ' + (gross ? (debt / gross * 100).toFixed(1) : '—') + '%'
     : '부채 없음';
   var thisKey = monthKeyOf(new Date());
   var s = monthSummary(thisKey);
@@ -2209,10 +2244,11 @@ function renderKpis() {
     $('kpiMonth').textContent = signedTxt(s.change);
     $('kpiMonth').className = 'kpi-v ' + dirClass(s.change);
     $('kpiMonthSub').textContent = (s.pct !== null ? pctTxt(s.pct) + ' · ' : '') + '전월 말 대비';
+    $('kpiMonth').title = (s.change < 0 ? '−' : '+') + comma(Math.abs(s.change)) + '원';
   } else {
     $('kpiMonth').textContent = '—';
     $('kpiMonth').className = 'kpi-v';
-    $('kpiMonthSub').textContent = '비교할 지난달 기록이 없습니다';
+    $('kpiMonthSub').textContent = '지난달 기록 없음';
   }
 }
 
@@ -2337,6 +2373,7 @@ function renderComposition() {
   Object.keys(byGroup).forEach(function (g) { if (byGroup[g] > 0) gross += byGroup[g]; });
   if (gross <= 0) { card.style.display = 'none'; return; }
   card.style.display = '';
+  $('compSub').textContent = '자산 합계 ' + fmtHeaderTotal(gross) + '원 기준 · 연동 부채 차감';
   var bar = $('compBar');
   var legend = $('compLegend');
   bar.innerHTML = '';
@@ -2355,10 +2392,10 @@ function renderComposition() {
     dot.style.background = GROUP_COLOR[g];
     item.appendChild(dot);
     item.appendChild(el('span', '', g));
+    item.appendChild(el('span', 'pct', pct.toFixed(1) + '%'));
     var amt = el('span', 'amt', fmtHeaderTotal(byGroup[g]) + '원');
     amt.title = comma(byGroup[g]) + '원';
     item.appendChild(amt);
-    item.appendChild(el('span', 'pct', pct.toFixed(1) + '%'));
     legend.appendChild(item);
   });
 }
@@ -3976,16 +4013,18 @@ function msStat(label, tag, value, cap) {
 
 function paintMonthSummary(body, s) {
   body.innerHTML = '';
+  var main = el('div', 'ms-main');
+  body.appendChild(main);
 
   // ── 이번 달 증감 ──
-  body.appendChild(el('div', 'ms-hero-l', '순자산 증감'));
+  main.appendChild(el('div', 'ms-hero-l', '순자산 증감'));
   var hv = el('div', 'ms-hero-v ' + dirClass(s.change));
   hv.appendChild(document.createTextNode(
     (s.change > 0 ? '▲ +' : s.change < 0 ? '▼ −' : '') + fmtCompact(Math.abs(s.change)) + '원'));
   if (s.pct !== null) hv.appendChild(el('span', 'ms-hero-p', pctTxt(s.pct)));
-  body.appendChild(hv);
+  main.appendChild(hv);
   // 한 달치 변화는 억 단위 반올림에 묻히므로 소수 둘째자리까지 보여준다
-  body.appendChild(el('div', 'ms-hero-s', fmtHeaderTotal(s.start) + '원 → ' + fmtHeaderTotal(s.end) + '원'));
+  main.appendChild(el('div', 'ms-hero-s', fmtHeaderTotal(s.start) + '원 → ' + fmtHeaderTotal(s.end) + '원'));
 
   // ── 전월 대비 / 전년 동월 대비 ──
   var stats = el('div', 'ms-stats');
@@ -3994,7 +4033,7 @@ function paintMonthSummary(body, s) {
   stats.appendChild(msStat('전년 동월 대비', 'YoY', s.yoy,
     s.yoy === null ? '1년 전 기록 없음'
       : (s.yoyPct === null ? s.endDate.slice(0, 4) - 1 + '년 대비' : pctTxt(s.yoyPct))));
-  body.appendChild(stats);
+  main.appendChild(stats);
 
   // ── 기여도 1·2위 ──
   if (s.contributors.length) {
@@ -4229,7 +4268,7 @@ function fgPaint(gaugeId, verdictBoxId, verdictTextId, prevId, maxPx) {
 function renderFgCard() {
   if (!fgData) return;
   $('fgCard').style.display = '';
-  fgPaint('fgcGauge', 'fgcVerdict', 'fgcVerdictText', 'fgcPrev', 72);
+  fgPaint('fgcGauge', 'fgcVerdict', 'fgcVerdictText', 'fgcPrev', 60);
 }
 
 function openFgSheet() {
@@ -4269,7 +4308,7 @@ function showFearGreed() {
 
 $('btnFgClose').addEventListener('click', function () { closeSheet('fgSheet'); });
 window.addEventListener('resize', function () {
-  if (fgData) fgFit('fgcVerdict', 'fgcVerdictText', 72);
+  if (fgData) fgFit('fgcVerdict', 'fgcVerdictText', 60);
   if ($('fgSheet').classList.contains('open')) fgFit('fgVerdict', 'fgVerdictText');
 });
 
