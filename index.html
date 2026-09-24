@@ -1156,7 +1156,7 @@
       <h2>로고 선택</h2>
       <button class="icon-btn" data-close="logoSheet" aria-label="닫기">✕</button>
     </div>
-    <p id="logoSheetNote">데이터 폴더의 <code>logos</code> 폴더에 있는 이미지에서 고르세요.</p>
+    <p id="logoSheetNote">저장소와 데이터 폴더의 <code>logos</code> 폴더 이미지에서 고르세요.</p>
     <div class="btn-row logo-search">
       <input id="logoSearch" class="text-input" type="search" placeholder="파일명 검색" autocomplete="off" style="flex:1">
       <button class="btn btn-ghost" id="btnLogoAdd" style="flex:none">＋ 이미지 추가</button>
@@ -2440,13 +2440,17 @@ function drawLineChart(wrap, series, H) {
    2) 없으면 index.html 옆 logos/ 경로와 logos.json(웹 호스팅용)을 쓴다 */
 var folderLogoUrls = {};    // 소문자 파일명 → blob URL
 var folderLogoFiles = null; // 데이터 폴더 logos\ 의 파일 목록 (폴더가 없으면 null)
-var hostedLogoFiles = [];   // logos.json 목록
-if (location.protocol !== 'file:') {
-  fetch('logos.json')
-    .then(function (r) { return r.json(); })
-    .then(function (list) { if (Array.isArray(list)) hostedLogoFiles = list; })
+var hostedLogoFiles = [];   // logos.json 목록 (GitHub Pages 배포 때 자동 생성)
+function loadHostedLogos() {
+  if (location.protocol === 'file:') return Promise.resolve();   // 로컬 파일로 열면 목록을 못 읽는다
+  return fetch('logos.json', { cache: 'no-cache' })
+    .then(function (r) { return r.ok ? r.json() : []; })
+    .then(function (list) {
+      if (Array.isArray(list)) hostedLogoFiles = list.filter(function (f) { return IMG_RE.test(f); });
+    })
     .catch(function () {});
 }
+loadHostedLogos();
 
 async function loadFolderLogos(onlyNames) {
   if (!onlyNames) {
@@ -2472,7 +2476,17 @@ async function loadFolderLogos(onlyNames) {
   files.sort(function (a, b) { return a.localeCompare(b, 'ko'); });
   folderLogoFiles = files;
 }
-function logoFileList() { return folderLogoFiles || hostedLogoFiles; }
+// 데이터 폴더의 logos\ 와 웹(logos.json)의 로고를 합친 목록 — 같은 파일명은 한 번만
+function logoFileList() {
+  var seen = {}, out = [];
+  (folderLogoFiles || []).concat(hostedLogoFiles).forEach(function (f) {
+    var k = f.toLowerCase();
+    if (seen[k]) return;
+    seen[k] = true;
+    out.push(f);
+  });
+  return out.sort(function (a, b) { return a.localeCompare(b, 'ko'); });
+}
 function logoSrc(f) { return folderLogoUrls[f.toLowerCase()] || LOGO_DIR + f; }
 
 // 확장자를 생략해도 찾도록 후보 경로 목록 생성 (예: "parkrio2" → parkrio2.png, .jpg …)
@@ -3185,6 +3199,10 @@ function openLogoSheet(targetId) {
   $('btnLogoAdd').hidden = store.mode !== 'folder';
   renderLogoGrid('');
   openSheet('logoSheet');
+  // 목록을 새로 받아 온다 — 방금 배포된 로고도 새로고침 없이 보이게
+  loadHostedLogos().then(function () {
+    if ($('logoSheet').classList.contains('open')) renderLogoGrid($('logoSearch').value);
+  });
   setTimeout(function () { $('logoSearch').focus(); }, 50);
 }
 
@@ -3203,9 +3221,12 @@ function renderLogoGrid(query) {
 
   var files = logoFileList();
   if (!files.length) {
-    grid.appendChild(el('div', 'logo-note', store.mode === 'folder'
-      ? '데이터 폴더에 logos 폴더가 없거나 비어 있습니다. "＋ 이미지 추가"로 로고 이미지를 넣으세요.'
-      : '데이터 폴더를 연결하면 그 안의 logos 폴더 이미지를 고를 수 있습니다.'));
+    var tips = [];
+    if (location.protocol !== 'file:') tips.push('GitHub 저장소의 logos 폴더에 이미지를 올리면 배포(1~2분) 뒤 여기에 나타납니다.');
+    tips.push(store.mode === 'folder'
+      ? '데이터 폴더의 logos 폴더에 넣어도 됩니다 — 위의 "＋ 이미지 추가"를 누르세요.'
+      : '데이터 폴더를 연결하면 그 안의 logos 폴더 이미지도 고를 수 있습니다.');
+    grid.appendChild(el('div', 'logo-note', tips.join(' ')));
     return;
   }
 
