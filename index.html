@@ -449,6 +449,45 @@
     .rb-tag { padding:3px 7px; }
   }
   .side-nav .nav-badge.show + kbd { display:none; }
+  /* ── 빈 화면 안내 ── */
+  .guide { text-align:center; padding:44px 22px; }
+  .guide.compact { padding:28px 16px; }
+  .guide-ico { font-size:2.3rem; line-height:1; margin-bottom:12px; }
+  .guide h3 { font-size:1.05rem; font-weight:800; letter-spacing:-.01em; }
+  .guide p { font-size:.86rem; color:var(--ink-2); line-height:1.65; margin:6px auto 0; max-width:520px; }
+  .guide-steps {
+    list-style:none; counter-reset:gs; display:inline-flex; flex-direction:column; gap:8px;
+    text-align:left; margin:16px auto 0; font-size:.84rem; color:var(--ink-2); line-height:1.5; max-width:460px;
+  }
+  .guide-steps li { counter-increment:gs; display:flex; gap:10px; align-items:flex-start; }
+  .guide-steps li::before {
+    content:counter(gs); flex:none; width:20px; height:20px; border-radius:50%; margin-top:0;
+    display:inline-flex; align-items:center; justify-content:center;
+    background:var(--accent-wash); color:var(--accent-deep); font-size:.72rem; font-weight:800;
+  }
+  .guide-actions { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:18px; }
+  .home-guide { margin-bottom:16px; }
+
+  /* ── 사용법 창 (? 키) ── */
+  .help-tabs { display:flex; overflow-x:auto; scrollbar-width:none; max-width:100%; margin-bottom:18px; }
+  .help-tabs::-webkit-scrollbar { display:none; }
+  .help-tabs button { white-space:nowrap; }
+  .help-grid { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:26px; }
+  .help-body h3 { font-size:.9rem; font-weight:800; margin:0 0 8px; }
+  .help-body h3 + * { margin-bottom:18px; }
+  .help-body ul { list-style:none; display:flex; flex-direction:column; gap:7px; }
+  .help-body ul li { position:relative; padding-left:14px; font-size:.84rem; line-height:1.6; color:var(--ink-2); }
+  .help-body ul li::before { content:''; position:absolute; left:2px; top:.62em; width:5px; height:5px; border-radius:50%; background:var(--accent); }
+  .help-body b { color:var(--ink); }
+  .help-body .guide-steps { display:flex; margin:0 0 18px; max-width:none; }
+  .help-keys { width:100%; border-collapse:collapse; font-size:.82rem; }
+  .help-keys td { padding:7px 0; border-bottom:1px solid var(--border); vertical-align:top; color:var(--ink-2); }
+  .help-keys tr:last-child td { border-bottom:none; }
+  .help-keys td:first-child { white-space:nowrap; padding-right:14px; width:1%; }
+  .help-keys kbd { font-size:.72rem; }
+  .help-foot { margin-top:18px; padding-top:14px; border-top:1px solid var(--border); font-size:.78rem; color:var(--muted); line-height:1.6; }
+  @media (max-width: 760px) { .help-grid { grid-template-columns:minmax(0,1fr); gap:6px; } }
+
   /* ── 도움말 툴팁 ── */
   .tipbox {
     position:fixed; left:-9999px; top:0; z-index:60; max-width:300px;
@@ -505,6 +544,7 @@
     color:var(--ink-2); font-size:.88rem; font-weight:600; cursor:pointer;
   }
   .side-btn:hover { background:var(--hover); color:var(--ink); }
+  .side-btn kbd { margin-left:auto; }
 
   /* ── 메인 ─────────────────────────── */
   .main { margin-left:var(--side-w); min-height:100vh; }
@@ -1412,7 +1452,9 @@
     .brand { flex:1; }
     .side-nav kbd, .brand-total { display:none; }
     .nav-sep { width:1px; height:auto; margin:6px 2px; }
-    .side-foot { margin:0; flex-direction:row; }
+    .side-foot { margin:0; flex-direction:row; align-items:center; }
+    .side-foot .side-lbl, .side-foot .side-btn kbd { display:none; }
+    .side-foot .side-btn { width:auto; padding:9px; }
     .store-card { display:none; }
     .save-bar { bottom:12px; padding:0 12px; }
     .save-bar-inner { padding-left:14px; }
@@ -1468,9 +1510,13 @@
       <button type="button" data-theme="light" title="밝은 화면">밝게</button>
       <button type="button" data-theme="dark" title="어두운 화면">어둡게</button>
     </div>
-    <button class="side-btn" id="btnSettings" data-tip-side="right" data-tip-t="설정" data-tip="데이터 폴더 바꾸기 · 백업/가져오기 · 소유자 관리 · 축하 효과 · 도움말 툴팁 켜고 끄기">
+    <button class="side-btn" id="btnHelp" aria-label="사용법 · 단축키" data-tip-side="right" data-tip-t="사용법 · 단축키" data-tip="지금 화면을 어떻게 쓰는지와 단축키를 한 장으로 봅니다. 어디서든 ? 키로도 열려요.">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.3 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.7 2.5-2.7 4"/><circle cx="12" cy="17.3" r=".9" fill="currentColor" stroke="none"/></svg>
+      <span class="side-lbl">사용법 · 단축키</span><kbd>?</kbd>
+    </button>
+    <button class="side-btn" id="btnSettings" aria-label="설정 · 데이터 파일" data-tip-side="right" data-tip-t="설정" data-tip="데이터 폴더 바꾸기 · 백업/가져오기 · 소유자 관리 · 축하 효과 · 도움말 툴팁 켜고 끄기">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      설정 · 데이터 파일
+      <span class="side-lbl">설정 · 데이터 파일</span>
     </button>
   </div>
 </aside>
@@ -1494,6 +1540,7 @@
   <!-- ── 대시보드 ─────────────────────── -->
   <section class="view on" id="view-home">
     <!-- 한 장의 그리드: 영역 배치는 CSS(grid-template-areas)가 폭에 따라 바꾼다 -->
+    <div class="card home-guide" id="homeGuide" hidden></div>
     <div class="dboard">
       <div class="card kpi hero">
         <div class="hero-main">
@@ -1747,10 +1794,7 @@
 
     <!-- 리밸런싱: 보유 현황(왼쪽) + 이번 계획(오른쪽) -->
     <div class="rb-pane on" id="rbPane-plan">
-      <div class="card rb-empty" id="rbPlanEmpty" hidden>
-        등록된 ETF가 없습니다.<br>종목과 목표비중을 먼저 정하세요.<br>
-        <button type="button" class="btn btn-primary" data-rbgo="setup">종목 · 설정으로</button>
-      </div>
+      <div class="card" id="rbPlanEmpty" hidden></div>
       <div id="rbPlanBodyWrap">
         <div class="rb-kpis" id="rbKpis"></div>
         <div class="rb-main">
@@ -1934,6 +1978,26 @@
 <div class="toast" id="toast"></div>
 
 <!-- 입력 화면에서 금액을 바꾸면 아래에 떠오르는 저장 바 -->
+<!-- 사용법 · 단축키 (? 키) -->
+<div class="sheet-back" id="helpSheet">
+  <div class="sheet wide">
+    <div class="sheet-head">
+      <h2 id="helpTitle">사용법</h2>
+      <button type="button" class="icon-btn" data-close="helpSheet" aria-label="닫기">✕</button>
+    </div>
+    <div class="seg help-tabs" id="helpTabs" role="tablist" aria-label="사용법 주제">
+      <button type="button" data-help="start">처음 시작</button>
+      <button type="button" data-help="home">대시보드</button>
+      <button type="button" data-help="list">자산</button>
+      <button type="button" data-help="input">입력</button>
+      <button type="button" data-help="badges">뱃지</button>
+      <button type="button" data-help="rebal">연금 리밸런싱</button>
+    </div>
+    <div class="help-body" id="helpBody"></div>
+    <div class="help-foot">마우스를 메뉴 · 버튼이나 카드 제목 옆 <b>?</b> 에 올리면 그 자리의 설명이 뜹니다 (설정에서 끌 수 있음). 이 창은 어디서든 <kbd>?</kbd> 키로 엽니다.</div>
+  </div>
+</div>
+
 <!-- 연금 리밸런싱: 가격 · 총자산 차트 -->
 <div class="sheet-back" id="rbChartSheet">
   <div class="sheet wide">
@@ -3032,11 +3096,16 @@ function renderHomeInner() {
   var series = totalSeries();
   var hero = $('heroValue');
   renderKpis();
+  // 기록이 하나도 없으면 대시보드 대신 시작 안내 (소유자 필터로 비었을 때나 폴더 재연결 대기 중은 제외)
+  var noData = !rows.length && store.state !== 'perm';
+  $('homeGuide').hidden = !noData;
+  document.querySelector('#view-home .dboard').hidden = noData;
+  if (noData && !$('homeGuide').firstChild) $('homeGuide').appendChild(guideBox(GUIDE_FIRST_ASSET));
   if (!series.length) {
     hero.textContent = '—';
     heroPrev = null;
     $('heroDelta').style.display = 'none';
-    $('heroUpdated').textContent = dashOwner === 'all' ? '입력 탭에서 자산을 추가하세요' : '이 소유자의 자산이 없습니다';
+    $('heroUpdated').textContent = dashOwner === 'all' ? '"＋ 새 자산"으로 첫 자산을 등록하세요' : '이 소유자의 자산이 없습니다';
     $('heroLabel').textContent = '순자산' + (dashOwner === 'all' ? '' : ' · ' + ownerName(dashOwner));
     $('heroGoal').hidden = true;
     $('chartSub').textContent = '';
@@ -3418,7 +3487,7 @@ function drawLineChart(wrap, series, H, opts) {
     empty.style.display = 'block';
     empty.textContent = series.length === 1
       ? '기록이 1건뿐입니다 — 며칠 더 입력하면 차트가 그려집니다'
-      : '데이터가 없습니다';
+      : '기록이 2건 이상 쌓이면 추이 차트가 그려집니다';
     return;
   }
   empty.style.display = 'none';
@@ -3790,9 +3859,13 @@ function renderListTable() {
   }
 
   if (!assets.length) {
-    var note = !rows.length ? emptyWithAdd('아직 자산이 없습니다. 첫 자산을 등록하세요.')
-      : el('div', 'empty-note', q ? '"' + listQuery.trim() + '" 와(과) 일치하는 자산이 없습니다.'
-                                  : '해당 소유자의 자산이 없습니다.');
+    var note = !rows.length ? guideBox(GUIDE_FIRST_ASSET)
+      : q ? guideBox({ compact: true, icon: '🔍', title: '"' + listQuery.trim() + '" 와(과) 일치하는 자산이 없어요',
+                       text: '이름의 일부만 넣어도 찾습니다 (예: "국민", "대출").',
+                       actions: [{ label: '검색어 지우기', act: 'clearSearch' }, { label: '＋ 새 자산으로 추가', primary: true, act: 'new' }] })
+      : guideBox({ compact: true, icon: '👤', title: ownerName(listOwner) + ' 의 자산이 아직 없어요',
+                   text: '새 자산을 추가할 때 소유자를 ' + ownerName(listOwner) + '(으)로 고르면 여기에 모입니다.',
+                   actions: [{ label: '전체 보기', act: 'allOwners' }, { label: '＋ 새 자산 추가', primary: true, act: 'new' }] });
     note.classList.add('card');
     view.appendChild(note);
     selectedName = null;
@@ -4087,7 +4160,12 @@ function renderInput() {
   wrap.innerHTML = '';
   var assets = Object.values(latestByName());
   if (!assets.length) {
-    wrap.appendChild(emptyWithAdd('아직 자산이 없습니다. 첫 자산을 등록하세요.'));
+    wrap.appendChild(guideBox({
+      icon: '✏️', title: '금액을 고칠 자산이 아직 없어요',
+      text: '입력 화면은 이미 등록한 자산의 오늘 금액을 빠르게 고치는 곳입니다. 먼저 자산을 등록하세요.',
+      steps: ['<b>＋ 새 자산 추가</b>로 계좌 · 부동산 · 대출을 등록', '다음부터 여기서 바뀐 금액만 고치고 <b>Ctrl+S</b>'],
+      actions: [{ label: '＋ 새 자산 추가', primary: true, act: 'new' }, { label: '사용법 보기', act: 'help:input' }]
+    }));
   }
 
   GROUPS.concat(['기타']).forEach(function (g) {
@@ -4776,9 +4854,16 @@ function renderBadges() {
     return BADGE_GROUP[x.b.t] === badgeFilter;
   });
   if (!shown.length) {
-    box.appendChild(el('div', 'bdg-empty', list.length
-      ? '이 종류의 뱃지는 아직 없어요.'
-      : '아직 모은 뱃지가 없어요. 금액을 입력해 순자산이 천만원 단위로 새 기록을 세우면 첫 뱃지를 받아요!'));
+    box.appendChild(list.length
+      ? guideBox({ compact: true, icon: '🔎', title: '이 종류의 뱃지는 아직 없어요',
+                   actions: [{ label: '전체 뱃지 보기', act: 'bdgAll' }] })
+      : guideBox({ icon: '🏅', title: '아직 모은 뱃지가 없어요',
+                   text: '금액을 꾸준히 기록하면 이런 순간마다 뱃지를 받아요.',
+                   steps: ['순자산이 천만원 단위로 새 최고치를 넘거나, 억 단위를 돌파할 때',
+                           '목표 금액에 10%씩 다가갈 때',
+                           '대출이 천만원 단위로 줄 때',
+                           '하루에 모든 자산을 기록하거나, 매주 빠짐없이 기록할 때'],
+                   actions: [{ label: '금액 입력하러 가기', primary: true, act: 'view:input' }] }));
     return;
   }
   // 달로 나누지 않고 한 격자에 최신순으로 이어서 — 한 줄에 6개씩 (날짜는 카드마다)
@@ -4850,18 +4935,6 @@ document.querySelector('.fx-set').addEventListener('click', function (e) {
 /* ═══════════ 새 자산 추가 ═══════════
    금액 입력(여러 자산을 한꺼번에 고쳐 저장)과 흐름을 나눈다 — 새 자산은 창에서
    정보와 현재 금액을 넣고 "추가"를 누르면 그 자리에서 바로 저장된다. */
-function emptyWithAdd(text) {
-  var box = el('div', 'empty-note');
-  box.appendChild(el('div', '', text));
-  var b = el('button', 'btn btn-primary js-new-asset', '＋ 새 자산 추가');
-  b.type = 'button';
-  box.appendChild(b);
-  return box;
-}
-document.addEventListener('click', function (e) {
-  if (e.target.closest('.js-new-asset')) openNewAsset();
-});
-
 function clearNewAssetForm() {
   $('naName').value = '';
   $('naLogo').value = '';
@@ -5568,6 +5641,14 @@ function rbCurrentPlan(contribution) {
 function renderRbPlan() {
   var p = rbPf(), empty = !p.items.length;
   $('rbPlanEmpty').hidden = !empty;
+  if (empty && !$('rbPlanEmpty').firstChild) $('rbPlanEmpty').appendChild(guideBox({
+    icon: '⚖️', title: '리밸런싱할 ETF를 먼저 정해 주세요',
+    text: '목표비중을 정해 두면, 매달 무엇을 몇 주 사고팔아야 비중이 맞는지 계산해 드립니다.',
+    steps: ['<b>종목 · 설정</b>에서 ETF를 검색해 추가하고 목표비중(%)을 적어요',
+            '이미 가진 수량과 예수금도 적어요 — 처음 산다면 <b>신규 투입</b>에서 살 수량을 계산해요',
+            '여기로 돌아오면 매도 · 매수 계획이 나옵니다'],
+    actions: [{ label: '종목 · 설정으로', primary: true, act: 'rb:setup' }, { label: '사용법 보기', act: 'help:rebal' }]
+  }));
   $('rbPlanBodyWrap').hidden = empty;
   if (empty) return;
   var plan = rbCurrentPlan(rbContribution());
@@ -5706,7 +5787,9 @@ function renderRbInvest() {
   var p = rbPf(), amount = Number($('rbInvAmt').dataset.value) || 0;
   $('rbInvFill').checked = lsGet('asset_pc_rb_fill') === '1';
   if (!p.items.length) {
-    $('rbInvTable').innerHTML = '<tbody><tr><td class="rb-empty">종목 · 설정에서 ETF를 먼저 등록하세요.</td></tr></tbody>';
+    $('rbInvTable').innerHTML = '<tbody><tr><td>' + guideHtml({ compact: true, icon: '🧺', title: '나눠 살 ETF가 아직 없어요',
+      text: '종목 · 설정에서 ETF와 목표비중을 정하면 투입 금액을 비중대로 나눠 드립니다.',
+      actions: [{ label: '종목 · 설정으로', primary: true, act: 'rb:setup' }] }) + '</td></tr></tbody>';
     $('rbInvSum').innerHTML = '';
     $('rbInvWarn').innerHTML = '';
     $('rbInvApply').disabled = true;
@@ -5800,7 +5883,9 @@ function renderRbItems() {
           '<td class="num rb-c-val" data-val>' + (price ? rbNum(price * it.qty) : '-') + '</td>' +
           '<td class="num"><button type="button" class="rb-del" data-del="' + i + '" title="목록에서 빼기" aria-label="삭제">✕</button></td></tr>';
       }).join('') + '</tbody>'
-    : '<tbody><tr><td class="rb-empty">위 검색창에서 ETF를 찾아 추가하세요.</td></tr></tbody>';
+    : '<tbody><tr><td>' + guideHtml({ compact: true, icon: '🔍', title: '위 검색창에서 ETF를 찾아 추가하세요',
+        text: '이름 일부("나스닥", "S&P500")나 종목코드로 찾습니다. 어떤 걸 담을지 모르겠다면 기본 9종목으로 시작해 보세요.',
+        actions: [{ label: '기본 9종목 넣기', act: 'rbDefaults' }] }) + '</td></tr></tbody>';
   renderRbWsum();
 }
 function renderRbWsum() {
@@ -5969,7 +6054,9 @@ function renderRbLog() {
           '<td class="rb-c-price" style="white-space:nowrap">' + rbEsc(x.baseDate || '-') + '</td>' +
           '<td class="rb-log-trades">' + (trades || '거래 없음') + '</td></tr>';
       }).join('') + '</tbody>'
-    : '<tbody><tr><td class="rb-empty">아직 기록이 없습니다.<br>리밸런싱이나 신규 투입을 반영하면 여기에 쌓입니다.</td></tr></tbody>';
+    : '<tbody><tr><td>' + guideHtml({ compact: true, icon: '🗂️', title: '아직 기록이 없어요',
+        text: '리밸런싱 탭의 "거래 완료 → 보유수량 반영"이나 신규 투입의 "매수 완료 → 반영"을 누르면 여기에 쌓이고, 총자산 추이도 이 기록으로 계산됩니다.',
+        actions: [{ label: '리밸런싱 탭으로', primary: true, act: 'rb:plan' }] }) + '</td></tr></tbody>';
 }
 
 /* ── 차트 (history/{code}.json, 일별 종가) ── */
@@ -6577,7 +6664,8 @@ document.addEventListener('keydown', function (e) {
   if (top || e.ctrlKey || e.metaKey || e.altKey) return;
   var t = e.target;
   if (t && t.closest && t.closest('input, select, textarea, [contenteditable="true"]')) return;
-  if (e.key === 'n' || e.key === 'N' || e.key === 'ㅜ') { e.preventDefault(); openNewAsset(); }
+  if (e.key === '?' || e.key === 'F1') { e.preventDefault(); openHelp(); }
+  else if (e.key === 'n' || e.key === 'N' || e.key === 'ㅜ') { e.preventDefault(); openNewAsset(); }
   else if (e.key === '1') switchView('home');
   else if (e.key === '2') switchView('list');
   else if (e.key === '3') switchView('input');
@@ -7285,6 +7373,153 @@ applyTheme(false);
 
 renderStoreCard();
 renderTopbar();
+/* ═══════════ 빈 화면 안내 ═══════════
+   기록이 없을 때 "무엇을 하면 되는지"와 바로가기 버튼을 보여 준다 */
+function guideBox(o) {
+  var box = el('div', 'guide' + (o.compact ? ' compact' : ''));
+  if (o.icon) box.appendChild(el('div', 'guide-ico', o.icon));
+  box.appendChild(el('h3', '', o.title));
+  if (o.text) box.appendChild(el('p', '', o.text));
+  if (o.steps) {
+    var ol = el('ol', 'guide-steps');
+    // 단계 문구는 코드에 적힌 고정 문장(<b> 강조 포함)만 쓴다
+    o.steps.forEach(function (t) { var li = el('li'); li.innerHTML = '<span>' + t + '</span>'; ol.appendChild(li); });
+    box.appendChild(ol);
+  }
+  if (o.actions && o.actions.length) {
+    var row = el('div', 'guide-actions');
+    o.actions.forEach(function (a) {
+      var b = el('button', 'btn ' + (a.primary ? 'btn-primary' : 'btn-ghost'), a.label);
+      b.type = 'button';
+      b.dataset.guide = a.act;
+      row.appendChild(b);
+    });
+    box.appendChild(row);
+  }
+  return box;
+}
+function guideHtml(o) { var d = el('div'); d.appendChild(guideBox(o)); return d.innerHTML; }
+var GUIDE_FIRST_ASSET = {
+  icon: '🌱', title: '아직 등록한 자산이 없어요',
+  text: '자산을 하나만 등록해도 순자산 · 목표 달성률이 계산되기 시작합니다.',
+  steps: ['<b>새 자산 추가</b>로 계좌 · 부동산 · 대출을 하나씩 등록하세요 (지금 금액과 함께)',
+          '다음부터는 <b>입력</b> 화면에서 바뀐 금액만 고쳐 저장하면 됩니다',
+          '기록이 며칠 쌓이면 추이 차트 · 월간 요약 · 뱃지가 생겨요'],
+  actions: [{ label: '＋ 새 자산 추가', primary: true, act: 'new' },
+            { label: '파일에서 가져오기', act: 'import' },
+            { label: '사용법 보기', act: 'help:start' }]
+};
+function runGuide(a) {
+  if (a === 'new') openNewAsset();
+  else if (a === 'import') $('importFile').click();
+  else if (a.indexOf('help') === 0) openHelp(a.split(':')[1]);
+  else if (a.indexOf('view:') === 0) switchView(a.slice(5));
+  else if (a.indexOf('rb:') === 0) { switchView('rebal'); rbSwitchTab(a.slice(3)); }
+  else if (a === 'clearSearch') { $('listSearch').value = ''; listQuery = ''; renderList(); $('listSearch').focus(); }
+  else if (a === 'allOwners') { listOwner = 'all'; renderList(); }
+  else if (a === 'bdgAll') {
+    badgeFilter = 'all';
+    document.querySelectorAll('#bdgFilter button').forEach(function (x) { x.classList.toggle('on', x.dataset.f === 'all'); });
+    renderBadges();
+  } else if (a === 'rbDefaults') {
+    var d = rbDraft();
+    d.items = rbDefault().items;
+    rbFillNames(d);
+    rbSetDirty(true);
+    renderRbItems();
+    showToast('기본 9종목을 넣었습니다 — 비중 · 수량을 고친 뒤 저장하세요');
+  }
+}
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('[data-guide]');
+  if (b) runGuide(b.dataset.guide);
+});
+
+/* ═══════════ 사용법 · 단축키 (? 키) ═══════════ */
+function hk(keys, what) {
+  return '<tr><td>' + keys.split(' ').map(function (k) { return k === '/' || k === '~' || k === '+' ? k : '<kbd>' + k + '</kbd>'; }).join(' ') + '</td><td>' + what + '</td></tr>';
+}
+var HELP_KEYS_COMMON = hk('1 ~ 5', '대시보드 · 자산 · 입력 · 뱃지 · 연금 리밸런싱') + hk('N', '새 자산 추가') + hk('?', '이 사용법 창') + hk('Esc', '열린 창 닫기');
+var HELP = {
+  start: { t: '처음 시작하기', main:
+    '<h3>이렇게 시작하세요</h3><ol class="guide-steps">' +
+    '<li><span><b>데이터 폴더 연결</b> — 왼쪽 아래 "데이터 폴더 연결"로 PC의 폴더를 고르면 그 안에 <code>asset-data.json</code> 이 만들어지고 모든 기록이 저장됩니다. (지금 보이는 숫자는 데모)</span></li>' +
+    '<li><span><b>자산 등록</b> — "＋ 새 자산"(<kbd>N</kbd>)으로 계좌 · 부동산 · 대출을 지금 금액과 함께 하나씩 넣습니다.</span></li>' +
+    '<li><span><b>금액 갱신</b> — 이후엔 <b>입력</b> 화면에서 바뀐 금액만 고치고 <kbd>Ctrl</kbd>+<kbd>S</kbd>. 주 1회 정도면 충분해요.</span></li>' +
+    '<li><span><b>목표 정하기</b> — 대시보드 순자산 오른쪽 원을 눌러 목표 금액을 정하면 달성률 · 도달 예상일이 나옵니다.</span></li>' +
+    '<li><span><b>연금 리밸런싱</b> (선택) — 연금 ETF를 굴린다면 종목 · 목표비중을 등록해 두고 한 달에 한 번 맞춥니다.</span></li></ol>' +
+    '<h3>알아 두면 좋은 것</h3><ul>' +
+    '<li>서버 · 계정이 없습니다. 데이터는 고른 폴더에만 있고, 매일 <code>backups</code> 폴더에 자동 백업됩니다.</li>' +
+    '<li>폴더 저장은 <b>Edge</b> · <b>Chrome</b> 에서 됩니다. 다른 브라우저는 설정의 "브라우저에 저장하기"를 쓰세요.</li>' +
+    '<li>순자산이 새 기록을 세우거나 대출이 줄면 축하 효과와 뱃지가 나와요.</li></ul>',
+    keys: HELP_KEYS_COMMON + hk('Ctrl + S', '입력한 금액 저장') },
+  home: { t: '대시보드', main:
+    '<h3>이 화면에서</h3><ul>' +
+    '<li><b>순자산</b> — 자산 합계 − 부채 합계. 오른쪽 원을 누르면 목표 금액을 바꿉니다.</li>' +
+    '<li><b>순자산 추이</b> — 선에 마우스를 올리면 그날 금액. <b>목표 · 예상</b>을 켜면 목표선과 예상선이 함께 그려집니다.</li>' +
+    '<li><b>미래 자산 예상</b> — 월 적립액 · 연 수익률을 ＋ − 로 바꿔 보며 목표 도달 시점을 가늠합니다.</li>' +
+    '<li><b>월간 요약</b> — 막대를 눌러 달을 고르면 그 달 가장 많이 늘고 준 자산이 나옵니다.</li>' +
+    '<li>오른쪽 위 소유자 버튼으로 한 사람 것만 모아 볼 수 있습니다.</li></ul>',
+    keys: HELP_KEYS_COMMON },
+  list: { t: '자산', main:
+    '<h3>이 화면에서</h3><ul>' +
+    '<li>자산별 최신 금액 목록입니다. 위에서 소유자로 거르거나 이름으로 검색합니다.</li>' +
+    '<li>행을 누르면 오른쪽에 그 자산의 <b>차트 · 기록</b>이 나옵니다.</li>' +
+    '<li>오른쪽 패널에서 이름 · 그룹 · 소유자 · 로고를 고치고 <b>변경 저장</b>, 필요 없으면 <b>자산 삭제</b>.</li>' +
+    '<li>기록 목록의 금액을 눌러 지난 기록을 고치거나 지울 수 있습니다.</li></ul>',
+    keys: HELP_KEYS_COMMON },
+  input: { t: '입력', main:
+    '<h3>이렇게 입력하세요</h3><ol class="guide-steps">' +
+    '<li><span>바뀐 자산의 칸만 눌러 오늘 금액을 적습니다 (칸에 들어가면 기존 금액이 선택돼 바로 덮어씁니다).</span></li>' +
+    '<li><span>아래 저장 바에서 몇 개가 바뀌었는지 확인하고 <b>저장</b>(<kbd>Ctrl</kbd>+<kbd>S</kbd>).</span></li></ol>' +
+    '<h3>알아 두면 좋은 것</h3><ul>' +
+    '<li>안 고친 자산은 직전 금액이 그대로 이어집니다 — 매번 전부 적을 필요가 없어요.</li>' +
+    '<li>같은 날 다시 저장하면 그날 기록을 덮어씁니다.</li>' +
+    '<li>처음 기록하는 자산은 "＋ 새 자산"(<kbd>N</kbd>)으로 추가합니다.</li></ul>',
+    keys: hk('Enter / ↓', '다음 자산 칸') + hk('Shift + Enter / ↑', '이전 자산 칸') + hk('Esc', '그 칸 되돌리기') + hk('Ctrl + S', '저장') + HELP_KEYS_COMMON },
+  badges: { t: '뱃지', main:
+    '<h3>이 화면에서</h3><ul>' +
+    '<li>그동안 넘어선 마일스톤이 카드로 쌓입니다. 카드를 누르면 그때의 축하를 다시 봅니다.</li>' +
+    '<li>위 버튼으로 자산 · 목표 · 부채 등 종류별로 골라 봅니다.</li></ul>' +
+    '<h3>이럴 때 받아요</h3><ul>' +
+    '<li>순자산이 천만원 단위로 새 최고치를 넘을 때, 억 단위를 돌파할 때</li>' +
+    '<li>목표의 10%씩 다가갈 때, 목표를 달성할 때</li>' +
+    '<li>대출이 천만원 단위로 줄 때, 부채가 0이 될 때</li>' +
+    '<li>하루에 모든 자산을 기록했을 때, 매주 빠짐없이 기록할 때</li></ul>',
+    keys: HELP_KEYS_COMMON },
+  rebal: { t: '연금 리밸런싱', main:
+    '<h3>한 달에 한 번, 이렇게</h3><ol class="guide-steps">' +
+    '<li><span><b>종목 · 설정</b> — 처음 한 번: ETF를 검색해 추가하고 목표비중 · 지금 보유수량 · 예수금을 적어 저장.</span></li>' +
+    '<li><span><b>리밸런싱</b> — 오른쪽 계획의 매도 · 매수 수량을 확인합니다 (넣을 돈이 있으면 추가 투입금에 적기).</span></li>' +
+    '<li><span>증권사 앱에서 <b>1단계 매도 → 2단계 매수</b> 순으로 주문합니다.</span></li>' +
+    '<li><span><b>거래 완료 → 보유수량 반영</b>을 누르면 수량 · 예수금이 바뀌고 오늘이 리밸런싱일로 기록됩니다.</span></li></ol>' +
+    '<h3>알아 두면 좋은 것</h3><ul>' +
+    '<li>가격은 전일 종가입니다. 당일 시세에 따라 남는 현금이 조금 달라질 수 있어요.</li>' +
+    '<li>처음 매수라면 <b>신규 투입</b> 탭에서 금액만 넣으면 종목별 수량이 나옵니다.</li>' +
+    '<li>주기가 지나면 메뉴에 빨간 <b>!</b> 가 뜹니다. 밴드를 두면 작은 차이는 거래하지 않아요.</li></ul>',
+    keys: hk('Ctrl + S', '종목 · 설정 저장') + hk('↑ ↓ Enter', 'ETF 검색 결과 고르기') + HELP_KEYS_COMMON }
+};
+var helpTopic = 'start';
+function renderHelp() {
+  var h = HELP[helpTopic];
+  $('helpTitle').textContent = '사용법 · ' + h.t;
+  $('helpBody').innerHTML = '<div class="help-grid"><div>' + h.main + '</div><div><h3>단축키</h3><table class="help-keys">' + h.keys + '</table></div></div>';
+  document.querySelectorAll('#helpTabs button').forEach(function (b) { b.classList.toggle('on', b.dataset.help === helpTopic); });
+}
+function openHelp(topic) {
+  // 데모로 둘러보는 중이거나 기록이 없으면 "처음 시작"부터
+  helpTopic = HELP[topic] ? topic : (store.mode === 'demo' || !rows.length ? 'start' : currentView);
+  renderHelp();
+  openSheet('helpSheet');
+}
+$('helpTabs').addEventListener('click', function (e) {
+  var b = e.target.closest('button[data-help]');
+  if (!b) return;
+  helpTopic = b.dataset.help;
+  renderHelp();
+});
+$('btnHelp').addEventListener('click', function () { openHelp(); });
+
 /* ═══════════ 도움말 툴팁 ═══════════
    data-tip(설명) · data-tip-t(제목)가 붙은 요소에 마우스를 올리거나 키보드로 들어오면 뜬다.
    data-tip-side="right" 는 오른쪽에 (사이드바 메뉴). 설정에서 끌 수 있다. */
