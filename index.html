@@ -1816,8 +1816,10 @@ function applyDb(obj) {
   rows = normalizeRows(obj.assets || []);
   var st = obj.settings || {};
   if (isFinite(st.goal) && st.goal > 0) goalAmount = Math.round(st.goal);
-  if (isFinite(st.fcMonthly)) fcMonthly = Math.round(st.fcMonthly);
-  if (isFinite(st.fcRate)) fcRate = Math.round(st.fcRate * 10) / 10;
+  // 예전 기본값(월 1,000만원 · 수익률 0%)이 그대로 저장돼 있으면 손대지 않은 값으로 보고 새 기본값을 쓴다
+  var oldDefault = st.fcMonthly === 10000000 && !st.fcRate;
+  fcMonthly = !oldDefault && isFinite(st.fcMonthly) ? Math.round(st.fcMonthly) : FC_DEFAULT_MONTHLY;
+  fcRate = !oldDefault && isFinite(st.fcRate) ? Math.round(st.fcRate * 10) / 10 : FC_DEFAULT_RATE;
 }
 
 // ── 파일 읽기/쓰기 ──
@@ -2452,11 +2454,13 @@ function renderKpis() {
 }
 
 /* ═══════════ 미래 자산 예상 & 목표 ═══════════ */
-var fcMonthly = 10000000;                     // 기본: 매달 +1,000만원 (데이터 파일에 저장)
+var FC_DEFAULT_MONTHLY = 5000000;            // 기본: 매달 +500만원
+var FC_DEFAULT_RATE = 4;                      // 기본: 연 4%
+var fcMonthly = FC_DEFAULT_MONTHLY;           // (데이터 파일에 저장)
 var FC_STEP = 1000000;                        // ± 100만원
 var fcMode = 'month';
 var goalAmount = 3500000000;                  // 기본 목표: 35억 (데이터 파일에 저장)
-var fcRate = 0;                               // 연 수익률(%) — 월 복리로 계산 (데이터 파일에 저장)
+var fcRate = FC_DEFAULT_RATE;                 // 연 수익률(%) — 월 복리로 계산 (데이터 파일에 저장)
 var FC_RATE_STEP = 0.5;
 
 // base 에서 months 개월 뒤의 예상 금액 — 매달 (수익률/12) 만큼 불어나고 적립액이 더해진다.
