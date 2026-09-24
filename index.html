@@ -187,46 +187,37 @@
     background:var(--surface); border:1px solid var(--border); font-size:.8rem; color:var(--ink-2);
   }
   .bdg-stat b { font-size:1.15rem; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; }
-  .bdg-h { font-size:.92rem; font-weight:800; margin:4px 2px 10px; display:flex; align-items:center; gap:8px; }
-  .bdg-h .cnt { font-size:.74rem; font-weight:600; color:var(--muted); }
-  .bdg-month { margin-top:26px; }
-  .bdg-month:first-child { margin-top:0; }
-  .badge-grid {
-    display:grid; grid-template-columns:repeat(auto-fill, minmax(196px, 1fr)); gap:12px;
-    grid-auto-flow:dense;
-  }
+  /* 정사각형 뱃지 — 한 줄에 6개 (좁으면 4 → 3 → 2개) */
+  #bdgList { container:bdgs / inline-size; }
+  .badge-grid { display:grid; grid-template-columns:repeat(6, minmax(0, 200px)); gap:12px; }
+  @container bdgs (max-width: 900px) { .badge-grid { grid-template-columns:repeat(4, minmax(0,1fr)); } }
+  @container bdgs (max-width: 560px) { .badge-grid { grid-template-columns:repeat(3, minmax(0,1fr)); } }
+  @container bdgs (max-width: 380px) { .badge-grid { grid-template-columns:repeat(2, minmax(0,1fr)); } }
   .bdg {
     --tier:#94a3b8;
-    position:relative; overflow:hidden; text-align:left; font:inherit; color:inherit; cursor:pointer;
-    background:var(--surface); border:1px solid var(--border); border-radius:18px;
-    padding:16px 16px 13px; display:flex; flex-direction:column;
-    transition:transform .16s cubic-bezier(.2,1.4,.4,1), box-shadow .16s;
+    aspect-ratio:1 / 1; min-width:0; overflow:hidden; cursor:pointer;
+    font:inherit; color:inherit; text-align:center;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+    padding:12px 10px;
+    background:var(--surface); border-radius:18px;
+    border:2px solid color-mix(in srgb, var(--tier) 55%, transparent);
+    transition:transform .16s cubic-bezier(.2,1.4,.4,1), box-shadow .16s, border-color .16s;
   }
-  .bdg::before { content:''; position:absolute; inset:0 0 auto 0; height:4px; background:var(--tier); }
-  .bdg:hover { transform:translateY(-3px); box-shadow:0 12px 26px rgba(0,0,0,.10); }
+  .bdg:hover { transform:translateY(-3px); border-color:var(--tier); box-shadow:0 12px 26px rgba(0,0,0,.10); }
   .bdg:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
-  .bdg:active { transform:scale(.97); }
-  .bdg.big { grid-column:span 2; background:linear-gradient(135deg, color-mix(in srgb, var(--tier) 14%, var(--surface)), var(--surface) 70%); }
+  .bdg:active { transform:scale(.96); }
+  /* 큰 성과(억 돌파 · 목표 달성 · 부채 제로)는 같은 크기에 옅은 색 배경으로 */
+  .bdg.big { background:color-mix(in srgb, var(--tier) 10%, var(--surface)); border-color:var(--tier); }
   .bdg-medal {
-    width:50px; height:50px; border-radius:50%; flex:none;
-    display:flex; align-items:center; justify-content:center; font-size:1.6rem;
+    width:clamp(40px, 34%, 60px); aspect-ratio:1 / 1; border-radius:50%; flex:none;
+    display:flex; align-items:center; justify-content:center; font-size:clamp(1.3rem, 2.2vw, 1.8rem);
     background:color-mix(in srgb, var(--tier) 16%, transparent);
-    box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--tier) 50%, transparent);
   }
-  .bdg.big .bdg-medal { width:60px; height:60px; font-size:2rem; }
-  .bdg-title { margin-top:12px; font-size:1.08rem; font-weight:800; letter-spacing:-.01em; }
-  .bdg.big .bdg-title { font-size:1.45rem; }
-  .bdg-sub { margin-top:3px; font-size:.78rem; color:var(--ink-2); font-variant-numeric:tabular-nums; }
-  .bdg-foot {
-    margin-top:auto; padding-top:12px; display:flex; justify-content:space-between; align-items:center;
-    flex-wrap:wrap; gap:4px 8px;
-    font-size:.72rem; color:var(--muted); font-variant-numeric:tabular-nums;
+  .bdg-title {
+    margin-top:8px; max-width:100%; font-size:.98rem; font-weight:800; letter-spacing:-.01em;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
-  .bdg-play { opacity:0; color:var(--accent-deep); font-weight:700; transition:opacity .15s; }
-  .bdg:hover .bdg-play, .bdg:focus-visible .bdg-play { opacity:1; }
-  .bdg-auto { font-size:.64rem; font-weight:700; color:var(--muted); background:var(--hover); border-radius:5px; padding:1px 5px; white-space:nowrap; }
-  .bdg-foot > span:first-child { white-space:nowrap; }
-  .bdg-play { white-space:nowrap; }
+  .bdg-date { font-size:.72rem; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
   .bdg-empty { text-align:center; color:var(--muted); font-size:.88rem; line-height:1.7; padding:40px 16px; }
   .t-goal { --tier:#f5b301; } .t-debtFree { --tier:#f5b301; } .t-eok { --tier:#9b5de5; }
   .t-chun { --tier:#f15bb5; } .t-pct { --tier:#14b8a6; } .t-debt { --tier:#3987e5; }
@@ -1171,7 +1162,9 @@
       gap:10px; padding:12px 14px; border-right:none; border-bottom:1px solid var(--border);
     }
     .side-nav { flex-direction:row; order:3; flex:1 1 100%; }
-    .side-nav button { flex:1; justify-content:center; white-space:nowrap; padding:9px 8px; gap:8px; }
+    .side-nav { overflow-x:auto; scrollbar-width:none; }
+    .side-nav::-webkit-scrollbar { display:none; }
+    .side-nav button { flex:1 0 auto; justify-content:center; white-space:nowrap; padding:9px 10px; gap:8px; }
     .brand { flex:1; }
     .side-nav kbd, .brand-total { display:none; }
     .nav-sep { width:1px; height:auto; margin:6px 2px; }
@@ -4294,16 +4287,13 @@ function badgeCard(b, i) {
   var btn = el('button', 'bdg t-' + b.t + (BADGE_BIG[b.t] ? ' big' : ''));
   btn.type = 'button';
   btn.dataset.i = i;
-  btn.title = '눌러서 그때의 축하 다시 보기';
+  // 카드에는 아이콘 · 제목 · 날짜만 — 금액 등은 마우스를 올리면
+  btn.title = c.title.replace(/!$/, '') + '\n' + c.sub + (b.auto ? '\n(지난 기록에서 찾은 뱃지)' : '') +
+    '\n눌러서 그때의 축하 다시 보기';
   btn.appendChild(el('div', 'bdg-medal', c.emoji));
   btn.appendChild(el('div', 'bdg-title', c.title.replace(/!$/, '')));
-  btn.appendChild(el('div', 'bdg-sub', c.sub));
-  var foot = el('div', 'bdg-foot');
-  var left = el('span', '', fmtBadgeDate(b.date));
-  if (b.auto) { left.appendChild(document.createTextNode(' ')); left.appendChild(el('span', 'bdg-auto', '지난 기록')); }
-  foot.appendChild(left);
-  foot.appendChild(el('span', 'bdg-play', '▶ 다시 보기'));
-  btn.appendChild(foot);
+  var d = parseDate(b.date);
+  btn.appendChild(el('div', 'bdg-date', d.getFullYear() + '. ' + (d.getMonth() + 1) + '. ' + d.getDate()));
   return btn;
 }
 function renderBadges() {
@@ -4339,22 +4329,10 @@ function renderBadges() {
       : '아직 모은 뱃지가 없어요. 금액을 입력해 순자산이 천만원 단위로 새 기록을 세우면 첫 뱃지를 받아요!'));
     return;
   }
-  var cur = null, grid = null;
-  shown.forEach(function (x) {
-    var mk = x.b.date.slice(0, 7);
-    if (mk !== cur) {
-      cur = mk;
-      var sec = el('div', 'bdg-month');
-      var n = shown.filter(function (y) { return y.b.date.slice(0, 7) === mk; }).length;
-      var h = el('h3', 'bdg-h', mk.slice(0, 4) + '년 ' + Number(mk.slice(5)) + '월');
-      h.appendChild(el('span', 'cnt', n + '개'));
-      sec.appendChild(h);
-      grid = el('div', 'badge-grid');
-      sec.appendChild(grid);
-      box.appendChild(sec);
-    }
-    grid.appendChild(badgeCard(x.b, x.i));
-  });
+  // 달로 나누지 않고 한 격자에 최신순으로 이어서 — 한 줄에 6개씩 (날짜는 카드마다)
+  var grid = el('div', 'badge-grid');
+  shown.forEach(function (x) { grid.appendChild(badgeCard(x.b, x.i)); });
+  box.appendChild(grid);
 }
 $('bdgList').addEventListener('click', function (e) {
   var btn = e.target.closest('.bdg[data-i]');
