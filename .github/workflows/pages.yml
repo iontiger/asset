@@ -1,0 +1,43 @@
+# index.html 과 아이콘(있으면 logos/, logos.json 도)을 GitHub Pages에 올린다.
+# → https://iontiger.github.io/asset/
+# 처음 한 번: 저장소 Settings → Pages → Source 를 "GitHub Actions" 로 바꿔야 한다.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    # 기본 브랜치에 올라온 것만 배포한다
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 사이트 파일 모으기
+        run: |
+          mkdir _site
+          cp index.html icon-192.png icon-512.png apple-touch-icon.png _site/
+          [ -d logos ] && cp -r logos _site/ || true
+          [ -f logos.json ] && cp logos.json _site/ || true
+          ls -la _site
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

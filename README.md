@@ -14,6 +14,19 @@ JavaScript가 윈도우 PC의 폴더에 `asset-data.json` 파일을 직접 만�
 | `index.html` | 앱 본체 (HTML + CSS + JS 단일 파일) |
 | `icon-192.png` `icon-512.png` `apple-touch-icon.png` | 앱 아이콘 (탭 아이콘은 `icon-192.png`) |
 | `.gitignore` | 저장소 폴더를 데이터 폴더로 써도 `asset-data.json`·`backups/` 가 커밋되지 않게 |
+| `.github/workflows/pages.yml` | 기본 브랜치에 푸시하면 GitHub Pages로 자동 배포 |
+
+## 웹 주소로 열기 — https://iontiger.github.io/asset/
+
+기본 브랜치에 푸시할 때마다 GitHub Actions가 `index.html` 과 아이콘(있으면 `logos/`,
+`logos.json` 도)을 GitHub Pages에 올립니다. **처음 한 번만** 저장소
+**Settings → Pages → Build and deployment → Source** 를 **GitHub Actions** 로 바꾸고,
+**Actions** 탭에서 "Deploy to GitHub Pages" 를 다시 실행(Re-run)하세요.
+
+웹 주소로 열어도 데이터는 GitHub에 올라가지 않습니다. 페이지는 앱 코드만 내려주고,
+자산 기록은 여전히 **내 PC에서 고른 폴더의 `asset-data.json`** 에만 저장됩니다.
+(`index.html` 을 더블클릭해 여는 것과 웹 주소로 여는 것은 브라우저가 서로 다른 곳으로 보기 때문에,
+처음 한 번은 각각 폴더를 골라 줘야 합니다 — 같은 폴더를 고르면 같은 파일을 씁니다.)
 
 ## 시작하기
 
