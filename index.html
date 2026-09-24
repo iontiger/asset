@@ -449,6 +449,21 @@
     .rb-tag { padding:3px 7px; }
   }
   .side-nav .nav-badge.show + kbd { display:none; }
+  /* ── 클라우드 연동 (설정) ── */
+  .cloud-seg { display:flex; width:100%; margin:4px 0 12px; }
+  .cloud-seg button { flex:1 1 0; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:6px 8px; }
+  .cloud-seg button.using::after { content:' ●'; color:var(--up); font-size:.6rem; vertical-align:2px; }
+  .cloud-status { font-size:.8rem; line-height:1.6; border-radius:10px; padding:10px 12px; margin-bottom:12px; background:var(--bg); border:1px solid var(--border); color:var(--ink-2); }
+  .cloud-status .btn { margin-top:8px; }
+  .cloud-status.ok { border-color:color-mix(in srgb, var(--up) 35%, transparent); }
+  .cloud-status.warn { color:var(--warn); border-color:color-mix(in srgb, var(--warn) 35%, transparent); }
+  .cloud-status.err { color:var(--down); border-color:color-mix(in srgb, var(--down) 35%, transparent); }
+  .cloud-status.busy { color:var(--accent-deep); }
+  .cloud-steps { display:flex; margin:2px 0 14px; max-width:none; font-size:.8rem; }
+  .cloud-steps a { color:var(--accent-deep); font-weight:700; }
+  .cloud-form { margin:4px 0 12px; }
+  .cloud-note { font-size:.8rem !important; }
+
   /* ── 빈 화면 안내 ── */
   .guide { text-align:center; padding:44px 22px; }
   .guide.compact { padding:28px 16px; }
@@ -1504,7 +1519,8 @@
   </nav>
   <div class="side-foot">
     <div class="store-card" id="storeCard" data-tip-side="right" data-tip-t="데이터 파일" data-tip="기록은 이 PC의 폴더에 asset-data.json 파일 하나로 저장됩니다 (서버 · 계정 없음).
-폴더를 연결하면 매일 backups 폴더에 자동 백업도 남깁니다."></div>
+폴더를 연결하면 매일 backups 폴더에 자동 백업도 남깁니다.
+여러 기기에서 쓰려면 설정 → 클라우드 연동에서 Supabase 나 구글 시트로 바꿀 수 있어요."></div>
     <div class="seg theme-seg" id="themeSeg" role="group" aria-label="화면 테마" data-tip-side="right" data-tip-t="화면 테마" data-tip="자동은 윈도우의 밝게/어둡게 설정을 따릅니다.">
       <button type="button" data-theme="auto" title="윈도우 설정 따르기">자동</button>
       <button type="button" data-theme="light" title="밝은 화면">밝게</button>
@@ -1992,6 +2008,7 @@
       <button type="button" data-help="input">입력</button>
       <button type="button" data-help="badges">뱃지</button>
       <button type="button" data-help="rebal">연금 리밸런싱</button>
+      <button type="button" data-help="cloud">클라우드 연동</button>
     </div>
     <div class="help-body" id="helpBody"></div>
     <div class="help-foot">마우스를 메뉴 · 버튼이나 카드 제목 옆 <b>?</b> 에 올리면 그 자리의 설명이 뜹니다 (설정에서 끌 수 있음). 이 창은 어디서든 <kbd>?</kbd> 키로 엽니다.</div>
@@ -2203,6 +2220,53 @@
         </div>
       </div>
       <div>
+        <div class="set-sec" id="cloudSec">
+          <h3>클라우드 연동 <span class="qm" tabindex="0" data-tip-t="클라우드 연동" data-tip="기본은 이 PC 폴더의 JSON 파일입니다. 휴대폰 · 다른 PC 에서도 같은 기록을 보려면 Supabase 나 구글 시트 중 한 곳에 저장하도록 바꿀 수 있어요. 한 번에 한 곳만 씁니다.">?</span></h3>
+          <p>기본은 <b>PC 파일</b>입니다. 여러 기기에서 같이 쓰려면 <b>Supabase</b> 나 <b>Google Sheet</b> 중 <b>한 곳</b>을 저장소로 연결하세요.</p>
+          <div class="seg cloud-seg" id="cloudSeg" role="tablist" aria-label="저장 방식">
+            <button type="button" data-cloud="off">PC 파일</button>
+            <button type="button" data-cloud="supabase">Supabase</button>
+            <button type="button" data-cloud="gsheet">Google Sheet</button>
+          </div>
+          <div class="cloud-status" id="cloudStatus"></div>
+
+          <div class="cloud-pane" id="cloudPane-off">
+            <p class="cloud-note">기록은 위 <b>데이터 파일</b>에서 고른 폴더의 <code>asset-data.json</code> 에 저장되고, 매일 <code>backups</code> 에 자동 백업됩니다. 인터넷 없이도 동작해요.</p>
+          </div>
+
+          <div class="cloud-pane" id="cloudPane-supabase" hidden>
+            <ol class="guide-steps cloud-steps">
+              <li><span><a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer">supabase.com</a> 에서 무료 프로젝트를 만듭니다 (예전 모바일 버전 프로젝트를 그대로 써도 됩니다).</span></li>
+              <li><span>아래 <b>SQL 복사</b>를 누르고, Supabase <b>SQL Editor → New query</b> 에 붙여넣어 <b>Run</b>.</span></li>
+              <li><span><b>Project Settings → API</b>(또는 API Keys)에서 <b>Project URL</b> 과 <b>anon · publishable</b> 키를 복사해 아래에 넣고 <b>연결</b>.</span></li>
+            </ol>
+            <div class="form-grid cloud-form">
+              <div class="field full"><label for="sbUrl">Project URL</label><input id="sbUrl" type="url" placeholder="https://abcdefgh.supabase.co" autocomplete="off" spellcheck="false"></div>
+              <div class="field full"><label for="sbKey">anon · publishable 키</label><input id="sbKey" type="password" placeholder="eyJ… 또는 sb_publishable_…" autocomplete="off" spellcheck="false"></div>
+            </div>
+            <div class="btn-row">
+              <button type="button" class="btn btn-ghost" id="btnCopySql">📋 SQL 복사</button>
+              <button type="button" class="btn btn-primary" id="btnSbConnect">연결</button>
+            </div>
+          </div>
+
+          <div class="cloud-pane" id="cloudPane-gsheet" hidden>
+            <ol class="guide-steps cloud-steps">
+              <li><span><a href="https://sheets.new" target="_blank" rel="noopener noreferrer">구글 시트</a>를 새로 만들고 <b>확장 프로그램 → Apps Script</b> 를 엽니다.</span></li>
+              <li><span>아래 <b>Apps Script 복사</b>를 눌러 기존 코드를 지우고 붙여넣은 뒤 저장. 맨 위 <code>TOKEN</code> 에 비밀 문자열을 넣어 두길 권해요.</span></li>
+              <li><span><b>배포 → 새 배포 → 웹 앱</b>, 실행: <b>나</b>, 액세스: <b>모든 사용자</b> → 배포 (처음엔 권한 허용).</span></li>
+              <li><span>나온 <b>웹 앱 URL</b>(…/exec)과 토큰을 아래에 넣고 <b>연결</b>.</span></li>
+            </ol>
+            <div class="form-grid cloud-form">
+              <div class="field full"><label for="gsUrl">웹 앱 URL</label><input id="gsUrl" type="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" spellcheck="false"></div>
+              <div class="field full"><label for="gsToken">비밀 토큰 (스크립트의 TOKEN 과 같게, 비워 두면 없음)</label><input id="gsToken" type="password" autocomplete="off" spellcheck="false"></div>
+            </div>
+            <div class="btn-row">
+              <button type="button" class="btn btn-ghost" id="btnCopyGs">📋 Apps Script 복사</button>
+              <button type="button" class="btn btn-primary" id="btnGsConnect">연결</button>
+            </div>
+          </div>
+        </div>
         <div class="set-sec">
           <h3>소유자 관리</h3>
           <p>이름을 바꾸면 기존 기록에도 바로 반영되고, 삭제하면 해당 소유자의 자산은 "미지정"이 됩니다.</p>
@@ -2615,6 +2679,8 @@ async function readFolder() {
     marks = null;
     syncMarks();
     badges = [];
+    pension = null;     // 데모로 보던 연금 포트폴리오를 새 파일에 쓰지 않는다
+    rbResetState();
     store.locked = false;
     await writeDataFile(serializeDb());
     showToast(DATA_FILE + ' 파일을 새로 만들었습니다');
@@ -2680,6 +2746,19 @@ function persist() {
     catch (e) { return Promise.reject(new Error('브라우저 저장 공간에 쓰지 못했습니다')); }
     setStoreState('saved');
     return Promise.resolve();
+  }
+  if (isCloud()) {
+    if (store.locked) return Promise.reject(new Error(cloudName(store.mode) + ' 에서 불러오지 못한 상태라 저장하지 않았습니다'));
+    var data = JSON.parse(serializeDb());
+    setStoreState('saving');
+    var cjob = saveQueue.catch(function () {}).then(function () { return cloudSave(data); });
+    saveQueue = cjob;
+    return cjob.then(function () { setStoreState('saved'); }, function (e) {
+      setStoreState('error', e.message);
+      // 다른 기기에서 먼저 바뀌었으면 최신 기록을 불러와 보여 준다 (방금 바꾼 것은 되돌려짐)
+      if (e.conflict) setTimeout(function () { openCloud(store.mode, '다른 기기에서 바뀐 기록을 불러왔습니다 — 방금 바꾼 것을 다시 해 주세요'); }, 0);
+      throw e;
+    });
   }
   if (store.locked) return Promise.reject(new Error(DATA_FILE + ' 을(를) 읽지 못한 상태라 덮어쓰지 않았습니다'));
   if (!store.dir || store.state === 'perm') return Promise.reject(new Error('데이터 폴더가 연결되지 않았습니다'));
@@ -2832,6 +2911,7 @@ function disconnect() {
 async function initStore() {
   var mode = lsGet(MODE_KEY);
   if (mode === 'local') { openLocal(); return; }
+  if (isCloud(mode)) { await openCloud(mode); return; }
   if (mode === 'folder' && FS_SUPPORTED) {
     var dir = null;
     try { dir = await idbGet('dir'); } catch (e) {}
@@ -2884,6 +2964,7 @@ function hhmmss(d) {
   return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') +
     ':' + String(d.getSeconds()).padStart(2, '0');
 }
+var CLOUD_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 8.5a4 4 0 0 1-.5 9.5Z"/></svg>';
 var FOLDER_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>';
 function storeStateText() {
   switch (store.state) {
@@ -2907,14 +2988,18 @@ function renderStoreCard() {
   } else if (store.mode === 'local') {
     name = '브라우저 저장소';
     file = '내보내기로 백업하세요';
+  } else if (isCloud()) {
+    name = cloudName(store.mode);
+    file = cloudHost(store.cloud || {}) || '클라우드';
+    if (store.state === 'error') act = { act: 'cloudReload', label: '↻ 다시 불러오기' };
   } else {
     name = '데모 데이터';
     file = '새로고침하면 초기화';
     act = FS_SUPPORTED ? { act: 'pick', label: '📁 데이터 폴더 연결' } : { act: 'local', label: '브라우저에 저장' };
   }
   var st = storeStateText();
-  c.innerHTML = '<div class="store-cap">데이터 파일</div>' +
-    '<div class="store-name">' + (store.mode === 'folder' ? FOLDER_ICON : '') +
+  c.innerHTML = '<div class="store-cap">' + (isCloud() ? '저장소 · 클라우드' : '데이터 파일') + '</div>' +
+    '<div class="store-name">' + (store.mode === 'folder' ? FOLDER_ICON : isCloud() ? CLOUD_ICON : '') +
     '<span>' + escapeHtml(name) + '</span></div>' +
     '<div class="store-file" title="' + escapeHtml(file) + '">' + escapeHtml(file) + '</div>' +
     '<div class="store-state ' + st.cls + '"><span class="dot"></span><span>' + escapeHtml(st.txt) + '</span></div>' +
@@ -2928,6 +3013,8 @@ function doAct(act) {
   else if (act === 'reload') reloadFolder('다시 불러왔습니다');
   else if (act === 'reconnect') reconnectFolder();
   else if (act === 'local') openLocal();
+  else if (act === 'cloudReload') openCloud(store.mode, '다시 불러왔습니다');
+  else if (act === 'cloudOff') disconnectCloud();
 }
 $('banner').addEventListener('click', function (e) {
   var b = e.target.closest('[data-act]');
@@ -6629,7 +6716,7 @@ $('edName').addEventListener('keydown', function (e) { if (e.key === 'Enter') sa
 // 창으로 돌아오면 파일이 바뀌었는지 확인
 window.addEventListener('focus', checkExternalChange);
 document.addEventListener('visibilitychange', function () {
-  if (!document.hidden) { checkExternalChange(); fetchKospiTrend(); }
+  if (!document.hidden) { checkExternalChange(); checkCloudChange(); fetchKospiTrend(); }
 });
 
 // 저장 안 한 입력이 있으면 창을 닫기 전에 묻는다
@@ -6675,6 +6762,9 @@ document.addEventListener('keydown', function (e) {
 
 /* ═══════════ 설정 ═══════════ */
 function openSettings() {
+  cloud.pane = null;   // 지금 쓰는 방식의 탭부터
+  cloudMsg('', '');
+  fillCloudFields();
   renderSettingsInfo();
   renderOwnerManageList();
   openSheet('settingsSheet');
@@ -6691,15 +6781,21 @@ function renderSettingsInfo() {
   } else if (store.mode === 'local') {
     html = '<b>브라우저 저장소</b> (localStorage)<br><span class="muted">자산 ' + nAssets + '개 · 기록 ' +
       rows.length + '건 — 이 브라우저에만 있으니 JSON 내보내기로 백업하세요</span>';
+  } else if (isCloud()) {
+    html = '☁ <b>' + cloudName(store.mode) + '</b> · ' + escapeHtml(cloudHost(store.cloud || {})) +
+      '<br><span class="muted">자산 ' + nAssets + '개 · 기록 ' + rows.length + '건 · ' + escapeHtml(st.txt) + '</span>' +
+      '<br><span class="muted">지금은 아래 클라우드 연동에 저장합니다. 폴더를 고르면 PC 파일로 바뀝니다.</span>';
   } else {
     html = '<b>데모 데이터</b><br><span class="muted">저장되지 않습니다 — 폴더를 고르면 실제 데이터 파일로 시작합니다</span>';
   }
   info.innerHTML = html;
   $('btnPickFolder').disabled = !FS_SUPPORTED;
-  $('btnPickFolder').textContent = store.mode === 'folder' ? '📁 다른 폴더 선택' : '📁 폴더 선택';
+  $('btnPickFolder').textContent = store.mode === 'folder' ? '📁 다른 폴더 선택' : isCloud() ? '📁 PC 폴더로 바꾸기' : '📁 폴더 선택';
+  $('btnPickFolder').className = 'btn ' + (isCloud() ? 'btn-ghost' : 'btn-primary');
   $('btnReload').hidden = store.mode !== 'folder';
+  renderCloudSec();
   $('btnUseLocal').hidden = FS_SUPPORTED || store.mode === 'local';
-  $('btnDisconnect').hidden = store.mode === 'demo';
+  $('btnDisconnect').hidden = store.mode === 'demo' || isCloud();
   $('btnImport').disabled = store.mode === 'demo';
   $('btnImport').title = store.mode === 'demo' ? '데이터 폴더를 먼저 연결하세요' : '';
   $('fsUnsupported').hidden = FS_SUPPORTED;
@@ -7373,6 +7469,350 @@ applyTheme(false);
 
 renderStoreCard();
 renderTopbar();
+/* ═══════════ 클라우드 연동 (Supabase · Google Sheet) ═══════════
+   기본 저장소는 PC 폴더의 JSON 파일. 설정에서 Supabase 나 구글 시트 중 "한 곳"을 저장소로 바꿀 수 있다.
+   - Supabase: 예전 모바일 버전과 같은 owners · assets 테이블 + app_state(설정 · 뱃지 · 연금) — 바뀐 행만 보낸다
+   - Google Sheet: Apps Script 웹 앱에 문서 전체를 읽고 쓴다
+   두 곳 모두 다른 기기에서 먼저 저장했으면(updatedAt 이 다르면) 덮어쓰지 않고 다시 불러온다. */
+var SB_CFG_KEY = 'asset_pc_sb';   // { url, key }
+var GS_CFG_KEY = 'asset_pc_gs';   // { url, token }
+var SUPABASE_SQL = "-- 자산 현황 (asset-pc) · Supabase 스키마\n-- Supabase → SQL Editor → New query 에 통째로 붙여넣고 Run.\n-- 여러 번 실행해도 안전합니다. 예전 모바일 버전의 owners · assets 테이블이 있으면 그대로 쓰고,\n-- 없는 것(app_state)만 새로 만듭니다.\n\ncreate table if not exists public.owners (\n  id          text primary key,\n  name        text not null,\n  sort_order  integer not null default 0\n);\n\ncreate table if not exists public.assets (\n  date         date   not null,\n  name         text   not null,\n  amount       bigint not null default 0,\n  asset_group  text   not null default '',\n  owner_id     text,\n  logo         text   default '',\n  primary key (date, name)\n);\n\n-- 목표 · 미래 예상 설정, 뱃지, 연금 리밸런싱 포트폴리오 등 (key 하나에 JSON 하나)\ncreate table if not exists public.app_state (\n  key         text primary key,\n  value       jsonb,\n  updated_at  timestamptz not null default now()\n);\n\n-- 접근 규칙: 프로젝트 URL 과 anon(publishable) 키를 아는 사람만 읽고 쓸 수 있습니다.\n-- 키는 이 앱을 연 브라우저에만 저장되고, 앱 코드나 GitHub 에는 올라가지 않습니다.\nalter table public.owners    enable row level security;\nalter table public.assets    enable row level security;\nalter table public.app_state enable row level security;\n\ndrop policy if exists \"asset_pc_rw\" on public.owners;\ndrop policy if exists \"asset_pc_rw\" on public.assets;\ndrop policy if exists \"asset_pc_rw\" on public.app_state;\ncreate policy \"asset_pc_rw\" on public.owners    for all to anon, authenticated using (true) with check (true);\ncreate policy \"asset_pc_rw\" on public.assets    for all to anon, authenticated using (true) with check (true);\ncreate policy \"asset_pc_rw\" on public.app_state for all to anon, authenticated using (true) with check (true);\n\ngrant select, insert, update, delete on public.owners, public.assets, public.app_state to anon, authenticated;\n";
+var APPS_SCRIPT = "/**\n * 자산 현황 (asset-pc) · Google Sheets 연동 Apps Script\n *\n * 1) 구글 시트를 새로 만들고  확장 프로그램 → Apps Script  를 연다\n * 2) 기본 코드를 모두 지우고 이 코드를 통째로 붙여넣고 저장\n * 3) (권장) 아래 TOKEN 에 아무 비밀 문자열을 넣고, 앱 설정의 '비밀 토큰' 칸에도 같은 값을 넣는다\n * 4) 배포 → 새 배포 → 유형: 웹 앱 / 실행 계정: 나 / 액세스 권한: 모든 사용자 → 배포\n *    (처음 한 번 '액세스 승인'을 눌러 권한을 허용)\n * 5) 나온 웹 앱 URL(…/exec)을 앱 설정에 붙여넣고 '연결'\n *\n * 코드를 고친 뒤에는  배포 → 배포 관리 → 수정(연필) → 버전: 새 버전 → 배포  해야 반영된다.\n * 시트 탭: assets(자산 기록) · owners(소유자) · state(설정 · 뱃지 · 연금 포트폴리오, JSON)\n */\nvar TOKEN = '';   // 예: 'my-secret-1234'  — 비워 두면 URL 만 알면 누구나 읽고 쓸 수 있음\n\nvar COLS = {\n  assets: ['date', 'name', 'amount', 'group', 'owner', 'logo'],\n  owners: ['id', 'name']\n};\nvar CHUNK = 40000;   // 셀 하나에 넣을 최대 글자 수 (구글 시트 한도 50,000)\n\nfunction doGet(e) {\n  return respond_(function () {\n    checkToken_(e.parameter.token);\n    var st = readState_();\n    if (e.parameter.meta) return { updatedAt: st.updatedAt || null };\n    return {\n      app: 'asset-pc',\n      updatedAt: st.updatedAt || null,\n      settings: st.settings || null,\n      badges: st.badges || null,\n      pension: st.pension || null,\n      owners: readRows_('owners'),\n      assets: readRows_('assets')\n    };\n  });\n}\n\nfunction doPost(e) {\n  return respond_(function () {\n    var body = JSON.parse(e.postData.contents);\n    checkToken_(body.token);\n    var lock = LockService.getScriptLock();\n    lock.waitLock(30000);\n    try {\n      var st = readState_();\n      // 다른 기기가 먼저 저장했으면 덮어쓰지 않는다\n      if (body.base !== undefined && st.updatedAt && body.base !== st.updatedAt) {\n        return { error: '다른 기기에서 먼저 바뀌었습니다', conflict: true, updatedAt: st.updatedAt };\n      }\n      var db = body.data || {};\n      writeRows_('assets', db.assets || []);\n      writeRows_('owners', db.owners || []);\n      var now = new Date().toISOString();\n      writeState_({ settings: db.settings || null, badges: db.badges || null, pension: db.pension || null, updatedAt: now });\n      return { ok: true, updatedAt: now };\n    } finally {\n      lock.releaseLock();\n    }\n  });\n}\n\nfunction respond_(fn) {\n  var out;\n  try { out = fn(); } catch (err) { out = { error: String(err && err.message || err) }; }\n  return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);\n}\n\nfunction checkToken_(t) {\n  if (TOKEN && t !== TOKEN) throw new Error('비밀 토큰이 맞지 않습니다');\n}\n\nfunction sheet_(name) {\n  var ss = SpreadsheetApp.getActiveSpreadsheet();\n  return ss.getSheetByName(name) || ss.insertSheet(name);\n}\n\nfunction readRows_(name) {\n  var sh = sheet_(name), cols = COLS[name];\n  var n = sh.getLastRow() - 1;\n  if (n < 1) return [];\n  var tz = Session.getScriptTimeZone();\n  return sh.getRange(2, 1, n, cols.length).getValues().filter(function (r) { return r[0] !== ''; }).map(function (r) {\n    var o = {};\n    cols.forEach(function (c, i) {\n      var v = r[i];\n      if (v instanceof Date) v = Utilities.formatDate(v, tz, 'yyyy-MM-dd');\n      o[c] = c === 'amount' ? Number(v) || 0 : String(v);\n    });\n    return o;\n  });\n}\n\nfunction writeRows_(name, list) {\n  var sh = sheet_(name), cols = COLS[name];\n  sh.clearContents();\n  var values = [cols].concat(list.map(function (o) {\n    return cols.map(function (c) { return c === 'amount' ? Number(o[c]) || 0 : (o[c] == null ? '' : String(o[c])); });\n  }));\n  var range = sh.getRange(1, 1, values.length, cols.length);\n  range.setNumberFormat('@');   // 날짜 · 이름이 자동 변환되지 않게 글자로\n  if (name === 'assets' && values.length > 1) sh.getRange(2, 3, values.length - 1, 1).setNumberFormat('#,##0');\n  range.setValues(values);\n  sh.setFrozenRows(1);\n}\n\nfunction readState_() {\n  var sh = sheet_('state'), out = {};\n  var n = sh.getLastRow(), w = sh.getLastColumn();\n  if (n < 1 || w < 2) return out;\n  sh.getRange(1, 1, n, w).getValues().forEach(function (r) {\n    if (!r[0]) return;\n    var json = r.slice(1).join('');\n    try { out[r[0]] = json ? JSON.parse(json) : null; } catch (e) {}\n  });\n  return out;\n}\n\nfunction writeState_(obj) {\n  var sh = sheet_('state');\n  sh.clearContents();\n  var rows = Object.keys(obj).map(function (k) {\n    var s = JSON.stringify(obj[k]), parts = [];\n    for (var i = 0; i < s.length; i += CHUNK) parts.push(s.slice(i, i + CHUNK));\n    return [k].concat(parts.length ? parts : ['null']);\n  });\n  var w = rows.reduce(function (m, r) { return Math.max(m, r.length); }, 2);\n  rows = rows.map(function (r) { while (r.length < w) r.push(''); return r; });\n  var range = sh.getRange(1, 1, rows.length, w);\n  range.setNumberFormat('@');\n  range.setValues(rows);\n}\n";
+var cloud = { snap: null, updatedAt: null, lastCheck: 0, pane: null };
+
+function isCloud(m) { if (!arguments.length) m = store.mode; return m === 'supabase' || m === 'gsheet'; }
+var PREV_MODE_KEY = 'asset_pc_prev_mode';   // 클라우드로 바꾸기 전의 PC 방식 (folder · local) — 연동 해제 때 돌아간다
+function cloudName(m) { return m === 'supabase' ? 'Supabase' : 'Google Sheet'; }
+function cloudCfg(m) {
+  try { return JSON.parse(lsGet(m === 'supabase' ? SB_CFG_KEY : GS_CFG_KEY) || 'null'); } catch (e) { return null; }
+}
+function cloudHost(cfg) { try { return new URL(cfg.url).host; } catch (e) { return ''; } }
+function cloudError(msg, conflict) { var e = new Error(msg); if (conflict) e.conflict = true; return e; }
+
+// ── Supabase (REST) ──
+function sbHeaders(cfg, prefer) {
+  var h = { apikey: cfg.key, 'Content-Type': 'application/json' };
+  if (/^eyJ/.test(cfg.key)) h.Authorization = 'Bearer ' + cfg.key;   // 예전 anon 키(JWT)
+  if (prefer) h.Prefer = prefer;
+  return h;
+}
+async function sbReq(cfg, method, path, body, prefer) {
+  var res;
+  try {
+    res = await fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/' + path, {
+      method: method, headers: sbHeaders(cfg, prefer), cache: 'no-store',
+      body: body == null ? undefined : JSON.stringify(body)
+    });
+  } catch (e) { throw cloudError('Supabase 에 연결하지 못했습니다 — Project URL 과 인터넷 연결을 확인하세요'); }
+  if (!res.ok) {
+    var t = '', msg = '';
+    try { t = await res.text(); var j = JSON.parse(t); msg = j.message || j.hint || j.error || t; } catch (e) { msg = t; }
+    if (/does not exist|Could not find the table|schema cache/i.test(msg)) throw cloudError('테이블이 없습니다 — "SQL 복사"로 스키마를 만든 뒤 다시 연결하세요');
+    if (res.status === 401 || res.status === 403 || /Invalid API key|JWT/i.test(msg)) throw cloudError('키가 맞지 않거나 권한이 없습니다 — anon · publishable 키와 SQL 실행 여부를 확인하세요');
+    throw cloudError('Supabase ' + res.status + (msg ? ' — ' + String(msg).slice(0, 160) : ''));
+  }
+  return method === 'GET' ? res.json() : null;
+}
+async function sbAll(cfg, path) {   // 한 번에 최대 1,000행이라 나눠 읽는다
+  var out = [], size = 1000;
+  for (var off = 0; ; off += size) {
+    var part = await sbReq(cfg, 'GET', path + '&limit=' + size + '&offset=' + off);
+    out = out.concat(part);
+    if (part.length < size) return out;
+  }
+}
+async function sbLoad(cfg) {
+  var r = await Promise.all([
+    sbAll(cfg, 'owners?select=id,name,sort_order&order=sort_order.asc,id.asc'),
+    sbAll(cfg, 'assets?select=date,name,amount,asset_group,owner_id,logo&order=date.asc,name.asc'),
+    sbReq(cfg, 'GET', 'app_state?select=key,value')
+  ]);
+  var st = {};
+  r[2].forEach(function (x) { st[x.key] = x.value; });
+  return {
+    owners: r[0].map(function (o) { return { id: String(o.id), name: String(o.name) }; }),
+    assets: r[1].map(function (a) {
+      return { date: String(a.date).slice(0, 10), name: a.name, amount: Number(a.amount) || 0,
+               group: a.asset_group || '', owner: a.owner_id || '', logo: a.logo || '' };
+    }),
+    settings: st.settings || null, badges: st.badges || null, pension: st.pension || null,
+    updatedAt: (st.meta && st.meta.updatedAt) || null
+  };
+}
+// 마지막으로 맞춘 상태(snap)와 비교해 바뀐 행만 고른다
+function sbShape(db) {
+  var cur = { assets: {}, owners: {} }, rowsA = {}, rowsO = {};
+  (db.assets || []).forEach(function (a) {
+    var row = { date: a.date, name: a.name, amount: Math.round(Number(a.amount) || 0), asset_group: a.group || '',
+                owner_id: a.owner || null, logo: a.logo || '' };
+    var k = a.date + '\u0001' + a.name;
+    cur.assets[k] = JSON.stringify(row); rowsA[k] = row;
+  });
+  (db.owners || []).forEach(function (o, i) {
+    var row = { id: o.id, name: o.name, sort_order: i };
+    cur.owners[o.id] = JSON.stringify(row); rowsO[o.id] = row;
+  });
+  return { cur: cur, rowsA: rowsA, rowsO: rowsO };
+}
+async function runLimited(tasks, n) {
+  var i = 0;
+  async function worker() { while (i < tasks.length) { var t = tasks[i++]; await t(); } }
+  var ws = [];
+  for (var k = 0; k < Math.min(n, tasks.length); k++) ws.push(worker());
+  await Promise.all(ws);
+}
+async function sbSave(cfg, db) {
+  // 다른 기기가 먼저 저장했는지 확인
+  var meta = await sbReq(cfg, 'GET', 'app_state?select=value&key=eq.meta');
+  var remote = meta[0] && meta[0].value && meta[0].value.updatedAt || null;
+  if (remote && remote !== cloud.updatedAt) throw cloudError('다른 기기에서 먼저 바뀌었습니다', true);
+  var snap = cloud.snap || { assets: {}, owners: {} }, sh = sbShape(db);
+  var upA = Object.keys(sh.rowsA).filter(function (k) { return snap.assets[k] !== sh.cur.assets[k]; }).map(function (k) { return sh.rowsA[k]; });
+  var upO = Object.keys(sh.rowsO).filter(function (k) { return snap.owners[k] !== sh.cur.owners[k]; }).map(function (k) { return sh.rowsO[k]; });
+  var delA = Object.keys(snap.assets).filter(function (k) { return !(k in sh.cur.assets); });
+  var delO = Object.keys(snap.owners).filter(function (k) { return !(k in sh.cur.owners); });
+  var merge = 'resolution=merge-duplicates,return=minimal';
+  // 순서: 소유자 추가 → 자산 반영 → 자산 삭제 → 소유자 삭제 (owner_id 외래키가 있어도 안전)
+  if (upO.length) await sbReq(cfg, 'POST', 'owners?on_conflict=id', upO, merge);
+  for (var i = 0; i < upA.length; i += 500) await sbReq(cfg, 'POST', 'assets?on_conflict=date,name', upA.slice(i, i + 500), merge);
+  await runLimited(delA.map(function (k) {
+    var p = k.split('\u0001');
+    return function () { return sbReq(cfg, 'DELETE', 'assets?date=eq.' + encodeURIComponent(p[0]) + '&name=eq.' + encodeURIComponent(p[1])); };
+  }), 6);
+  await runLimited(delO.map(function (id) {
+    return function () { return sbReq(cfg, 'DELETE', 'owners?id=eq.' + encodeURIComponent(id)); };
+  }), 4);
+  var now = new Date().toISOString();
+  var state = [{ key: 'settings', value: db.settings || null }, { key: 'badges', value: db.badges || [] }, { key: 'meta', value: { updatedAt: now } }];
+  if (db.pension) state.push({ key: 'pension', value: db.pension });
+  state.forEach(function (x) { x.updated_at = now; });
+  await sbReq(cfg, 'POST', 'app_state?on_conflict=key', state, merge);
+  cloud.snap = sh.cur;
+  cloud.updatedAt = now;
+}
+
+// ── Google Sheet (Apps Script 웹 앱) ──
+async function gsFetch(cfg, init, query) {
+  var url = cfg.url + (cfg.url.indexOf('?') < 0 ? '?' : '&') + (query || '') + 't=' + Date.now();
+  var res;
+  try { res = await fetch(url, init); }
+  catch (e) { throw cloudError('웹 앱에 연결하지 못했습니다 — URL(…/exec)과 배포 액세스("모든 사용자")를 확인하세요'); }
+  if (!res.ok) throw cloudError('Google 응답 ' + res.status + ' — 웹 앱을 다시 배포했는지 확인하세요');
+  var j;
+  try { j = await res.json(); }
+  catch (e) { throw cloudError('웹 앱 응답을 읽지 못했습니다 — 배포 액세스를 "모든 사용자"로 했는지 확인하세요'); }
+  if (j && j.error) throw cloudError(j.conflict ? '다른 기기에서 먼저 바뀌었습니다' : 'Apps Script: ' + j.error, !!j.conflict);
+  return j;
+}
+async function gsLoad(cfg) {
+  var j = await gsFetch(cfg, { cache: 'no-store' }, 'token=' + encodeURIComponent(cfg.token || '') + '&');
+  if (j.app !== 'asset-pc') throw cloudError('이 앱용 Apps Script 가 아닙니다 — "Apps Script 복사"로 붙여넣은 코드를 배포하세요');
+  return j;
+}
+async function gsSave(cfg, db) {
+  // 문자열로 보내면(text/plain) 브라우저가 사전 확인(CORS preflight)을 하지 않는다
+  var j = await gsFetch(cfg, {
+    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ token: cfg.token || '', base: cloud.updatedAt, data: db })
+  });
+  cloud.updatedAt = j.updatedAt || null;
+}
+
+// ── 공통: 불러오기 · 저장 · 전환 ──
+function cloudLoad(m, cfg) { return m === 'supabase' ? sbLoad(cfg) : gsLoad(cfg); }
+function cloudSave(db) { return store.mode === 'supabase' ? sbSave(store.cloud, db) : gsSave(store.cloud, db); }
+function cloudIsEmpty(db) { return !(db.assets || []).length && !(db.owners || []).length && !db.settings; }
+function applyCloudDb(db) {
+  applyDb({ owners: db.owners, assets: db.assets, settings: db.settings || {}, badges: db.badges, pension: db.pension });
+  cloud.updatedAt = db.updatedAt || null;
+  cloud.snap = store.mode === 'supabase' ? sbShape(db).cur : null;
+}
+function startEmptyData() {
+  OWNERS = DEFAULT_OWNERS.slice();
+  rows = [];
+  marks = null;
+  syncMarks();
+  badges = [];
+  pension = null;
+  rbResetState();
+}
+// 저장해 둔 설정으로 다시 연결 (앱 시작 · 다시 불러오기)
+async function openCloud(m, okMsg) {
+  var cfg = cloudCfg(m);
+  store.mode = m;
+  store.dir = null;
+  store.cloud = cfg;
+  store.locked = true;   // 불러오기 전에는 저장하지 않는다
+  setStoreState('loading');
+  try {
+    if (!cfg || !cfg.url) throw cloudError(cloudName(m) + ' 연결 정보가 없습니다');
+    applyCloudDb(await cloudLoad(m, cfg));
+    store.locked = false;
+    setBanner('');
+    setStoreState('loaded');
+    if (okMsg) showToast(okMsg);
+  } catch (e) {
+    rows = [];
+    setStoreState('error', e.message);
+    setBanner('⚠ ' + escapeHtml(cloudName(m)) + ' 에서 불러오지 못했습니다 — ' + escapeHtml(e.message) +
+      ' <button class="btn btn-ghost btn-sm" data-act="cloudReload">↻ 다시 불러오기</button>' +
+      ' <button class="btn btn-ghost btn-sm" data-act="cloudOff">PC 파일로 돌아가기</button>', 'error');
+  }
+  renderAll();
+  markPopupReady('data');
+}
+// 설정 화면의 "연결" — 먼저 읽어 보고, 비어 있으면 지금 기록을 올릴지 묻는다
+async function connectCloud(m) {
+  var cfg = m === 'supabase'
+    ? { url: $('sbUrl').value.trim().replace(/\/+$/, ''), key: $('sbKey').value.trim() }
+    : { url: $('gsUrl').value.trim(), token: $('gsToken').value.trim() };
+  if (!/^https:\/\//.test(cfg.url)) { cloudMsg('주소는 https:// 로 시작해야 합니다', 'err'); return; }
+  if (m === 'supabase' && !cfg.key) { cloudMsg('anon · publishable 키를 넣어 주세요', 'err'); return; }
+  if (m === 'gsheet' && !/\/exec$/.test(cfg.url)) { cloudMsg('웹 앱 URL 은 …/exec 로 끝납니다 (배포 → 웹 앱 URL 복사)', 'err'); return; }
+  var btn = $(m === 'supabase' ? 'btnSbConnect' : 'btnGsConnect');
+  btn.disabled = true;
+  cloudMsg(cloudName(m) + ' 에 연결하는 중…', 'busy');
+  try {
+    var db = await cloudLoad(m, cfg);
+    var nA = Object.keys(buildByName()).length;
+    var upload = false;
+    if (cloudIsEmpty(db) && rows.length && store.mode !== 'demo') {
+      upload = confirm(cloudName(m) + ' 이(가) 비어 있습니다.\n지금 기록(자산 ' + nA + '개 · 기록 ' + rows.length + '건)을 올려서 시작할까요?\n\n취소를 누르면 빈 상태로 시작합니다. (PC 파일은 그대로 남아 있어요)');
+    } else if (!cloudIsEmpty(db) && !confirm(cloudName(m) + ' 의 기록(기록 ' + (db.assets || []).length + '건)을 불러와 이 저장소로 씁니다.\n지금 PC 파일은 그대로 남고, 연동을 해제하면 다시 돌아갈 수 있어요. 계속할까요?')) {
+      cloudMsg('', '');
+      return;
+    }
+    lsSet(m === 'supabase' ? SB_CFG_KEY : GS_CFG_KEY, JSON.stringify(cfg));
+    if (!isCloud()) { if (store.mode === 'folder' || store.mode === 'local') lsSet(PREV_MODE_KEY, store.mode); else lsDel(PREV_MODE_KEY); }
+    lsSet(MODE_KEY, m);
+    store.mode = m;
+    store.dir = null;
+    store.cloud = cfg;
+    store.locked = false;
+    cloud.snap = m === 'supabase' ? { assets: {}, owners: {} } : null;
+    cloud.updatedAt = db.updatedAt || null;
+    if (cloudIsEmpty(db)) {
+      if (!upload) startEmptyData();
+      await persist();   // 빈 저장소를 지금 데이터(또는 빈 데이터)로 채운다
+    } else {
+      applyCloudDb(db);
+    }
+    setBanner('');
+    setStoreState('saved');
+    renderAll();
+    showToast(cloudName(m) + ' 에 연결했습니다' + (upload ? ' — 지금 기록을 올렸어요' : ''));
+  } catch (e) {
+    cloudMsg('연결 실패 — ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    renderCloudSec();
+  }
+}
+async function disconnectCloud() {
+  if (!confirm(cloudName(store.mode) + ' 연동을 해제하고 PC 파일로 돌아갈까요?\n(' + cloudName(store.mode) + ' 의 기록은 그대로 남고, 다시 연결하면 이어서 쓸 수 있어요)')) return;
+  store.cloud = null;
+  cloud.snap = null;
+  cloud.updatedAt = null;
+  var prev = lsGet(PREV_MODE_KEY), dir = null;
+  try { dir = await idbGet('dir'); } catch (e) {}
+  if (prev === 'local') lsSet(MODE_KEY, 'local');
+  else if (dir) lsSet(MODE_KEY, 'folder');
+  else lsDel(MODE_KEY);
+  setBanner('');
+  closeSheet('settingsSheet');
+  await initStore();
+  showToast('PC 파일로 돌아왔습니다');
+}
+// 창으로 돌아올 때 다른 기기에서 바뀌었으면 다시 불러온다 (20초에 한 번까지)
+async function checkCloudChange() {
+  if (!isCloud() || store.locked || extCheckBusy || Date.now() - cloud.lastCheck < 20000) return;
+  if (store.state !== 'loaded' && store.state !== 'saved') return;
+  if (typeof collectEntries === 'function' && collectEntries().length) return;   // 입력 중인 금액이 있으면 건드리지 않는다
+  cloud.lastCheck = Date.now();
+  extCheckBusy = true;
+  try {
+    var remote;
+    if (store.mode === 'supabase') {
+      var meta = await sbReq(store.cloud, 'GET', 'app_state?select=value&key=eq.meta');
+      remote = meta[0] && meta[0].value && meta[0].value.updatedAt || null;
+    } else {
+      remote = (await gsFetch(store.cloud, { cache: 'no-store' }, 'meta=1&token=' + encodeURIComponent(store.cloud.token || '') + '&')).updatedAt || null;
+    }
+    if (remote && remote !== cloud.updatedAt) await openCloud(store.mode, '다른 기기에서 바뀐 기록을 불러왔습니다');
+  } catch (e) {
+    // 잠깐 연결이 안 되는 경우 — 다음에 다시 확인
+  } finally {
+    extCheckBusy = false;
+  }
+}
+
+// ── 설정 화면 ──
+// 저장해 둔 연결 정보를 칸에 채운다 — 설정을 열 때만 (연결에 실패해도 적던 값은 그대로)
+function fillCloudFields() {
+  var sb = cloudCfg('supabase') || {}, gs = cloudCfg('gsheet') || {};
+  $('sbUrl').value = sb.url || '';
+  $('sbKey').value = sb.key || '';
+  $('gsUrl').value = gs.url || '';
+  $('gsToken').value = gs.token || '';
+}
+function cloudMsg(text, cls) {
+  var b = $('cloudStatus');
+  b.className = 'cloud-status' + (cls ? ' ' + cls : '');
+  b.innerHTML = text;
+  b.hidden = !text;
+}
+function renderCloudSec() {
+  var active = isCloud() ? store.mode : 'off';
+  var pane = cloud.pane || active;
+  document.querySelectorAll('#cloudSeg button').forEach(function (b) {
+    b.classList.toggle('on', b.dataset.cloud === pane);
+    b.classList.toggle('using', b.dataset.cloud === active);
+  });
+  ['off', 'supabase', 'gsheet'].forEach(function (k) { $('cloudPane-' + k).hidden = k !== pane; });
+  // 한 번에 한 곳만 — 다른 클라우드를 쓰는 중이면 연결 버튼을 잠근다
+  var other = isCloud() && pane !== 'off' && pane !== active;
+  $('btnSbConnect').disabled = other;
+  $('btnGsConnect').disabled = other;
+  $('btnSbConnect').textContent = active === 'supabase' ? '다시 연결' : '연결';
+  $('btnGsConnect').textContent = active === 'gsheet' ? '다시 연결' : '연결';
+  if (isCloud()) {
+    var st = storeStateText();
+    cloudMsg((other ? '지금은 <b>' + cloudName(active) + '</b> 를 쓰는 중입니다. ' + cloudName(pane) + ' 로 바꾸려면 먼저 연동을 해제하세요.<br>'
+                    : '☁ <b>' + cloudName(active) + '</b> 에 저장 중 · ' + escapeHtml(cloudHost(store.cloud || {})) + ' · ' + escapeHtml(st.txt) + '<br>') +
+      '<button type="button" class="btn btn-ghost btn-sm" data-act="cloudReload">↻ 다시 불러오기</button> ' +
+      '<button type="button" class="btn btn-ghost btn-sm" data-act="cloudOff">연동 해제 → PC 파일로</button>', other ? 'warn' : 'ok');
+  } else if (!$('cloudStatus').classList.contains('err') && !$('cloudStatus').classList.contains('busy')) {
+    cloudMsg('', '');
+  }
+}
+function copyText(text, okMsg) {
+  function fallback() {
+    var ta = el('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    ta.remove();
+    showToast(ok ? okMsg : '복사하지 못했습니다 — 브라우저 권한을 확인하세요');
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function () { showToast(okMsg); }, fallback);
+  } else fallback();
+}
+$('cloudSeg').addEventListener('click', function (e) {
+  var b = e.target.closest('button[data-cloud]');
+  if (!b) return;
+  cloud.pane = b.dataset.cloud;
+  if (!$('cloudStatus').classList.contains('busy')) cloudMsg('', '');
+  renderCloudSec();
+});
+$('btnSbConnect').addEventListener('click', function () { connectCloud('supabase'); });
+$('btnGsConnect').addEventListener('click', function () { connectCloud('gsheet'); });
+$('btnCopySql').addEventListener('click', function () { copyText(SUPABASE_SQL, 'SQL을 복사했습니다 — Supabase SQL Editor 에 붙여넣고 Run'); });
+$('btnCopyGs').addEventListener('click', function () { copyText(APPS_SCRIPT, 'Apps Script 를 복사했습니다 — 시트의 확장 프로그램 → Apps Script 에 붙여넣으세요'); });
+
 /* ═══════════ 빈 화면 안내 ═══════════
    기록이 없을 때 "무엇을 하면 되는지"와 바로가기 버튼을 보여 준다 */
 function guideBox(o) {
@@ -7451,7 +7891,8 @@ var HELP = {
     '<h3>알아 두면 좋은 것</h3><ul>' +
     '<li>서버 · 계정이 없습니다. 데이터는 고른 폴더에만 있고, 매일 <code>backups</code> 폴더에 자동 백업됩니다.</li>' +
     '<li>폴더 저장은 <b>Edge</b> · <b>Chrome</b> 에서 됩니다. 다른 브라우저는 설정의 "브라우저에 저장하기"를 쓰세요.</li>' +
-    '<li>순자산이 새 기록을 세우거나 대출이 줄면 축하 효과와 뱃지가 나와요.</li></ul>',
+    '<li>순자산이 새 기록을 세우거나 대출이 줄면 축하 효과와 뱃지가 나와요.</li>' +
+    '<li>여러 기기에서 같이 보려면 설정의 <b>클라우드 연동</b>으로 Supabase 나 구글 시트에 저장할 수 있어요.</li></ul>',
     keys: HELP_KEYS_COMMON + hk('Ctrl + S', '입력한 금액 저장') },
   home: { t: '대시보드', main:
     '<h3>이 화면에서</h3><ul>' +
@@ -7499,6 +7940,23 @@ var HELP = {
     '<li>주기가 지나면 메뉴에 빨간 <b>!</b> 가 뜹니다. 밴드를 두면 작은 차이는 거래하지 않아요.</li></ul>',
     keys: hk('Ctrl + S', '종목 · 설정 저장') + hk('↑ ↓ Enter', 'ETF 검색 결과 고르기') + HELP_KEYS_COMMON }
 };
+HELP.cloud = { t: '클라우드 연동', main:
+  '<h3>언제 쓰나요</h3><ul>' +
+  '<li>기본은 <b>PC 파일</b>(<code>asset-data.json</code>)입니다. 이 PC 에서만 쓴다면 그대로 두는 게 가장 간단하고 빠릅니다.</li>' +
+  '<li>휴대폰 · 회사 PC 등 <b>여러 기기에서 같은 기록</b>을 보려면 <b>Supabase</b> 나 <b>Google Sheet</b> 중 <b>한 곳</b>을 저장소로 연결하세요. 둘을 동시에 쓸 수는 없습니다.</li>' +
+  '<li>연결하면 그때부터 모든 저장이 그곳으로 갑니다. PC 파일은 그대로 남고, <b>연동 해제</b>하면 다시 PC 파일로 돌아옵니다.</li></ul>' +
+  '<h3>어느 쪽이 좋을까</h3><ul>' +
+  '<li><b>Supabase</b> — 빠르고 기록이 많아도 가볍습니다. 예전 모바일 버전의 Supabase 프로젝트를 그대로 연결할 수 있어요 (SQL 은 여러 번 실행해도 안전).</li>' +
+  '<li><b>Google Sheet</b> — 구글 계정만 있으면 되고, 기록을 시트에서 바로 보고 고칠 수 있습니다. 저장할 때마다 시트 전체를 다시 쓰므로 조금 느립니다.</li></ul>' +
+  '<h3>연결하는 법</h3><ol class="guide-steps">' +
+  '<li><span><b>설정 → 클라우드 연동</b>에서 Supabase 나 Google Sheet 탭을 고릅니다.</span></li>' +
+  '<li><span><b>SQL 복사</b> / <b>Apps Script 복사</b> 버튼으로 코드를 복사해 안내대로 붙여넣습니다.</span></li>' +
+  '<li><span>주소와 키(또는 토큰)를 넣고 <b>연결</b>. 클라우드가 비어 있으면 지금 기록을 올릴지 물어봅니다.</span></li></ol>' +
+  '<h3>보안</h3><ul>' +
+  '<li>주소 · 키 · 토큰은 <b>이 브라우저에만</b> 저장되고, 앱 코드나 GitHub 에는 올라가지 않습니다.</li>' +
+  '<li>다만 그 값을 아는 사람은 기록을 읽고 쓸 수 있으니 공유하지 마세요. 구글 시트는 스크립트의 <code>TOKEN</code> 을 꼭 정해 두길 권합니다.</li>' +
+  '<li>다른 기기에서 먼저 저장했으면 덮어쓰지 않고 최신 기록을 다시 불러옵니다.</li></ul>',
+  keys: HELP_KEYS_COMMON };
 var helpTopic = 'start';
 function renderHelp() {
   var h = HELP[helpTopic];
