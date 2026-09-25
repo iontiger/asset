@@ -1000,6 +1000,24 @@
       "ms    ms    ms"
       "heat  heat  heat";
   }
+  /* 부채가 0원이면 작은 KPI(자산 합계 · 부채 합계 · 이번 달 증감)를 숨기고 순자산 · 자산 구성을 넓게 */
+  .dboard.no-kpi > .kpi-stack { display:none; }
+  .dboard.no-kpi {
+    grid-template-areas:
+      "hero  hero  fc"
+      "comp  comp  fc"
+      "chart chart fc"
+      "ms    ms    fg"
+      "heat  heat  heat";
+  }
+  .dboard.no-kpi:not(.has-fg) {
+    grid-template-areas:
+      "hero  hero  fc"
+      "comp  comp  fc"
+      "chart chart fc"
+      "ms    ms    ms"
+      "heat  heat  heat";
+  }
   .dboard > .hero { grid-area:hero; }
   .dboard > .kpi-stack { grid-area:kpi; align-self:stretch; }
   .dboard > .comp-card { grid-area:comp; }
@@ -1610,6 +1628,22 @@
         "ms    ms"
         "heat  heat";
     }
+    .dboard.no-kpi {
+      grid-template-areas:
+        "hero  fc"
+        "comp  fc"
+        "chart fc"
+        "ms    fg"
+        "heat  heat";
+    }
+    .dboard.no-kpi:not(.has-fg) {
+      grid-template-areas:
+        "hero  fc"
+        "comp  fc"
+        "chart fc"
+        "ms    ms"
+        "heat  heat";
+    }
     .kpi-stack { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
   }
   /* 좁은 폭: 한 열 */
@@ -1619,6 +1653,8 @@
       grid-template-areas:"hero" "kpi" "comp" "chart" "fc" "ms" "fg" "heat";
     }
     .dboard:not(.has-fg) { grid-template-areas:"hero" "kpi" "comp" "chart" "fc" "ms" "heat"; }
+    .dboard.no-kpi { grid-template-areas:"hero" "comp" "chart" "fc" "ms" "fg" "heat"; }
+    .dboard.no-kpi:not(.has-fg) { grid-template-areas:"hero" "comp" "chart" "fc" "ms" "heat"; }
   }
   /* 자산: 휴대폰 폭에서만 상세 패널을 아래로 내린다 */
   @container main (max-width: 540px) {
@@ -3700,6 +3736,8 @@ function renderKpis() {
   Object.values(latestByName()).forEach(function (a) {
     if (isDebtRow(a)) { debt += a.amount; nD++; } else { gross += a.amount; nA++; }
   });
+  // 부채가 0원이면 자산 합계 = 순자산이라 작은 카드 세 장을 숨긴다 (소유자별 보기에도 그 소유자 기준)
+  document.querySelector('#view-home .dboard').classList.toggle('no-kpi', rows.length > 0 && !debt);
   if (!rows.length) {
     ['kpiGross', 'kpiDebt', 'kpiMonth'].forEach(function (id) { $(id).textContent = '—'; $(id).className = 'kpi-v'; });
     ['kpiGrossSub', 'kpiDebtSub', 'kpiMonthSub'].forEach(function (id) { $(id).textContent = ''; });
