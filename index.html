@@ -70,6 +70,8 @@
     --fgz4-fill:  #c9ebd2;  --fgz4-ink: #1e9e4a;  /* 탐욕 — 녹색 */
     --fgz5-fill:  #bfd3f7;  --fgz5-ink: #1049c8;  /* 극단적 탐욕 — 강렬한 파랑 */
     --side-w: 252px;
+    --hero-a: #2f80e0;  --hero-b: #1b58b0;   /* 순자산 카드 채움 */
+    --hero-shadow: 0 16px 36px rgba(27,88,176,.32), 0 3px 10px rgba(11,11,11,.08);
   }
   /* 다크 테마 — <html data-theme="dark"> 일 때. 자동/밝게/어둡게는 JS가 정한다 */
   :root[data-theme="dark"] {
@@ -106,6 +108,8 @@
     --grp4: #9085e9;
     --grp5: #e66767;
     --shadow-pop: 0 24px 60px rgba(0,0,0,.6), 0 4px 14px rgba(0,0,0,.4);
+    --hero-a: #2f74cf;  --hero-b: #1a4589;
+    --hero-shadow: 0 16px 40px rgba(0,0,0,.55), 0 0 0 1px rgba(120,170,240,.18);
     --fg-track:   #2f2f2d;
     --fg-dash:    #9a9a94;
     --fgz1-fill:  rgba(215,25,28,.42);   --fgz1-ink: #ff6154;
@@ -801,12 +805,29 @@
   .kpi-v.up { color:var(--up); }
   .kpi-v.down { color:var(--down); }
   .kpi-s { margin-top:auto; padding-top:10px; font-size:.76rem; color:var(--muted); font-variant-numeric:tabular-nums; }
+  /* 순자산 카드 — 색을 꽉 채우고 그림자로 띄운다 (숫자 · 최근 1개월 변동만) */
   .kpi.hero {
-    background:linear-gradient(120deg, var(--accent-wash), transparent 55%), var(--surface);
+    background:linear-gradient(135deg, var(--hero-a), var(--hero-b));
+    border:none; box-shadow:var(--hero-shadow); color:#fff;
+    position:relative; overflow:hidden; justify-content:center;
   }
-  .kpi.hero .kpi-v { font-size:2.6rem; text-overflow:clip; }
-  .kpi.hero .kpi-v .won { font-size:1.15rem; font-weight:600; color:var(--ink-2); margin-left:3px; }
-  .kpi.hero .kpi-s { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .kpi.hero::before {
+    content:''; position:absolute; right:-60px; top:-80px; width:260px; height:260px; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,255,255,.16), transparent 70%); pointer-events:none;
+  }
+  .kpi.hero .kpi-l { color:rgba(255,255,255,.82); }
+  .kpi.hero .qm { border-color:rgba(255,255,255,.55); color:rgba(255,255,255,.85); }
+  .kpi.hero .qm:hover, .kpi.hero .qm:focus-visible { background:rgba(255,255,255,.18); border-color:#fff; color:#fff; }
+  .kpi.hero .kpi-v { font-size:2.8rem; text-overflow:clip; color:#fff; margin-top:10px; }
+  .kpi.hero .kpi-v .won { font-size:1.2rem; font-weight:600; color:rgba(255,255,255,.75); margin-left:3px; }
+  .kpi.hero .kpi-s { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:12px; padding-top:0; color:rgba(255,255,255,.8); }
+  .kpi.hero .kpi-s:empty { display:none; }
+  .kpi.hero .delta {
+    color:#fff; background:rgba(255,255,255,.17); border-radius:99px; padding:5px 12px 5px 10px; font-size:.86rem;
+  }
+  .kpi.hero .delta .period { color:rgba(255,255,255,.72); font-weight:600; }
+  .kpi.hero #heroUpdated:empty { display:none; }
+  .kpi.hero .hero-main { justify-content:center; }
   .delta { font-size:.85rem; font-weight:700; display:inline-flex; gap:6px; align-items:center; }
   .delta.up   { color:var(--up); }
   .delta.down { color:var(--down); }
@@ -820,7 +841,17 @@
   /* 순자산 카드 — 오른쪽에 목표 달성률 링 */
   .kpi.hero { flex-direction:row; align-items:stretch; gap:22px; container:hero / inline-size; }
   .hero-main { flex:1; min-width:0; display:flex; flex-direction:column; }
-  .hero-goal { flex:none; display:flex; align-items:center; padding-left:12px; border-left:1px solid var(--border); }
+  .hero-goal { flex:none; display:flex; align-items:center; padding-left:12px; border-left:1px solid rgba(255,255,255,.22); position:relative; }
+  .kpi.hero .hg-btn:hover, .kpi.hero .hg-btn:focus-visible { background:rgba(255,255,255,.12); }
+  .kpi.hero .hg-btn:focus-visible { box-shadow:0 0 0 2px #fff; }
+  .kpi.hero .hg-edit { color:#fff; }
+  .kpi.hero .ring-bg { stroke:rgba(255,255,255,.24); }
+  .kpi.hero .ring-fg { stroke:#fff; }
+  .kpi.hero .ring-fg.done { stroke:#ffd84d; }
+  .kpi.hero .ring-pct { color:#fff; }
+  .kpi.hero .hg-l { color:rgba(255,255,255,.75); }
+  .kpi.hero .hg-v { color:#fff; }
+  .kpi.hero .hg-s { color:rgba(255,255,255,.8); }
   .hg-btn {
     position:relative; display:flex; align-items:center; gap:14px; cursor:pointer;
     padding:8px 12px 8px 10px; border-radius:14px; outline:none;
@@ -3427,27 +3458,30 @@ function renderHomeInner() {
   animateHero(last.total);
   $('heroLabel').textContent = (rows.some(isDebtRow) ? '순자산' : '총 자산') +
     (dashOwner === 'all' ? '' : ' · ' + ownerName(dashOwner));
-  $('heroUpdated').textContent = '약 ' + fmtCompact(last.total) + ' · 최근 입력 ' + last.date;
+  $('heroUpdated').textContent = '';
   renderComposition();
 
-  var fs = filteredSeries();
+  // 순자산 아래에는 최근 1개월 변동만 (차트 기간 버튼과 상관없이)
   var deltaEl = $('heroDelta');
-  if (fs.length >= 2) {
-    var diff = fs[fs.length - 1].total - fs[0].total;
-    var pct = fs[0].total ? (diff / Math.abs(fs[0].total) * 100) : 0;
+  var mAgo = parseDate(last.date);
+  mAgo.setMonth(mAgo.getMonth() - 1);
+  var base1m = netAt(buildByName(), fmtDateStr(mAgo));
+  if (base1m !== null && series.length >= 2) {
+    var diff = last.total - base1m;
+    var pct = base1m ? (diff / Math.abs(base1m) * 100) : 0;
     var up = diff >= 0;
     deltaEl.className = 'delta ' + (up ? 'up' : 'down');
     deltaEl.innerHTML = '';
     deltaEl.appendChild(document.createTextNode(
       (up ? '▲ +' : '▼ −') + fmtCompact(Math.abs(diff)) + ' (' + (up ? '+' : '−') + Math.abs(pct).toFixed(1) + '%)'
     ));
-    deltaEl.appendChild(el('span', 'period', rangeLabel()));
+    deltaEl.appendChild(el('span', 'period', '최근 1개월'));
     deltaEl.style.display = 'inline-flex';
-    $('chartSub').textContent = rangeLabel() + ' · ' + fs[0].date + ' → ' + fs[fs.length - 1].date;
   } else {
     deltaEl.style.display = 'none';
-    $('chartSub').textContent = rangeLabel();
   }
+  var fs = filteredSeries();
+  $('chartSub').textContent = fs.length >= 2 ? rangeLabel() + ' · ' + fs[0].date + ' → ' + fs[fs.length - 1].date : rangeLabel();
   syncChartMode();
   if (chartMode === 'strata') drawStrata(fs);
   else drawLineChart($('chartWrap'), fs, CHART_H,
@@ -3772,14 +3806,21 @@ function renderComposition() {
 }
 
 // 총자산 숫자가 카드 폭을 넘으면 폭에 맞을 때까지 글자 크기를 줄임
+// 웹 글꼴이 늦게 들어오거나 카드 폭이 바뀌면 다시 맞춘다 (숫자 끝 '원'이 잘리지 않게)
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { fitHeroValue(); });
+if (window.ResizeObserver) new ResizeObserver(function () { fitHeroValue(); }).observe(document.querySelector('.kpi.hero'));
 function fitHeroValue() {
-  var e = $('heroValue');
+  var e = $('heroValue'), node = e.firstChild;
+  // 숫자가 0부터 올라가는 중이어도 최종 금액 길이로 잰다
+  var shown = node && node.nodeType === 3 ? node.nodeValue : null;
+  if (shown !== null && heroPrev !== null) node.nodeValue = comma(heroPrev);
   e.style.fontSize = '';
   var size = parseFloat(getComputedStyle(e).fontSize);
   while (e.scrollWidth > e.clientWidth && size > 18) {
     size -= 1;
     e.style.fontSize = size + 'px';
   }
+  if (shown !== null) node.nodeValue = shown;
 }
 
 function rangeLabel() {
