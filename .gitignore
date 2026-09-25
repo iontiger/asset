@@ -1,3 +1,9 @@
 # 개인 자산 데이터 — 저장소 폴더를 데이터 폴더로 써도 커밋되지 않게
 asset-data.json
 backups/
+
+# 테스트 스크린샷이 실수로 올라가지 않게 (아이콘은 예외)
+/*.png
+!/icon-192.png
+!/icon-512.png
+!/apple-touch-icon.png

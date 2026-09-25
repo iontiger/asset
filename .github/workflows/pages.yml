@@ -31,6 +31,10 @@ jobs:
         run: |
           mkdir _site
           cp index.html icon-192.png icon-512.png apple-touch-icon.png _site/
+          # 버전 표시 · 새 버전 알림용 — 커밋 번호와 배포 시각(한국 시간)
+          BUILD="${GITHUB_SHA::7} $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M')"
+          sed -i "s|content=\"__BUILD__\"|content=\"$BUILD\"|" _site/index.html
+          grep -o 'name="app-build" content="[^"]*"' _site/index.html
           # logos/ 의 이미지를 올리고, 로고 선택 창이 읽을 logos.json 목록을 자동으로 만든다
           mkdir -p _site/logos
           if [ -d logos ]; then

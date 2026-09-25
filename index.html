@@ -7,6 +7,8 @@
 <meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <title>자산 현황</title>
+<!-- 배포할 때 GitHub Actions 가 커밋 번호 · 시각으로 바꾼다 (새 버전 알림에 쓰임) -->
+<meta name="app-build" content="__BUILD__">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@700&family=Orbitron:wght@700&display=swap" rel="stylesheet">
@@ -598,6 +600,18 @@
   .sync-tip ul li::before { content:'·'; position:absolute; left:2px; font-weight:800; }
   .set-hint { font-size:.78rem !important; color:var(--accent-deep) !important; margin:-4px 0 12px !important; }
   .set-hint a { color:inherit; font-weight:700; cursor:pointer; text-decoration:underline; }
+
+  /* ── 새 버전 알림 ── */
+  .app-ver { font-size:.72rem; font-weight:600; color:var(--muted); margin-left:8px; font-variant-numeric:tabular-nums; }
+  .upd-bar {
+    position:fixed; top:16px; left:50%; transform:translate(-50%, -140%); z-index:45;
+    display:flex; align-items:center; gap:12px; padding:9px 10px 9px 18px; border-radius:99px;
+    background:var(--ink); color:var(--bg); font-size:.86rem; font-weight:600; box-shadow:var(--shadow-pop);
+    transition:transform .35s cubic-bezier(.22,1,.36,1);
+  }
+  .upd-bar.show { transform:translate(-50%, 0); }
+  .upd-bar button { border:none; cursor:pointer; font:inherit; font-weight:800; border-radius:99px; padding:6px 14px; background:var(--accent); color:#fff; }
+  .upd-bar .upd-x { background:none; color:inherit; opacity:.6; padding:6px 8px; }
 
   /* ── 빈 화면 안내 ── */
   .guide { text-align:center; padding:44px 22px; }
@@ -2223,6 +2237,9 @@
   <div class="wr-hint" id="wrHint"></div>
 </div>
 
+<!-- 새 버전 알림 -->
+<div class="upd-bar" id="updBar" role="status">✨ 새 버전이 배포됐어요 <button type="button" id="updReload">새로고침</button><button type="button" class="upd-x" id="updClose" aria-label="닫기">✕</button></div>
+
 <!-- 사용법 · 단축키 (? 키) -->
 <div class="sheet-back" id="helpSheet">
   <div class="sheet wide">
@@ -2413,7 +2430,7 @@
 <div class="sheet-back" id="settingsSheet">
   <div class="sheet wide">
     <div class="sheet-head">
-      <h2>설정</h2>
+      <h2>설정 <span class="app-ver" id="appVer"></span></h2>
       <button class="icon-btn" data-close="settingsSheet" aria-label="닫기">✕</button>
     </div>
     <div class="settings-grid">
@@ -8946,6 +8963,33 @@ $('setTips').addEventListener('change', function () {
   showToast(this.checked ? '도움말 툴팁을 켰습니다' : '도움말 툴팁을 껐습니다 — 설정에서 다시 켤 수 있어요');
 });
 applyTipsPref();
+
+/* ═══════════ 새 버전 알림 ═══════════
+   배포할 때 app-build 에 커밋 번호 · 시각이 들어간다. 창으로 돌아올 때(5분에 한 번까지)와 30분마다
+   서버의 index.html 을 캐시 없이 받아 build 가 다르면 "새로고침" 알림을 띄운다. */
+var APP_BUILD = (document.querySelector('meta[name="app-build"]') || {}).content || '';
+var updLast = 0;
+$('appVer').textContent = /^__/.test(APP_BUILD) ? '로컬 파일' : '버전 ' + APP_BUILD;
+function checkUpdate(force) {
+  if (/^__/.test(APP_BUILD) || location.protocol === 'file:') return;
+  if (!force && Date.now() - updLast < 5 * 60 * 1000) return;
+  updLast = Date.now();
+  fetch(location.pathname + '?build=' + Date.now(), { cache: 'no-store' })
+    .then(function (r) { return r.ok ? r.text() : ''; })
+    .then(function (t) {
+      var m = /<meta name="app-build" content="([^"]+)"/.exec(t);
+      if (m && m[1] !== APP_BUILD && !/^__/.test(m[1])) $('updBar').classList.add('show');
+    })
+    .catch(function () {});
+}
+$('updReload').addEventListener('click', function () {
+  if (typeof collectEntries === 'function' && collectEntries().length && !confirm('입력하고 저장하지 않은 금액이 있습니다. 새로고침할까요?')) return;
+  location.reload();
+});
+$('updClose').addEventListener('click', function () { $('updBar').classList.remove('show'); });
+document.addEventListener('visibilitychange', function () { if (!document.hidden) checkUpdate(); });
+setInterval(function () { checkUpdate(true); }, 30 * 60 * 1000);
+setTimeout(function () { checkUpdate(true); }, 4000);
 
 initStore();
 </script>
