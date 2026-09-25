@@ -583,6 +583,7 @@
   .cloud-seg button.using::after { content:' ●'; color:var(--up); font-size:.6rem; vertical-align:2px; }
   .cloud-status { font-size:.8rem; line-height:1.6; border-radius:10px; padding:10px 12px; margin-bottom:12px; background:var(--bg); border:1px solid var(--border); color:var(--ink-2); }
   .cloud-status .btn { margin-top:8px; }
+  .cloud-status .cloud-sub { display:block; margin-top:6px; font-size:.76rem; color:var(--ink-2); line-height:1.55; }
   .cloud-status.ok { border-color:color-mix(in srgb, var(--up) 35%, transparent); }
   .cloud-status.warn { color:var(--warn); border-color:color-mix(in srgb, var(--warn) 35%, transparent); }
   .cloud-status.err { color:var(--down); border-color:color-mix(in srgb, var(--down) 35%, transparent); }
@@ -2498,7 +2499,7 @@
           <div class="cloud-pane" id="cloudPane-supabase" hidden>
             <ol class="guide-steps cloud-steps">
               <li><span><a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer">supabase.com</a> 에서 무료 프로젝트를 만듭니다 (예전 모바일 버전 프로젝트를 그대로 써도 됩니다).</span></li>
-              <li><span>아래 <b>SQL 복사</b>를 누르고, Supabase <b>SQL Editor → New query</b> 에 붙여넣어 <b>Run</b>.</span></li>
+              <li><span>아래 <b>SQL 복사</b>를 누르고, Supabase <b>SQL Editor → New query</b> 에 붙여넣어 <b>Run</b>. 예전 모바일 버전 프로젝트(owners · assets)는 건너뛰어도 연결됩니다 — 그때 목표 · 뱃지 · 연금 포트폴리오는 이 브라우저에 저장돼요.</span></li>
               <li><span><b>Project Settings → API</b>(또는 API Keys)에서 <b>Project URL</b> 과 <b>anon · publishable</b> 키를 복사해 아래에 넣고 <b>연결</b>.</span></li>
             </ol>
             <div class="form-grid cloud-form">
@@ -2597,7 +2598,12 @@ function fmtDateStr(d) {
 }
 // 어떤 형식으로 날짜가 들어오든 yyyy-MM-dd 로 정규화
 function normalizeDateStr(s) {
-  var m = String(s).match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
+  // 시간대가 붙은 시각(예: 구글 시트가 주는 2026-09-23T15:00:00.000Z)은 이 PC 시간대의 날짜로
+  if (/T\d{2}:\d{2}.*(Z|[+-]\d{2}:?\d{2})$/.test(String(s))) {
+    var dz = new Date(s);
+    if (!isNaN(dz.getTime())) return fmtDateStr(dz);
+  }
+  var m = String(s).match(/^(\d{4})\s*[-./]\s*(\d{1,2})\s*[-./]\s*(\d{1,2})/);
   if (m) return m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0');
   var d = new Date(s);
   return isNaN(d.getTime()) ? String(s) : fmtDateStr(d);
@@ -3353,7 +3359,14 @@ function importFiles(fileList) {
   }
   Promise.all(files.map(function (f) {
     return f.text().then(function (t) { return parseImport(f.name, t); });
-  })).then(function (parts) {
+  })).then(importParsed).catch(function (e) {
+    showToast('가져오기 실패: ' + e.message);
+  });
+}
+// 가져온 기록 · 소유자 · 설정을 지금 데이터에 합친다 (파일 가져오기 · 예전 웹 앱 가져오기 공용)
+function importParsed(parts) {
+  if (store.mode === 'demo') { showToast('먼저 데이터 폴더를 연결하세요 — 가져온 데이터는 연결된 파일에 저장됩니다'); return; }
+  {
     var inRows = [], inOwners = [], inSettings = null;
     parts.forEach(function (p) {
       inRows = inRows.concat(normalizeRows(p.rows));
@@ -3392,9 +3405,7 @@ function importFiles(fileList) {
       renderOwnerManageList();
       renderSettingsInfo();
     });
-  }).catch(function (e) {
-    showToast('가져오기 실패: ' + e.message);
-  });
+  }
 }
 
 /* ═══════════ 렌더: 대시보드 ═══════════ */
@@ -8371,7 +8382,7 @@ function wrSaveImage() {
 var SB_CFG_KEY = 'asset_pc_sb';   // { url, key }
 var GS_CFG_KEY = 'asset_pc_gs';   // { url, token }
 var SUPABASE_SQL = "-- 자산 현황 (asset-pc) · Supabase 스키마\n-- Supabase → SQL Editor → New query 에 통째로 붙여넣고 Run.\n-- 여러 번 실행해도 안전합니다. 예전 모바일 버전의 owners · assets 테이블이 있으면 그대로 쓰고,\n-- 없는 것(app_state)만 새로 만듭니다.\n\ncreate table if not exists public.owners (\n  id          text primary key,\n  name        text not null,\n  sort_order  integer not null default 0\n);\n\ncreate table if not exists public.assets (\n  date         date   not null,\n  name         text   not null,\n  amount       bigint not null default 0,\n  asset_group  text   not null default '',\n  owner_id     text,\n  logo         text   default '',\n  primary key (date, name)\n);\n\n-- 목표 · 미래 예상 설정, 뱃지, 연금 리밸런싱 포트폴리오 등 (key 하나에 JSON 하나)\ncreate table if not exists public.app_state (\n  key         text primary key,\n  value       jsonb,\n  updated_at  timestamptz not null default now()\n);\n\n-- 접근 규칙: 프로젝트 URL 과 anon(publishable) 키를 아는 사람만 읽고 쓸 수 있습니다.\n-- 키는 이 앱을 연 브라우저에만 저장되고, 앱 코드나 GitHub 에는 올라가지 않습니다.\nalter table public.owners    enable row level security;\nalter table public.assets    enable row level security;\nalter table public.app_state enable row level security;\n\ndrop policy if exists \"asset_pc_rw\" on public.owners;\ndrop policy if exists \"asset_pc_rw\" on public.assets;\ndrop policy if exists \"asset_pc_rw\" on public.app_state;\ncreate policy \"asset_pc_rw\" on public.owners    for all to anon, authenticated using (true) with check (true);\ncreate policy \"asset_pc_rw\" on public.assets    for all to anon, authenticated using (true) with check (true);\ncreate policy \"asset_pc_rw\" on public.app_state for all to anon, authenticated using (true) with check (true);\n\ngrant select, insert, update, delete on public.owners, public.assets, public.app_state to anon, authenticated;\n";
-var APPS_SCRIPT = "/**\n * 자산 현황 (asset-pc) · Google Sheets 연동 Apps Script\n *\n * 1) 구글 시트를 새로 만들고  확장 프로그램 → Apps Script  를 연다\n * 2) 기본 코드를 모두 지우고 이 코드를 통째로 붙여넣고 저장\n * 3) (권장) 아래 TOKEN 에 아무 비밀 문자열을 넣고, 앱 설정의 '비밀 토큰' 칸에도 같은 값을 넣는다\n * 4) 배포 → 새 배포 → 유형: 웹 앱 / 실행 계정: 나 / 액세스 권한: 모든 사용자 → 배포\n *    (처음 한 번 '액세스 승인'을 눌러 권한을 허용)\n * 5) 나온 웹 앱 URL(…/exec)을 앱 설정에 붙여넣고 '연결'\n *\n * 코드를 고친 뒤에는  배포 → 배포 관리 → 수정(연필) → 버전: 새 버전 → 배포  해야 반영된다.\n * 시트 탭: assets(자산 기록) · owners(소유자) · state(설정 · 뱃지 · 연금 포트폴리오, JSON)\n */\nvar TOKEN = '';   // 예: 'my-secret-1234'  — 비워 두면 URL 만 알면 누구나 읽고 쓸 수 있음\n\nvar COLS = {\n  assets: ['date', 'name', 'amount', 'group', 'owner', 'logo'],\n  owners: ['id', 'name']\n};\nvar CHUNK = 40000;   // 셀 하나에 넣을 최대 글자 수 (구글 시트 한도 50,000)\n\nfunction doGet(e) {\n  return respond_(function () {\n    checkToken_(e.parameter.token);\n    var st = readState_();\n    if (e.parameter.meta) return { updatedAt: st.updatedAt || null };\n    return {\n      app: 'asset-pc',\n      updatedAt: st.updatedAt || null,\n      settings: st.settings || null,\n      badges: st.badges || null,\n      pension: st.pension || null,\n      owners: readRows_('owners'),\n      assets: readRows_('assets')\n    };\n  });\n}\n\nfunction doPost(e) {\n  return respond_(function () {\n    var body = JSON.parse(e.postData.contents);\n    checkToken_(body.token);\n    var lock = LockService.getScriptLock();\n    lock.waitLock(30000);\n    try {\n      var st = readState_();\n      // 다른 기기가 먼저 저장했으면 덮어쓰지 않는다\n      if (body.base !== undefined && st.updatedAt && body.base !== st.updatedAt) {\n        return { error: '다른 기기에서 먼저 바뀌었습니다', conflict: true, updatedAt: st.updatedAt };\n      }\n      var db = body.data || {};\n      writeRows_('assets', db.assets || []);\n      writeRows_('owners', db.owners || []);\n      var now = new Date().toISOString();\n      writeState_({ settings: db.settings || null, badges: db.badges || null, pension: db.pension || null, updatedAt: now });\n      return { ok: true, updatedAt: now };\n    } finally {\n      lock.releaseLock();\n    }\n  });\n}\n\nfunction respond_(fn) {\n  var out;\n  try { out = fn(); } catch (err) { out = { error: String(err && err.message || err) }; }\n  return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);\n}\n\nfunction checkToken_(t) {\n  if (TOKEN && t !== TOKEN) throw new Error('비밀 토큰이 맞지 않습니다');\n}\n\nfunction sheet_(name) {\n  var ss = SpreadsheetApp.getActiveSpreadsheet();\n  return ss.getSheetByName(name) || ss.insertSheet(name);\n}\n\nfunction readRows_(name) {\n  var sh = sheet_(name), cols = COLS[name];\n  var n = sh.getLastRow() - 1;\n  if (n < 1) return [];\n  var tz = Session.getScriptTimeZone();\n  return sh.getRange(2, 1, n, cols.length).getValues().filter(function (r) { return r[0] !== ''; }).map(function (r) {\n    var o = {};\n    cols.forEach(function (c, i) {\n      var v = r[i];\n      if (v instanceof Date) v = Utilities.formatDate(v, tz, 'yyyy-MM-dd');\n      o[c] = c === 'amount' ? Number(v) || 0 : String(v);\n    });\n    return o;\n  });\n}\n\nfunction writeRows_(name, list) {\n  var sh = sheet_(name), cols = COLS[name];\n  sh.clearContents();\n  var values = [cols].concat(list.map(function (o) {\n    return cols.map(function (c) { return c === 'amount' ? Number(o[c]) || 0 : (o[c] == null ? '' : String(o[c])); });\n  }));\n  var range = sh.getRange(1, 1, values.length, cols.length);\n  range.setNumberFormat('@');   // 날짜 · 이름이 자동 변환되지 않게 글자로\n  if (name === 'assets' && values.length > 1) sh.getRange(2, 3, values.length - 1, 1).setNumberFormat('#,##0');\n  range.setValues(values);\n  sh.setFrozenRows(1);\n}\n\nfunction readState_() {\n  var sh = sheet_('state'), out = {};\n  var n = sh.getLastRow(), w = sh.getLastColumn();\n  if (n < 1 || w < 2) return out;\n  sh.getRange(1, 1, n, w).getValues().forEach(function (r) {\n    if (!r[0]) return;\n    var json = r.slice(1).join('');\n    try { out[r[0]] = json ? JSON.parse(json) : null; } catch (e) {}\n  });\n  return out;\n}\n\nfunction writeState_(obj) {\n  var sh = sheet_('state');\n  sh.clearContents();\n  var rows = Object.keys(obj).map(function (k) {\n    var s = JSON.stringify(obj[k]), parts = [];\n    for (var i = 0; i < s.length; i += CHUNK) parts.push(s.slice(i, i + CHUNK));\n    return [k].concat(parts.length ? parts : ['null']);\n  });\n  var w = rows.reduce(function (m, r) { return Math.max(m, r.length); }, 2);\n  rows = rows.map(function (r) { while (r.length < w) r.push(''); return r; });\n  var range = sh.getRange(1, 1, rows.length, w);\n  range.setNumberFormat('@');\n  range.setValues(rows);\n}\n";
+var APPS_SCRIPT = "/**\n * 자산 현황 (asset-pc) · Google Sheets 연동 Apps Script\n *\n * 1) 구글 시트를 새로 만들고  확장 프로그램 → Apps Script  를 연다\n * 2) 기본 코드를 모두 지우고 이 코드를 통째로 붙여넣고 저장\n * 3) (권장) 아래 TOKEN 에 아무 비밀 문자열을 넣고, 앱 설정의 '비밀 토큰' 칸에도 같은 값을 넣는다\n * 4) 배포 → 새 배포 → 유형: 웹 앱 / 실행 계정: 나 / 액세스 권한: 모든 사용자 → 배포\n *    (처음 한 번 '액세스 승인'을 눌러 권한을 허용)\n * 5) 나온 웹 앱 URL(…/exec)을 앱 설정에 붙여넣고 '연결'\n *\n * 코드를 고친 뒤에는  배포 → 배포 관리 → 수정(연필) → 버전: 새 버전 → 배포  해야 반영된다.\n * 시트 탭: assets(자산 기록) · owners(소유자) · state(설정 · 뱃지 · 연금 포트폴리오, JSON)\n *\n * 예전에 쓰던 시트에 이 코드를 넣어도 된다 — assets · owners 탭이 아직 없으면 머리글에\n * 날짜 · 이름 · 금액(또는 date · name · amount) 열이 있는 탭을 찾아 그 기록을 읽는다.\n * 처음 저장할 때 assets · owners 탭이 새로 생기고, 예전 탭은 그대로 남는다.\n * 예전 웹 앱의 URL 을 그대로 쓰려면: 같은 Apps Script 프로젝트에 이 코드를 붙여넣고\n * 배포 관리 → 기존 배포 수정 → 새 버전 으로 배포한다 (새 배포를 만들면 URL 이 바뀜).\n */\nvar TOKEN = '';   // 예: 'my-secret-1234'  — 비워 두면 URL 만 알면 누구나 읽고 쓸 수 있음\n\nvar COLS = {\n  assets: ['date', 'name', 'amount', 'group', 'owner', 'logo'],\n  owners: ['id', 'name']\n};\nvar CHUNK = 40000;   // 셀 하나에 넣을 최대 글자 수 (구글 시트 한도 50,000)\n\nfunction doGet(e) {\n  return respond_(function () {\n    checkToken_(e.parameter.token);\n    var st = readState_();\n    if (e.parameter.meta) return { updatedAt: st.updatedAt || null };\n    return {\n      app: 'asset-pc',\n      updatedAt: st.updatedAt || null,\n      settings: st.settings || null,\n      badges: st.badges || null,\n      pension: st.pension || null,\n      owners: readRows_('owners'),\n      assets: readRows_('assets')\n    };\n  });\n}\n\nfunction doPost(e) {\n  return respond_(function () {\n    var body = JSON.parse(e.postData.contents);\n    checkToken_(body.token);\n    var lock = LockService.getScriptLock();\n    lock.waitLock(30000);\n    try {\n      var st = readState_();\n      // 다른 기기가 먼저 저장했으면 덮어쓰지 않는다\n      if (body.base !== undefined && st.updatedAt && body.base !== st.updatedAt) {\n        return { error: '다른 기기에서 먼저 바뀌었습니다', conflict: true, updatedAt: st.updatedAt };\n      }\n      var db = body.data || {};\n      writeRows_('assets', db.assets || []);\n      writeRows_('owners', db.owners || []);\n      var now = new Date().toISOString();\n      writeState_({ settings: db.settings || null, badges: db.badges || null, pension: db.pension || null, updatedAt: now });\n      return { ok: true, updatedAt: now };\n    } finally {\n      lock.releaseLock();\n    }\n  });\n}\n\nfunction respond_(fn) {\n  var out;\n  try { out = fn(); } catch (err) { out = { error: String(err && err.message || err) }; }\n  return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);\n}\n\nfunction checkToken_(t) {\n  if (TOKEN && t !== TOKEN) throw new Error('비밀 토큰이 맞지 않습니다');\n}\n\nfunction sheet_(name) {\n  var ss = SpreadsheetApp.getActiveSpreadsheet();\n  return ss.getSheetByName(name) || ss.insertSheet(name);\n}\n\n// 예전 시트의 열 이름 (영어 · 한글)\nvar ALIAS = {\n  date: ['date', '날짜', '일자', '기준일'], name: ['name', '이름', '자산', '자산명', '항목'],\n  amount: ['amount', '금액', '잔액', '평가금액', 'value'], group: ['group', 'asset_group', '그룹', '분류', '구분'],\n  owner: ['owner', 'owner_id', '소유자', '소유', '명의'], logo: ['logo', '로고'], id: ['id', '아이디', '코드']\n};\nfunction findLegacy_(need) {\n  var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();\n  for (var s = 0; s < sheets.length; s++) {\n    var sh = sheets[s];\n    if (['assets', 'owners', 'state'].indexOf(sh.getName()) >= 0 || sh.getLastRow() < 2) continue;\n    var values = sh.getDataRange().getValues();\n    var head = values[0].map(function (h) { return String(h).trim().toLowerCase(); });\n    var map = {};\n    Object.keys(ALIAS).forEach(function (k) {\n      for (var i = 0; i < head.length; i++) if (ALIAS[k].indexOf(head[i]) >= 0) { map[k] = i; break; }\n    });\n    if (need.every(function (k) { return map[k] !== undefined; })) return { values: values, map: map };\n  }\n  return null;\n}\nfunction readRows_(name) {\n  var ss = SpreadsheetApp.getActiveSpreadsheet(), cols = COLS[name];\n  var tz = Session.getScriptTimeZone();\n  var sh = ss.getSheetByName(name);\n  if (!sh || sh.getLastRow() < 2) {\n    // 아직 이 앱 형식으로 저장한 적이 없으면 예전 탭에서 읽는다\n    var leg = findLegacy_(name === 'assets' ? ['date', 'name', 'amount'] : ['id', 'name']);\n    if (!leg) return [];\n    return leg.values.slice(1).filter(function (r) { return r[leg.map[cols[0]]] !== ''; }).map(function (r) {\n      var o = {};\n      cols.forEach(function (c) {\n        var v = leg.map[c] === undefined ? '' : r[leg.map[c]];\n        if (v instanceof Date) v = Utilities.formatDate(v, tz, 'yyyy-MM-dd');\n        o[c] = c === 'amount' ? Number(String(v).replace(/[,\\s원]/g, '')) || 0 : String(v);\n      });\n      return o;\n    });\n  }\n  var n = sh.getLastRow() - 1;\n  return sh.getRange(2, 1, n, cols.length).getValues().filter(function (r) { return r[0] !== ''; }).map(function (r) {\n    var o = {};\n    cols.forEach(function (c, i) {\n      var v = r[i];\n      if (v instanceof Date) v = Utilities.formatDate(v, tz, 'yyyy-MM-dd');\n      o[c] = c === 'amount' ? Number(v) || 0 : String(v);\n    });\n    return o;\n  });\n}\n\nfunction writeRows_(name, list) {\n  var sh = sheet_(name), cols = COLS[name];\n  sh.clearContents();\n  var values = [cols].concat(list.map(function (o) {\n    return cols.map(function (c) { return c === 'amount' ? Number(o[c]) || 0 : (o[c] == null ? '' : String(o[c])); });\n  }));\n  var range = sh.getRange(1, 1, values.length, cols.length);\n  range.setNumberFormat('@');   // 날짜 · 이름이 자동 변환되지 않게 글자로\n  if (name === 'assets' && values.length > 1) sh.getRange(2, 3, values.length - 1, 1).setNumberFormat('#,##0');\n  range.setValues(values);\n  sh.setFrozenRows(1);\n}\n\nfunction readState_() {\n  var sh = sheet_('state'), out = {};\n  var n = sh.getLastRow(), w = sh.getLastColumn();\n  if (n < 1 || w < 2) return out;\n  sh.getRange(1, 1, n, w).getValues().forEach(function (r) {\n    if (!r[0]) return;\n    var json = r.slice(1).join('');\n    try { out[r[0]] = json ? JSON.parse(json) : null; } catch (e) {}\n  });\n  return out;\n}\n\nfunction writeState_(obj) {\n  var sh = sheet_('state');\n  sh.clearContents();\n  var rows = Object.keys(obj).map(function (k) {\n    var s = JSON.stringify(obj[k]), parts = [];\n    for (var i = 0; i < s.length; i += CHUNK) parts.push(s.slice(i, i + CHUNK));\n    return [k].concat(parts.length ? parts : ['null']);\n  });\n  var w = rows.reduce(function (m, r) { return Math.max(m, r.length); }, 2);\n  rows = rows.map(function (r) { while (r.length < w) r.push(''); return r; });\n  var range = sh.getRange(1, 1, rows.length, w);\n  range.setNumberFormat('@');\n  range.setValues(rows);\n}\n";
 var cloud = { snap: null, updatedAt: null, lastCheck: 0, pane: null };
 
 function isCloud(m) { if (!arguments.length) m = store.mode; return m === 'supabase' || m === 'gsheet'; }
@@ -8401,7 +8412,11 @@ async function sbReq(cfg, method, path, body, prefer) {
   if (!res.ok) {
     var t = '', msg = '';
     try { t = await res.text(); var j = JSON.parse(t); msg = j.message || j.hint || j.error || t; } catch (e) { msg = t; }
-    if (/does not exist|Could not find the table|schema cache/i.test(msg)) throw cloudError('테이블이 없습니다 — "SQL 복사"로 스키마를 만든 뒤 다시 연결하세요');
+    if (/relation .* does not exist|Could not find the table/i.test(msg)) {
+      var te = cloudError('테이블이 없습니다 — "SQL 복사"로 스키마를 만든 뒤 다시 연결하세요');
+      te.missingTable = true;
+      throw te;
+    }
     if (res.status === 401 || res.status === 403 || /Invalid API key|JWT/i.test(msg)) throw cloudError('키가 맞지 않거나 권한이 없습니다 — anon · publishable 키와 SQL 실행 여부를 확인하세요');
     throw cloudError('Supabase ' + res.status + (msg ? ' — ' + String(msg).slice(0, 160) : ''));
   }
@@ -8415,22 +8430,33 @@ async function sbAll(cfg, path) {   // 한 번에 최대 1,000행이라 나눠 �
     if (part.length < size) return out;
   }
 }
+// app_state(목표 · 뱃지 · 연금) 테이블이 없는 예전 프로젝트면 그 값들은 이 브라우저에 저장한다
+var SB_LOCAL_STATE = 'asset_pc_sb_state';
 async function sbLoad(cfg) {
   var r = await Promise.all([
-    sbAll(cfg, 'owners?select=id,name,sort_order&order=sort_order.asc,id.asc'),
-    sbAll(cfg, 'assets?select=date,name,amount,asset_group,owner_id,logo&order=date.asc,name.asc'),
-    sbReq(cfg, 'GET', 'app_state?select=key,value')
+    sbAll(cfg, 'owners?select=*'),
+    sbAll(cfg, 'assets?select=*&order=date.asc,name.asc'),
+    sbReq(cfg, 'GET', 'app_state?select=key,value').then(function (x) { return x; }, function (e) {
+      if (e.missingTable) return null;   // 예전 모바일 버전 프로젝트 — owners · assets 만 있어도 된다
+      throw e;
+    })
   ]);
-  var st = {};
-  r[2].forEach(function (x) { st[x.key] = x.value; });
+  var noState = r[2] === null, st = {};
+  if (noState) { try { st = JSON.parse(lsGet(SB_LOCAL_STATE) || '{}') || {}; } catch (e) { st = {}; } }
+  else r[2].forEach(function (x) { st[x.key] = x.value; });
+  var owners = r[0].slice().sort(function (a, b) {
+    return (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0) || String(a.id).localeCompare(String(b.id));
+  });
   return {
-    owners: r[0].map(function (o) { return { id: String(o.id), name: String(o.name) }; }),
+    noState: noState,
+    owners: owners.map(function (o) { return { id: String(o.id), name: String(o.name == null ? o.id : o.name) }; }),
     assets: r[1].map(function (a) {
       return { date: String(a.date).slice(0, 10), name: a.name, amount: Number(a.amount) || 0,
-               group: a.asset_group || '', owner: a.owner_id || '', logo: a.logo || '' };
+               group: pickVal(a.asset_group, a.group) || '', owner: pickVal(a.owner_id, a.owner) || '', logo: a.logo || '' };
     }),
     settings: st.settings || null, badges: st.badges || null, pension: st.pension || null,
-    updatedAt: (st.meta && st.meta.updatedAt) || null
+    updatedAt: noState ? null : (st.meta && st.meta.updatedAt) || null,
+    count: r[1].length
   };
 }
 // 마지막으로 맞춘 상태(snap)와 비교해 바뀐 행만 고른다
@@ -8456,10 +8482,12 @@ async function runLimited(tasks, n) {
   await Promise.all(ws);
 }
 async function sbSave(cfg, db) {
-  // 다른 기기가 먼저 저장했는지 확인
-  var meta = await sbReq(cfg, 'GET', 'app_state?select=value&key=eq.meta');
-  var remote = meta[0] && meta[0].value && meta[0].value.updatedAt || null;
-  if (remote && remote !== cloud.updatedAt) throw cloudError('다른 기기에서 먼저 바뀌었습니다', true);
+  // 다른 기기가 먼저 저장했는지 확인 (app_state 가 없으면 건너뛴다)
+  if (!cloud.noState) {
+    var meta = await sbReq(cfg, 'GET', 'app_state?select=value&key=eq.meta');
+    var remote = meta[0] && meta[0].value && meta[0].value.updatedAt || null;
+    if (remote && remote !== cloud.updatedAt) throw cloudError('다른 기기에서 먼저 바뀌었습니다', true);
+  }
   var snap = cloud.snap || { assets: {}, owners: {} }, sh = sbShape(db);
   var upA = Object.keys(sh.rowsA).filter(function (k) { return snap.assets[k] !== sh.cur.assets[k]; }).map(function (k) { return sh.rowsA[k]; });
   var upO = Object.keys(sh.rowsO).filter(function (k) { return snap.owners[k] !== sh.cur.owners[k]; }).map(function (k) { return sh.rowsO[k]; });
@@ -8477,12 +8505,17 @@ async function sbSave(cfg, db) {
     return function () { return sbReq(cfg, 'DELETE', 'owners?id=eq.' + encodeURIComponent(id)); };
   }), 4);
   var now = new Date().toISOString();
-  var state = [{ key: 'settings', value: db.settings || null }, { key: 'badges', value: db.badges || [] }, { key: 'meta', value: { updatedAt: now } }];
-  if (db.pension) state.push({ key: 'pension', value: db.pension });
-  state.forEach(function (x) { x.updated_at = now; });
-  await sbReq(cfg, 'POST', 'app_state?on_conflict=key', state, merge);
+  if (cloud.noState) {
+    lsSet(SB_LOCAL_STATE, JSON.stringify({ settings: db.settings || null, badges: db.badges || [], pension: db.pension || null }));
+  } else {
+    var state = [{ key: 'settings', value: db.settings || null }, { key: 'badges', value: db.badges || [] }, { key: 'meta', value: { updatedAt: now } }];
+    if (db.pension) state.push({ key: 'pension', value: db.pension });
+    state.forEach(function (x) { x.updated_at = now; });
+    await sbReq(cfg, 'POST', 'app_state?on_conflict=key', state, merge);
+    cloud.updatedAt = now;
+  }
   cloud.snap = sh.cur;
-  cloud.updatedAt = now;
+  cloud.count = Object.keys(sh.cur.assets).length;
 }
 
 // ── Google Sheet (Apps Script 웹 앱) ──
@@ -8500,8 +8533,48 @@ async function gsFetch(cfg, init, query) {
 }
 async function gsLoad(cfg) {
   var j = await gsFetch(cfg, { cache: 'no-store' }, 'token=' + encodeURIComponent(cfg.token || '') + '&');
-  if (j.app !== 'asset-pc') throw cloudError('이 앱용 Apps Script 가 아닙니다 — "Apps Script 복사"로 붙여넣은 코드를 배포하세요');
+  if (j.app !== 'asset-pc') {
+    var e = cloudError('예전 형식의 Apps Script 입니다');
+    e.legacy = legacyRowsFrom(j);
+    throw e;
+  }
   return j;
+}
+// 예전 웹 앱 응답에서 자산 기록 · 소유자를 찾아낸다 — 열 이름은 영어 · 한글 모두
+var LEGACY_KEYS = {
+  date: ['date', '날짜', '일자', '기준일', 'day'], name: ['name', '이름', '자산', '자산명', '항목', 'asset'],
+  amount: ['amount', '금액', '잔액', '평가금액', 'value'], group: ['group', 'asset_group', '그룹', '분류', '구분', 'category'],
+  owner: ['owner', 'owner_id', '소유자', '소유', '명의'], logo: ['logo', '로고', 'icon'], id: ['id', '아이디', '코드']
+};
+function legacyObj(o) {
+  var out = {};
+  Object.keys(o).forEach(function (k) {
+    var kk = String(k).trim().toLowerCase();
+    Object.keys(LEGACY_KEYS).forEach(function (f) { if (out[f] === undefined && LEGACY_KEYS[f].indexOf(kk) >= 0) out[f] = o[k]; });
+  });
+  return out;
+}
+function legacyRowsFrom(x) {
+  var rowsOut = [], ownersOut = [];
+  function take(list) {
+    if (!Array.isArray(list) || !list.length) return;
+    if (Array.isArray(list[0])) {   // 시트 값 그대로 (첫 줄이 머리글)
+      var head = list[0];
+      list = list.slice(1).map(function (r) { var o = {}; head.forEach(function (h, i) { o[h] = r[i]; }); return o; });
+    }
+    list.forEach(function (it) {
+      if (!it || typeof it !== 'object') return;
+      var o = legacyObj(it);
+      if (o.date != null && o.name != null && o.amount != null) rowsOut.push(o);
+      else if (o.id != null && o.name != null) ownersOut.push({ id: String(o.id), name: String(o.name) });
+    });
+  }
+  function walk(v, depth) {
+    if (Array.isArray(v)) take(v);
+    else if (v && typeof v === 'object' && depth < 3) Object.keys(v).forEach(function (k) { walk(v[k], depth + 1); });
+  }
+  walk(x, 0);
+  return { rows: normalizeRows(rowsOut), owners: normalizeOwners(ownersOut) };
 }
 async function gsSave(cfg, db) {
   // 문자열로 보내면(text/plain) 브라우저가 사전 확인(CORS preflight)을 하지 않는다
@@ -8517,7 +8590,14 @@ function cloudLoad(m, cfg) { return m === 'supabase' ? sbLoad(cfg) : gsLoad(cfg)
 function cloudSave(db) { return store.mode === 'supabase' ? sbSave(store.cloud, db) : gsSave(store.cloud, db); }
 function cloudIsEmpty(db) { return !(db.assets || []).length && !(db.owners || []).length && !db.settings; }
 function applyCloudDb(db) {
-  applyDb({ owners: db.owners, assets: db.assets, settings: db.settings || {}, badges: db.badges, pension: db.pension });
+  var owners = db.owners || [];
+  if (!owners.length && (db.assets || []).length) {
+    var seen = {};
+    db.assets.forEach(function (a) { if (a.owner && !seen[a.owner]) { seen[a.owner] = 1; owners.push({ id: a.owner, name: a.owner }); } });
+  }
+  applyDb({ owners: owners.length ? owners : undefined, assets: db.assets, settings: db.settings || {}, badges: db.badges, pension: db.pension });
+  cloud.noState = !!db.noState;
+  cloud.count = (db.assets || []).length;
   cloud.updatedAt = db.updatedAt || null;
   cloud.snap = store.mode === 'supabase' ? sbShape(db).cur : null;
 }
@@ -8567,7 +8647,13 @@ async function connectCloud(m) {
   btn.disabled = true;
   cloudMsg(cloudName(m) + ' 에 연결하는 중…', 'busy');
   try {
-    var db = await cloudLoad(m, cfg);
+    var db;
+    try { db = await cloudLoad(m, cfg); }
+    catch (le) {
+      if (!le.legacy) throw le;
+      legacyImport(le.legacy, cfg);
+      return;
+    }
     var nA = Object.keys(buildByName()).length;
     var upload = false;
     if (cloudIsEmpty(db) && rows.length && store.mode !== 'demo') {
@@ -8585,6 +8671,7 @@ async function connectCloud(m) {
     store.locked = false;
     cloud.snap = m === 'supabase' ? { assets: {}, owners: {} } : null;
     cloud.updatedAt = db.updatedAt || null;
+    cloud.noState = !!db.noState;
     if (cloudIsEmpty(db)) {
       if (!upload) startEmptyData();
       await persist();   // 빈 저장소를 지금 데이터(또는 빈 데이터)로 채운다
@@ -8601,6 +8688,21 @@ async function connectCloud(m) {
     btn.disabled = false;
     renderCloudSec();
   }
+}
+// 예전 Apps Script — 이 앱이 바로 저장할 수는 없으니 기록을 지금 저장소로 한 번 가져온다
+function legacyImport(leg, cfg) {
+  lsSet(GS_CFG_KEY, JSON.stringify(cfg));
+  if (!leg.rows.length) {
+    cloudMsg('이 웹 앱은 예전 형식이고 자산 기록을 찾지 못했습니다. <b>Apps Script 복사</b>로 같은 프로젝트의 코드를 바꾸고 <b>배포 관리 → 수정 → 새 버전</b>으로 다시 배포하면 같은 URL 그대로 연결됩니다 (시트의 기존 기록도 읽어요).', 'warn');
+    return;
+  }
+  var dates = leg.rows.map(function (r) { return r.date; }).sort();
+  cloudMsg('예전 형식의 웹 앱에서 기록 <b>' + leg.rows.length + '건</b>(' + dates[0] + ' ~ ' + dates[dates.length - 1] + ')을 찾았습니다.<br>' +
+    '이 앱이 바로 저장하려면 <b>Apps Script 복사</b>로 같은 프로젝트의 코드를 바꾸고 <b>배포 관리 → 수정 → 새 버전</b>으로 다시 배포하세요 — URL 은 그대로이고 시트의 기존 기록도 읽습니다.' +
+    (store.mode === 'demo' ? '<br>지금 기록을 가져오려면 먼저 PC 폴더를 연결하세요.' :
+      '<br><button type="button" class="btn btn-primary btn-sm" id="btnLegacyImport">기록 ' + leg.rows.length + '건 지금 저장소로 가져오기</button>'), 'warn');
+  var b = $('btnLegacyImport');
+  if (b) b.addEventListener('click', function () { importParsed([{ rows: leg.rows, owners: leg.owners, settings: null }]); });
 }
 async function disconnectCloud() {
   if (!confirm(cloudName(store.mode) + ' 연동을 해제하고 PC 파일로 돌아갈까요?\n(' + cloudName(store.mode) + ' 의 기록은 그대로 남고, 다시 연결하면 이어서 쓸 수 있어요)')) return;
@@ -8626,6 +8728,14 @@ async function checkCloudChange() {
   extCheckBusy = true;
   try {
     var remote;
+    if (store.mode === 'supabase' && cloud.noState) {
+      // app_state 가 없으면 자산 기록 개수로만 다른 기기의 변경을 알아챈다
+      var head = await fetch(store.cloud.url.replace(/\/+$/, '') + '/rest/v1/assets?select=date', {
+        method: 'HEAD', headers: sbHeaders(store.cloud, 'count=exact'), cache: 'no-store' });
+      var total = Number(String(head.headers.get('content-range') || '').split('/')[1]);
+      if (isFinite(total) && total !== cloud.count) await openCloud(store.mode, '다른 기기에서 바뀐 기록을 불러왔습니다');
+      return;
+    }
     if (store.mode === 'supabase') {
       var meta = await sbReq(store.cloud, 'GET', 'app_state?select=value&key=eq.meta');
       remote = meta[0] && meta[0].value && meta[0].value.updatedAt || null;
@@ -8672,10 +8782,11 @@ function renderCloudSec() {
   if (isCloud()) {
     var st = storeStateText();
     cloudMsg((other ? '지금은 <b>' + cloudName(active) + '</b> 를 쓰는 중입니다. ' + cloudName(pane) + ' 로 바꾸려면 먼저 연동을 해제하세요.<br>'
-                    : '☁ <b>' + cloudName(active) + '</b> 에 저장 중 · ' + escapeHtml(cloudHost(store.cloud || {})) + ' · ' + escapeHtml(st.txt) + '<br>') +
+                    : '☁ <b>' + cloudName(active) + '</b> 에 저장 중 · ' + escapeHtml(cloudHost(store.cloud || {})) + ' · ' + escapeHtml(st.txt) + '<br>' +
+                      (active === 'supabase' && cloud.noState ? '<span class="cloud-sub">예전 프로젝트(owners · assets 만)로 쓰는 중 — 자산 기록 · 소유자는 Supabase 에, 목표 · 뱃지 · 연금 포트폴리오는 이 브라우저에 저장됩니다. 함께 저장하려면 "SQL 복사"로 app_state 를 만든 뒤 다시 연결하세요.</span><br>' : '')) +
       '<button type="button" class="btn btn-ghost btn-sm" data-act="cloudReload">↻ 다시 불러오기</button> ' +
       '<button type="button" class="btn btn-ghost btn-sm" data-act="cloudOff">연동 해제 → PC 파일로</button>', other ? 'warn' : 'ok');
-  } else if (!$('cloudStatus').classList.contains('err') && !$('cloudStatus').classList.contains('busy')) {
+  } else if (!['err', 'busy', 'warn'].some(function (c) { return $('cloudStatus').classList.contains(c); })) {
     cloudMsg('', '');
   }
 }
