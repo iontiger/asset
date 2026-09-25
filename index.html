@@ -821,14 +821,13 @@
   .kpi-v.down { color:var(--down); }
   .kpi-s { margin-top:auto; padding-top:10px; font-size:.76rem; color:var(--muted); font-variant-numeric:tabular-nums; }
   /* 순자산 카드 — 색을 꽉 채우고 그림자로 띄운다 (숫자 · 최근 1개월 변동만) */
+  /* 빛 번짐은 배경 그라데이션으로 — 카드가 내용을 자르지 않아야 목표 링 툴팁이 카드 밖으로 나온다 */
   .kpi.hero {
-    background:linear-gradient(135deg, var(--hero-a), var(--hero-b));
+    background:
+      radial-gradient(circle at 100% 0, rgba(255,255,255,.17), transparent 42%),
+      linear-gradient(135deg, var(--hero-a), var(--hero-b));
     border:none; box-shadow:var(--hero-shadow); color:#fff;
-    position:relative; overflow:hidden; justify-content:center;
-  }
-  .kpi.hero::before {
-    content:''; position:absolute; right:-60px; top:-80px; width:260px; height:260px; border-radius:50%;
-    background:radial-gradient(circle, rgba(255,255,255,.16), transparent 70%); pointer-events:none;
+    position:relative; z-index:3; justify-content:center;
   }
   .kpi.hero .kpi-l { color:rgba(255,255,255,.82); }
   .kpi.hero .qm { border-color:rgba(255,255,255,.55); color:rgba(255,255,255,.85); }
