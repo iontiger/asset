@@ -556,7 +556,7 @@
   .wr-list div { display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:14px; background:rgba(255,255,255,.12); backdrop-filter:blur(6px); }
   .wr-list span { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:700; }
   .wr-list b { font-variant-numeric:tabular-nums; white-space:nowrap; }
-  .wr-list em { font-style:normal; width:26px; text-align:center; font-size:1.15rem; }
+  .wr-list em { font-style:normal; width:26px; text-align:center; display:inline-flex; justify-content:center; }
   .wr-badges { display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin:22px auto 0; max-width:420px; }
   .wr-badges div { padding:12px 6px; border-radius:14px; background:rgba(255,255,255,.12); font-size:.72rem; font-weight:700; line-height:1.3; }
   .wr-badges div i { display:block; font-style:normal; font-size:1.7rem; margin-bottom:4px; }
@@ -602,6 +602,46 @@
   .set-hint { font-size:.78rem !important; color:var(--accent-deep) !important; margin:-4px 0 12px !important; }
   .set-hint a { color:inherit; font-weight:700; cursor:pointer; text-decoration:underline; }
 
+  /* ── 선 아이콘 ── */
+  .ic { width:1.15em; height:1.15em; flex:none; vertical-align:-.2em; }
+  .btn .ic { width:1.1em; height:1.1em; }
+  /* ── 움직이는 날씨 아이콘 ── */
+  .wx { width:44px; height:44px; flex:none; overflow:visible; }
+  .wx .wx-sun { stroke:#e9a200; }
+  .wx .wx-sun circle { fill:rgba(245,179,1,.22); }
+  .wx .wx-rays { transform-box:view-box; transform-origin:12px 12px; animation:wxSpin 16s linear infinite; }
+  .wx .wx-cloud { stroke:var(--ink-2); animation:wxDrift 4.8s ease-in-out infinite alternate; }
+  .wx .wx-cloud path { fill:var(--surface); }
+  .wx .wx-cloud.back { stroke:var(--muted); opacity:.75; animation-duration:6.4s; animation-direction:alternate-reverse; }
+  .wx .wx-cloud.dark path { fill:color-mix(in srgb, var(--ink-2) 22%, var(--surface)); }
+  .wx .wx-drop { stroke:var(--accent); animation:wxDrop 1.05s linear infinite; }
+  .wx .wx-bolt { stroke:#e9a200; fill:rgba(245,179,1,.35); animation:wxFlash 2.8s steps(1) infinite; }
+  @keyframes wxSpin { to { transform:rotate(360deg); } }
+  @keyframes wxDrift { from { transform:translateX(-1.2px); } to { transform:translateX(1.4px); } }
+  @keyframes wxDrop { 0% { transform:translateY(-2.5px); opacity:0; } 25% { opacity:1; } 100% { transform:translateY(3.5px); opacity:0; } }
+  @keyframes wxFlash { 0%, 62%, 70%, 100% { opacity:.15; } 64%, 72% { opacity:1; } }
+  @media (prefers-reduced-motion: reduce) { .wx * { animation:none !important; } }
+  .guide-ico { display:inline-flex; align-items:center; justify-content:center; width:64px; height:64px; border-radius:50%;
+    background:var(--accent-wash); color:var(--accent-deep); margin-bottom:14px; }
+  .guide-ico .ic { width:30px; height:30px; }
+  .bdg-medal .ic { width:52%; height:52%; color:var(--tier); }
+  .bdg-stat .ic { color:var(--accent-deep); align-self:center; }
+  .fx-emoji { color:var(--accent); }
+  .fx-emoji .ic { width:2.6rem; height:2.6rem; }
+  .fx-card.mid .fx-emoji .ic { width:2.1rem; height:2.1rem; }
+  .mw-ico .wx { width:46px; height:46px; }
+  .wr-emoji .ic { width:4.4rem; height:4.4rem; stroke-width:1.5; }
+  .wr-emoji .wx-big { width:5.2rem; height:5.2rem; }
+  .wr-list em .ic, .wr-list em .wx { width:1.35rem; height:1.35rem; vertical-align:middle; }
+  .wr-badges div .ic { display:block; width:1.9rem; height:1.9rem; margin:0 auto 6px; }
+  .wr-rank { display:inline-flex; align-items:center; justify-content:center; width:1.5rem; height:1.5rem; border-radius:50%; font-size:.8rem; font-weight:900; color:#2a1650; background:#fff; }
+  .wr-rank.r2 { background:#dfe6ef; } .wr-rank.r3 { background:#f0c9a0; }
+  .wr-ov .wx .wx-cloud { stroke:#fff; } .wr-ov .wx .wx-cloud path { fill:rgba(255,255,255,.12); }
+  .wr-ov .wx .wx-drop { stroke:#bfe0ff; }
+  .fc-mtn .ic, .card-title .ic { color:var(--accent-deep); }
+  .ic-flame { color:#f97316; }
+  .rb-notice .ic, .rb-ok .ic { width:1.1em; height:1.1em; }
+
   /* ── 새 버전 알림 ── */
   .app-ver { font-size:.72rem; font-weight:600; color:var(--muted); margin-left:8px; font-variant-numeric:tabular-nums; }
   .upd-bar {
@@ -617,7 +657,7 @@
   /* ── 빈 화면 안내 ── */
   .guide { text-align:center; padding:44px 22px; }
   .guide.compact { padding:28px 16px; }
-  .guide-ico { font-size:2.3rem; line-height:1; margin-bottom:12px; }
+
   .guide h3 { font-size:1.05rem; font-weight:800; letter-spacing:-.01em; }
   .guide p { font-size:.86rem; color:var(--ink-2); line-height:1.65; margin:6px auto 0; max-width:520px; }
   .guide-steps {
@@ -1752,7 +1792,7 @@
     </div>
     <div class="topbar-actions">
       <div class="seg" id="dashOwners" hidden role="group" aria-label="소유자별 보기" data-tip-t="소유자별 보기" data-tip="대시보드 숫자를 한 사람 것만 모아 봅니다."></div>
-      <button class="btn btn-ghost" id="btnWrapped" hidden data-tip-t="연간 결산" data-tip="올해의 자산 이야기를 슬라이드로 돌아봅니다.">🎁 <span id="btnWrappedY"></span> 결산</button>
+      <button class="btn btn-ghost" id="btnWrapped" hidden data-tip-t="연간 결산" data-tip="올해의 자산 이야기를 슬라이드로 돌아봅니다."><i data-ic="gift"></i> <span id="btnWrappedY"></span> 결산</button>
       <button class="btn btn-primary" id="btnTopAdd" hidden data-tip-t="새 자산 추가 · N" data-tip="처음 기록하는 계좌 · 부동산 · 대출을 추가합니다. 이미 있는 자산의 금액은 &quot;입력&quot; 화면에서 고칩니다.">＋ 새 자산</button>
     </div>
   </header>
@@ -2010,7 +2050,7 @@
     <div class="card mtn-card" id="bdgMountain" hidden></div>
     <div class="bdg-top">
       <div class="bdg-stats" id="bdgStats"></div>
-      <button type="button" class="btn btn-ghost" id="btnWrappedB" data-tip-t="연간 결산" data-tip="한 해의 자산 이야기를 슬라이드로 돌아봅니다 — 가장 빛난 달 · 성장 주역 · 꾸준함 · 뱃지 · 목표. 마지막 장에서 이미지로 저장할 수 있어요.">🎁 연간 결산</button>
+      <button type="button" class="btn btn-ghost" id="btnWrappedB" data-tip-t="연간 결산" data-tip="한 해의 자산 이야기를 슬라이드로 돌아봅니다 — 가장 빛난 달 · 성장 주역 · 꾸준함 · 뱃지 · 목표. 마지막 장에서 이미지로 저장할 수 있어요."><i data-ic="gift"></i> 연간 결산</button>
       <div class="seg" id="bdgFilter" role="group" aria-label="뱃지 종류" data-tip-t="뱃지 종류" data-tip="자산 · 목표 · 부채 등 종류별로 골라 봅니다.">
         <button type="button" data-f="all" class="on">전체</button>
         <button type="button" data-f="big">큰 성과</button>
@@ -2171,9 +2211,9 @@
           <div class="card">
             <div class="card-head"><div class="card-title">알림 · 백업</div></div>
             <div class="rb-links">
-              <button type="button" class="btn btn-ghost" id="rbIcs">📅 리밸런싱 알림 캘린더(.ics) 받기</button>
-              <button type="button" class="btn btn-ghost" id="rbExport">⬇ 포트폴리오 JSON 내보내기</button>
-              <button type="button" class="btn btn-ghost" id="rbImport">⬆ 포트폴리오 JSON 가져오기</button>
+              <button type="button" class="btn btn-ghost" id="rbIcs"><i data-ic="calendar"></i> 리밸런싱 알림 캘린더(.ics) 받기</button>
+              <button type="button" class="btn btn-ghost" id="rbExport"><i data-ic="download"></i> 포트폴리오 JSON 내보내기</button>
+              <button type="button" class="btn btn-ghost" id="rbImport"><i data-ic="upload"></i> 포트폴리오 JSON 가져오기</button>
               <button type="button" class="btn btn-danger" id="rbReset">기본 포트폴리오(9종목)로 초기화</button>
               <input type="file" id="rbImportFile" accept=".json,application/json" hidden>
             </div>
@@ -2238,7 +2278,7 @@
 </div>
 
 <!-- 새 버전 알림 -->
-<div class="upd-bar" id="updBar" role="status">✨ 새 버전이 배포됐어요 <button type="button" id="updReload">새로고침</button><button type="button" class="upd-x" id="updClose" aria-label="닫기">✕</button></div>
+<div class="upd-bar" id="updBar" role="status"><i data-ic="sparkles"></i> 새 버전이 배포됐어요 <button type="button" id="updReload">새로고침</button><button type="button" class="upd-x" id="updClose" aria-label="닫기">✕</button></div>
 
 <!-- 사용법 · 단축키 (? 키) -->
 <div class="sheet-back" id="helpSheet">
@@ -2438,14 +2478,14 @@
         <div class="set-sec">
           <h3>데이터 파일</h3>
           <p>모든 기록은 고른 폴더 안의 JSON 파일 하나에 저장됩니다. 서버나 계정 없이 이 PC에만 있습니다.</p>
-          <div class="tree">📁 고른 폴더
+          <div class="tree"><i data-ic="folder"></i> 고른 폴더
  ├ asset-data.json      ← 자산 기록 · 소유자 · 설정
  ├ backups\             ← 하루 한 번 자동 백업 (최근 30개)
  └ logos\               ← 로고 이미지 (선택)</div>
-          <p class="set-hint">💡 OneDrive · Google Drive · Dropbox 폴더를 고르면 PC 여러 대에서 같이 쓸 수 있어요 — <a data-sync-help>방법 보기</a></p>
+          <p class="set-hint"><i data-ic="bulb"></i> OneDrive · Google Drive · Dropbox 폴더를 고르면 PC 여러 대에서 같이 쓸 수 있어요 — <a data-sync-help>방법 보기</a></p>
           <div class="store-info" id="setStoreInfo"></div>
           <div class="btn-row">
-            <button class="btn btn-primary" id="btnPickFolder">📁 폴더 선택</button>
+            <button class="btn btn-primary" id="btnPickFolder"><i data-ic="folder"></i> 폴더 선택</button>
             <button class="btn btn-ghost" id="btnReload">↻ 다시 불러오기</button>
           </div>
           <div class="btn-row">
@@ -2460,8 +2500,8 @@
           <p>JSON으로 내보내거나 JSON/CSV 파일을 가져와 합칩니다 (같은 날짜·이름은 덮어씀).
           Supabase에서 내보낸 <code>assets</code> · <code>owners</code> CSV도 그대로 가져올 수 있습니다.</p>
           <div class="btn-row">
-            <button class="btn btn-ghost" id="btnExport">⬇ JSON 내보내기</button>
-            <button class="btn btn-ghost" id="btnImport">⬆ 가져오기</button>
+            <button class="btn btn-ghost" id="btnExport"><i data-ic="download"></i> JSON 내보내기</button>
+            <button class="btn btn-ghost" id="btnImport"><i data-ic="upload"></i> 가져오기</button>
           </div>
           <input type="file" id="importFile" accept=".json,.csv,application/json,text/csv" multiple hidden>
         </div>
@@ -2480,10 +2520,10 @@
           <div class="cloud-pane" id="cloudPane-off">
             <p class="cloud-note">기록은 위 <b>데이터 파일</b>에서 고른 폴더의 <code>asset-data.json</code> 에 저장되고, 매일 <code>backups</code> 에 자동 백업됩니다. 인터넷 없이도 동작해요.</p>
             <div class="sync-tip">
-              <h4>💡 PC 여러 대에서 쓰려면 — 동기화 폴더에 두기 (설정 필요 없음)</h4>
+              <h4><i data-ic="bulb"></i> PC 여러 대에서 쓰려면 — 동기화 폴더에 두기 (설정 필요 없음)</h4>
               <ol class="guide-steps">
                 <li><span>PC에 <b>OneDrive</b>(윈도우 기본) · <b>Google Drive 데스크톱</b> · <b>Dropbox</b> 중 하나가 로그인돼 있는지 확인합니다.</span></li>
-                <li><span>그 동기화 폴더 안에 폴더를 하나 만들고 (예: <code>OneDrive\자산현황</code>), 위 <b>📁 폴더 선택</b>으로 고릅니다.</span></li>
+                <li><span>그 동기화 폴더 안에 폴더를 하나 만들고 (예: <code>OneDrive\자산현황</code>), 위 <b>폴더 선택</b>으로 고릅니다.</span></li>
                 <li><span>다른 PC에서도 같은 폴더를 고르면 같은 기록을 봅니다. 한쪽에서 저장하면 몇 초~몇 분 뒤 다른 PC에 동기화되고, 창으로 돌아올 때 자동으로 다시 불러옵니다.</span></li>
               </ol>
               <ul>
@@ -2506,7 +2546,7 @@
               <div class="field full"><label for="sbKey">anon · publishable 키</label><input id="sbKey" type="password" placeholder="eyJ… 또는 sb_publishable_…" autocomplete="off" spellcheck="false"></div>
             </div>
             <div class="btn-row">
-              <button type="button" class="btn btn-ghost" id="btnCopySql">📋 SQL 복사</button>
+              <button type="button" class="btn btn-ghost" id="btnCopySql"><i data-ic="copy"></i> SQL 복사</button>
               <button type="button" class="btn btn-primary" id="btnSbConnect">연결</button>
             </div>
           </div>
@@ -2523,7 +2563,7 @@
               <div class="field full"><label for="gsToken">비밀 토큰 (스크립트의 TOKEN 과 같게, 비워 두면 없음)</label><input id="gsToken" type="password" autocomplete="off" spellcheck="false"></div>
             </div>
             <div class="btn-row">
-              <button type="button" class="btn btn-ghost" id="btnCopyGs">📋 Apps Script 복사</button>
+              <button type="button" class="btn btn-ghost" id="btnCopyGs"><i data-ic="copy"></i> Apps Script 복사</button>
               <button type="button" class="btn btn-primary" id="btnGsConnect">연결</button>
             </div>
           </div>
@@ -2543,9 +2583,9 @@
           대출이 천만원 단위로 줄 때 화면 효과로 축하해 드려요. 같은 기록은 한 번만 축하합니다.</p>
           <label class="switch-row"><input type="checkbox" id="fxToggle"> 축하 효과 켜기</label>
           <div class="btn-row">
-            <button type="button" class="btn btn-ghost btn-sm" data-fx="rain">🌸 꽃가루</button>
-            <button type="button" class="btn btn-ghost btn-sm" data-fx="fireworks">🎆 폭죽</button>
-            <button type="button" class="btn btn-ghost btn-sm" data-fx="zoom">🔢 숫자</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-fx="rain"><i data-ic="flower"></i> 꽃가루</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-fx="fireworks"><i data-ic="party"></i> 폭죽</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-fx="zoom"><i data-ic="hash"></i> 숫자</button>
           </div>
         </div>
         <div class="set-sec">
@@ -2580,6 +2620,92 @@ var currentRange = 91;  // 기본 3개월
 var currentView = 'home';
 
 var $ = function (id) { return document.getElementById(id); };
+
+/* ═══════════ 아이콘 — 사이드바와 같은 선 아이콘 (Lucide 스타일, 24×24 · 선 1.9) ═══════════
+   이모지 대신 이것만 쓴다. 색은 글자색(currentColor)을 따른다. */
+var ICONS = {
+  folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
+  copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  download: '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>',
+  upload: '<path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/>',
+  calendar: '<rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  gift: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>',
+  sparkles: '<path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9Z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z"/>',
+  bulb: '<path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2Z"/>',
+  flower: '<circle cx="12" cy="12" r="2.2"/>' + [0, 72, 144, 216, 288].map(function (a) {
+    return '<path transform="rotate(' + a + ' 12 12)" d="M12 9.6c-2.3-2.2-2.4-5.1 0-6.9 2.4 1.8 2.3 4.7 0 6.9Z"/>';
+  }).join('') + '<path d="M12 14.4v7.4"/>',
+  party: '<path d="M5.8 11.3 2 22l10.7-3.8"/><path d="M4 3h.01M22 8h.01M15 2h.01M22 20h.01"/><path d="m22 2-2.2.8a2.9 2.9 0 0 0-2 3.1c.1.9-.6 1.6-1.4 1.6h-.4c-.9 0-1.6.6-1.8 1.4L14 10"/><path d="m22 13-.8-.3c-.9-.4-1.8.2-2 1.1-.1.7-.7 1.2-1.4 1.2H17"/><path d="m11 2 .3.8c.4.9-.2 1.8-1.1 2C9.5 4.9 9 5.5 9 6.2V7"/><path d="M11 13c1.9 1.9 2.8 4.2 2 5-.8.8-3.1-.1-5-2-1.9-1.9-2.8-4.2-2-5 .8-.8 3.1.1 5 2Z"/>',
+  hash: '<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>',
+  alert: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/>',
+  mountain: '<path d="m8 3 4 8 5-5 5 15H2L8 3z"/><path d="M4.1 15.4 8 13l2 2"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  pencil: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  trophy: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.7V17c0 .6-.5 1-1 1.2C7.9 18.8 7 20.2 7 22"/><path d="M14 14.7V17c0 .6.5 1 1 1.2 1.1.6 2 2 2 3.8"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+  feather: '<path d="M20.2 12.2a6 6 0 0 0-8.5-8.5L5 10.5V19h8.5z"/><path d="M16 8 2 22M17.5 15H9"/>',
+  rocket: '<path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.2 2.2 0 0 0-2.9-.1z"/><path d="m12 15-3-3a22 22 0 0 1 2-4A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.6-3 2-4c1.6-1.1 5 0 5 0M12 15v5s3-.6 4-2c1.1-1.6 0-5 0-5"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  down: '<path d="m22 17-8.5-8.5-5 5L2 7"/><path d="M16 17h6v-6"/>',
+  up: '<path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/>',
+  star: '<path d="m12 2.5 2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5-4.8-4.6 6.6-.9Z"/>',
+  flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+  check: '<circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 5-5"/>',
+  award: '<circle cx="12" cy="8" r="6"/><path d="M15.48 12.89 17 22l-5-3-5 3 1.52-9.11"/>',
+  scale: '<path d="M12 3v18M7 21h10M3 7h18"/><path d="m6 7-3 7a3 3 0 0 0 6 0Z"/><path d="m18 7-3 7a3 3 0 0 0 6 0Z"/>',
+  basket: '<path d="m15 11-1 9M19 11l-4-7M2 11h20M3.5 11l1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4M4.5 15.5h15M5 11l4-7M9 11l1 9"/>',
+  archive: '<rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/>',
+  sprout: '<path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/>',
+  tree: '<path d="M8 19a4 4 0 0 1-2.2-7.3A3.5 3.5 0 0 1 9 6v0a3 3 0 1 1 6 0v0a3.5 3.5 0 0 1 3.2 5.7A4 4 0 0 1 16 19Z"/><path d="M12 19v3"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+  image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
+  alarm: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M5 3 2 6M22 6l-3-3"/>',
+  cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4.5 4.5 0 1 1 0 9Z"/>',
+  person: '<circle cx="12" cy="4.5" r="1.8"/><path d="m9 21 3-6 3 6M6 9l6 2 6-2M12 11v4"/>',
+  handsUp: '<circle cx="12" cy="7" r="1.8"/><path d="m9 21 3-6 3 6M12 11v4M5 3l3 6 4 2 4-2 3-6"/>'
+};
+function ico(name, cls) {
+  return '<svg class="ic' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONS[name] || ICONS.award) + '</svg>';
+}
+// 다른 SVG(등산 지도) 안에 넣는 아이콘 — 가운데(x, y) · 크기 · 색
+function icoG(name, x, y, size, color, width) {
+  var k = size / 24;
+  return '<g transform="translate(' + (x - size / 2).toFixed(1) + ' ' + (y - size / 2).toFixed(1) + ') scale(' + k.toFixed(3) + ')" fill="none" ' +
+    'style="stroke:' + color + '" stroke-width="' + (width || 2) + '" stroke-linecap="round" stroke-linejoin="round">' + ICONS[name] + '</g>';
+}
+// HTML 안의 <i data-ic="이름"></i> 자리에 아이콘을 채운다
+function paintIcons(root) {
+  (root || document).querySelectorAll('i[data-ic]').forEach(function (e) { e.outerHTML = ico(e.dataset.ic, e.className); });
+}
+
+/* 움직이는 날씨 아이콘 — 해는 천천히 돌고, 구름은 흘러가고, 비는 떨어지고, 번개는 번쩍 */
+var WX_SUN_RAYS = '<g class="wx-rays"><path d="M12 2.2v2M12 19.8v2M2.2 12h2M19.8 12h2M5.1 5.1l1.4 1.4M17.5 17.5l1.4 1.4M5.1 18.9l1.4-1.4M17.5 6.5l1.4-1.4"/></g>';
+var WX_CLOUD = 'M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4.5 4.5 0 1 1 0 9Z';
+function wxIcon(kind, cls) {
+  var sun = function (tx, ty, s) {
+    return '<g class="wx-sun" transform="translate(' + tx + ' ' + ty + ') scale(' + s + ')"><circle cx="12" cy="12" r="4.2"/>' + WX_SUN_RAYS + '</g>';
+  };
+  var cloud = function (tx, ty, s, c) {
+    return '<g class="wx-cloud' + (c ? ' ' + c : '') + '"><path transform="translate(' + tx + ' ' + ty + ') scale(' + s + ')" d="' + WX_CLOUD + '"/></g>';
+  };
+  var drops = function (xs) {
+    return xs.map(function (x, i) { return '<path class="wx-drop" style="animation-delay:' + (i * 0.35).toFixed(2) + 's" d="M' + x + ' 17.2l-.9 2.6"/>'; }).join('');
+  };
+  var b;
+  switch (kind) {
+    case 'sun': b = sun(0, 0, 1); break;
+    case 'fair': b = sun(-2.5, -2.5, 0.8) + cloud(6.5, 8.5, 0.62); break;
+    case 'partly': b = sun(-3.5, -3.5, 0.72) + cloud(2, 3.5, 0.86); break;
+    case 'cloud': b = cloud(-2.5, -1, 0.68, 'back') + cloud(3, 3, 0.82); break;
+    case 'shower': b = sun(-3.8, -4.8, 0.62) + cloud(2.2, -0.8, 0.8) + drops([10.6, 14.6]); break;
+    case 'rain': b = cloud(1.4, -1.6, 0.9) + drops([8.8, 12.6, 16.4]); break;
+    default: b = cloud(1.4, -2.2, 0.9, 'dark') + '<path class="wx-bolt" d="M13.4 13.4 10.6 17.6h3l-2 4"/>' + drops([7.8, 17.2]);
+  }
+  return '<svg class="wx ' + (cls || '') + '" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + b + '</svg>';
+}
+
+paintIcons();
 
 function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
@@ -3103,7 +3229,7 @@ async function reloadFolder(okMsg) {
   } catch (e) {
     rows = [];
     setStoreState('error', e.message);
-    setBanner('⚠ ' + escapeHtml(e.message) +
+    setBanner(ico('alert') + ' ' + escapeHtml(e.message) +
       (store.locked ? '<br>메모장 등으로 파일을 고치거나 <code>backups</code> 폴더의 백업으로 바꾼 뒤 다시 불러오세요.' : '') +
       ' <button class="btn btn-ghost btn-sm" data-act="reload">↻ 다시 불러오기</button>', 'error');
   }
@@ -3158,7 +3284,7 @@ function openDemo() {
   setBanner(FS_SUPPORTED
     ? '<span>지금은 <b>데모 데이터</b>입니다. 데이터 폴더를 고르면 이 PC에 <code>' + DATA_FILE +
       '</code> 파일을 만들어 기록을 관리합니다.</span>' +
-      '<button class="btn btn-primary btn-sm" data-act="pick">📁 데이터 폴더 연결</button>'
+      '<button class="btn btn-primary btn-sm" data-act="pick">' + ico('folder') + ' 데이터 폴더 연결</button>'
     : '<span>지금은 <b>데모 데이터</b>입니다. 이 브라우저는 PC 폴더에 직접 저장할 수 없습니다 — ' +
       '<b>Edge</b>·<b>Chrome</b>을 권장합니다.</span>' +
       '<button class="btn btn-primary btn-sm" data-act="local">브라우저에 저장하며 쓰기</button>');
@@ -3190,7 +3316,7 @@ async function initStore() {
       // 권한이 필요하다 — 사용자가 버튼을 눌러야 요청할 수 있다
       rows = [];
       setStoreState('perm');
-      setBanner('<span>📁 <b>' + escapeHtml(dir.name) + '</b> 폴더에 다시 연결해야 기록을 불러옵니다.</span>' +
+      setBanner('<span>' + ico('folder') + ' <b>' + escapeHtml(dir.name) + '</b> 폴더에 다시 연결해야 기록을 불러옵니다.</span>' +
         '<button class="btn btn-primary btn-sm" data-act="reconnect">연결</button>');
       renderAll();
       $('rcName').textContent = dir.name;
@@ -3238,7 +3364,7 @@ function storeStateText() {
     case 'saving':  return { cls: 'busy', txt: '저장 중…' };
     case 'saved':   return { cls: 'ok', txt: '저장됨 ' + hhmmss(store.at) };
     case 'loaded':  return { cls: 'ok', txt: '불러옴 ' + hhmmss(store.at) };
-    case 'error':   return { cls: 'err', txt: '⚠ ' + (store.error || '오류') };
+    case 'error':   return { cls: 'err', txt: store.error || '오류' };
     case 'perm':    return { cls: 'err', txt: '폴더 권한 필요' };
     default:        return { cls: '', txt: '저장 안 됨' };
   }
@@ -3261,7 +3387,7 @@ function renderStoreCard() {
   } else {
     name = '데모 데이터';
     file = '새로고침하면 초기화';
-    act = FS_SUPPORTED ? { act: 'pick', label: '📁 데이터 폴더 연결' } : { act: 'local', label: '브라우저에 저장' };
+    act = FS_SUPPORTED ? { act: 'pick', label: ico('folder') + ' 데이터 폴더 연결' } : { act: 'local', label: '브라우저에 저장' };
   }
   var st = storeStateText();
   c.innerHTML = '<div class="store-cap">' + (isCloud() ? '저장소 · 클라우드' : '데이터 파일') + '</div>' +
@@ -3636,7 +3762,7 @@ function monthsToGoal(base, goal) {
   return null;
 }
 function goalEtaText(months) {
-  if (months === 0) return '이미 달성했어요 🎉';
+  if (months === 0) return '이미 달성했어요';
   if (months === null) return '지금 적립액·수익률로는 100년 안에 닿지 않아요';
   var gd = etaDate(months), yy = Math.floor(months / 12), mm = months % 12;
   return gd.getFullYear() + '년 ' + (gd.getMonth() + 1) + '월 도달 예상 (' +
@@ -3685,8 +3811,8 @@ function renderForecastInner() {
   var etaText, etaShort;
   var months = monthsToGoal(base);
   if (months === 0) {
-    etaText = '목표 달성! 🎉';
-    etaShort = '달성! 🎉';
+    etaText = '목표 달성!';
+    etaShort = '달성!';
   } else if (months === null) {
     etaText = '지금 적립액·수익률로는 100년 안에 닿지 않아요';
     etaShort = '도달 시점 없음';
@@ -3698,7 +3824,8 @@ function renderForecastInner() {
     etaShort = gd.getFullYear() + '년 ' + (gd.getMonth() + 1) + '월 예상';
   }
   gb.appendChild(el('div', 'goal-eta', '현재 ' + pct.toFixed(1) + '% 달성 · ' + etaText));
-  var mb = el('button', 'fc-mtn', '⛰ 등산 지도로 보기 ›');
+  var mb = el('button', 'fc-mtn');
+  mb.innerHTML = ico('mountain') + ' 등산 지도로 보기 ›';
   mb.type = 'button';
   mb.dataset.mtnOpen = '1';
   gb.appendChild(mb);
@@ -4238,10 +4365,10 @@ function renderListTable() {
 
   if (!assets.length) {
     var note = !rows.length ? guideBox(GUIDE_FIRST_ASSET)
-      : q ? guideBox({ compact: true, icon: '🔍', title: '"' + listQuery.trim() + '" 와(과) 일치하는 자산이 없어요',
+      : q ? guideBox({ compact: true, icon: 'search', title: '"' + listQuery.trim() + '" 와(과) 일치하는 자산이 없어요',
                        text: '이름의 일부만 넣어도 찾습니다 (예: "국민", "대출").',
                        actions: [{ label: '검색어 지우기', act: 'clearSearch' }, { label: '＋ 새 자산으로 추가', primary: true, act: 'new' }] })
-      : guideBox({ compact: true, icon: '👤', title: ownerName(listOwner) + ' 의 자산이 아직 없어요',
+      : guideBox({ compact: true, icon: 'user', title: ownerName(listOwner) + ' 의 자산이 아직 없어요',
                    text: '새 자산을 추가할 때 소유자를 ' + ownerName(listOwner) + '(으)로 고르면 여기에 모입니다.',
                    actions: [{ label: '전체 보기', act: 'allOwners' }, { label: '＋ 새 자산 추가', primary: true, act: 'new' }] });
     note.classList.add('card');
@@ -4539,7 +4666,7 @@ function renderInput() {
   var assets = Object.values(latestByName());
   if (!assets.length) {
     wrap.appendChild(guideBox({
-      icon: '✏️', title: '금액을 고칠 자산이 아직 없어요',
+      icon: 'pencil', title: '금액을 고칠 자산이 아직 없어요',
       text: '입력 화면은 이미 등록한 자산의 오늘 금액을 빠르게 고치는 곳입니다. 먼저 자산을 등록하세요.',
       steps: ['<b>＋ 새 자산 추가</b>로 계좌 · 부동산 · 대출을 등록', '다음부터 여기서 바뀐 금액만 고치고 <b>Ctrl+S</b>'],
       actions: [{ label: '＋ 새 자산 추가', primary: true, act: 'new' }, { label: '사용법 보기', act: 'help:input' }]
@@ -4925,7 +5052,7 @@ function showFxCard(o) {
   wrap.innerHTML = '';
   var card = el('div', 'fx-card' + (o.size === 'mid' ? ' mid' : ''));
   card.setAttribute('role', 'status');
-  if (o.emoji) card.appendChild(el('div', 'fx-emoji', o.emoji));
+  if (o.icon) { var fe = el('div', 'fx-emoji'); fe.innerHTML = ico(o.icon); card.appendChild(fe); }
   card.appendChild(el('div', 'fx-title', o.title));
   if (o.sub) card.appendChild(el('div', 'fx-sub', o.sub));
   if (o.lines && o.lines.length) {
@@ -5050,7 +5177,7 @@ function milestoneShort(e) {
     case 'chun': return fmtCompact(e.n * 1e7) + ' 돌파';
     case 'debt': return '대출 ' + fmtCompact(e.n * 1e7) + '대 진입';
     case 'peak': return '순자산 신기록 ' + fmtHeaderTotal(e.net) + '원';
-    case 'streak': return e.n + '주 연속 기록 🔥';
+    case 'streak': return e.n + '주 연속 기록';
     case 'day': return '오늘 모든 자산 기록 완료 ✓';
   }
   return '';
@@ -5076,22 +5203,22 @@ function celebrate(ev, baseMsg) {
 function eventCard(e, replay) {
   var g = e.goal || goalAmount;
   switch (e.t) {
-    case 'goal': return { emoji: '🏆', title: '목표 달성!', sub: fmtHeaderTotal(g) + '원 — 해냈어요!' };
-    case 'debtFree': return { emoji: '🕊️', title: '부채 제로!', sub: '모든 대출을 갚았어요' };
-    case 'eok': return { emoji: '🎆', title: e.n + '억 돌파!', sub: '순자산 ' + fmtHeaderTotal(e.net) + '원' };
-    case 'pct': return { emoji: '🎯', title: '목표의 ' + e.n + '%', size: 'mid',
+    case 'goal': return { icon: 'trophy', title: '목표 달성!', sub: fmtHeaderTotal(g) + '원 — 해냈어요!' };
+    case 'debtFree': return { icon: 'feather', title: '부채 제로!', sub: '모든 대출을 갚았어요' };
+    case 'eok': return { icon: 'rocket', title: e.n + '억 돌파!', sub: '순자산 ' + fmtHeaderTotal(e.net) + '원' };
+    case 'pct': return { icon: 'target', title: '목표의 ' + e.n + '%', size: 'mid',
       sub: replay ? '목표 ' + fmtHeaderTotal(g) + '원 기준 · 순자산 ' + fmtHeaderTotal(e.net) + '원'
                   : '목표 ' + fmtHeaderTotal(g) + '원까지 ' + fmtHeaderTotal(g - e.net) + '원 남았어요' };
-    case 'chun': return { emoji: '🌸', title: fmtCompact(e.n * 1e7) + ' 돌파', size: 'mid',
+    case 'chun': return { icon: 'flower', title: fmtCompact(e.n * 1e7) + ' 돌파', size: 'mid',
       sub: replay ? '순자산 ' + fmtHeaderTotal(e.net) + '원'
                   : '다음 ' + fmtCompact((e.n + 1) * 1e7) + '까지 ' + fmtCompact((e.n + 1) * 1e7 - e.net) + '원' };
-    case 'debt': return { emoji: '💪', title: '대출 ' + fmtCompact(e.n * 1e7) + '대', size: 'mid',
+    case 'debt': return { icon: 'down', title: '대출 ' + fmtCompact(e.n * 1e7) + '대', size: 'mid',
       sub: '잔액 ' + fmtHeaderTotal(e.debt) + '원으로 줄었어요' };
-    case 'peak': return { emoji: '✨', title: '순자산 신기록', size: 'mid', sub: fmtHeaderTotal(e.net) + '원' };
-    case 'streak': return { emoji: '🔥', title: e.n + '주 연속 기록', size: 'mid', sub: '꾸준함이 쌓이고 있어요' };
-    case 'day': return { emoji: '✅', title: '하루 기록 완료', size: 'mid', sub: '모든 자산을 오늘 기록했어요' };
+    case 'peak': return { icon: 'star', title: '순자산 신기록', size: 'mid', sub: fmtHeaderTotal(e.net) + '원' };
+    case 'streak': return { icon: 'flame', title: e.n + '주 연속 기록', size: 'mid', sub: '꾸준함이 쌓이고 있어요' };
+    case 'day': return { icon: 'check', title: '하루 기록 완료', size: 'mid', sub: '모든 자산을 오늘 기록했어요' };
   }
-  return { emoji: '🏅', title: '마일스톤', size: 'mid' };
+  return { icon: 'award', title: '마일스톤', size: 'mid' };
 }
 
 // 이벤트 연출 — 폭죽 · 꽃가루 · 카드. 뱃지를 누르면 replay=true 로 다시 튼다
@@ -5116,7 +5243,7 @@ function eventFx(e, rest, replay, fromEl) {
         }
     }
   }
-  showFxCard({ emoji: c.emoji, title: c.title, sub: c.sub + (replay && e.date ? ' · ' + fmtBadgeDate(e.date) : ''),
+  showFxCard({ icon: c.icon, title: c.title, sub: c.sub + (replay && e.date ? ' · ' + fmtBadgeDate(e.date) : ''),
                size: c.size, lines: rest || [], ms: ms });
 }
 
@@ -5198,7 +5325,9 @@ function badgeCard(b, i) {
   // 카드에는 아이콘 · 제목 · 날짜만 — 금액 등은 마우스를 올리면
   btn.title = c.title.replace(/!$/, '') + '\n' + c.sub + (b.auto ? '\n(지난 기록에서 찾은 뱃지)' : '') +
     '\n눌러서 그때의 축하 다시 보기';
-  btn.appendChild(el('div', 'bdg-medal', c.emoji));
+  var md = el('div', 'bdg-medal');
+  md.innerHTML = ico(c.icon);
+  btn.appendChild(md);
   btn.appendChild(el('div', 'bdg-title', c.title.replace(/!$/, '')));
   var d = parseDate(b.date);
   btn.appendChild(el('div', 'bdg-date', d.getFullYear() + '. ' + (d.getMonth() + 1) + '. ' + d.getDate()));
@@ -5218,9 +5347,9 @@ function renderBadges() {
   var nBig = list.filter(function (x) { return BADGE_BIG[x.b.t]; }).length;
   var stats = $('bdgStats');
   stats.innerHTML = '';
-  [['🏅', '모은 뱃지', list.length], ['📅', '이번 달', nMonth], ['🎆', '큰 성과', nBig]].forEach(function (a) {
+  [['award', '모은 뱃지', list.length], ['calendar', '이번 달', nMonth], ['rocket', '큰 성과', nBig]].forEach(function (a) {
     var d = el('div', 'bdg-stat');
-    d.appendChild(document.createTextNode(a[0] + ' ' + a[1] + ' '));
+    d.innerHTML = ico(a[0]) + ' ' + a[1] + ' ';
     d.appendChild(el('b', '', a[2]));
     stats.appendChild(d);
   });
@@ -5234,9 +5363,9 @@ function renderBadges() {
   });
   if (!shown.length) {
     box.appendChild(list.length
-      ? guideBox({ compact: true, icon: '🔎', title: '이 종류의 뱃지는 아직 없어요',
+      ? guideBox({ compact: true, icon: 'search', title: '이 종류의 뱃지는 아직 없어요',
                    actions: [{ label: '전체 뱃지 보기', act: 'bdgAll' }] })
-      : guideBox({ icon: '🏅', title: '아직 모은 뱃지가 없어요',
+      : guideBox({ icon: 'award', title: '아직 모은 뱃지가 없어요',
                    text: '금액을 꾸준히 기록하면 이런 순간마다 뱃지를 받아요.',
                    steps: ['순자산이 천만원 단위로 새 최고치를 넘거나, 억 단위를 돌파할 때',
                            '목표 금액에 10%씩 다가갈 때',
@@ -5305,8 +5434,8 @@ document.querySelector('.fx-set').addEventListener('click', function (e) {
     else if (b.dataset.fx === 'fireworks') FX.fireworks(5);
     else {
       FX.burst(W / 2, H * .62, 90);
-      showFxCard({ emoji: '🎆', title: '13억 돌파!', sub: '미리보기 — 순자산이 억 단위를 넘으면 이렇게 축하해요',
-                   lines: ['목표의 70%', '3주 연속 기록 🔥'] });
+      showFxCard({ icon: 'rocket', title: '13억 돌파!', sub: '미리보기 — 순자산이 억 단위를 넘으면 이렇게 축하해요',
+                   lines: ['목표의 70%', '3주 연속 기록'] });
     }
   }, 250);
 });
@@ -5991,7 +6120,7 @@ function renderRbNotice(p) {
   n.className = 'rb-notice';
   if (rb.priceError) {
     n.classList.add('err');
-    n.innerHTML = '⚠ ' + rbEsc(rb.priceError) + ' <button type="button" class="btn btn-ghost btn-sm" data-rbact="reload">다시 시도</button>';
+    n.innerHTML = ico('alert') + ' ' + rbEsc(rb.priceError) + ' <button type="button" class="btn btn-ghost btn-sm" data-rbact="reload">다시 시도</button>';
     return;
   }
   if (!rb.prices) { n.textContent = '전일 종가를 불러오는 중…'; return; }
@@ -6006,7 +6135,7 @@ function renderRbNotice(p) {
   var next = new Date(new Date(p.lastRebalancedAt).getTime() + cycle * 86400000);
   var due = days >= cycle;
   if (due) n.classList.add('due');
-  n.textContent = (due ? '⏰ 리밸런싱 시점입니다 · ' : '✅ ') + '마지막 ' + rbDate(p.lastRebalancedAt) +
+  n.innerHTML = (due ? ico('alarm') + ' 리밸런싱 시점입니다 · ' : ico('check') + ' ') + '마지막 ' + rbDate(p.lastRebalancedAt) +
     ' (' + days + '일 전) · 다음 ' + rbDate(next.toISOString()) + (due ? ' 지남' : '');
 }
 
@@ -6021,7 +6150,7 @@ function renderRbPlan() {
   var p = rbPf(), empty = !p.items.length;
   $('rbPlanEmpty').hidden = !empty;
   if (empty && !$('rbPlanEmpty').firstChild) $('rbPlanEmpty').appendChild(guideBox({
-    icon: '⚖️', title: '리밸런싱할 ETF를 먼저 정해 주세요',
+    icon: 'scale', title: '리밸런싱할 ETF를 먼저 정해 주세요',
     text: '목표비중을 정해 두면, 매달 무엇을 몇 주 사고팔아야 비중이 맞는지 계산해 드립니다.',
     steps: ['<b>종목 · 설정</b>에서 ETF를 검색해 추가하고 목표비중(%)을 적어요',
             '이미 가진 수량과 예수금도 적어요 — 처음 산다면 <b>신규 투입</b>에서 살 수량을 계산해요',
@@ -6109,7 +6238,7 @@ function renderRbPlan() {
   if (!rb.prices) h += '<div class="rb-hint">가격을 불러오면 계획을 계산합니다.</div>';
   else if (plan.total <= 0) h += '<div class="rb-hint">보유수량과 예수금이 없습니다. 처음이라면 <b>신규 투입</b>에서 살 수량을 계산하거나, 위 칸에 투입금을 넣어 보세요.</div>' +
     '<button type="button" class="btn btn-ghost btn-block" data-rbgo="invest" style="margin-top:10px">신규 투입 계산하기</button>';
-  else if (!plan.tradeCount) h += '<div class="rb-ok">✅ 현재 비중이 목표와 맞습니다. 거래가 필요 없습니다.</div>';
+  else if (!plan.tradeCount) h += '<div class="rb-ok">' + ico('check') + ' 현재 비중이 목표와 맞습니다. 거래가 필요 없습니다.</div>';
   else {
     h += '<div class="rb-step"><h4>1단계 · 매도<span class="rb-tag' + (plan.sells.length ? ' sell' : '') + '">' +
       (plan.sells.length ? plan.sells.length + '종목 · ' + rbKRW(plan.sellTotal) : '없음') + '</span></h4>' + rbTradeRows(plan.sells, '매도', 'rb-sell') + '</div>';
@@ -6166,7 +6295,7 @@ function renderRbInvest() {
   var p = rbPf(), amount = Number($('rbInvAmt').dataset.value) || 0;
   $('rbInvFill').checked = lsGet('asset_pc_rb_fill') === '1';
   if (!p.items.length) {
-    $('rbInvTable').innerHTML = '<tbody><tr><td>' + guideHtml({ compact: true, icon: '🧺', title: '나눠 살 ETF가 아직 없어요',
+    $('rbInvTable').innerHTML = '<tbody><tr><td>' + guideHtml({ compact: true, icon: 'basket', title: '나눠 살 ETF가 아직 없어요',
       text: '종목 · 설정에서 ETF와 목표비중을 정하면 투입 금액을 비중대로 나눠 드립니다.',
       actions: [{ label: '종목 · 설정으로', primary: true, act: 'rb:setup' }] }) + '</td></tr></tbody>';
     $('rbInvSum').innerHTML = '';
@@ -6262,7 +6391,7 @@ function renderRbItems() {
           '<td class="num rb-c-val" data-val>' + (price ? rbNum(price * it.qty) : '-') + '</td>' +
           '<td class="num"><button type="button" class="rb-del" data-del="' + i + '" title="목록에서 빼기" aria-label="삭제">✕</button></td></tr>';
       }).join('') + '</tbody>'
-    : '<tbody><tr><td>' + guideHtml({ compact: true, icon: '🔍', title: '위 검색창에서 ETF를 찾아 추가하세요',
+    : '<tbody><tr><td>' + guideHtml({ compact: true, icon: 'search', title: '위 검색창에서 ETF를 찾아 추가하세요',
         text: '이름 일부("나스닥", "S&P500")나 종목코드로 찾습니다. 어떤 걸 담을지 모르겠다면 기본 9종목으로 시작해 보세요.',
         actions: [{ label: '기본 9종목 넣기', act: 'rbDefaults' }] }) + '</td></tr></tbody>';
   renderRbWsum();
@@ -6433,7 +6562,7 @@ function renderRbLog() {
           '<td class="rb-c-price" style="white-space:nowrap">' + rbEsc(x.baseDate || '-') + '</td>' +
           '<td class="rb-log-trades">' + (trades || '거래 없음') + '</td></tr>';
       }).join('') + '</tbody>'
-    : '<tbody><tr><td>' + guideHtml({ compact: true, icon: '🗂️', title: '아직 기록이 없어요',
+    : '<tbody><tr><td>' + guideHtml({ compact: true, icon: 'archive', title: '아직 기록이 없어요',
         text: '리밸런싱 탭의 "거래 완료 → 보유수량 반영"이나 신규 투입의 "매수 완료 → 반영"을 누르면 여기에 쌓이고, 총자산 추이도 이 기록으로 계산됩니다.',
         actions: [{ label: '리밸런싱 탭으로', primary: true, act: 'rb:plan' }] }) + '</td></tr></tbody>';
 }
@@ -7092,14 +7221,14 @@ function renderSettingsInfo() {
   var nAssets = Object.keys(buildByName()).length;
   var html;
   if (store.mode === 'folder') {
-    html = '📁 <b>' + escapeHtml(store.dir ? store.dir.name : '') + '</b> \\ ' + DATA_FILE +
+    html = ico('folder') + ' <b>' + escapeHtml(store.dir ? store.dir.name : '') + '</b> \\ ' + DATA_FILE +
       '<br><span class="muted">자산 ' + nAssets + '개 · 기록 ' + rows.length + '건 · ' + escapeHtml(st.txt) + '</span>' +
       '<br><span class="muted">브라우저는 보안상 폴더 이름만 알려 줍니다 (전체 경로는 표시되지 않음)</span>';
   } else if (store.mode === 'local') {
     html = '<b>브라우저 저장소</b> (localStorage)<br><span class="muted">자산 ' + nAssets + '개 · 기록 ' +
       rows.length + '건 — 이 브라우저에만 있으니 JSON 내보내기로 백업하세요</span>';
   } else if (isCloud()) {
-    html = '☁ <b>' + cloudName(store.mode) + '</b> · ' + escapeHtml(cloudHost(store.cloud || {})) +
+    html = ico('cloud') + ' <b>' + cloudName(store.mode) + '</b> · ' + escapeHtml(cloudHost(store.cloud || {})) +
       '<br><span class="muted">자산 ' + nAssets + '개 · 기록 ' + rows.length + '건 · ' + escapeHtml(st.txt) + '</span>' +
       '<br><span class="muted">지금은 아래 클라우드 연동에 저장합니다. 폴더를 고르면 PC 파일로 바뀝니다.</span>';
   } else {
@@ -7107,7 +7236,7 @@ function renderSettingsInfo() {
   }
   info.innerHTML = html;
   $('btnPickFolder').disabled = !FS_SUPPORTED;
-  $('btnPickFolder').textContent = store.mode === 'folder' ? '📁 다른 폴더 선택' : isCloud() ? '📁 PC 폴더로 바꾸기' : '📁 폴더 선택';
+  $('btnPickFolder').innerHTML = ico('folder') + ' ' + (store.mode === 'folder' ? '다른 폴더 선택' : isCloud() ? 'PC 폴더로 바꾸기' : '폴더 선택');
   $('btnPickFolder').className = 'btn ' + (isCloud() ? 'btn-ghost' : 'btn-primary');
   $('btnReload').hidden = store.mode !== 'folder';
   renderCloudSec();
@@ -7456,7 +7585,7 @@ function renderMonthCardInner() {
   $('msTitle').textContent = monthTitle(key) + ' 요약';
   var streak = key === thisKey ? 0 : monthStreak(key);
   if (key === thisKey && s.change > 0) streak = 1 + monthStreak(shiftMonthKey(key, -1));
-  $('msRange').textContent = msRangeText(s) + (streak >= 2 ? ' · 🔥 ' + streak + '개월 연속 증가' : '');
+  $('msRange').innerHTML = escapeHtml(msRangeText(s)) + (streak >= 2 ? ' · ' + ico('flame', 'ic-flame') + ' ' + streak + '개월 연속 증가' : '');
   // 더 볼 기록이 없으면 이전 버튼을, 이번 달이면 다음 버튼을 잠근다
   $('msPrev').disabled = !monthSummary(shiftMonthKey(key, -1));
   $('msNext').disabled = key >= thisKey;
@@ -7544,7 +7673,7 @@ function openMonthSheet(key) {
   var s = monthSummary(key);
   if (!s) return false;
   var streak = monthStreak(key);
-  $('msSheetCap').textContent = msRangeText(s) + ' 결산' + (streak >= 2 ? ' · 🔥 ' + streak + '개월 연속 증가' : '');
+  $('msSheetCap').innerHTML = escapeHtml(msRangeText(s)) + ' 결산' + (streak >= 2 ? ' · ' + ico('flame', 'ic-flame') + ' ' + streak + '개월 연속 증가' : '');
   $('msSheetTitle').textContent = s.label + ' 요약';
   paintMonthSummary($('msSheetBody'), s);
   openSheet('monthSheet');
@@ -8023,13 +8152,13 @@ function renderHeat() {
 /* ═══════════ 이번 달 자산 날씨 ═══════════ */
 function monthWeather(s) {
   var p = s.pct === null ? (s.change > 0 ? 1 : s.change < 0 ? -1 : 0) : s.pct;
-  var W = p >= 3 ? ['☀️', '쨍쨍한 맑음', 'wx-sun', ['순자산이 쑥쑥 자란 화창한 달이에요', '햇볕 좋은 달 — 이 기세 그대로!']]
-    : p >= 1 ? ['🌤️', '맑음', 'wx-fair', ['기분 좋게 맑은 달이에요', '꾸준히 오른, 산책하기 좋은 날씨']]
-    : p > 0.1 ? ['⛅', '구름 조금', 'wx-fair', ['조금씩이지만 앞으로 가고 있어요', '구름 사이로 해가 보여요']]
-    : p >= -0.1 ? ['☁️', '흐림', 'wx-cloud', ['큰 변화 없이 잔잔한 달이에요', '고요한 날씨 — 쉬어 가는 달']]
-    : p > -1 ? ['🌦️', '소나기', 'wx-rain', ['살짝 비가 왔지만 금방 갤 거예요', '지나가는 소나기예요']]
-    : p > -3 ? ['🌧️', '비', 'wx-rain', ['비 오는 달 — 우산 쓰고 버텨요', '비가 그치면 땅이 더 단단해져요']]
-    : ['⛈️', '폭풍우', 'wx-storm', ['거센 폭풍이 지나갔어요. 폭풍 뒤엔 맑은 날이 와요', '험한 날씨였지만, 버틴 것만으로 충분해요']];
+  var W = p >= 3 ? ['sun', '쨍쨍한 맑음', 'wx-sun', ['순자산이 쑥쑥 자란 화창한 달이에요', '햇볕 좋은 달 — 이 기세 그대로!']]
+    : p >= 1 ? ['fair', '맑음', 'wx-fair', ['기분 좋게 맑은 달이에요', '꾸준히 오른, 산책하기 좋은 날씨']]
+    : p > 0.1 ? ['partly', '구름 조금', 'wx-fair', ['조금씩이지만 앞으로 가고 있어요', '구름 사이로 해가 보여요']]
+    : p >= -0.1 ? ['cloud', '흐림', 'wx-cloud', ['큰 변화 없이 잔잔한 달이에요', '고요한 날씨 — 쉬어 가는 달']]
+    : p > -1 ? ['shower', '소나기', 'wx-rain', ['살짝 비가 왔지만 금방 갤 거예요', '지나가는 소나기예요']]
+    : p > -3 ? ['rain', '비', 'wx-rain', ['비 오는 달 — 우산 쓰고 버텨요', '비가 그치면 땅이 더 단단해져요']]
+    : ['storm', '폭풍우', 'wx-storm', ['거센 폭풍이 지나갔어요. 폭풍 뒤엔 맑은 날이 와요', '험한 날씨였지만, 버틴 것만으로 충분해요']];
   var h = 0;
   for (var i = 0; i < s.key.length; i++) h = (h * 31 + s.key.charCodeAt(i)) >>> 0;
   var line = W[3][h % W[3].length];
@@ -8041,7 +8170,9 @@ function monthWeather(s) {
 function weatherNode(s) {
   var w = monthWeather(s);
   var box = el('div', 'ms-weather ' + w.cls);
-  box.appendChild(el('div', 'mw-ico', w.ico));
+  var wi = el('div', 'mw-ico');
+  wi.innerHTML = wxIcon(w.ico);
+  box.appendChild(wi);
   var t = el('div');
   t.appendChild(el('div', 'mw-t', s.label + ' 자산 날씨 · ' + w.title));
   t.appendChild(el('div', 'mw-s', w.line));
@@ -8113,7 +8244,8 @@ function renderMountain(box) {
       '<line x1="' + p.x.toFixed(1) + '" y1="' + p.y.toFixed(1) + '" x2="' + p.x.toFixed(1) + '" y2="' + (p.y - 26).toFixed(1) + '" style="stroke:var(--ink-2)" stroke-width="1.6"/>' +
       '<path d="M' + p.x.toFixed(1) + ' ' + (p.y - 26).toFixed(1) + ' l' + (right ? 16 : -16) + ' 5 l' + (right ? -16 : 16) + ' 5 Z" style="fill:' + fc + '"/>' +
       (near ? '' : '<text x="' + (p.x + (right ? 20 : -20)).toFixed(1) + '" y="' + (p.y - 17).toFixed(1) + '" text-anchor="' + (right ? 'start' : 'end') + '" font-size="13" font-weight="800" style="fill:' + (reached ? 'var(--ink)' : 'var(--muted)') + '">' +
-        (k === 10 ? '🏆 ' : '') + amt + '</text>') +
+        amt + '</text>') +
+      (k === 10 ? icoG('trophy', p.x + (right ? 20 : -20) + (right ? -2 : 2) + (right ? -14 : 14), p.y - 44, 20, '#e9a200') : '') +
       (reached && date && !near ? '<text x="' + (p.x + (right ? 20 : -20)).toFixed(1) + '" y="' + (p.y - 3).toFixed(1) + '" text-anchor="' + (right ? 'start' : 'end') + '" font-size="11" style="fill:var(--muted)">' + date.replace(/-/g, '.') + '</text>' : '') +
       '</g>';
   }
@@ -8122,14 +8254,14 @@ function renderMountain(box) {
   var bubbleW = 170, bx = Math.max(10, Math.min(990 - bubbleW, me.x - bubbleW / 2)), by = me.y + 18 > 350 ? me.y - 86 : me.y + 16;
   svg += '<g><circle class="mtn-pulse" cx="' + me.x.toFixed(1) + '" cy="' + me.y.toFixed(1) + '" r="11" style="fill:var(--accent)" opacity=".5"/>' +
     '<circle cx="' + me.x.toFixed(1) + '" cy="' + me.y.toFixed(1) + '" r="8" style="fill:var(--accent);stroke:var(--surface)" stroke-width="3"/>' +
-    '<text class="mtn-me" x="' + me.x.toFixed(1) + '" y="' + (me.y - 14).toFixed(1) + '" text-anchor="middle" font-size="26">' + (frac >= 1 ? '🙌' : '🧗') + '</text>' +
+    '<g class="mtn-me">' + icoG(frac >= 1 ? 'handsUp' : 'person', me.x, me.y - 26, 26, 'var(--accent-deep)', 2.2) + '</g>' +
     '<g transform="translate(' + bx.toFixed(1) + ' ' + by.toFixed(1) + ')"><rect width="' + bubbleW + '" height="44" rx="12" style="fill:var(--ink)"/>' +
     '<text x="' + bubbleW / 2 + '" y="19" text-anchor="middle" font-size="13" font-weight="800" style="fill:var(--bg)">지금 ' + fmtHeaderTotal(net) + '원</text>' +
     '<text x="' + bubbleW / 2 + '" y="35" text-anchor="middle" font-size="11" style="fill:var(--bg)" opacity=".8">목표의 ' + (net / goal * 100).toFixed(1) + '% 지점</text></g></g>';
   svg += '</svg>';
   var months = monthsToGoal(net);
-  box.innerHTML = '<div class="mtn-head"><div><div class="card-title">⛰ 목표까지 등산 지도</div>' +
-    '<div class="card-sub">정상 ' + fmtHeaderTotal(goal) + '원 · ' + (net >= goal ? '정상에 올랐어요! 🎉' : '남은 거리 ' + fmtHeaderTotal(goal - net) + '원 · ' + goalEtaText(months)) + '</div></div>' +
+  box.innerHTML = '<div class="mtn-head"><div><div class="card-title">' + ico('mountain') + ' 목표까지 등산 지도</div>' +
+    '<div class="card-sub">정상 ' + fmtHeaderTotal(goal) + '원 · ' + (net >= goal ? '정상에 올랐어요!' : '남은 거리 ' + fmtHeaderTotal(goal - net) + '원 · ' + goalEtaText(months)) + '</div></div>' +
     '<button type="button" class="btn btn-ghost btn-sm" data-mtn-goal>목표 바꾸기</button></div>' + svg;
 }
 function openMountain() {
@@ -8239,27 +8371,27 @@ function wrBuild(s) {
     '<div class="wr-actions"><button type="button" class="wr-btn pri" data-wr-go="1">시작하기 →</button></div>');
   sl.push('<div class="wr-kick">' + Y + '년 순자산은</div><div class="wr-big">' + wrSigned(s.change) + '</div>' +
     '<p class="wr-p">' + e(s.startLabel) + ' <b>' + fmtHeaderTotal(s.startNet) + '원</b> → ' + (s.ongoing ? '지금' : '연말') + ' <b>' + fmtHeaderTotal(s.endNet) + '원</b>' +
-    (s.pct !== null ? '<br>' + (s.pct >= 0 ? '+' : '−') + Math.abs(s.pct).toFixed(1) + '% ' + (s.change >= 0 ? '자랐어요 🌱' : '줄었어요 — 내년엔 다시!') : '') + '</p>' + wrSpark(s.spark));
+    (s.pct !== null ? '<br>' + (s.pct >= 0 ? '+' : '−') + Math.abs(s.pct).toFixed(1) + '% ' + (s.change >= 0 ? '자랐어요' : '줄었어요 — 내년엔 다시!') : '') + '</p>' + wrSpark(s.spark));
   if (s.bestM) {
     var bw = monthWeather(s.bestM), ww = s.worstM ? monthWeather(s.worstM) : null;
-    sl.push('<div class="wr-emoji">' + bw.ico + '</div><div class="wr-kick">가장 빛난 달</div><div class="wr-big">' + s.bestM.label + '</div>' +
+    sl.push('<div class="wr-emoji">' + wxIcon(bw.ico, 'wx-big') + '</div><div class="wr-kick">가장 빛난 달</div><div class="wr-big">' + s.bestM.label + '</div>' +
       '<p class="wr-p">순자산 <b>' + wrSigned(s.bestM.change) + '</b>' + (s.bestM.contributors[0] ? '<br>일등 공신은 <b>' + e(s.bestM.contributors[0].name) + '</b>' : '') + '</p>' +
-      (ww ? '<div class="wr-list"><div><em>' + ww.ico + '</em><span>가장 힘들었던 달 · ' + s.worstM.label + '</span><b>' + wrSigned(s.worstM.change) + '</b></div></div>' : ''));
+      (ww ? '<div class="wr-list"><div><em>' + wxIcon(ww.ico, 'wx-sm') + '</em><span>가장 힘들었던 달 · ' + s.worstM.label + '</span><b>' + wrSigned(s.worstM.change) + '</b></div></div>' : ''));
   }
   if (s.growth.length || s.paid) {
-    var medals = ['🥇', '🥈', '🥉'];
-    sl.push('<div class="wr-emoji">🌳</div><div class="wr-kick">올해의 성장 주역</div>' +
+    var medals = ['<b class="wr-rank r1">1</b>', '<b class="wr-rank r2">2</b>', '<b class="wr-rank r3">3</b>'];
+    sl.push('<div class="wr-emoji">' + ico('tree') + '</div><div class="wr-kick">올해의 성장 주역</div>' +
       (s.growth[0] ? '<div class="wr-mid">' + e(s.growth[0].name) + '</div><p class="wr-p">혼자서 <b>' + wrSigned(s.growth[0].v) + '</b>' + (s.growth[0].isNew ? ' (올해 새로 시작)' : '') + '</p>' : '') +
       '<div class="wr-list">' + s.growth.map(function (g, i) { return '<div><em>' + medals[i] + '</em><span>' + e(g.name) + '</span><b>' + wrSigned(g.v) + '</b></div>'; }).join('') +
-      (s.paid ? '<div><em>💪</em><span>가장 많이 갚은 대출 · ' + e(s.paid.name) + '</span><b>−' + fmtHeaderTotal(s.paid.v) + '원</b></div>' : '') + '</div>');
+      (s.paid ? '<div><em>' + ico('down') + '</em><span>가장 많이 갚은 대출 · ' + e(s.paid.name) + '</span><b>−' + fmtHeaderTotal(s.paid.v) + '원</b></div>' : '') + '</div>');
   }
-  sl.push('<div class="wr-emoji">🔥</div><div class="wr-kick">꾸준함</div><div class="wr-big">' + s.days + '일</div>' +
+  sl.push('<div class="wr-emoji">' + ico('flame') + '</div><div class="wr-kick">꾸준함</div><div class="wr-big">' + s.days + '일</div>' +
     '<p class="wr-p">기록을 남겼어요 · 기록 ' + s.records + '건</p><div class="wr-list">' +
-    '<div><em>📅</em><span>기록한 주</span><b>' + s.weeks + '주</b></div>' +
-    '<div><em>🔗</em><span>가장 긴 연속 기록</span><b>' + s.longest + '주</b></div>' +
-    '<div><em>⭐</em><span>가장 자주 기록한 요일</span><b>' + WEEKDAYS[s.favDow] + '요일</b></div></div>');
-  sl.push('<div class="wr-emoji">🏅</div><div class="wr-kick">올해 모은 뱃지</div><div class="wr-big">' + s.badges.length + '개</div>' +
-    (s.badges.length ? '<div class="wr-badges">' + s.badges.slice(0, 8).map(function (b) { var c = eventCard(b, true); return '<div><i>' + c.emoji + '</i>' + e(c.title.replace(/!$/, '')) + '</div>'; }).join('') + '</div>'
+    '<div><em>' + ico('calendar') + '</em><span>기록한 주</span><b>' + s.weeks + '주</b></div>' +
+    '<div><em>' + ico('link') + '</em><span>가장 긴 연속 기록</span><b>' + s.longest + '주</b></div>' +
+    '<div><em>' + ico('star') + '</em><span>가장 자주 기록한 요일</span><b>' + WEEKDAYS[s.favDow] + '요일</b></div></div>');
+  sl.push('<div class="wr-emoji">' + ico('award') + '</div><div class="wr-kick">올해 모은 뱃지</div><div class="wr-big">' + s.badges.length + '개</div>' +
+    (s.badges.length ? '<div class="wr-badges">' + s.badges.slice(0, 8).map(function (b) { var c = eventCard(b, true); return '<div>' + ico(c.icon) + '' + e(c.title.replace(/!$/, '')) + '</div>'; }).join('') + '</div>'
       : '<p class="wr-p">내년엔 첫 뱃지를 받아 봐요!</p>'));
   var p0 = Math.max(0, Math.min(100, s.startNet / s.goal * 100)), p1 = Math.max(0, Math.min(100, s.endNet / s.goal * 100)), C = 2 * Math.PI * 76;
   sl.push('<div class="wr-kick">목표 ' + fmtHeaderTotal(s.goal) + '원까지</div>' +
@@ -8267,13 +8399,13 @@ function wrBuild(s) {
     '<circle cx="90" cy="90" r="76" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="14" stroke-dasharray="' + (C * p0 / 100).toFixed(1) + ' ' + C.toFixed(1) + '"/>' +
     '<circle cx="90" cy="90" r="76" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-dasharray="' + (C * p1 / 100).toFixed(1) + ' ' + C.toFixed(1) + '"/></svg>' +
     '<div class="wr-big">' + p1.toFixed(1) + '%</div><p class="wr-p">올해 <b>' + (p1 - p0 >= 0 ? '+' : '−') + Math.abs(p1 - p0).toFixed(1) + '%p</b> 다가갔어요<br>' + e(goalEtaText(monthsToGoal(s.endNet))) + '</p>');
-  sl.push('<div class="wr-emoji">🎉</div><div class="wr-kick">' + Y + ' 자산 결산</div><div class="wr-big">' + wrSigned(s.change) + '</div>' +
+  sl.push('<div class="wr-emoji">' + ico('party') + '</div><div class="wr-kick">' + Y + ' 자산 결산</div><div class="wr-big">' + wrSigned(s.change) + '</div>' +
     '<div class="wr-list">' +
-    (s.bestM ? '<div><em>☀️</em><span>가장 빛난 달</span><b>' + s.bestM.label + '</b></div>' : '') +
-    (s.growth[0] ? '<div><em>🌳</em><span>성장 주역</span><b>' + e(s.growth[0].name) + '</b></div>' : '') +
-    '<div><em>🔥</em><span>기록한 날</span><b>' + s.days + '일</b></div>' +
-    '<div><em>🏅</em><span>모은 뱃지</span><b>' + s.badges.length + '개</b></div></div>' +
-    '<div class="wr-actions"><button type="button" class="wr-btn pri" data-wr-save="1">🖼 이미지로 저장</button><button type="button" class="wr-btn" data-wr-restart="1">처음부터</button><button type="button" class="wr-btn" data-wr-close="1">닫기</button></div>');
+    (s.bestM ? '<div><em>' + ico('sparkles') + '</em><span>가장 빛난 달</span><b>' + s.bestM.label + '</b></div>' : '') +
+    (s.growth[0] ? '<div><em>' + ico('tree') + '</em><span>성장 주역</span><b>' + e(s.growth[0].name) + '</b></div>' : '') +
+    '<div><em>' + ico('flame') + '</em><span>기록한 날</span><b>' + s.days + '일</b></div>' +
+    '<div><em>' + ico('award') + '</em><span>모은 뱃지</span><b>' + s.badges.length + '개</b></div></div>' +
+    '<div class="wr-actions"><button type="button" class="wr-btn pri" data-wr-save="1">' + ico('image') + ' 이미지로 저장</button><button type="button" class="wr-btn" data-wr-restart="1">처음부터</button><button type="button" class="wr-btn" data-wr-close="1">닫기</button></div>');
   return sl;
 }
 function openWrapped(year) {
@@ -8346,10 +8478,10 @@ function wrSaveImage() {
   txt(wrSigned(s.change), 90, 400, 120, 900);
   txt(fmtHeaderTotal(s.startNet) + '원 → ' + fmtHeaderTotal(s.endNet) + '원' + (s.pct !== null ? '  (' + (s.pct >= 0 ? '+' : '−') + Math.abs(s.pct).toFixed(1) + '%)' : ''), 90, 470, 38, 600, 'left', 0.85);
   var boxes = [
-    ['☀️ 가장 빛난 달', s.bestM ? s.bestM.label + ' ' + wrSigned(s.bestM.change) : '-'],
-    ['🌳 성장 주역', s.growth[0] ? s.growth[0].name : '-'],
-    ['🔥 기록한 날', s.days + '일 · ' + s.longest + '주 연속'],
-    ['🏅 모은 뱃지', s.badges.length + '개']
+    ['가장 빛난 달', s.bestM ? s.bestM.label + ' ' + wrSigned(s.bestM.change) : '-'],
+    ['성장 주역', s.growth[0] ? s.growth[0].name : '-'],
+    ['기록한 날', s.days + '일 · ' + s.longest + '주 연속'],
+    ['모은 뱃지', s.badges.length + '개']
   ];
   boxes.forEach(function (b, i) {
     var x = 90 + (i % 2) * 460, y = 560 + Math.floor(i / 2) * 230;
@@ -8627,7 +8759,7 @@ async function openCloud(m, okMsg) {
   } catch (e) {
     rows = [];
     setStoreState('error', e.message);
-    setBanner('⚠ ' + escapeHtml(cloudName(m)) + ' 에서 불러오지 못했습니다 — ' + escapeHtml(e.message) +
+    setBanner(ico('alert') + ' ' + escapeHtml(cloudName(m)) + ' 에서 불러오지 못했습니다 — ' + escapeHtml(e.message) +
       ' <button class="btn btn-ghost btn-sm" data-act="cloudReload">↻ 다시 불러오기</button>' +
       ' <button class="btn btn-ghost btn-sm" data-act="cloudOff">PC 파일로 돌아가기</button>', 'error');
   }
@@ -8781,7 +8913,7 @@ function renderCloudSec() {
   if (isCloud()) {
     var st = storeStateText();
     cloudMsg((other ? '지금은 <b>' + cloudName(active) + '</b> 를 쓰는 중입니다. ' + cloudName(pane) + ' 로 바꾸려면 먼저 연동을 해제하세요.<br>'
-                    : '☁ <b>' + cloudName(active) + '</b> 에 저장 중 · ' + escapeHtml(cloudHost(store.cloud || {})) + ' · ' + escapeHtml(st.txt) + '<br>' +
+                    : ico('cloud') + ' <b>' + cloudName(active) + '</b> 에 저장 중 · ' + escapeHtml(cloudHost(store.cloud || {})) + ' · ' + escapeHtml(st.txt) + '<br>' +
                       (active === 'supabase' && cloud.noState ? '<span class="cloud-sub">예전 프로젝트(owners · assets 만)로 쓰는 중 — 자산 기록 · 소유자는 Supabase 에, 목표 · 뱃지 · 연금 포트폴리오는 이 브라우저에 저장됩니다. 함께 저장하려면 "SQL 복사"로 app_state 를 만든 뒤 다시 연결하세요.</span><br>' : '')) +
       '<button type="button" class="btn btn-ghost btn-sm" data-act="cloudReload">↻ 다시 불러오기</button> ' +
       '<button type="button" class="btn btn-ghost btn-sm" data-act="cloudOff">연동 해제 → PC 파일로</button>', other ? 'warn' : 'ok');
@@ -8827,7 +8959,7 @@ $('btnCopyGs').addEventListener('click', function () { copyText(APPS_SCRIPT, 'Ap
    기록이 없을 때 "무엇을 하면 되는지"와 바로가기 버튼을 보여 준다 */
 function guideBox(o) {
   var box = el('div', 'guide' + (o.compact ? ' compact' : ''));
-  if (o.icon) box.appendChild(el('div', 'guide-ico', o.icon));
+  if (o.icon) { var gi = el('div', 'guide-ico'); gi.innerHTML = ico(o.icon); box.appendChild(gi); }
   box.appendChild(el('h3', '', o.title));
   if (o.text) box.appendChild(el('p', '', o.text));
   if (o.steps) {
@@ -8850,7 +8982,7 @@ function guideBox(o) {
 }
 function guideHtml(o) { var d = el('div'); d.appendChild(guideBox(o)); return d.innerHTML; }
 var GUIDE_FIRST_ASSET = {
-  icon: '🌱', title: '아직 등록한 자산이 없어요',
+  icon: 'sprout', title: '아직 등록한 자산이 없어요',
   text: '자산을 하나만 등록해도 순자산 · 목표 달성률이 계산되기 시작합니다.',
   steps: ['<b>새 자산 추가</b>로 계좌 · 부동산 · 대출을 하나씩 등록하세요 (지금 금액과 함께)',
           '다음부터는 <b>입력</b> 화면에서 바뀐 금액만 고쳐 저장하면 됩니다',
@@ -8909,10 +9041,10 @@ var HELP = {
     '<li><b>순자산</b> — 자산 합계 − 부채 합계. 오른쪽 원을 누르면 목표 금액을 바꿉니다.</li>' +
     '<li><b>순자산 추이</b> — 선에 마우스를 올리면 그날 금액. <b>목표 · 예상</b>을 켜면 목표선과 예상선이 함께 그려집니다.</li>' +
     '<li><b>미래 자산 예상</b> — 월 적립액 · 연 수익률을 ＋ − 로 바꿔 보며 목표 도달 시점을 가늠합니다.</li>' +
-    '<li><b>월간 요약</b> — 막대를 눌러 달을 고르면 그 달 가장 많이 늘고 준 자산과 <b>자산 날씨</b>(☀️ 맑음 ~ ⛈ 폭풍우)가 나옵니다.</li>' +
+    '<li><b>월간 요약</b> — 막대를 눌러 달을 고르면 그 달 가장 많이 늘고 준 자산과 <b>자산 날씨</b>(맑음 ~ 폭풍우)가 나옵니다.</li>' +
     '<li><b>선 · 지층</b> — 순자산 추이 카드에서 "지층"을 고르면 부동산 · 증권 · 예금 · 장기 자산이 층으로 쌓인 모습을 봅니다 (점선 = 부채를 뺀 순자산).</li>' +
     '<li><b>기록 잔디</b> — 기록한 날을 칠한 1년 달력. 초록은 오른 날, 빨강은 내린 날이고 칸을 누르면 그달 요약이 열립니다.</li>' +
-    '<li><b>⛰ 등산 지도</b> — 미래 자산 예상 카드의 "등산 지도로 보기"에서, 목표를 정상으로 한 내 위치를 봅니다.</li>' +
+    '<li><b>등산 지도</b> — 미래 자산 예상 카드의 "등산 지도로 보기"에서, 목표를 정상으로 한 내 위치를 봅니다.</li>' +
     '<li>오른쪽 위 소유자 버튼으로 한 사람 것만 모아 볼 수 있습니다.</li></ul>',
     keys: HELP_KEYS_COMMON },
   list: { t: '자산', main:
@@ -8935,8 +9067,8 @@ var HELP = {
     '<h3>이 화면에서</h3><ul>' +
     '<li>그동안 넘어선 마일스톤이 카드로 쌓입니다. 카드를 누르면 그때의 축하를 다시 봅니다.</li>' +
     '<li>위 버튼으로 자산 · 목표 · 부채 등 종류별로 골라 봅니다.</li>' +
-    '<li>맨 위 <b>⛰ 등산 지도</b>는 목표를 정상으로, 10%마다 깃발(넘어선 날짜)을 꽂아 보여 줍니다.</li>' +
-    '<li><b>🎁 연간 결산</b> — 한 해를 슬라이드로 돌아보고 마지막 장에서 이미지로 저장합니다 (← → · 클릭으로 넘기기, Esc 닫기). 12월 · 1월에는 대시보드 위에도 버튼이 나와요.</li></ul>' +
+    '<li>맨 위 <b>등산 지도</b>는 목표를 정상으로, 10%마다 깃발(넘어선 날짜)을 꽂아 보여 줍니다.</li>' +
+    '<li><b>연간 결산</b> — 한 해를 슬라이드로 돌아보고 마지막 장에서 이미지로 저장합니다 (← → · 클릭으로 넘기기, Esc 닫기). 12월 · 1월에는 대시보드 위에도 버튼이 나와요.</li></ul>' +
     '<h3>이럴 때 받아요</h3><ul>' +
     '<li>순자산이 천만원 단위로 새 최고치를 넘을 때, 억 단위를 돌파할 때</li>' +
     '<li>목표의 10%씩 다가갈 때, 목표를 달성할 때</li>' +
@@ -8958,7 +9090,7 @@ var HELP = {
 HELP.cloud = { t: '클라우드 연동', main:
   '<h3>가장 쉬운 방법 — 동기화 폴더에 두기 (PC끼리)</h3><ol class="guide-steps">' +
   '<li><span>PC에 <b>OneDrive</b> · <b>Google Drive 데스크톱</b> · <b>Dropbox</b> 중 하나가 로그인돼 있는지 확인합니다.</span></li>' +
-  '<li><span>그 동기화 폴더 안에 폴더를 만들고(예: <code>OneDrive\\자산현황</code>) <b>설정 → 📁 폴더 선택</b>으로 고릅니다.</span></li>' +
+  '<li><span>그 동기화 폴더 안에 폴더를 만들고(예: <code>OneDrive\\자산현황</code>) <b>설정 → 폴더 선택</b>으로 고릅니다.</span></li>' +
   '<li><span>다른 PC에서도 같은 폴더를 고르면 끝. 저장한 내용이 동기화되면 창으로 돌아올 때 자동으로 다시 불러옵니다.</span></li></ol>' +
   '<ul><li>휴대폰 브라우저는 폴더 저장을 못 해서 <b>PC끼리만</b> 됩니다. 휴대폰도 쓰려면 아래 Supabase · Google Sheet 를 쓰세요.</li>' +
   '<li>두 PC에서 동시에 고치면 동기화 앱이 충돌 사본(<code>asset-data-PC이름.json</code>)을 만들 수 있어요 — 한쪽에서 저장하고 동기화가 끝난 뒤 다른 PC에서 이어 쓰세요.</li></ul>' +
