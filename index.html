@@ -1587,13 +1587,23 @@
     background:var(--accent-wash); color:var(--accent-deep);
   }
 
-  /* ── 탐험 (자산마을 iframe) ─────────── */
-  .explore-wrap {
-    position:relative; height:calc(100vh - 150px); min-height:420px;
-    border-radius:18px; overflow:hidden; border:1px solid var(--border); background:#afced0;
+  /* ── 탐험 (자산마을 iframe) — 연간 결산처럼 화면 전체를 쓴다 ──
+     본문(.main-inner)은 컨테이너 쿼리 때문에 fixed 요소를 가두므로 body 바로 아래에 둔다.
+     사용법 · 설정 창(20) · 토스트(30) · 축하 효과(40)는 그 위에 뜬다 */
+  .explore-ov { position:fixed; inset:0; z-index:15; display:none; background:#afced0; }
+  body.explore-on .explore-ov { display:block; }
+  body.explore-on { overflow:hidden; }
+  body.explore-on .toast { left:50%; }
+  .explore-ov iframe { display:block; width:100%; height:100%; border:0; }
+  .ex-x {
+    position:absolute; top:24px; right:24px; z-index:2; width:46px; height:46px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,.7); cursor:pointer;
+    background:rgba(255,255,249,.94); color:#213e3c; box-shadow:0 4px 16px rgba(33,62,60,.16);
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); transition:background .15s, transform .15s;
   }
-  .explore-wrap iframe { display:block; width:100%; height:100%; border:0; }
-  body.explore-on .main-inner { padding-bottom:16px; }
+  .ex-x:hover { background:#fff; transform:rotate(90deg); }
+  .ex-x svg { width:20px; height:20px; }
+  @media (max-width: 760px) { .ex-x { top:14px; right:13px; width:38px; height:38px; } }
 
   /* ── 기타 ─────────────────────────── */
   .view { display:none; }
@@ -2166,10 +2176,8 @@
     <div id="bdgList"></div>
   </section>
 
-  <!-- ── 탐험: 자산마을(3D) — 문서 끝 #villageSrc 를 처음 열 때 iframe 으로 띄운다 ── -->
-  <section class="view" id="view-explore">
-    <div class="explore-wrap" id="exploreWrap"></div>
-  </section>
+  <!-- ── 탐험: 화면은 body 아래 #exploreOv (전체 화면) 가 그린다 ── -->
+  <section class="view" id="view-explore"></section>
 
   <!-- ── 연금 리밸런싱: 별도 앱을 그대로 끼워 넣는다 (처음 열 때 불러옴) ── -->
   <section class="view" id="view-rebal">
@@ -2374,6 +2382,12 @@
   <div class="sheet wide">
     <div class="card mtn-card" id="mountainBody"></div>
   </div>
+</div>
+
+<!-- 탐험: 자산마을(3D) — 문서 끝 #villageSrc 를 처음 열 때 iframe 으로 띄운다. ✕ · Esc → 대시보드 -->
+<div class="explore-ov" id="exploreOv" role="dialog" aria-label="탐험 — 자산마을">
+  <div id="exploreWrap" style="height:100%"></div>
+  <button type="button" class="ex-x" id="exploreClose" aria-label="닫기 — 대시보드로" title="닫기 — 대시보드로 (Esc)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
 </div>
 
 <!-- 연말 결산 -->
@@ -7016,7 +7030,6 @@ function villageShow() {
     $('exploreWrap').appendChild(f);
     village.frame = f;
   }
-  fitExplore();
   villagePost({ type: 'asset-village:visible', visible: true });
   villageSync();
   try { village.frame.focus(); } catch (e) {}
@@ -7038,16 +7051,8 @@ function villageSync() {
   p.type = 'asset-village:data';
   villagePost(p);
 }
-// iframe 높이 = 창 아래 끝까지 (페이지는 스크롤되지 않게).
-// 화면 전환 애니메이션 중에는 위치가 몇 px 어긋나므로 끝난 뒤 한 번 더 맞춘다
-function fitExplore() {
-  if (currentView !== 'explore') return;
-  var w = $('exploreWrap');
-  var top = w.getBoundingClientRect().top + window.scrollY;
-  w.style.height = Math.max(420, window.innerHeight - top - 16) + 'px';
-}
-window.addEventListener('resize', fitExplore);
-$('view-explore').addEventListener('animationend', fitExplore);
+// 닫기(✕ · Esc) → 대시보드
+$('exploreClose').addEventListener('click', function () { switchView('home'); });
 // 마을에서 '＋ 새로운 금액 기록' — 그 날짜 기록을 덮어쓰고 그룹 · 소유자 · 로고는 최신 기록을 잇는다
 function villageRecord(m) {
   var name = String(m.name || ''), date = String(m.date || ''), amount = Number(m.amount);
@@ -7074,8 +7079,12 @@ window.addEventListener('message', function (e) {
   } else if (m.type === 'asset-village:record') {
     villageRecord(m);
   } else if (m.type === 'asset-village:key') {
+    // 자산 현황의 키 처리와 같게: 열린 창이 있으면 Esc 는 그 창만 닫고, 메뉴 키는 무시
+    var open = document.querySelectorAll('.sheet-back.open');
+    if (open.length) { if (m.key === 'Escape') closeSheet(open[open.length - 1].id); return; }
     if (VIEW_KEYS[m.key]) switchView(VIEW_KEYS[m.key]);
     else if (m.key === '?') openHelp();
+    else if (m.key === 'Escape') switchView('home');
   }
 });
 
@@ -7392,6 +7401,7 @@ document.addEventListener('keydown', function (e) {
   var open = document.querySelectorAll('.sheet-back.open');
   var top = open.length ? open[open.length - 1] : null;
   if (e.key === 'Escape' && top) { closeSheet(top.id); return; }
+  if (e.key === 'Escape' && currentView === 'explore') { switchView('home'); return; }
   if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 's') {
     e.preventDefault();
     if (!top && currentView === 'rebal' && rb.dirty) { rbSaveDraft(); return; }
@@ -9277,6 +9287,7 @@ var HELP = {
     keys: HELP_KEYS_COMMON },
   explore: { t: '탐험', main:
     '<h3>이 화면에서</h3><ul>' +
+    '<li>연간 결산처럼 <b>화면 전체</b>를 씁니다. 오른쪽 위 <b>✕</b>(또는 <kbd>Esc</kbd>)를 누르면 대시보드로 돌아가요.</li>' +
     '<li>자산이 마을이 됩니다 — 부동산은 주택가, 증권은 거래소, 예금은 금고 산책길, 장기는 낚시터, 부채는 상환 정류장에 있어요.</li>' +
     '<li>주택은 금액에 따라 작은 집 → 2층 주택 → 저택으로 커집니다. 1억 미만 자산은 가방이나 상자로 놓여요.</li>' +
     '<li><b>자산마다 하나씩</b> 섭니다 — 증권(거래소 앞) · 장기(호숫가 잔교)는 개수 제한 없이 많으면 조금 작게, 주택은 5채 · 금고는 10개까지예요. 그보다 많으면(부채는 3개 넘게) 마지막 자리에 "외 N개"로 모아 둡니다.</li>' +
@@ -9287,7 +9298,7 @@ var HELP = {
     '<li>금액이 0 인 자산(정리한 계좌 · 다 갚은 대출)은 마을에 세우지 않습니다.</li>' +
     '<li>자산 상세의 <b>＋ 새로운 금액 기록</b>은 입력 화면과 같은 곳에 바로 저장됩니다.</li>' +
     '<li>날씨는 공포 · 탐욕 지수, 주민들은 증권 속보를 전해 줘요 (인터넷 연결 필요).</li></ul>',
-    keys: hk('W A S D / 방향키', '걷기 · 회전') + hk('드래그', '둘러보기') + hk('휠 · ＋ −', '위에서 볼 때 확대 · 축소') + hk('Esc', '상세 닫기') + HELP_KEYS_COMMON },
+    keys: hk('W A S D / 방향키', '걷기 · 회전') + hk('드래그', '둘러보기') + hk('휠 · ＋ −', '위에서 볼 때 확대 · 축소') + hk('Esc', '상세 닫기 · 닫을 게 없으면 대시보드로') + HELP_KEYS_COMMON },
   rebal: { t: '연금 리밸런싱', main:
     '<h3>한 달에 한 번, 이렇게</h3><ol class="guide-steps">' +
     '<li><span><b>종목 · 설정</b> — 처음 한 번: ETF를 검색해 추가하고 목표비중 · 지금 보유수량 · 예수금을 적어 저장.</span></li>' +
@@ -9475,7 +9486,7 @@ initStore();
 .arrival-assets{margin-top:16px}.arrival-assets button{font-size:14px;padding:16px 0}.arrival-assets .asset-value{text-align:right;flex-shrink:0}.arrival-assets b{font-size:16px;color:#22675e}.arrival-assets .asset-value small{font-size:11px}.section-view .world-label small{display:block!important;font-size:11px;font-weight:650;color:#365c4d}@media(max-width:760px){.section-view #detail .eyebrow{font-size:11px}.section-view #detail h2{font-size:20px}.section-view #detail .amount{font-size:24px;margin:8px 0 3px}.section-view #detail .tag{padding:3px 7px}.arrival-assets{margin-top:8px}.arrival-assets button{padding:12px 0}.section-view #detail{max-height:46dvh}.section-view .cameratools{bottom:48dvh}.section-view .world-label small{font-size:10px}}
 #newsDialog{max-width:620px;width:min(620px,calc(100% - 28px));max-height:min(720px,calc(100dvh - 40px));padding:28px 30px}#newsDialog h2{margin-top:10px}.news-status{font-size:12px;color:#708179;margin:0 0 12px}.news-list{display:grid;gap:8px;max-height:440px;overflow:auto;padding-right:4px}.news-card{display:block;width:100%;background:#f0f4eb;border:1px solid #e1e9dc;border-radius:13px;padding:12px 14px;text-align:left;text-decoration:none;color:var(--ink)}.news-card:hover{background:#e6f0e4;transform:translateY(-1px)}.news-card b{display:block;font-size:14px;line-height:1.45}.news-card p{font-size:12px;line-height:1.55;color:#6b7c70;margin:6px 0 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.news-meta{display:flex;justify-content:space-between;gap:8px;margin-top:8px;font-size:10px;color:#849388}.news-refresh{width:100%;margin-top:16px}.npc-label{background:#fff9e8;border-color:#f1dfaf;pointer-events:none}.npc-label b{font-size:11px}.npc-label small{font-size:10px}.npc-label:after{border-top-color:#fff9e8}@media(max-width:760px){#newsDialog{padding:23px 20px;border-radius:22px}.news-list{max-height:50dvh}.news-card b{font-size:13px}}
 #weatherBadge{font-size:11px;letter-spacing:1px;background:#fffff0e8;color:#315c52;border:1px solid #ffffffb8;border-radius:30px;padding:9px 13px;box-shadow:0 4px 18px #32574718;white-space:nowrap}#weatherBadge[data-mode="rain"]{background:#dcecf4;color:#245b72}#weatherBadge[data-mode="snow"]{background:#f4f8ff;color:#41658a}#weatherBadge[data-mode="clouds"]{background:#e9ecec;color:#536466}#weatherBadge[data-mode="rainbow"]{background:linear-gradient(90deg,#fbe0d1,#f6efc8,#d8ebd8,#d9e5f6);color:#4c5b62}@media(max-width:760px){#weatherBadge{position:fixed;top:267px;left:15px;font-size:10px;padding:7px 10px}.walking-view #weatherBadge{top:229px}.section-view #weatherBadge{top:119px}}
-.embedded #import,.embedded #export{display:none!important}.switcher button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.embedded #import,.embedded #export{display:none!important}.embedded header{right:84px}@media(max-width:760px){.embedded header{right:60px}}.switcher button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #timeBadge{font-size:11px;letter-spacing:1px;background:#fffaf0e8;color:#715a35;border:1px solid #ffffffb8;border-radius:30px;padding:9px 13px;box-shadow:0 4px 18px #32574718;white-space:nowrap}#timeBadge[data-mode="night"]{background:#1d2c55e8;color:#edf3ff;border-color:#93a9d466}#timeBadge[data-mode="dusk"]{background:#f3d0b8e8;color:#754638}@media(max-width:760px){#timeBadge{position:fixed;top:305px;left:15px;font-size:10px;padding:7px 10px}.walking-view #timeBadge{top:267px}.section-view #timeBadge{top:157px}}
 </style></head><body>
 <div id="world" aria-label="자산마을 3D 화면. 방향키 또는 WASD로 걷습니다. 구역에 도착하면 해당 자산이 자동으로 열립니다." tabindex="0"></div><div id="labels"></div>
@@ -9690,7 +9701,8 @@ function applyAppData(p){data=fromApp(p);isDemo=!!p.isDemo;if(mode!=='all'&&!dat
   if(first){fullOverview();$('#loading')?.remove();return}const sp=nearestWalkable(pos.x,pos.z);if(sp){player.x=sp.x;player.z=sp.z;placeCharacters(0,false)}drawRoute();const shown=show&&visible.find(a=>a.name===show);if(shown){enterSection(categoryOf(shown));showAsset(show)}else if(oldSection)enterSection(oldSection);else if(cameraMode==='overview')applySectionVisibility()}
 function setPaused(v){paused=v;keys={};if(!v){lastTime=performance.now();resize();if(!pendingFrame){pendingFrame=true;requestAnimationFrame(frame)}}}
 if(EMBED){addEventListener('message',e=>{if(e.source!==parent)return;const m=e.data||{};if(m.type==='asset-village:data')applyAppData(m);else if(m.type==='asset-village:visible')setPaused(!m.visible);else if(m.type==='asset-village:recorded'&&!m.ok)appPendingShow=null});
-  // 마을을 누른 뒤에도 1 ~ 6 · ? 로 자산 현황의 메뉴를 쓸 수 있게 넘긴다
+  // 마을을 누른 뒤에도 1 ~ 6 · ? 로 자산 현황의 메뉴를 쓸 수 있게 넘긴다. Esc 는 상세 · 길 안내를 먼저 닫고, 닫을 게 없으면 자산 현황으로(탐험 닫기)
+  addEventListener('keydown',e=>{if(e.key==='Escape'&&!inputBusy()&&!$('#detail').classList.contains('open')&&!route.length&&!target)parent.postMessage({type:'asset-village:key',key:'Escape'},'*')},true);
   addEventListener('keydown',e=>{if(inputBusy()||e.ctrlKey||e.metaKey||e.altKey)return;if(/^[1-6]$/.test(e.key)||e.key==='?'){e.preventDefault();parent.postMessage({type:'asset-village:key',key:e.key},'*')}});
   parent.postMessage({type:'asset-village:ready'},'*')}
 // Read-only inspection surface for local validation and accessibility tooling.
