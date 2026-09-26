@@ -3689,6 +3689,8 @@ function renderHome() {
   // 사이드바 총자산은 필터와 상관없이 전체
   var allSeries = totalSeries();
   $('headerTotal').textContent = allSeries.length ? fmtHeaderTotal(allSeries[allSeries.length - 1].total) : '';
+  // 대시보드가 숨겨져 있으면 폭이 0이라 차트가 음수 크기로 그려진다 — switchView('home')에서 다시 그린다
+  if (currentView !== 'home') return;
   withDashRows(renderHomeInner);
 }
 
