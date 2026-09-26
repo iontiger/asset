@@ -9766,9 +9766,10 @@ function drawMinimap(){const cv=$('#minimap');if(!cv||getComputedStyle(cv).displ
   const col=c=>categories.find(k=>k.key===c)?.color||'#919485';objects.forEach(o=>{if(o.alias)return;const [a,b]=mmXY(o.x,o.z);x.fillStyle=col(categoryOf(o.asset));x.fillRect(a-4,b-4,8,8)});
   badgeGroups.forEach(g=>{const [a,b]=mmXY(g.position.x,g.position.z);x.fillStyle='#e9b949';x.beginPath();x.arc(a,b,4,0,Math.PI*2);x.fill()});
   x.font='700 17px sans-serif';x.textAlign='center';x.textBaseline='middle';categories.forEach(c=>{const [a,b]=mmXY(c.x,c.z);x.fillStyle='#ffffffd9';x.beginPath();x.arc(a,b,12,0,Math.PI*2);x.fill();x.fillStyle=c.color;x.fillText(c.icon,a,b+1)});
-  const [px,pz]=mmXY(player.x,player.z);x.save();x.translate(px,pz);x.rotate(-player.angle+Math.PI);x.fillStyle='#d6493b';x.beginPath();x.moveTo(0,-9);x.lineTo(6,6);x.lineTo(0,3);x.lineTo(-6,6);x.closePath();x.fill();x.restore()}
+  // 내 위치 — 퍼져 나가는 고리 + 흰 테두리의 큰 화살표가 깜빡인다
+const [px,pz]=mmXY(player.x,player.z),t=performance.now()/1000,ring=(t*.9)%1;x.save();x.translate(px,pz);x.strokeStyle=`rgba(214,73,59,${(1-ring)*.8})`;x.lineWidth=4;x.beginPath();x.arc(0,0,12+ring*26,0,Math.PI*2);x.stroke();x.globalAlpha=.4+.6*(.5+.5*Math.sin(t*7));x.rotate(-player.angle+Math.PI);x.beginPath();x.moveTo(0,-21);x.lineTo(14,13);x.lineTo(0,6);x.lineTo(-14,13);x.closePath();x.lineJoin='round';x.lineWidth=6;x.strokeStyle='#fff';x.stroke();x.fillStyle='#d6493b';x.fill();x.restore()}
 function minimapClick(e){const cv=$('#minimap'),rc=cv.getBoundingClientRect(),mx=(e.clientX-rc.left)/rc.width*MM.W,my=(e.clientY-rc.top)/rc.height*MM.H,wx=(mx-MM.W/2)*47/(MM.W/2-10),wz=(my-MM.H/2)*37/(MM.H/2-10);let best=null,bd=3.5;objects.forEach(o=>{const d=Math.hypot(o.x-wx,o.z-wz);if(d<bd){bd=d;best=o}});if(best){goToAsset(best.asset.name);return}const c=categories.find(c=>Math.hypot(c.x-wx,c.z-wz)<5);if(c){goToCategory(c.key);return}const p=nearestWalkable(wx,wz);if(p)travelTo(p,null)}
-function updateExtras(dt){updateMonthFx();updatePension();updateBoard();updateDecor();if(performance.now()-miniAt>120){miniAt=performance.now();drawMinimap()}}
+function updateExtras(dt){updateMonthFx();updatePension();updateBoard();updateDecor();if(performance.now()-miniAt>50){miniAt=performance.now();drawMinimap()}}
 /* ── 거래소 전광판 · 연금 낚시찌 · 상환 버스 · 마을 꾸밈 · 주민이 전하는 우리 집 소식 ── */
 let kospi=null,pension=null,boardCtx=null,boardTex=null,boardAt=0,bulbs=[],pensionFx=[],decorFx={},busInfo=null,meetCount=0;
 const shortName=s=>String(s).length>9?String(s).slice(0,8)+'…':String(s);
