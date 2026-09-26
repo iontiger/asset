@@ -9332,7 +9332,8 @@ var HELP = {
     '<li><b>연금 낚시찌</b>(호수) — 연금 리밸런싱의 종목마다 찌가 하나. 목표 비중에서 많이 벗어날수록 크게 흔들리고, 누르면 목표 / 지금 비중이 나와요.</li>' +
     '<li><b>상환 버스</b> — 부채가 가장 많았던 날이 출발, 부채 0 이 종점. 갚을수록 버스가 앞으로 가요.</li>' +
     '<li><b>마을 성장</b> — 순자산 1억 꽃 화분 · 3억 2단 분수 · 5억 돛단배 · 10억 열기구 · 20억 등대. 왼쪽 목록의 "마을 성장"을 누르면 다음 단계를 봐요.</li>' +
-    '<li><b>주민</b>을 만날 때마다 우리 집 소식(이번 달 증감 · 효자 자산 · 목표 · 기록 · 상환 · 코스피)과 네이버 증권 속보를 번갈아 하나씩 전해요. 리밸런싱할 때가 되면 모두 그것부터 알려 줘요.</li></ul>' +
+    '<li><b>주민</b>을 만날 때마다 우리 집 소식(이번 달 증감 · 효자 자산 · 목표 · 기록 · 상환 · 코스피)과 네이버 증권 속보를 번갈아 하나씩 전해요. 리밸런싱할 때가 되면 모두 그것부터 알려 줘요. 주민 몇 명은 큰길을 따라 걸어 다녀요.</li>' +
+    '<li><b>풍경</b> — 해의 위치에 맞춰 바뀌는 하늘(낮 · 노을 · 밤), 하늘과 건물이 비치는 호수, 바람에 흔들리는 나무 · 풀, 계절 따라 봄 꽃잎 · 가을 낙엽 · 여름밤 반딧불, 나비와 새 떼가 있어요. 컴퓨터가 버거워하면 효과를 스스로 한 단계씩 줄이고, 설정의 <b>가벼운 모드</b>를 켜면 모두 꺼져요.</li></ul>' +
     '<h3>뱃지 기념물</h3><ul>' +
     '<li><b>억 돌파 석탑</b>(광장 북동쪽) — 억 단위를 넘을 때마다 한 층씩 올라가요.</li>' +
     '<li><b>별 광장</b> — 천만 단위 돌파(금빛) · 순자산 신기록(흰빛)마다 광장 바닥에 별이 박혀요.</li>' +
@@ -9567,6 +9568,2363 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 
 <\/script>
 <script>
+/* three.js r160 add-ons (MIT, © three.js authors) — EffectComposer · RenderPass · ShaderPass · OutputPass · UnrealBloomPass · GTAOPass · Sky · Water.
+   원본 ES 모듈을 전역 THREE 로 쓰도록 파일마다 블록으로 감쌌다 (import → THREE / ADD, export → ADD). */
+/* three.js r160 examples/jsm (EffectComposer, RenderPass, ShaderPass, OutputPass, UnrealBloomPass, GTAOPass, Sky, Water and their shaders)
+   MIT License — Copyright © 2010-2023 three.js authors. Bundled as a classic script exposing window.THREE_ADDONS. */
+window.THREE_ADDONS=(function(){'use strict';const ADD={};
+{ /* shaders/CopyShader */
+const CopyShader = {
+	name: 'CopyShader',
+	uniforms: {
+		'tDiffuse': { value: null },
+		'opacity': { value: 1.0 }
+	},
+	vertexShader: /* glsl */`
+		varying vec2 vUv;
+		void main() {
+			vUv = uv;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+		}`,
+	fragmentShader: /* glsl */`
+		uniform float opacity;
+		uniform sampler2D tDiffuse;
+		varying vec2 vUv;
+		void main() {
+			vec4 texel = texture2D( tDiffuse, vUv );
+			gl_FragColor = opacity * texel;
+		}`
+};
+Object.assign(ADD,{CopyShader});
+}
+{ /* shaders/OutputShader */
+const OutputShader = {
+	name: 'OutputShader',
+	uniforms: {
+		'tDiffuse': { value: null },
+		'toneMappingExposure': { value: 1 }
+	},
+	vertexShader: /* glsl */`
+		precision highp float;
+		uniform mat4 modelViewMatrix;
+		uniform mat4 projectionMatrix;
+		attribute vec3 position;
+		attribute vec2 uv;
+		varying vec2 vUv;
+		void main() {
+			vUv = uv;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+		}`,
+	fragmentShader: /* glsl */`
+		precision highp float;
+		uniform sampler2D tDiffuse;
+		#include <tonemapping_pars_fragment>
+		#include <colorspace_pars_fragment>
+		varying vec2 vUv;
+		void main() {
+			gl_FragColor = texture2D( tDiffuse, vUv );
+			// tone mapping
+			#ifdef LINEAR_TONE_MAPPING
+				gl_FragColor.rgb = LinearToneMapping( gl_FragColor.rgb );
+			#elif defined( REINHARD_TONE_MAPPING )
+				gl_FragColor.rgb = ReinhardToneMapping( gl_FragColor.rgb );
+			#elif defined( CINEON_TONE_MAPPING )
+				gl_FragColor.rgb = OptimizedCineonToneMapping( gl_FragColor.rgb );
+			#elif defined( ACES_FILMIC_TONE_MAPPING )
+				gl_FragColor.rgb = ACESFilmicToneMapping( gl_FragColor.rgb );
+			#elif defined( AGX_TONE_MAPPING )
+				gl_FragColor.rgb = AgXToneMapping( gl_FragColor.rgb );
+			#endif
+			// color space
+			#ifdef SRGB_TRANSFER
+				gl_FragColor = sRGBTransferOETF( gl_FragColor );
+			#endif
+		}`
+};
+Object.assign(ADD,{OutputShader});
+}
+{ /* shaders/LuminosityHighPassShader */
+const {Color}=THREE;
+const LuminosityHighPassShader = {
+	name: 'LuminosityHighPassShader',
+	shaderID: 'luminosityHighPass',
+	uniforms: {
+		'tDiffuse': { value: null },
+		'luminosityThreshold': { value: 1.0 },
+		'smoothWidth': { value: 1.0 },
+		'defaultColor': { value: new Color( 0x000000 ) },
+		'defaultOpacity': { value: 0.0 }
+	},
+	vertexShader: /* glsl */`
+		varying vec2 vUv;
+		void main() {
+			vUv = uv;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+		}`,
+	fragmentShader: /* glsl */`
+		uniform sampler2D tDiffuse;
+		uniform vec3 defaultColor;
+		uniform float defaultOpacity;
+		uniform float luminosityThreshold;
+		uniform float smoothWidth;
+		varying vec2 vUv;
+		void main() {
+			vec4 texel = texture2D( tDiffuse, vUv );
+			vec3 luma = vec3( 0.299, 0.587, 0.114 );
+			float v = dot( texel.xyz, luma );
+			vec4 outputColor = vec4( defaultColor.rgb, defaultOpacity );
+			float alpha = smoothstep( luminosityThreshold, luminosityThreshold + smoothWidth, v );
+			gl_FragColor = mix( outputColor, texel, alpha );
+		}`
+};
+Object.assign(ADD,{LuminosityHighPassShader});
+}
+{ /* shaders/GTAOShader */
+const {DataTexture,Matrix4,RepeatWrapping,Vector2,Vector3}=THREE;
+const GTAOShader = {
+	name: 'GTAOShader',
+	defines: {
+		PERSPECTIVE_CAMERA: 1,
+		SAMPLES: 16,
+		NORMAL_VECTOR_TYPE: 1,
+		DEPTH_SWIZZLING: 'x',
+		SCREEN_SPACE_RADIUS: 0,
+		SCREEN_SPACE_RADIUS_SCALE: 100.0,
+		SCENE_CLIP_BOX: 0,
+	},
+	uniforms: {
+		tNormal: { value: null },
+		tDepth: { value: null },
+		tNoise: { value: null },
+		resolution: { value: new Vector2() },
+		cameraNear: { value: null },
+		cameraFar: { value: null },
+		cameraProjectionMatrix: { value: new Matrix4() },
+		cameraProjectionMatrixInverse: { value: new Matrix4() },
+		cameraWorldMatrix: { value: new Matrix4() },
+		radius: { value: 0.25 },
+		distanceExponent: { value: 1. },
+		thickness: { value: 1. },
+		distanceFallOff: { value: 1. },
+		scale: { value: 1. },
+		sceneBoxMin: { value: new Vector3( - 1, - 1, - 1 ) },
+		sceneBoxMax: { value: new Vector3( 1, 1, 1 ) },
+	},
+	vertexShader: /* glsl */`
+		varying vec2 vUv;
+		void main() {
+			vUv = uv;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+		}`,
+	fragmentShader: /* glsl */`
+		varying vec2 vUv;
+		uniform highp sampler2D tNormal;
+		uniform highp sampler2D tDepth;
+		uniform sampler2D tNoise;
+		uniform vec2 resolution;
+		uniform float cameraNear;
+		uniform float cameraFar;
+		uniform mat4 cameraProjectionMatrix;
+		uniform mat4 cameraProjectionMatrixInverse;		
+		uniform mat4 cameraWorldMatrix;
+		uniform float radius;
+		uniform float distanceExponent;
+		uniform float thickness;
+		uniform float distanceFallOff;
+		uniform float scale;
+		#if SCENE_CLIP_BOX == 1
+			uniform vec3 sceneBoxMin;
+			uniform vec3 sceneBoxMax;
+		#endif
+		#include <common>
+		#include <packing>
+		#ifndef FRAGMENT_OUTPUT
+		#define FRAGMENT_OUTPUT vec4(vec3(ao), 1.)
+		#endif
+		vec3 getViewPosition(const in vec2 screenPosition, const in float depth) {
+			vec4 clipSpacePosition = vec4(vec3(screenPosition, depth) * 2.0 - 1.0, 1.0);
+			vec4 viewSpacePosition = cameraProjectionMatrixInverse * clipSpacePosition;
+			return viewSpacePosition.xyz / viewSpacePosition.w;
+		}
+		float getDepth(const vec2 uv) {  
+			return textureLod(tDepth, uv.xy, 0.0).DEPTH_SWIZZLING;
+		}
+		float fetchDepth(const ivec2 uv) {   
+			return texelFetch(tDepth, uv.xy, 0).DEPTH_SWIZZLING;
+		}
+		float getViewZ(const in float depth) {
+			#if PERSPECTIVE_CAMERA == 1
+				return perspectiveDepthToViewZ(depth, cameraNear, cameraFar);
+			#else
+				return orthographicDepthToViewZ(depth, cameraNear, cameraFar);
+			#endif
+		}
+		vec3 computeNormalFromDepth(const vec2 uv) {
+			vec2 size = vec2(textureSize(tDepth, 0));
+			ivec2 p = ivec2(uv * size);
+			float c0 = fetchDepth(p);
+			float l2 = fetchDepth(p - ivec2(2, 0));
+			float l1 = fetchDepth(p - ivec2(1, 0));
+			float r1 = fetchDepth(p + ivec2(1, 0));
+			float r2 = fetchDepth(p + ivec2(2, 0));
+			float b2 = fetchDepth(p - ivec2(0, 2));
+			float b1 = fetchDepth(p - ivec2(0, 1));
+			float t1 = fetchDepth(p + ivec2(0, 1));
+			float t2 = fetchDepth(p + ivec2(0, 2));
+			float dl = abs((2.0 * l1 - l2) - c0);
+			float dr = abs((2.0 * r1 - r2) - c0);
+			float db = abs((2.0 * b1 - b2) - c0);
+			float dt = abs((2.0 * t1 - t2) - c0);
+			vec3 ce = getViewPosition(uv, c0).xyz;
+			vec3 dpdx = (dl < dr) ? ce - getViewPosition((uv - vec2(1.0 / size.x, 0.0)), l1).xyz : -ce + getViewPosition((uv + vec2(1.0 / size.x, 0.0)), r1).xyz;
+			vec3 dpdy = (db < dt) ? ce - getViewPosition((uv - vec2(0.0, 1.0 / size.y)), b1).xyz : -ce + getViewPosition((uv + vec2(0.0, 1.0 / size.y)), t1).xyz;
+			return normalize(cross(dpdx, dpdy));
+		}
+		vec3 getViewNormal(const vec2 uv) {
+			#if NORMAL_VECTOR_TYPE == 2
+				return normalize(textureLod(tNormal, uv, 0.).rgb);
+			#elif NORMAL_VECTOR_TYPE == 1
+				return unpackRGBToNormal(textureLod(tNormal, uv, 0.).rgb);
+			#else
+				return computeNormalFromDepth(uv);
+			#endif
+		}
+		vec3 getSceneUvAndDepth(vec3 sampleViewPos) {
+			vec4 sampleClipPos = cameraProjectionMatrix * vec4(sampleViewPos, 1.);
+			vec2 sampleUv = sampleClipPos.xy / sampleClipPos.w * 0.5 + 0.5;
+			float sampleSceneDepth = getDepth(sampleUv);
+			return vec3(sampleUv, sampleSceneDepth);
+		}
+		void main() {
+			float depth = getDepth(vUv.xy);
+			if (depth >= 1.0) {
+				discard;
+				return;
+			}
+			vec3 viewPos = getViewPosition(vUv, depth);
+			vec3 viewNormal = getViewNormal(vUv);
+			float radiusToUse = radius;
+			float distanceFalloffToUse = thickness;
+			#if SCREEN_SPACE_RADIUS == 1
+				float radiusScale = getViewPosition(vec2(0.5 + float(SCREEN_SPACE_RADIUS_SCALE) / resolution.x, 0.0), depth).x;
+				radiusToUse *= radiusScale;
+				distanceFalloffToUse *= radiusScale;
+			#endif
+			#if SCENE_CLIP_BOX == 1
+				vec3 worldPos = (cameraWorldMatrix * vec4(viewPos, 1.0)).xyz;
+				float boxDistance = length(max(vec3(0.0), max(sceneBoxMin - worldPos, worldPos - sceneBoxMax)));
+				if (boxDistance > radiusToUse) {
+					discard;
+					return;
+				}
+			#endif
+			vec2 noiseResolution = vec2(textureSize(tNoise, 0));
+			vec2 noiseUv = vUv * resolution / noiseResolution;
+			vec4 noiseTexel = textureLod(tNoise, noiseUv, 0.0);
+			vec3 randomVec = noiseTexel.xyz * 2.0 - 1.0;
+			vec3 tangent = normalize(vec3(randomVec.xy, 0.));
+			vec3 bitangent = vec3(-tangent.y, tangent.x, 0.);
+			mat3 kernelMatrix = mat3(tangent, bitangent, vec3(0., 0., 1.));
+			const int DIRECTIONS = SAMPLES < 30 ? 3 : 5;
+			const int STEPS = (SAMPLES + DIRECTIONS - 1) / DIRECTIONS;
+			float ao = 0.0, totalWeight = 0.0;
+			for (int i = 0; i < DIRECTIONS; ++i) {
+				float angle = float(i) / float(DIRECTIONS) * PI;
+				vec4 sampleDir = vec4(cos(angle), sin(angle), 0., 0.5 + 0.5 * noiseTexel.w); 
+				sampleDir.xyz = normalize(kernelMatrix * sampleDir.xyz);
+				vec3 viewDir = normalize(-viewPos.xyz);
+				vec3 sliceBitangent = normalize(cross(sampleDir.xyz, viewDir));
+				vec3 sliceTangent = cross(sliceBitangent, viewDir);
+				vec3 normalInSlice = normalize(viewNormal - sliceBitangent * dot(viewNormal, sliceBitangent));
+				vec3 tangentToNormalInSlice = cross(normalInSlice, sliceBitangent);
+				vec2 cosHorizons = vec2(dot(viewDir, tangentToNormalInSlice), dot(viewDir, -tangentToNormalInSlice));
+				for (int j = 0; j < STEPS; ++j) {
+					vec3 sampleViewOffset = sampleDir.xyz * radiusToUse * sampleDir.w * pow(float(j + 1) / float(STEPS), distanceExponent);	
+					vec3 sampleSceneUvDepth = getSceneUvAndDepth(viewPos + sampleViewOffset);
+					vec3 sampleSceneViewPos = getViewPosition(sampleSceneUvDepth.xy, sampleSceneUvDepth.z);
+					vec3 viewDelta = sampleSceneViewPos - viewPos;
+					if (abs(viewDelta.z) < thickness) {
+						float sampleCosHorizon = dot(viewDir, normalize(viewDelta));
+						cosHorizons.x += max(0., (sampleCosHorizon - cosHorizons.x) * mix(1., 2. / float(j + 2), distanceFallOff));
+					}		
+					sampleSceneUvDepth = getSceneUvAndDepth(viewPos - sampleViewOffset);
+					sampleSceneViewPos = getViewPosition(sampleSceneUvDepth.xy, sampleSceneUvDepth.z);
+					viewDelta = sampleSceneViewPos - viewPos;
+					if (abs(viewDelta.z) < thickness) {
+						float sampleCosHorizon = dot(viewDir, normalize(viewDelta));
+						cosHorizons.y += max(0., (sampleCosHorizon - cosHorizons.y) * mix(1., 2. / float(j + 2), distanceFallOff));
+					}
+				}
+				vec2 sinHorizons = sqrt(1. - cosHorizons * cosHorizons);
+				float nx = dot(normalInSlice, sliceTangent);
+				float ny = dot(normalInSlice, viewDir);
+				float nxb = 1. / 2. * (acos(cosHorizons.y) - acos(cosHorizons.x) + sinHorizons.x * cosHorizons.x - sinHorizons.y * cosHorizons.y);
+				float nyb = 1. / 2. * (2. - cosHorizons.x * cosHorizons.x - cosHorizons.y * cosHorizons.y);
+				float occlusion = nx * nxb + ny * nyb;
+				ao += occlusion;
+			}
+			ao = clamp(ao / float(DIRECTIONS), 0., 1.);		
+		#if SCENE_CLIP_BOX == 1
+			ao = mix(ao, 1., smoothstep(0., radiusToUse, boxDistance));
+		#endif
+			ao = pow(ao, scale);
+			gl_FragColor = FRAGMENT_OUTPUT;
+		}`
+};
+const GTAODepthShader = {
+	name: 'GTAODepthShader',
+	defines: {
+		PERSPECTIVE_CAMERA: 1
+	},
+	uniforms: {
+		tDepth: { value: null },
+		cameraNear: { value: null },
+		cameraFar: { value: null },
+	},
+	vertexShader: /* glsl */`
+		varying vec2 vUv;
+		void main() {
+			vUv = uv;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+		}`,
+	fragmentShader: /* glsl */`
+		uniform sampler2D tDepth;
+		uniform float cameraNear;
+		uniform float cameraFar;
+		varying vec2 vUv;
+		#include <packing>
+		float getLinearDepth( const in vec2 screenPosition ) {
+			#if PERSPECTIVE_CAMERA == 1
+				float fragCoordZ = texture2D( tDepth, screenPosition ).x;
+				float viewZ = perspectiveDepthToViewZ( fragCoordZ, cameraNear, cameraFar );
+				return viewZToOrthographicDepth( viewZ, cameraNear, cameraFar );
+			#else
+				return texture2D( tDepth, screenPosition ).x;
+			#endif
+		}
+		void main() {
+			float depth = getLinearDepth( vUv );
+			gl_FragColor = vec4( vec3( 1.0 - depth ), 1.0 );
+		}`
+};
+const GTAOBlendShader = {
+	name: 'GTAOBlendShader',
+	uniforms: {
+		tDiffuse: { value: null },
+		intensity: { value: 1.0 }
+	},
+	vertexShader: /* glsl */`
+		varying vec2 vUv;
+		void main() {
+			vUv = uv;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+		}`,
+	fragmentShader: /* glsl */`
+		uniform float intensity;
+		uniform sampler2D tDiffuse;
+		varying vec2 vUv;
+		void main() {
+			vec4 texel = texture2D( tDiffuse, vUv );
+			gl_FragColor = vec4(mix(vec3(1.), texel.rgb, intensity), texel.a);
+		}`
+};
+function generateMagicSquareNoise( size = 5 ) {
+	const noiseSize = Math.floor( size ) % 2 === 0 ? Math.floor( size ) + 1 : Math.floor( size );
+	const magicSquare = generateMagicSquare( noiseSize );
+	const noiseSquareSize = magicSquare.length;
+	const data = new Uint8Array( noiseSquareSize * 4 );
+	for ( let inx = 0; inx < noiseSquareSize; ++ inx ) {
+		const iAng = magicSquare[ inx ];
+		const angle = ( 2 * Math.PI * iAng ) / noiseSquareSize;
+		const randomVec = new Vector3(
+			Math.cos( angle ),
+			Math.sin( angle ),
+			0
+		).normalize();
+		data[ inx * 4 ] = ( randomVec.x * 0.5 + 0.5 ) * 255;
+		data[ inx * 4 + 1 ] = ( randomVec.y * 0.5 + 0.5 ) * 255;
+		data[ inx * 4 + 2 ] = 127;
+		data[ inx * 4 + 3 ] = 255;
+	}
+	const noiseTexture = new DataTexture( data, noiseSize, noiseSize );
+	noiseTexture.wrapS = RepeatWrapping;
+	noiseTexture.wrapT = RepeatWrapping;
+	noiseTexture.needsUpdate = true;
+	return noiseTexture;
+}
+function generateMagicSquare( size ) {
+	const noiseSize = Math.floor( size ) % 2 === 0 ? Math.floor( size ) + 1 : Math.floor( size );
+	const noiseSquareSize = noiseSize * noiseSize;
+	const magicSquare = Array( noiseSquareSize ).fill( 0 );
+	let i = Math.floor( noiseSize / 2 );
+	let j = noiseSize - 1;
+	for ( let num = 1; num <= noiseSquareSize; ) {
+		if ( i === - 1 && j === noiseSize ) {
+			j = noiseSize - 2;
+			i = 0;
+		} else {
+			if ( j === noiseSize ) {
+				j = 0;
+			}
+			if ( i < 0 ) {
+				i = noiseSize - 1;
+			}
+		}
+		if ( magicSquare[ i * noiseSize + j ] !== 0 ) {
+			j -= 2;
+			i ++;
+			continue;
+		} else {
+			magicSquare[ i * noiseSize + j ] = num ++;
+		}
+		j ++;
+		i --;
+	}
+	return magicSquare;
+}
+Object.assign(ADD,{generateMagicSquareNoise,GTAOShader,GTAODepthShader,GTAOBlendShader});
+}
+{ /* shaders/PoissonDenoiseShader */
+const {Matrix4,Vector2,Vector3}=THREE;
+const PoissonDenoiseShader = {
+	name: 'PoissonDenoiseShader',
+	defines: {
+		'SAMPLES': 16,
+		'SAMPLE_VECTORS': generatePdSamplePointInitializer( 16, 2, 1 ),
+		'NORMAL_VECTOR_TYPE': 1,
+		'DEPTH_VALUE_SOURCE': 0,
+	},
+	uniforms: {
+		'tDiffuse': { value: null },
+		'tNormal': { value: null },
+		'tDepth': { value: null },
+		'tNoise': { value: null },
+		'resolution': { value: new Vector2() },
+		'cameraProjectionMatrixInverse': { value: new Matrix4() },
+		'lumaPhi': { value: 5. },
+		'depthPhi': { value: 5. },
+		'normalPhi': { value: 5. },
+		'radius': { value: 4. },
+		'index': { value: 0 }
+	},
+	vertexShader: /* glsl */`
+		varying vec2 vUv;
+		void main() {
+			vUv = uv;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+		}`,
+	fragmentShader: /* glsl */`
+		varying vec2 vUv;
+		uniform sampler2D tDiffuse;
+		uniform sampler2D tNormal;
+		uniform sampler2D tDepth;
+		uniform sampler2D tNoise;
+		uniform vec2 resolution;
+		uniform mat4 cameraProjectionMatrixInverse;
+		uniform float lumaPhi;
+		uniform float depthPhi;
+		uniform float normalPhi;
+		uniform float radius;
+		uniform int index;
+		#include <common>
+		#include <packing>
+		#ifndef SAMPLE_LUMINANCE
+		#define SAMPLE_LUMINANCE dot(vec3(0.2125, 0.7154, 0.0721), a)
+		#endif
+		#ifndef FRAGMENT_OUTPUT
+		#define FRAGMENT_OUTPUT vec4(denoised, 1.)
+		#endif
+		float getLuminance(const in vec3 a) {
+			return SAMPLE_LUMINANCE;
+		}
+		const vec3 poissonDisk[SAMPLES] = SAMPLE_VECTORS;
+		vec3 getViewPosition(const in vec2 screenPosition, const in float depth) {
+			vec4 clipSpacePosition = vec4(vec3(screenPosition, depth) * 2.0 - 1.0, 1.0);
+			vec4 viewSpacePosition = cameraProjectionMatrixInverse * clipSpacePosition;
+			return viewSpacePosition.xyz / viewSpacePosition.w;
+		}
+		float getDepth(const vec2 uv) {
+		#if DEPTH_VALUE_SOURCE == 1    
+			return textureLod(tDepth, uv.xy, 0.0).a;
+		#else
+			return textureLod(tDepth, uv.xy, 0.0).r;
+		#endif
+		}
+		float fetchDepth(const ivec2 uv) {
+			#if DEPTH_VALUE_SOURCE == 1    
+				return texelFetch(tDepth, uv.xy, 0).a;
+			#else
+				return texelFetch(tDepth, uv.xy, 0).r;
+			#endif
+		}
+		vec3 computeNormalFromDepth(const vec2 uv) {
+			vec2 size = vec2(textureSize(tDepth, 0));
+			ivec2 p = ivec2(uv * size);
+			float c0 = fetchDepth(p);
+			float l2 = fetchDepth(p - ivec2(2, 0));
+			float l1 = fetchDepth(p - ivec2(1, 0));
+			float r1 = fetchDepth(p + ivec2(1, 0));
+			float r2 = fetchDepth(p + ivec2(2, 0));
+			float b2 = fetchDepth(p - ivec2(0, 2));
+			float b1 = fetchDepth(p - ivec2(0, 1));
+			float t1 = fetchDepth(p + ivec2(0, 1));
+			float t2 = fetchDepth(p + ivec2(0, 2));
+			float dl = abs((2.0 * l1 - l2) - c0);
+			float dr = abs((2.0 * r1 - r2) - c0);
+			float db = abs((2.0 * b1 - b2) - c0);
+			float dt = abs((2.0 * t1 - t2) - c0);
+			vec3 ce = getViewPosition(uv, c0).xyz;
+			vec3 dpdx = (dl < dr) ?  ce - getViewPosition((uv - vec2(1.0 / size.x, 0.0)), l1).xyz
+									: -ce + getViewPosition((uv + vec2(1.0 / size.x, 0.0)), r1).xyz;
+			vec3 dpdy = (db < dt) ?  ce - getViewPosition((uv - vec2(0.0, 1.0 / size.y)), b1).xyz
+									: -ce + getViewPosition((uv + vec2(0.0, 1.0 / size.y)), t1).xyz;
+			return normalize(cross(dpdx, dpdy));
+		}
+		vec3 getViewNormal(const vec2 uv) {
+		#if NORMAL_VECTOR_TYPE == 2
+			return normalize(textureLod(tNormal, uv, 0.).rgb);
+		#elif NORMAL_VECTOR_TYPE == 1
+			return unpackRGBToNormal(textureLod(tNormal, uv, 0.).rgb);
+		#else
+			return computeNormalFromDepth(uv);
+		#endif
+		}
+		void denoiseSample(in vec3 center, in vec3 viewNormal, in vec3 viewPos, in vec2 sampleUv, inout vec3 denoised, inout float totalWeight) {
+			vec4 sampleTexel = textureLod(tDiffuse, sampleUv, 0.0);
+			float sampleDepth = getDepth(sampleUv);
+			vec3 sampleNormal = getViewNormal(sampleUv);
+			vec3 neighborColor = sampleTexel.rgb;
+			vec3 viewPosSample = getViewPosition(sampleUv, sampleDepth);
+			float normalDiff = dot(viewNormal, sampleNormal);
+			float normalSimilarity = pow(max(normalDiff, 0.), normalPhi);
+			float lumaDiff = abs(getLuminance(neighborColor) - getLuminance(center));
+			float lumaSimilarity = max(1.0 - lumaDiff / lumaPhi, 0.0);
+			float depthDiff = abs(dot(viewPos - viewPosSample, viewNormal));
+			float depthSimilarity = max(1. - depthDiff / depthPhi, 0.);
+			float w = lumaSimilarity * depthSimilarity * normalSimilarity;
+			denoised += w * neighborColor;
+			totalWeight += w;
+		}
+		void main() {
+			float depth = getDepth(vUv.xy);	
+			vec3 viewNormal = getViewNormal(vUv);	
+			if (depth == 1. || dot(viewNormal, viewNormal) == 0.) {
+				discard;
+				return;
+			}
+			vec4 texel = textureLod(tDiffuse, vUv, 0.0);
+			vec3 center = texel.rgb;
+			vec3 viewPos = getViewPosition(vUv, depth);
+			vec2 noiseResolution = vec2(textureSize(tNoise, 0));
+			vec2 noiseUv = vUv * resolution / noiseResolution;
+			vec4 noiseTexel = textureLod(tNoise, noiseUv, 0.0);
+      		vec2 noiseVec = vec2(sin(noiseTexel[index % 4] * 2. * PI), cos(noiseTexel[index % 4] * 2. * PI));
+    		mat2 rotationMatrix = mat2(noiseVec.x, -noiseVec.y, noiseVec.x, noiseVec.y);
+			float totalWeight = 1.0;
+			vec3 denoised = texel.rgb;
+			for (int i = 0; i < SAMPLES; i++) {
+				vec3 sampleDir = poissonDisk[i];
+				vec2 offset = rotationMatrix * (sampleDir.xy * (1. + sampleDir.z * (radius - 1.)) / resolution);
+				vec2 sampleUv = vUv + offset;
+				denoiseSample(center, viewNormal, viewPos, sampleUv, denoised, totalWeight);
+			}
+			if (totalWeight > 0.) { 
+				denoised /= totalWeight;
+			}
+			gl_FragColor = FRAGMENT_OUTPUT;
+		}`
+};
+function generatePdSamplePointInitializer( samples, rings, radiusExponent ) {
+	const poissonDisk = generateDenoiseSamples(
+		samples,
+		rings,
+		radiusExponent,
+	);
+	let glslCode = 'vec3[SAMPLES](';
+	for ( let i = 0; i < samples; i ++ ) {
+		const sample = poissonDisk[ i ];
+		glslCode += `vec3(${sample.x}, ${sample.y}, ${sample.z})${( i < samples - 1 ) ? ',' : ')'}`;
+	}
+	return glslCode;
+}
+function generateDenoiseSamples( numSamples, numRings, radiusExponent ) {
+	const samples = [];
+	for ( let i = 0; i < numSamples; i ++ ) {
+		const angle = 2 * Math.PI * numRings * i / numSamples;
+		const radius = Math.pow( i / ( numSamples - 1 ), radiusExponent );
+		samples.push( new Vector3( Math.cos( angle ), Math.sin( angle ), radius ) );
+	}
+	return samples;
+}
+Object.assign(ADD,{generatePdSamplePointInitializer,PoissonDenoiseShader});
+}
+{ /* math/SimplexNoise */
+// Ported from Stefan Gustavson's java implementation
+// http://staffwww.itn.liu.se/~stegu/simplexnoise/simplexnoise.pdf
+// Read Stefan's excellent paper for details on how this code works.
+//
+// Sean McCullough banksean@gmail.com
+//
+// Added 4D noise
+class SimplexNoise {
+	constructor( r = Math ) {
+		this.grad3 = [[ 1, 1, 0 ], [ - 1, 1, 0 ], [ 1, - 1, 0 ], [ - 1, - 1, 0 ],
+			[ 1, 0, 1 ], [ - 1, 0, 1 ], [ 1, 0, - 1 ], [ - 1, 0, - 1 ],
+			[ 0, 1, 1 ], [ 0, - 1, 1 ], [ 0, 1, - 1 ], [ 0, - 1, - 1 ]];
+		this.grad4 = [[ 0, 1, 1, 1 ], [ 0, 1, 1, - 1 ], [ 0, 1, - 1, 1 ], [ 0, 1, - 1, - 1 ],
+			[ 0, - 1, 1, 1 ], [ 0, - 1, 1, - 1 ], [ 0, - 1, - 1, 1 ], [ 0, - 1, - 1, - 1 ],
+			[ 1, 0, 1, 1 ], [ 1, 0, 1, - 1 ], [ 1, 0, - 1, 1 ], [ 1, 0, - 1, - 1 ],
+			[ - 1, 0, 1, 1 ], [ - 1, 0, 1, - 1 ], [ - 1, 0, - 1, 1 ], [ - 1, 0, - 1, - 1 ],
+			[ 1, 1, 0, 1 ], [ 1, 1, 0, - 1 ], [ 1, - 1, 0, 1 ], [ 1, - 1, 0, - 1 ],
+			[ - 1, 1, 0, 1 ], [ - 1, 1, 0, - 1 ], [ - 1, - 1, 0, 1 ], [ - 1, - 1, 0, - 1 ],
+			[ 1, 1, 1, 0 ], [ 1, 1, - 1, 0 ], [ 1, - 1, 1, 0 ], [ 1, - 1, - 1, 0 ],
+			[ - 1, 1, 1, 0 ], [ - 1, 1, - 1, 0 ], [ - 1, - 1, 1, 0 ], [ - 1, - 1, - 1, 0 ]];
+		this.p = [];
+		for ( let i = 0; i < 256; i ++ ) {
+			this.p[ i ] = Math.floor( r.random() * 256 );
+		}
+		// To remove the need for index wrapping, double the permutation table length
+		this.perm = [];
+		for ( let i = 0; i < 512; i ++ ) {
+			this.perm[ i ] = this.p[ i & 255 ];
+		}
+		// A lookup table to traverse the simplex around a given point in 4D.
+		// Details can be found where this table is used, in the 4D noise method.
+		this.simplex = [
+			[ 0, 1, 2, 3 ], [ 0, 1, 3, 2 ], [ 0, 0, 0, 0 ], [ 0, 2, 3, 1 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 1, 2, 3, 0 ],
+			[ 0, 2, 1, 3 ], [ 0, 0, 0, 0 ], [ 0, 3, 1, 2 ], [ 0, 3, 2, 1 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 1, 3, 2, 0 ],
+			[ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ],
+			[ 1, 2, 0, 3 ], [ 0, 0, 0, 0 ], [ 1, 3, 0, 2 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 2, 3, 0, 1 ], [ 2, 3, 1, 0 ],
+			[ 1, 0, 2, 3 ], [ 1, 0, 3, 2 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 2, 0, 3, 1 ], [ 0, 0, 0, 0 ], [ 2, 1, 3, 0 ],
+			[ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ],
+			[ 2, 0, 1, 3 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 3, 0, 1, 2 ], [ 3, 0, 2, 1 ], [ 0, 0, 0, 0 ], [ 3, 1, 2, 0 ],
+			[ 2, 1, 0, 3 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ], [ 3, 1, 0, 2 ], [ 0, 0, 0, 0 ], [ 3, 2, 0, 1 ], [ 3, 2, 1, 0 ]];
+	}
+	dot( g, x, y ) {
+		return g[ 0 ] * x + g[ 1 ] * y;
+	}
+	dot3( g, x, y, z ) {
+		return g[ 0 ] * x + g[ 1 ] * y + g[ 2 ] * z;
+	}
+	dot4( g, x, y, z, w ) {
+		return g[ 0 ] * x + g[ 1 ] * y + g[ 2 ] * z + g[ 3 ] * w;
+	}
+	noise( xin, yin ) {
+		let n0; // Noise contributions from the three corners
+		let n1;
+		let n2;
+		// Skew the input space to determine which simplex cell we're in
+		const F2 = 0.5 * ( Math.sqrt( 3.0 ) - 1.0 );
+		const s = ( xin + yin ) * F2; // Hairy factor for 2D
+		const i = Math.floor( xin + s );
+		const j = Math.floor( yin + s );
+		const G2 = ( 3.0 - Math.sqrt( 3.0 ) ) / 6.0;
+		const t = ( i + j ) * G2;
+		const X0 = i - t; // Unskew the cell origin back to (x,y) space
+		const Y0 = j - t;
+		const x0 = xin - X0; // The x,y distances from the cell origin
+		const y0 = yin - Y0;
+		// For the 2D case, the simplex shape is an equilateral triangle.
+		// Determine which simplex we are in.
+		let i1; // Offsets for second (middle) corner of simplex in (i,j) coords
+		let j1;
+		if ( x0 > y0 ) {
+			i1 = 1; j1 = 0;
+			// lower triangle, XY order: (0,0)->(1,0)->(1,1)
+		}	else {
+			i1 = 0; j1 = 1;
+		} // upper triangle, YX order: (0,0)->(0,1)->(1,1)
+		// A step of (1,0) in (i,j) means a step of (1-c,-c) in (x,y), and
+		// a step of (0,1) in (i,j) means a step of (-c,1-c) in (x,y), where
+		// c = (3-sqrt(3))/6
+		const x1 = x0 - i1 + G2; // Offsets for middle corner in (x,y) unskewed coords
+		const y1 = y0 - j1 + G2;
+		const x2 = x0 - 1.0 + 2.0 * G2; // Offsets for last corner in (x,y) unskewed coords
+		const y2 = y0 - 1.0 + 2.0 * G2;
+		// Work out the hashed gradient indices of the three simplex corners
+		const ii = i & 255;
+		const jj = j & 255;
+		const gi0 = this.perm[ ii + this.perm[ jj ] ] % 12;
+		const gi1 = this.perm[ ii + i1 + this.perm[ jj + j1 ] ] % 12;
+		const gi2 = this.perm[ ii + 1 + this.perm[ jj + 1 ] ] % 12;
+		// Calculate the contribution from the three corners
+		let t0 = 0.5 - x0 * x0 - y0 * y0;
+		if ( t0 < 0 ) n0 = 0.0;
+		else {
+			t0 *= t0;
+			n0 = t0 * t0 * this.dot( this.grad3[ gi0 ], x0, y0 ); // (x,y) of grad3 used for 2D gradient
+		}
+		let t1 = 0.5 - x1 * x1 - y1 * y1;
+		if ( t1 < 0 ) n1 = 0.0;
+		else {
+			t1 *= t1;
+			n1 = t1 * t1 * this.dot( this.grad3[ gi1 ], x1, y1 );
+		}
+		let t2 = 0.5 - x2 * x2 - y2 * y2;
+		if ( t2 < 0 ) n2 = 0.0;
+		else {
+			t2 *= t2;
+			n2 = t2 * t2 * this.dot( this.grad3[ gi2 ], x2, y2 );
+		}
+		// Add contributions from each corner to get the final noise value.
+		// The result is scaled to return values in the interval [-1,1].
+		return 70.0 * ( n0 + n1 + n2 );
+	}
+	// 3D simplex noise
+	noise3d( xin, yin, zin ) {
+		let n0; // Noise contributions from the four corners
+		let n1;
+		let n2;
+		let n3;
+		// Skew the input space to determine which simplex cell we're in
+		const F3 = 1.0 / 3.0;
+		const s = ( xin + yin + zin ) * F3; // Very nice and simple skew factor for 3D
+		const i = Math.floor( xin + s );
+		const j = Math.floor( yin + s );
+		const k = Math.floor( zin + s );
+		const G3 = 1.0 / 6.0; // Very nice and simple unskew factor, too
+		const t = ( i + j + k ) * G3;
+		const X0 = i - t; // Unskew the cell origin back to (x,y,z) space
+		const Y0 = j - t;
+		const Z0 = k - t;
+		const x0 = xin - X0; // The x,y,z distances from the cell origin
+		const y0 = yin - Y0;
+		const z0 = zin - Z0;
+		// For the 3D case, the simplex shape is a slightly irregular tetrahedron.
+		// Determine which simplex we are in.
+		let i1; // Offsets for second corner of simplex in (i,j,k) coords
+		let j1;
+		let k1;
+		let i2; // Offsets for third corner of simplex in (i,j,k) coords
+		let j2;
+		let k2;
+		if ( x0 >= y0 ) {
+			if ( y0 >= z0 ) {
+				i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 1; k2 = 0;
+				// X Y Z order
+			} else if ( x0 >= z0 ) {
+				i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 0; k2 = 1;
+				// X Z Y order
+			} else {
+				i1 = 0; j1 = 0; k1 = 1; i2 = 1; j2 = 0; k2 = 1;
+			} // Z X Y order
+		} else { // x0<y0
+			if ( y0 < z0 ) {
+				i1 = 0; j1 = 0; k1 = 1; i2 = 0; j2 = 1; k2 = 1;
+				// Z Y X order
+			} else if ( x0 < z0 ) {
+				i1 = 0; j1 = 1; k1 = 0; i2 = 0; j2 = 1; k2 = 1;
+				// Y Z X order
+			} else {
+				i1 = 0; j1 = 1; k1 = 0; i2 = 1; j2 = 1; k2 = 0;
+			} // Y X Z order
+		}
+		// A step of (1,0,0) in (i,j,k) means a step of (1-c,-c,-c) in (x,y,z),
+		// a step of (0,1,0) in (i,j,k) means a step of (-c,1-c,-c) in (x,y,z), and
+		// a step of (0,0,1) in (i,j,k) means a step of (-c,-c,1-c) in (x,y,z), where
+		// c = 1/6.
+		const x1 = x0 - i1 + G3; // Offsets for second corner in (x,y,z) coords
+		const y1 = y0 - j1 + G3;
+		const z1 = z0 - k1 + G3;
+		const x2 = x0 - i2 + 2.0 * G3; // Offsets for third corner in (x,y,z) coords
+		const y2 = y0 - j2 + 2.0 * G3;
+		const z2 = z0 - k2 + 2.0 * G3;
+		const x3 = x0 - 1.0 + 3.0 * G3; // Offsets for last corner in (x,y,z) coords
+		const y3 = y0 - 1.0 + 3.0 * G3;
+		const z3 = z0 - 1.0 + 3.0 * G3;
+		// Work out the hashed gradient indices of the four simplex corners
+		const ii = i & 255;
+		const jj = j & 255;
+		const kk = k & 255;
+		const gi0 = this.perm[ ii + this.perm[ jj + this.perm[ kk ] ] ] % 12;
+		const gi1 = this.perm[ ii + i1 + this.perm[ jj + j1 + this.perm[ kk + k1 ] ] ] % 12;
+		const gi2 = this.perm[ ii + i2 + this.perm[ jj + j2 + this.perm[ kk + k2 ] ] ] % 12;
+		const gi3 = this.perm[ ii + 1 + this.perm[ jj + 1 + this.perm[ kk + 1 ] ] ] % 12;
+		// Calculate the contribution from the four corners
+		let t0 = 0.6 - x0 * x0 - y0 * y0 - z0 * z0;
+		if ( t0 < 0 ) n0 = 0.0;
+		else {
+			t0 *= t0;
+			n0 = t0 * t0 * this.dot3( this.grad3[ gi0 ], x0, y0, z0 );
+		}
+		let t1 = 0.6 - x1 * x1 - y1 * y1 - z1 * z1;
+		if ( t1 < 0 ) n1 = 0.0;
+		else {
+			t1 *= t1;
+			n1 = t1 * t1 * this.dot3( this.grad3[ gi1 ], x1, y1, z1 );
+		}
+		let t2 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2;
+		if ( t2 < 0 ) n2 = 0.0;
+		else {
+			t2 *= t2;
+			n2 = t2 * t2 * this.dot3( this.grad3[ gi2 ], x2, y2, z2 );
+		}
+		let t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3;
+		if ( t3 < 0 ) n3 = 0.0;
+		else {
+			t3 *= t3;
+			n3 = t3 * t3 * this.dot3( this.grad3[ gi3 ], x3, y3, z3 );
+		}
+		// Add contributions from each corner to get the final noise value.
+		// The result is scaled to stay just inside [-1,1]
+		return 32.0 * ( n0 + n1 + n2 + n3 );
+	}
+	// 4D simplex noise
+	noise4d( x, y, z, w ) {
+		// For faster and easier lookups
+		const grad4 = this.grad4;
+		const simplex = this.simplex;
+		const perm = this.perm;
+		// The skewing and unskewing factors are hairy again for the 4D case
+		const F4 = ( Math.sqrt( 5.0 ) - 1.0 ) / 4.0;
+		const G4 = ( 5.0 - Math.sqrt( 5.0 ) ) / 20.0;
+		let n0; // Noise contributions from the five corners
+		let n1;
+		let n2;
+		let n3;
+		let n4;
+		// Skew the (x,y,z,w) space to determine which cell of 24 simplices we're in
+		const s = ( x + y + z + w ) * F4; // Factor for 4D skewing
+		const i = Math.floor( x + s );
+		const j = Math.floor( y + s );
+		const k = Math.floor( z + s );
+		const l = Math.floor( w + s );
+		const t = ( i + j + k + l ) * G4; // Factor for 4D unskewing
+		const X0 = i - t; // Unskew the cell origin back to (x,y,z,w) space
+		const Y0 = j - t;
+		const Z0 = k - t;
+		const W0 = l - t;
+		const x0 = x - X0; // The x,y,z,w distances from the cell origin
+		const y0 = y - Y0;
+		const z0 = z - Z0;
+		const w0 = w - W0;
+		// For the 4D case, the simplex is a 4D shape I won't even try to describe.
+		// To find out which of the 24 possible simplices we're in, we need to
+		// determine the magnitude ordering of x0, y0, z0 and w0.
+		// The method below is a good way of finding the ordering of x,y,z,w and
+		// then find the correct traversal order for the simplex we’re in.
+		// First, six pair-wise comparisons are performed between each possible pair
+		// of the four coordinates, and the results are used to add up binary bits
+		// for an integer index.
+		const c1 = ( x0 > y0 ) ? 32 : 0;
+		const c2 = ( x0 > z0 ) ? 16 : 0;
+		const c3 = ( y0 > z0 ) ? 8 : 0;
+		const c4 = ( x0 > w0 ) ? 4 : 0;
+		const c5 = ( y0 > w0 ) ? 2 : 0;
+		const c6 = ( z0 > w0 ) ? 1 : 0;
+		const c = c1 + c2 + c3 + c4 + c5 + c6;
+		// simplex[c] is a 4-vector with the numbers 0, 1, 2 and 3 in some order.
+		// Many values of c will never occur, since e.g. x>y>z>w makes x<z, y<w and x<w
+		// impossible. Only the 24 indices which have non-zero entries make any sense.
+		// We use a thresholding to set the coordinates in turn from the largest magnitude.
+		// The number 3 in the "simplex" array is at the position of the largest coordinate.
+		const i1 = simplex[ c ][ 0 ] >= 3 ? 1 : 0;
+		const j1 = simplex[ c ][ 1 ] >= 3 ? 1 : 0;
+		const k1 = simplex[ c ][ 2 ] >= 3 ? 1 : 0;
+		const l1 = simplex[ c ][ 3 ] >= 3 ? 1 : 0;
+		// The number 2 in the "simplex" array is at the second largest coordinate.
+		const i2 = simplex[ c ][ 0 ] >= 2 ? 1 : 0;
+		const j2 = simplex[ c ][ 1 ] >= 2 ? 1 : 0;
+		const k2 = simplex[ c ][ 2 ] >= 2 ? 1 : 0;
+		const l2 = simplex[ c ][ 3 ] >= 2 ? 1 : 0;
+		// The number 1 in the "simplex" array is at the second smallest coordinate.
+		const i3 = simplex[ c ][ 0 ] >= 1 ? 1 : 0;
+		const j3 = simplex[ c ][ 1 ] >= 1 ? 1 : 0;
+		const k3 = simplex[ c ][ 2 ] >= 1 ? 1 : 0;
+		const l3 = simplex[ c ][ 3 ] >= 1 ? 1 : 0;
+		// The fifth corner has all coordinate offsets = 1, so no need to look that up.
+		const x1 = x0 - i1 + G4; // Offsets for second corner in (x,y,z,w) coords
+		const y1 = y0 - j1 + G4;
+		const z1 = z0 - k1 + G4;
+		const w1 = w0 - l1 + G4;
+		const x2 = x0 - i2 + 2.0 * G4; // Offsets for third corner in (x,y,z,w) coords
+		const y2 = y0 - j2 + 2.0 * G4;
+		const z2 = z0 - k2 + 2.0 * G4;
+		const w2 = w0 - l2 + 2.0 * G4;
+		const x3 = x0 - i3 + 3.0 * G4; // Offsets for fourth corner in (x,y,z,w) coords
+		const y3 = y0 - j3 + 3.0 * G4;
+		const z3 = z0 - k3 + 3.0 * G4;
+		const w3 = w0 - l3 + 3.0 * G4;
+		const x4 = x0 - 1.0 + 4.0 * G4; // Offsets for last corner in (x,y,z,w) coords
+		const y4 = y0 - 1.0 + 4.0 * G4;
+		const z4 = z0 - 1.0 + 4.0 * G4;
+		const w4 = w0 - 1.0 + 4.0 * G4;
+		// Work out the hashed gradient indices of the five simplex corners
+		const ii = i & 255;
+		const jj = j & 255;
+		const kk = k & 255;
+		const ll = l & 255;
+		const gi0 = perm[ ii + perm[ jj + perm[ kk + perm[ ll ] ] ] ] % 32;
+		const gi1 = perm[ ii + i1 + perm[ jj + j1 + perm[ kk + k1 + perm[ ll + l1 ] ] ] ] % 32;
+		const gi2 = perm[ ii + i2 + perm[ jj + j2 + perm[ kk + k2 + perm[ ll + l2 ] ] ] ] % 32;
+		const gi3 = perm[ ii + i3 + perm[ jj + j3 + perm[ kk + k3 + perm[ ll + l3 ] ] ] ] % 32;
+		const gi4 = perm[ ii + 1 + perm[ jj + 1 + perm[ kk + 1 + perm[ ll + 1 ] ] ] ] % 32;
+		// Calculate the contribution from the five corners
+		let t0 = 0.6 - x0 * x0 - y0 * y0 - z0 * z0 - w0 * w0;
+		if ( t0 < 0 ) n0 = 0.0;
+		else {
+			t0 *= t0;
+			n0 = t0 * t0 * this.dot4( grad4[ gi0 ], x0, y0, z0, w0 );
+		}
+		let t1 = 0.6 - x1 * x1 - y1 * y1 - z1 * z1 - w1 * w1;
+		if ( t1 < 0 ) n1 = 0.0;
+		else {
+			t1 *= t1;
+			n1 = t1 * t1 * this.dot4( grad4[ gi1 ], x1, y1, z1, w1 );
+		}
+		let t2 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2 - w2 * w2;
+		if ( t2 < 0 ) n2 = 0.0;
+		else {
+			t2 *= t2;
+			n2 = t2 * t2 * this.dot4( grad4[ gi2 ], x2, y2, z2, w2 );
+		}
+		let t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3 - w3 * w3;
+		if ( t3 < 0 ) n3 = 0.0;
+		else {
+			t3 *= t3;
+			n3 = t3 * t3 * this.dot4( grad4[ gi3 ], x3, y3, z3, w3 );
+		}
+		let t4 = 0.6 - x4 * x4 - y4 * y4 - z4 * z4 - w4 * w4;
+		if ( t4 < 0 ) n4 = 0.0;
+		else {
+			t4 *= t4;
+			n4 = t4 * t4 * this.dot4( grad4[ gi4 ], x4, y4, z4, w4 );
+		}
+		// Sum up and scale the result to cover the range [-1,1]
+		return 27.0 * ( n0 + n1 + n2 + n3 + n4 );
+	}
+}
+Object.assign(ADD,{SimplexNoise});
+}
+{ /* postprocessing/Pass */
+const {BufferGeometry,Float32BufferAttribute,OrthographicCamera,Mesh}=THREE;
+class Pass {
+	constructor() {
+		this.isPass = true;
+		// if set to true, the pass is processed by the composer
+		this.enabled = true;
+		// if set to true, the pass indicates to swap read and write buffer after rendering
+		this.needsSwap = true;
+		// if set to true, the pass clears its buffer before rendering
+		this.clear = false;
+		// if set to true, the result of the pass is rendered to screen. This is set automatically by EffectComposer.
+		this.renderToScreen = false;
+	}
+	setSize( /* width, height */ ) {}
+	render( /* renderer, writeBuffer, readBuffer, deltaTime, maskActive */ ) {
+		console.error( 'THREE.Pass: .render() must be implemented in derived pass.' );
+	}
+	dispose() {}
+}
+// Helper for passes that need to fill the viewport with a single quad.
+const _camera = new OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+// https://github.com/mrdoob/three.js/pull/21358
+class FullscreenTriangleGeometry extends BufferGeometry {
+	constructor() {
+		super();
+		this.setAttribute( 'position', new Float32BufferAttribute( [ - 1, 3, 0, - 1, - 1, 0, 3, - 1, 0 ], 3 ) );
+		this.setAttribute( 'uv', new Float32BufferAttribute( [ 0, 2, 0, 0, 2, 0 ], 2 ) );
+	}
+}
+const _geometry = new FullscreenTriangleGeometry();
+class FullScreenQuad {
+	constructor( material ) {
+		this._mesh = new Mesh( _geometry, material );
+	}
+	dispose() {
+		this._mesh.geometry.dispose();
+	}
+	render( renderer ) {
+		renderer.render( this._mesh, _camera );
+	}
+	get material() {
+		return this._mesh.material;
+	}
+	set material( value ) {
+		this._mesh.material = value;
+	}
+}
+Object.assign(ADD,{Pass,FullScreenQuad});
+}
+{ /* postprocessing/ShaderPass */
+const {ShaderMaterial,UniformsUtils}=THREE;
+const {Pass,FullScreenQuad}=ADD;
+class ShaderPass extends Pass {
+	constructor( shader, textureID ) {
+		super();
+		this.textureID = ( textureID !== undefined ) ? textureID : 'tDiffuse';
+		if ( shader instanceof ShaderMaterial ) {
+			this.uniforms = shader.uniforms;
+			this.material = shader;
+		} else if ( shader ) {
+			this.uniforms = UniformsUtils.clone( shader.uniforms );
+			this.material = new ShaderMaterial( {
+				name: ( shader.name !== undefined ) ? shader.name : 'unspecified',
+				defines: Object.assign( {}, shader.defines ),
+				uniforms: this.uniforms,
+				vertexShader: shader.vertexShader,
+				fragmentShader: shader.fragmentShader
+			} );
+		}
+		this.fsQuad = new FullScreenQuad( this.material );
+	}
+	render( renderer, writeBuffer, readBuffer /*, deltaTime, maskActive */ ) {
+		if ( this.uniforms[ this.textureID ] ) {
+			this.uniforms[ this.textureID ].value = readBuffer.texture;
+		}
+		this.fsQuad.material = this.material;
+		if ( this.renderToScreen ) {
+			renderer.setRenderTarget( null );
+			this.fsQuad.render( renderer );
+		} else {
+			renderer.setRenderTarget( writeBuffer );
+			// TODO: Avoid using autoClear properties, see https://github.com/mrdoob/three.js/pull/15571#issuecomment-465669600
+			if ( this.clear ) renderer.clear( renderer.autoClearColor, renderer.autoClearDepth, renderer.autoClearStencil );
+			this.fsQuad.render( renderer );
+		}
+	}
+	dispose() {
+		this.material.dispose();
+		this.fsQuad.dispose();
+	}
+}
+Object.assign(ADD,{ShaderPass});
+}
+{ /* postprocessing/MaskPass */
+const {Pass}=ADD;
+class MaskPass extends Pass {
+	constructor( scene, camera ) {
+		super();
+		this.scene = scene;
+		this.camera = camera;
+		this.clear = true;
+		this.needsSwap = false;
+		this.inverse = false;
+	}
+	render( renderer, writeBuffer, readBuffer /*, deltaTime, maskActive */ ) {
+		const context = renderer.getContext();
+		const state = renderer.state;
+		// don't update color or depth
+		state.buffers.color.setMask( false );
+		state.buffers.depth.setMask( false );
+		// lock buffers
+		state.buffers.color.setLocked( true );
+		state.buffers.depth.setLocked( true );
+		// set up stencil
+		let writeValue, clearValue;
+		if ( this.inverse ) {
+			writeValue = 0;
+			clearValue = 1;
+		} else {
+			writeValue = 1;
+			clearValue = 0;
+		}
+		state.buffers.stencil.setTest( true );
+		state.buffers.stencil.setOp( context.REPLACE, context.REPLACE, context.REPLACE );
+		state.buffers.stencil.setFunc( context.ALWAYS, writeValue, 0xffffffff );
+		state.buffers.stencil.setClear( clearValue );
+		state.buffers.stencil.setLocked( true );
+		// draw into the stencil buffer
+		renderer.setRenderTarget( readBuffer );
+		if ( this.clear ) renderer.clear();
+		renderer.render( this.scene, this.camera );
+		renderer.setRenderTarget( writeBuffer );
+		if ( this.clear ) renderer.clear();
+		renderer.render( this.scene, this.camera );
+		// unlock color and depth buffer and make them writable for subsequent rendering/clearing
+		state.buffers.color.setLocked( false );
+		state.buffers.depth.setLocked( false );
+		state.buffers.color.setMask( true );
+		state.buffers.depth.setMask( true );
+		// only render where stencil is set to 1
+		state.buffers.stencil.setLocked( false );
+		state.buffers.stencil.setFunc( context.EQUAL, 1, 0xffffffff ); // draw if == 1
+		state.buffers.stencil.setOp( context.KEEP, context.KEEP, context.KEEP );
+		state.buffers.stencil.setLocked( true );
+	}
+}
+class ClearMaskPass extends Pass {
+	constructor() {
+		super();
+		this.needsSwap = false;
+	}
+	render( renderer /*, writeBuffer, readBuffer, deltaTime, maskActive */ ) {
+		renderer.state.buffers.stencil.setLocked( false );
+		renderer.state.buffers.stencil.setTest( false );
+	}
+}
+Object.assign(ADD,{MaskPass,ClearMaskPass});
+}
+{ /* postprocessing/EffectComposer */
+const {Clock,HalfFloatType,NoBlending,Vector2,WebGLRenderTarget}=THREE;
+const {CopyShader}=ADD;
+const {ShaderPass}=ADD;
+const {MaskPass}=ADD;
+const {ClearMaskPass}=ADD;
+class EffectComposer {
+	constructor( renderer, renderTarget ) {
+		this.renderer = renderer;
+		this._pixelRatio = renderer.getPixelRatio();
+		if ( renderTarget === undefined ) {
+			const size = renderer.getSize( new Vector2() );
+			this._width = size.width;
+			this._height = size.height;
+			renderTarget = new WebGLRenderTarget( this._width * this._pixelRatio, this._height * this._pixelRatio, { type: HalfFloatType } );
+			renderTarget.texture.name = 'EffectComposer.rt1';
+		} else {
+			this._width = renderTarget.width;
+			this._height = renderTarget.height;
+		}
+		this.renderTarget1 = renderTarget;
+		this.renderTarget2 = renderTarget.clone();
+		this.renderTarget2.texture.name = 'EffectComposer.rt2';
+		this.writeBuffer = this.renderTarget1;
+		this.readBuffer = this.renderTarget2;
+		this.renderToScreen = true;
+		this.passes = [];
+		this.copyPass = new ShaderPass( CopyShader );
+		this.copyPass.material.blending = NoBlending;
+		this.clock = new Clock();
+	}
+	swapBuffers() {
+		const tmp = this.readBuffer;
+		this.readBuffer = this.writeBuffer;
+		this.writeBuffer = tmp;
+	}
+	addPass( pass ) {
+		this.passes.push( pass );
+		pass.setSize( this._width * this._pixelRatio, this._height * this._pixelRatio );
+	}
+	insertPass( pass, index ) {
+		this.passes.splice( index, 0, pass );
+		pass.setSize( this._width * this._pixelRatio, this._height * this._pixelRatio );
+	}
+	removePass( pass ) {
+		const index = this.passes.indexOf( pass );
+		if ( index !== - 1 ) {
+			this.passes.splice( index, 1 );
+		}
+	}
+	isLastEnabledPass( passIndex ) {
+		for ( let i = passIndex + 1; i < this.passes.length; i ++ ) {
+			if ( this.passes[ i ].enabled ) {
+				return false;
+			}
+		}
+		return true;
+	}
+	render( deltaTime ) {
+		// deltaTime value is in seconds
+		if ( deltaTime === undefined ) {
+			deltaTime = this.clock.getDelta();
+		}
+		const currentRenderTarget = this.renderer.getRenderTarget();
+		let maskActive = false;
+		for ( let i = 0, il = this.passes.length; i < il; i ++ ) {
+			const pass = this.passes[ i ];
+			if ( pass.enabled === false ) continue;
+			pass.renderToScreen = ( this.renderToScreen && this.isLastEnabledPass( i ) );
+			pass.render( this.renderer, this.writeBuffer, this.readBuffer, deltaTime, maskActive );
+			if ( pass.needsSwap ) {
+				if ( maskActive ) {
+					const context = this.renderer.getContext();
+					const stencil = this.renderer.state.buffers.stencil;
+					//context.stencilFunc( context.NOTEQUAL, 1, 0xffffffff );
+					stencil.setFunc( context.NOTEQUAL, 1, 0xffffffff );
+					this.copyPass.render( this.renderer, this.writeBuffer, this.readBuffer, deltaTime );
+					//context.stencilFunc( context.EQUAL, 1, 0xffffffff );
+					stencil.setFunc( context.EQUAL, 1, 0xffffffff );
+				}
+				this.swapBuffers();
+			}
+			if ( MaskPass !== undefined ) {
+				if ( pass instanceof MaskPass ) {
+					maskActive = true;
+				} else if ( pass instanceof ClearMaskPass ) {
+					maskActive = false;
+				}
+			}
+		}
+		this.renderer.setRenderTarget( currentRenderTarget );
+	}
+	reset( renderTarget ) {
+		if ( renderTarget === undefined ) {
+			const size = this.renderer.getSize( new Vector2() );
+			this._pixelRatio = this.renderer.getPixelRatio();
+			this._width = size.width;
+			this._height = size.height;
+			renderTarget = this.renderTarget1.clone();
+			renderTarget.setSize( this._width * this._pixelRatio, this._height * this._pixelRatio );
+		}
+		this.renderTarget1.dispose();
+		this.renderTarget2.dispose();
+		this.renderTarget1 = renderTarget;
+		this.renderTarget2 = renderTarget.clone();
+		this.writeBuffer = this.renderTarget1;
+		this.readBuffer = this.renderTarget2;
+	}
+	setSize( width, height ) {
+		this._width = width;
+		this._height = height;
+		const effectiveWidth = this._width * this._pixelRatio;
+		const effectiveHeight = this._height * this._pixelRatio;
+		this.renderTarget1.setSize( effectiveWidth, effectiveHeight );
+		this.renderTarget2.setSize( effectiveWidth, effectiveHeight );
+		for ( let i = 0; i < this.passes.length; i ++ ) {
+			this.passes[ i ].setSize( effectiveWidth, effectiveHeight );
+		}
+	}
+	setPixelRatio( pixelRatio ) {
+		this._pixelRatio = pixelRatio;
+		this.setSize( this._width, this._height );
+	}
+	dispose() {
+		this.renderTarget1.dispose();
+		this.renderTarget2.dispose();
+		this.copyPass.dispose();
+	}
+}
+Object.assign(ADD,{EffectComposer});
+}
+{ /* postprocessing/RenderPass */
+const {Color}=THREE;
+const {Pass}=ADD;
+class RenderPass extends Pass {
+	constructor( scene, camera, overrideMaterial = null, clearColor = null, clearAlpha = null ) {
+		super();
+		this.scene = scene;
+		this.camera = camera;
+		this.overrideMaterial = overrideMaterial;
+		this.clearColor = clearColor;
+		this.clearAlpha = clearAlpha;
+		this.clear = true;
+		this.clearDepth = false;
+		this.needsSwap = false;
+		this._oldClearColor = new Color();
+	}
+	render( renderer, writeBuffer, readBuffer /*, deltaTime, maskActive */ ) {
+		const oldAutoClear = renderer.autoClear;
+		renderer.autoClear = false;
+		let oldClearAlpha, oldOverrideMaterial;
+		if ( this.overrideMaterial !== null ) {
+			oldOverrideMaterial = this.scene.overrideMaterial;
+			this.scene.overrideMaterial = this.overrideMaterial;
+		}
+		if ( this.clearColor !== null ) {
+			renderer.getClearColor( this._oldClearColor );
+			renderer.setClearColor( this.clearColor );
+		}
+		if ( this.clearAlpha !== null ) {
+			oldClearAlpha = renderer.getClearAlpha();
+			renderer.setClearAlpha( this.clearAlpha );
+		}
+		if ( this.clearDepth == true ) {
+			renderer.clearDepth();
+		}
+		renderer.setRenderTarget( this.renderToScreen ? null : readBuffer );
+		if ( this.clear === true ) {
+			// TODO: Avoid using autoClear properties, see https://github.com/mrdoob/three.js/pull/15571#issuecomment-465669600
+			renderer.clear( renderer.autoClearColor, renderer.autoClearDepth, renderer.autoClearStencil );
+		}
+		renderer.render( this.scene, this.camera );
+		// restore
+		if ( this.clearColor !== null ) {
+			renderer.setClearColor( this._oldClearColor );
+		}
+		if ( this.clearAlpha !== null ) {
+			renderer.setClearAlpha( oldClearAlpha );
+		}
+		if ( this.overrideMaterial !== null ) {
+			this.scene.overrideMaterial = oldOverrideMaterial;
+		}
+		renderer.autoClear = oldAutoClear;
+	}
+}
+Object.assign(ADD,{RenderPass});
+}
+{ /* postprocessing/OutputPass */
+const {ColorManagement,RawShaderMaterial,UniformsUtils,LinearToneMapping,ReinhardToneMapping,CineonToneMapping,AgXToneMapping,ACESFilmicToneMapping,SRGBTransfer}=THREE;
+const {Pass,FullScreenQuad}=ADD;
+const {OutputShader}=ADD;
+class OutputPass extends Pass {
+	constructor() {
+		super();
+		//
+		const shader = OutputShader;
+		this.uniforms = UniformsUtils.clone( shader.uniforms );
+		this.material = new RawShaderMaterial( {
+			name: shader.name,
+			uniforms: this.uniforms,
+			vertexShader: shader.vertexShader,
+			fragmentShader: shader.fragmentShader
+		} );
+		this.fsQuad = new FullScreenQuad( this.material );
+		// internal cache
+		this._outputColorSpace = null;
+		this._toneMapping = null;
+	}
+	render( renderer, writeBuffer, readBuffer/*, deltaTime, maskActive */ ) {
+		this.uniforms[ 'tDiffuse' ].value = readBuffer.texture;
+		this.uniforms[ 'toneMappingExposure' ].value = renderer.toneMappingExposure;
+		// rebuild defines if required
+		if ( this._outputColorSpace !== renderer.outputColorSpace || this._toneMapping !== renderer.toneMapping ) {
+			this._outputColorSpace = renderer.outputColorSpace;
+			this._toneMapping = renderer.toneMapping;
+			this.material.defines = {};
+			if ( ColorManagement.getTransfer( this._outputColorSpace ) === SRGBTransfer ) this.material.defines.SRGB_TRANSFER = '';
+			if ( this._toneMapping === LinearToneMapping ) this.material.defines.LINEAR_TONE_MAPPING = '';
+			else if ( this._toneMapping === ReinhardToneMapping ) this.material.defines.REINHARD_TONE_MAPPING = '';
+			else if ( this._toneMapping === CineonToneMapping ) this.material.defines.CINEON_TONE_MAPPING = '';
+			else if ( this._toneMapping === ACESFilmicToneMapping ) this.material.defines.ACES_FILMIC_TONE_MAPPING = '';
+			else if ( this._toneMapping === AgXToneMapping ) this.material.defines.AGX_TONE_MAPPING = '';
+			this.material.needsUpdate = true;
+		}
+		//
+		if ( this.renderToScreen === true ) {
+			renderer.setRenderTarget( null );
+			this.fsQuad.render( renderer );
+		} else {
+			renderer.setRenderTarget( writeBuffer );
+			if ( this.clear ) renderer.clear( renderer.autoClearColor, renderer.autoClearDepth, renderer.autoClearStencil );
+			this.fsQuad.render( renderer );
+		}
+	}
+	dispose() {
+		this.material.dispose();
+		this.fsQuad.dispose();
+	}
+}
+Object.assign(ADD,{OutputPass});
+}
+{ /* postprocessing/UnrealBloomPass */
+const {AdditiveBlending,Color,HalfFloatType,MeshBasicMaterial,ShaderMaterial,UniformsUtils,Vector2,Vector3,WebGLRenderTarget}=THREE;
+const {Pass,FullScreenQuad}=ADD;
+const {CopyShader}=ADD;
+const {LuminosityHighPassShader}=ADD;
+class UnrealBloomPass extends Pass {
+	constructor( resolution, strength, radius, threshold ) {
+		super();
+		this.strength = ( strength !== undefined ) ? strength : 1;
+		this.radius = radius;
+		this.threshold = threshold;
+		this.resolution = ( resolution !== undefined ) ? new Vector2( resolution.x, resolution.y ) : new Vector2( 256, 256 );
+		// create color only once here, reuse it later inside the render function
+		this.clearColor = new Color( 0, 0, 0 );
+		// render targets
+		this.renderTargetsHorizontal = [];
+		this.renderTargetsVertical = [];
+		this.nMips = 5;
+		let resx = Math.round( this.resolution.x / 2 );
+		let resy = Math.round( this.resolution.y / 2 );
+		this.renderTargetBright = new WebGLRenderTarget( resx, resy, { type: HalfFloatType } );
+		this.renderTargetBright.texture.name = 'UnrealBloomPass.bright';
+		this.renderTargetBright.texture.generateMipmaps = false;
+		for ( let i = 0; i < this.nMips; i ++ ) {
+			const renderTargetHorizonal = new WebGLRenderTarget( resx, resy, { type: HalfFloatType } );
+			renderTargetHorizonal.texture.name = 'UnrealBloomPass.h' + i;
+			renderTargetHorizonal.texture.generateMipmaps = false;
+			this.renderTargetsHorizontal.push( renderTargetHorizonal );
+			const renderTargetVertical = new WebGLRenderTarget( resx, resy, { type: HalfFloatType } );
+			renderTargetVertical.texture.name = 'UnrealBloomPass.v' + i;
+			renderTargetVertical.texture.generateMipmaps = false;
+			this.renderTargetsVertical.push( renderTargetVertical );
+			resx = Math.round( resx / 2 );
+			resy = Math.round( resy / 2 );
+		}
+		// luminosity high pass material
+		const highPassShader = LuminosityHighPassShader;
+		this.highPassUniforms = UniformsUtils.clone( highPassShader.uniforms );
+		this.highPassUniforms[ 'luminosityThreshold' ].value = threshold;
+		this.highPassUniforms[ 'smoothWidth' ].value = 0.01;
+		this.materialHighPassFilter = new ShaderMaterial( {
+			uniforms: this.highPassUniforms,
+			vertexShader: highPassShader.vertexShader,
+			fragmentShader: highPassShader.fragmentShader
+		} );
+		// gaussian blur materials
+		this.separableBlurMaterials = [];
+		const kernelSizeArray = [ 3, 5, 7, 9, 11 ];
+		resx = Math.round( this.resolution.x / 2 );
+		resy = Math.round( this.resolution.y / 2 );
+		for ( let i = 0; i < this.nMips; i ++ ) {
+			this.separableBlurMaterials.push( this.getSeperableBlurMaterial( kernelSizeArray[ i ] ) );
+			this.separableBlurMaterials[ i ].uniforms[ 'invSize' ].value = new Vector2( 1 / resx, 1 / resy );
+			resx = Math.round( resx / 2 );
+			resy = Math.round( resy / 2 );
+		}
+		// composite material
+		this.compositeMaterial = this.getCompositeMaterial( this.nMips );
+		this.compositeMaterial.uniforms[ 'blurTexture1' ].value = this.renderTargetsVertical[ 0 ].texture;
+		this.compositeMaterial.uniforms[ 'blurTexture2' ].value = this.renderTargetsVertical[ 1 ].texture;
+		this.compositeMaterial.uniforms[ 'blurTexture3' ].value = this.renderTargetsVertical[ 2 ].texture;
+		this.compositeMaterial.uniforms[ 'blurTexture4' ].value = this.renderTargetsVertical[ 3 ].texture;
+		this.compositeMaterial.uniforms[ 'blurTexture5' ].value = this.renderTargetsVertical[ 4 ].texture;
+		this.compositeMaterial.uniforms[ 'bloomStrength' ].value = strength;
+		this.compositeMaterial.uniforms[ 'bloomRadius' ].value = 0.1;
+		const bloomFactors = [ 1.0, 0.8, 0.6, 0.4, 0.2 ];
+		this.compositeMaterial.uniforms[ 'bloomFactors' ].value = bloomFactors;
+		this.bloomTintColors = [ new Vector3( 1, 1, 1 ), new Vector3( 1, 1, 1 ), new Vector3( 1, 1, 1 ), new Vector3( 1, 1, 1 ), new Vector3( 1, 1, 1 ) ];
+		this.compositeMaterial.uniforms[ 'bloomTintColors' ].value = this.bloomTintColors;
+		// blend material
+		const copyShader = CopyShader;
+		this.copyUniforms = UniformsUtils.clone( copyShader.uniforms );
+		this.blendMaterial = new ShaderMaterial( {
+			uniforms: this.copyUniforms,
+			vertexShader: copyShader.vertexShader,
+			fragmentShader: copyShader.fragmentShader,
+			blending: AdditiveBlending,
+			depthTest: false,
+			depthWrite: false,
+			transparent: true
+		} );
+		this.enabled = true;
+		this.needsSwap = false;
+		this._oldClearColor = new Color();
+		this.oldClearAlpha = 1;
+		this.basic = new MeshBasicMaterial();
+		this.fsQuad = new FullScreenQuad( null );
+	}
+	dispose() {
+		for ( let i = 0; i < this.renderTargetsHorizontal.length; i ++ ) {
+			this.renderTargetsHorizontal[ i ].dispose();
+		}
+		for ( let i = 0; i < this.renderTargetsVertical.length; i ++ ) {
+			this.renderTargetsVertical[ i ].dispose();
+		}
+		this.renderTargetBright.dispose();
+		//
+		for ( let i = 0; i < this.separableBlurMaterials.length; i ++ ) {
+			this.separableBlurMaterials[ i ].dispose();
+		}
+		this.compositeMaterial.dispose();
+		this.blendMaterial.dispose();
+		this.basic.dispose();
+		//
+		this.fsQuad.dispose();
+	}
+	setSize( width, height ) {
+		let resx = Math.round( width / 2 );
+		let resy = Math.round( height / 2 );
+		this.renderTargetBright.setSize( resx, resy );
+		for ( let i = 0; i < this.nMips; i ++ ) {
+			this.renderTargetsHorizontal[ i ].setSize( resx, resy );
+			this.renderTargetsVertical[ i ].setSize( resx, resy );
+			this.separableBlurMaterials[ i ].uniforms[ 'invSize' ].value = new Vector2( 1 / resx, 1 / resy );
+			resx = Math.round( resx / 2 );
+			resy = Math.round( resy / 2 );
+		}
+	}
+	render( renderer, writeBuffer, readBuffer, deltaTime, maskActive ) {
+		renderer.getClearColor( this._oldClearColor );
+		this.oldClearAlpha = renderer.getClearAlpha();
+		const oldAutoClear = renderer.autoClear;
+		renderer.autoClear = false;
+		renderer.setClearColor( this.clearColor, 0 );
+		if ( maskActive ) renderer.state.buffers.stencil.setTest( false );
+		// Render input to screen
+		if ( this.renderToScreen ) {
+			this.fsQuad.material = this.basic;
+			this.basic.map = readBuffer.texture;
+			renderer.setRenderTarget( null );
+			renderer.clear();
+			this.fsQuad.render( renderer );
+		}
+		// 1. Extract Bright Areas
+		this.highPassUniforms[ 'tDiffuse' ].value = readBuffer.texture;
+		this.highPassUniforms[ 'luminosityThreshold' ].value = this.threshold;
+		this.fsQuad.material = this.materialHighPassFilter;
+		renderer.setRenderTarget( this.renderTargetBright );
+		renderer.clear();
+		this.fsQuad.render( renderer );
+		// 2. Blur All the mips progressively
+		let inputRenderTarget = this.renderTargetBright;
+		for ( let i = 0; i < this.nMips; i ++ ) {
+			this.fsQuad.material = this.separableBlurMaterials[ i ];
+			this.separableBlurMaterials[ i ].uniforms[ 'colorTexture' ].value = inputRenderTarget.texture;
+			this.separableBlurMaterials[ i ].uniforms[ 'direction' ].value = UnrealBloomPass.BlurDirectionX;
+			renderer.setRenderTarget( this.renderTargetsHorizontal[ i ] );
+			renderer.clear();
+			this.fsQuad.render( renderer );
+			this.separableBlurMaterials[ i ].uniforms[ 'colorTexture' ].value = this.renderTargetsHorizontal[ i ].texture;
+			this.separableBlurMaterials[ i ].uniforms[ 'direction' ].value = UnrealBloomPass.BlurDirectionY;
+			renderer.setRenderTarget( this.renderTargetsVertical[ i ] );
+			renderer.clear();
+			this.fsQuad.render( renderer );
+			inputRenderTarget = this.renderTargetsVertical[ i ];
+		}
+		// Composite All the mips
+		this.fsQuad.material = this.compositeMaterial;
+		this.compositeMaterial.uniforms[ 'bloomStrength' ].value = this.strength;
+		this.compositeMaterial.uniforms[ 'bloomRadius' ].value = this.radius;
+		this.compositeMaterial.uniforms[ 'bloomTintColors' ].value = this.bloomTintColors;
+		renderer.setRenderTarget( this.renderTargetsHorizontal[ 0 ] );
+		renderer.clear();
+		this.fsQuad.render( renderer );
+		// Blend it additively over the input texture
+		this.fsQuad.material = this.blendMaterial;
+		this.copyUniforms[ 'tDiffuse' ].value = this.renderTargetsHorizontal[ 0 ].texture;
+		if ( maskActive ) renderer.state.buffers.stencil.setTest( true );
+		if ( this.renderToScreen ) {
+			renderer.setRenderTarget( null );
+			this.fsQuad.render( renderer );
+		} else {
+			renderer.setRenderTarget( readBuffer );
+			this.fsQuad.render( renderer );
+		}
+		// Restore renderer settings
+		renderer.setClearColor( this._oldClearColor, this.oldClearAlpha );
+		renderer.autoClear = oldAutoClear;
+	}
+	getSeperableBlurMaterial( kernelRadius ) {
+		const coefficients = [];
+		for ( let i = 0; i < kernelRadius; i ++ ) {
+			coefficients.push( 0.39894 * Math.exp( - 0.5 * i * i / ( kernelRadius * kernelRadius ) ) / kernelRadius );
+		}
+		return new ShaderMaterial( {
+			defines: {
+				'KERNEL_RADIUS': kernelRadius
+			},
+			uniforms: {
+				'colorTexture': { value: null },
+				'invSize': { value: new Vector2( 0.5, 0.5 ) }, // inverse texture size
+				'direction': { value: new Vector2( 0.5, 0.5 ) },
+				'gaussianCoefficients': { value: coefficients } // precomputed Gaussian coefficients
+			},
+			vertexShader:
+				`varying vec2 vUv;
+				void main() {
+					vUv = uv;
+					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+				}`,
+			fragmentShader:
+				`#include <common>
+				varying vec2 vUv;
+				uniform sampler2D colorTexture;
+				uniform vec2 invSize;
+				uniform vec2 direction;
+				uniform float gaussianCoefficients[KERNEL_RADIUS];
+				void main() {
+					float weightSum = gaussianCoefficients[0];
+					vec3 diffuseSum = texture2D( colorTexture, vUv ).rgb * weightSum;
+					for( int i = 1; i < KERNEL_RADIUS; i ++ ) {
+						float x = float(i);
+						float w = gaussianCoefficients[i];
+						vec2 uvOffset = direction * invSize * x;
+						vec3 sample1 = texture2D( colorTexture, vUv + uvOffset ).rgb;
+						vec3 sample2 = texture2D( colorTexture, vUv - uvOffset ).rgb;
+						diffuseSum += (sample1 + sample2) * w;
+						weightSum += 2.0 * w;
+					}
+					gl_FragColor = vec4(diffuseSum/weightSum, 1.0);
+				}`
+		} );
+	}
+	getCompositeMaterial( nMips ) {
+		return new ShaderMaterial( {
+			defines: {
+				'NUM_MIPS': nMips
+			},
+			uniforms: {
+				'blurTexture1': { value: null },
+				'blurTexture2': { value: null },
+				'blurTexture3': { value: null },
+				'blurTexture4': { value: null },
+				'blurTexture5': { value: null },
+				'bloomStrength': { value: 1.0 },
+				'bloomFactors': { value: null },
+				'bloomTintColors': { value: null },
+				'bloomRadius': { value: 0.0 }
+			},
+			vertexShader:
+				`varying vec2 vUv;
+				void main() {
+					vUv = uv;
+					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+				}`,
+			fragmentShader:
+				`varying vec2 vUv;
+				uniform sampler2D blurTexture1;
+				uniform sampler2D blurTexture2;
+				uniform sampler2D blurTexture3;
+				uniform sampler2D blurTexture4;
+				uniform sampler2D blurTexture5;
+				uniform float bloomStrength;
+				uniform float bloomRadius;
+				uniform float bloomFactors[NUM_MIPS];
+				uniform vec3 bloomTintColors[NUM_MIPS];
+				float lerpBloomFactor(const in float factor) {
+					float mirrorFactor = 1.2 - factor;
+					return mix(factor, mirrorFactor, bloomRadius);
+				}
+				void main() {
+					gl_FragColor = bloomStrength * ( lerpBloomFactor(bloomFactors[0]) * vec4(bloomTintColors[0], 1.0) * texture2D(blurTexture1, vUv) +
+						lerpBloomFactor(bloomFactors[1]) * vec4(bloomTintColors[1], 1.0) * texture2D(blurTexture2, vUv) +
+						lerpBloomFactor(bloomFactors[2]) * vec4(bloomTintColors[2], 1.0) * texture2D(blurTexture3, vUv) +
+						lerpBloomFactor(bloomFactors[3]) * vec4(bloomTintColors[3], 1.0) * texture2D(blurTexture4, vUv) +
+						lerpBloomFactor(bloomFactors[4]) * vec4(bloomTintColors[4], 1.0) * texture2D(blurTexture5, vUv) );
+				}`
+		} );
+	}
+}
+UnrealBloomPass.BlurDirectionX = new Vector2( 1.0, 0.0 );
+UnrealBloomPass.BlurDirectionY = new Vector2( 0.0, 1.0 );
+Object.assign(ADD,{UnrealBloomPass});
+}
+{ /* postprocessing/GTAOPass */
+const {AddEquation,Color,CustomBlending,DataTexture,DepthTexture,DepthStencilFormat,DstAlphaFactor,DstColorFactor,HalfFloatType,MeshNormalMaterial,NearestFilter,NoBlending,RepeatWrapping,RGBAFormat,ShaderMaterial,UniformsUtils,UnsignedByteType,UnsignedInt248Type,WebGLRenderTarget,ZeroFactor}=THREE;
+const {Pass,FullScreenQuad}=ADD;
+const {generateMagicSquareNoise,GTAOShader,GTAODepthShader,GTAOBlendShader}=ADD;
+const {generatePdSamplePointInitializer,PoissonDenoiseShader}=ADD;
+const {CopyShader}=ADD;
+const {SimplexNoise}=ADD;
+class GTAOPass extends Pass {
+	constructor( scene, camera, width, height, parameters, aoParameters, pdParameters ) {
+		super();
+		this.width = ( width !== undefined ) ? width : 512;
+		this.height = ( height !== undefined ) ? height : 512;
+		this.clear = true;
+		this.camera = camera;
+		this.scene = scene;
+		this.output = 0;
+		this._renderGBuffer = true;
+		this._visibilityCache = new Map();
+		this.blendIntensity = 1.;
+		this.pdRings = 2.;
+		this.pdRadiusExponent = 2.;
+		this.pdSamples = 16;
+		this.gtaoNoiseTexture = generateMagicSquareNoise();
+		this.pdNoiseTexture = this.generateNoise();
+		this.gtaoRenderTarget = new WebGLRenderTarget( this.width, this.height, { type: HalfFloatType } );
+		this.pdRenderTarget = this.gtaoRenderTarget.clone();
+		this.gtaoMaterial = new ShaderMaterial( {
+			defines: Object.assign( {}, GTAOShader.defines ),
+			uniforms: UniformsUtils.clone( GTAOShader.uniforms ),
+			vertexShader: GTAOShader.vertexShader,
+			fragmentShader: GTAOShader.fragmentShader,
+			blending: NoBlending,
+			depthTest: false,
+			depthWrite: false,
+		} );
+		this.gtaoMaterial.definesPERSPECTIVE_CAMERA = this.camera.isPerspectiveCamera ? 1 : 0;
+		this.gtaoMaterial.uniforms.tNoise.value = this.gtaoNoiseTexture;
+		this.gtaoMaterial.uniforms.resolution.value.set( this.width, this.height );
+		this.gtaoMaterial.uniforms.cameraNear.value = this.camera.near;
+		this.gtaoMaterial.uniforms.cameraFar.value = this.camera.far;
+		this.normalMaterial = new MeshNormalMaterial();
+		this.normalMaterial.blending = NoBlending;
+		this.pdMaterial = new ShaderMaterial( {
+			defines: Object.assign( {}, PoissonDenoiseShader.defines ),
+			uniforms: UniformsUtils.clone( PoissonDenoiseShader.uniforms ),
+			vertexShader: PoissonDenoiseShader.vertexShader,
+			fragmentShader: PoissonDenoiseShader.fragmentShader,
+			depthTest: false,
+			depthWrite: false,
+		} );
+		this.pdMaterial.uniforms.tDiffuse.value = this.gtaoRenderTarget.texture;
+		this.pdMaterial.uniforms.tNoise.value = this.pdNoiseTexture;
+		this.pdMaterial.uniforms.resolution.value.set( this.width, this.height );
+		this.pdMaterial.uniforms.lumaPhi.value = 10;
+		this.pdMaterial.uniforms.depthPhi.value = 2;
+		this.pdMaterial.uniforms.normalPhi.value = 3;
+		this.pdMaterial.uniforms.radius.value = 8;
+		this.depthRenderMaterial = new ShaderMaterial( {
+			defines: Object.assign( {}, GTAODepthShader.defines ),
+			uniforms: UniformsUtils.clone( GTAODepthShader.uniforms ),
+			vertexShader: GTAODepthShader.vertexShader,
+			fragmentShader: GTAODepthShader.fragmentShader,
+			blending: NoBlending
+		} );
+		this.depthRenderMaterial.uniforms.cameraNear.value = this.camera.near;
+		this.depthRenderMaterial.uniforms.cameraFar.value = this.camera.far;
+		this.copyMaterial = new ShaderMaterial( {
+			uniforms: UniformsUtils.clone( CopyShader.uniforms ),
+			vertexShader: CopyShader.vertexShader,
+			fragmentShader: CopyShader.fragmentShader,
+			transparent: true,
+			depthTest: false,
+			depthWrite: false,
+			blendSrc: DstColorFactor,
+			blendDst: ZeroFactor,
+			blendEquation: AddEquation,
+			blendSrcAlpha: DstAlphaFactor,
+			blendDstAlpha: ZeroFactor,
+			blendEquationAlpha: AddEquation
+		} );
+		this.blendMaterial = new ShaderMaterial( {
+			uniforms: UniformsUtils.clone( GTAOBlendShader.uniforms ),
+			vertexShader: GTAOBlendShader.vertexShader,
+			fragmentShader: GTAOBlendShader.fragmentShader,
+			transparent: true,
+			depthTest: false,
+			depthWrite: false,
+			blending: CustomBlending,
+			blendSrc: DstColorFactor,
+			blendDst: ZeroFactor,
+			blendEquation: AddEquation,
+			blendSrcAlpha: DstAlphaFactor,
+			blendDstAlpha: ZeroFactor,
+			blendEquationAlpha: AddEquation
+		} );
+		this.fsQuad = new FullScreenQuad( null );
+		this.originalClearColor = new Color();
+		this.setGBuffer( parameters ? parameters.depthTexture : undefined, parameters ? parameters.normalTexture : undefined );
+		if ( aoParameters !== undefined ) {
+			this.updateGtaoMaterial( aoParameters );
+		}
+		if ( pdParameters !== undefined ) {
+			this.updatePdMaterial( pdParameters );
+		}
+	}
+	dispose() {
+		this.gtaoNoiseTexture.dispose();
+		this.pdNoiseTexture.dispose();
+		this.normalRenderTarget.dispose();
+		this.gtaoRenderTarget.dispose();
+		this.pdRenderTarget.dispose();
+		this.normalMaterial.dispose();
+		this.pdMaterial.dispose();
+		this.copyMaterial.dispose();
+		this.depthRenderMaterial.dispose();
+		this.fsQuad.dispose();
+	}
+	setGBuffer( depthTexture, normalTexture ) {
+		if ( depthTexture !== undefined ) {
+			this.depthTexture = depthTexture;
+			this.normalTexture = normalTexture;
+			this._renderGBuffer = false;
+		} else {
+			this.depthTexture = new DepthTexture();
+			this.depthTexture.format = DepthStencilFormat;
+			this.depthTexture.type = UnsignedInt248Type;
+			this.normalRenderTarget = new WebGLRenderTarget( this.width, this.height, {
+				minFilter: NearestFilter,
+				magFilter: NearestFilter,
+				type: HalfFloatType,
+				depthTexture: this.depthTexture
+			} );
+			this.normalTexture = this.normalRenderTarget.texture;
+			this._renderGBuffer = true;
+		}
+		const normalVectorType = ( this.normalTexture ) ? 1 : 0;
+		const depthValueSource = ( this.depthTexture === this.normalTexture ) ? 'w' : 'x';
+		this.gtaoMaterial.defines.NORMAL_VECTOR_TYPE = normalVectorType;
+		this.gtaoMaterial.defines.DEPTH_SWIZZLING = depthValueSource;
+		this.gtaoMaterial.uniforms.tNormal.value = this.normalTexture;
+		this.gtaoMaterial.uniforms.tDepth.value = this.depthTexture;
+		this.pdMaterial.defines.NORMAL_VECTOR_TYPE = normalVectorType;
+		this.pdMaterial.defines.DEPTH_SWIZZLING = depthValueSource;
+		this.pdMaterial.uniforms.tNormal.value = this.normalTexture;
+		this.pdMaterial.uniforms.tDepth.value = this.depthTexture;
+		this.depthRenderMaterial.uniforms.tDepth.value = this.normalRenderTarget.depthTexture;
+	}
+	setSceneClipBox( box ) {
+		if ( box ) {
+			this.gtaoMaterial.needsUpdate = this.gtaoMaterial.defines.SCENE_CLIP_BOX !== 1;
+			this.gtaoMaterial.defines.SCENE_CLIP_BOX = 1;
+			this.gtaoMaterial.uniforms.sceneBoxMin.value.copy( box.min );
+			this.gtaoMaterial.uniforms.sceneBoxMax.value.copy( box.max );
+		} else {
+			this.gtaoMaterial.needsUpdate = this.gtaoMaterial.defines.SCENE_CLIP_BOX === 0;
+			this.gtaoMaterial.defines.SCENE_CLIP_BOX = 0;
+		}
+	}
+	updateGtaoMaterial( parameters ) {
+		if ( parameters.radius !== undefined ) {
+			this.gtaoMaterial.uniforms.radius.value = parameters.radius;
+		}
+		if ( parameters.distanceExponent !== undefined ) {
+			this.gtaoMaterial.uniforms.distanceExponent.value = parameters.distanceExponent;
+		}
+		if ( parameters.thickness !== undefined ) {
+			this.gtaoMaterial.uniforms.thickness.value = parameters.thickness;
+		}
+		if ( parameters.distanceFallOff !== undefined ) {
+			this.gtaoMaterial.uniforms.distanceFallOff.value = parameters.distanceFallOff;
+			this.gtaoMaterial.needsUpdate = true;
+		}
+		if ( parameters.scale !== undefined ) {
+			this.gtaoMaterial.uniforms.scale.value = parameters.scale;
+		}
+		if ( parameters.samples !== undefined && parameters.samples !== this.gtaoMaterial.defines.SAMPLES ) {
+			this.gtaoMaterial.defines.SAMPLES = parameters.samples;
+			this.gtaoMaterial.needsUpdate = true;
+		}
+		if ( parameters.screenSpaceRadius !== undefined && ( parameters.screenSpaceRadius ? 1 : 0 ) !== this.gtaoMaterial.defines.SCREEN_SPACE_RADIUS ) {
+			this.gtaoMaterial.defines.SCREEN_SPACE_RADIUS = parameters.screenSpaceRadius ? 1 : 0;
+			this.gtaoMaterial.needsUpdate = true;
+		}
+	}
+	updatePdMaterial( parameters ) {
+		let updateShader = false;
+		if ( parameters.lumaPhi !== undefined ) {
+			this.pdMaterial.uniforms.lumaPhi.value = parameters.lumaPhi;
+		}
+		if ( parameters.depthPhi !== undefined ) {
+			this.pdMaterial.uniforms.depthPhi.value = parameters.depthPhi;
+		}
+		if ( parameters.normalPhi !== undefined ) {
+			this.pdMaterial.uniforms.normalPhi.value = parameters.normalPhi;
+		}
+		if ( parameters.radius !== undefined && parameters.radius !== this.radius ) {
+			this.pdMaterial.uniforms.radius.value = parameters.radius;
+		}
+		if ( parameters.radiusExponent !== undefined && parameters.radiusExponent !== this.pdRadiusExponent ) {
+			this.pdRadiusExponent = parameters.radiusExponent;
+			updateShader = true;
+		}
+		if ( parameters.rings !== undefined && parameters.rings !== this.pdRings ) {
+			this.pdRings = parameters.rings;
+			updateShader = true;
+		}
+		if ( parameters.samples !== undefined && parameters.samples !== this.pdSamples ) {
+			this.pdSamples = parameters.samples;
+			updateShader = true;
+		}
+		if ( updateShader ) {
+			this.pdMaterial.defines.SAMPLES = this.pdSamples;
+			this.pdMaterial.defines.SAMPLE_VECTORS = generatePdSamplePointInitializer( this.pdSamples, this.pdRings, this.pdRadiusExponent );
+			this.pdMaterial.needsUpdate = true;
+		}
+	}
+	render( renderer, writeBuffer, readBuffer /*, deltaTime, maskActive */ ) {
+		// render normals and depth (honor only meshes, points and lines do not contribute to AO)
+		if ( this._renderGBuffer ) {
+			this.overrideVisibility();
+			this.renderOverride( renderer, this.normalMaterial, this.normalRenderTarget, 0x7777ff, 1.0 );
+			this.restoreVisibility();
+		}
+		// render AO
+		this.gtaoMaterial.uniforms.cameraNear.value = this.camera.near;
+		this.gtaoMaterial.uniforms.cameraFar.value = this.camera.far;
+		this.gtaoMaterial.uniforms.cameraProjectionMatrix.value.copy( this.camera.projectionMatrix );
+		this.gtaoMaterial.uniforms.cameraProjectionMatrixInverse.value.copy( this.camera.projectionMatrixInverse );
+		this.gtaoMaterial.uniforms.cameraWorldMatrix.value.copy( this.camera.matrixWorld );
+		this.renderPass( renderer, this.gtaoMaterial, this.gtaoRenderTarget, 0xffffff, 1.0 );
+		// render poisson denoise
+		this.pdMaterial.uniforms.cameraProjectionMatrixInverse.value.copy( this.camera.projectionMatrixInverse );
+		this.renderPass( renderer, this.pdMaterial, this.pdRenderTarget, 0xffffff, 1.0 );
+		// output result to screen
+		switch ( this.output ) {
+			case GTAOPass.OUTPUT.Diffuse:
+				this.copyMaterial.uniforms.tDiffuse.value = readBuffer.texture;
+				this.copyMaterial.blending = NoBlending;
+				this.renderPass( renderer, this.copyMaterial, this.renderToScreen ? null : writeBuffer );
+				break;
+			case GTAOPass.OUTPUT.AO:
+				this.copyMaterial.uniforms.tDiffuse.value = this.gtaoRenderTarget.texture;
+				this.copyMaterial.blending = NoBlending;
+				this.renderPass( renderer, this.copyMaterial, this.renderToScreen ? null : writeBuffer );
+				break;
+			case GTAOPass.OUTPUT.Denoise:
+				this.copyMaterial.uniforms.tDiffuse.value = this.pdRenderTarget.texture;
+				this.copyMaterial.blending = NoBlending;
+				this.renderPass( renderer, this.copyMaterial, this.renderToScreen ? null : writeBuffer );
+				break;
+			case GTAOPass.OUTPUT.Depth:
+				this.depthRenderMaterial.uniforms.cameraNear.value = this.camera.near;
+				this.depthRenderMaterial.uniforms.cameraFar.value = this.camera.far;
+				this.renderPass( renderer, this.depthRenderMaterial, this.renderToScreen ? null : writeBuffer );
+				break;
+			case GTAOPass.OUTPUT.Normal:
+				this.copyMaterial.uniforms.tDiffuse.value = this.normalRenderTarget.texture;
+				this.copyMaterial.blending = NoBlending;
+				this.renderPass( renderer, this.copyMaterial, this.renderToScreen ? null : writeBuffer );
+				break;
+			case GTAOPass.OUTPUT.Default:
+				this.copyMaterial.uniforms.tDiffuse.value = readBuffer.texture;
+				this.copyMaterial.blending = NoBlending;
+				this.renderPass( renderer, this.copyMaterial, this.renderToScreen ? null : writeBuffer );
+				this.blendMaterial.uniforms.intensity.value = this.blendIntensity;
+				this.blendMaterial.uniforms.tDiffuse.value = this.pdRenderTarget.texture;
+				this.renderPass( renderer, this.blendMaterial, this.renderToScreen ? null : writeBuffer );
+				break;
+			default:
+				console.warn( 'THREE.GTAOPass: Unknown output type.' );
+		}
+	}
+	renderPass( renderer, passMaterial, renderTarget, clearColor, clearAlpha ) {
+		// save original state
+		renderer.getClearColor( this.originalClearColor );
+		const originalClearAlpha = renderer.getClearAlpha();
+		const originalAutoClear = renderer.autoClear;
+		renderer.setRenderTarget( renderTarget );
+		// setup pass state
+		renderer.autoClear = false;
+		if ( ( clearColor !== undefined ) && ( clearColor !== null ) ) {
+			renderer.setClearColor( clearColor );
+			renderer.setClearAlpha( clearAlpha || 0.0 );
+			renderer.clear();
+		}
+		this.fsQuad.material = passMaterial;
+		this.fsQuad.render( renderer );
+		// restore original state
+		renderer.autoClear = originalAutoClear;
+		renderer.setClearColor( this.originalClearColor );
+		renderer.setClearAlpha( originalClearAlpha );
+	}
+	renderOverride( renderer, overrideMaterial, renderTarget, clearColor, clearAlpha ) {
+		renderer.getClearColor( this.originalClearColor );
+		const originalClearAlpha = renderer.getClearAlpha();
+		const originalAutoClear = renderer.autoClear;
+		renderer.setRenderTarget( renderTarget );
+		renderer.autoClear = false;
+		clearColor = overrideMaterial.clearColor || clearColor;
+		clearAlpha = overrideMaterial.clearAlpha || clearAlpha;
+		if ( ( clearColor !== undefined ) && ( clearColor !== null ) ) {
+			renderer.setClearColor( clearColor );
+			renderer.setClearAlpha( clearAlpha || 0.0 );
+			renderer.clear();
+		}
+		this.scene.overrideMaterial = overrideMaterial;
+		renderer.render( this.scene, this.camera );
+		this.scene.overrideMaterial = null;
+		renderer.autoClear = originalAutoClear;
+		renderer.setClearColor( this.originalClearColor );
+		renderer.setClearAlpha( originalClearAlpha );
+	}
+	setSize( width, height ) {
+		this.width = width;
+		this.height = height;
+		this.gtaoRenderTarget.setSize( width, height );
+		this.normalRenderTarget.setSize( width, height );
+		this.pdRenderTarget.setSize( width, height );
+		this.gtaoMaterial.uniforms.resolution.value.set( width, height );
+		this.gtaoMaterial.uniforms.cameraProjectionMatrix.value.copy( this.camera.projectionMatrix );
+		this.gtaoMaterial.uniforms.cameraProjectionMatrixInverse.value.copy( this.camera.projectionMatrixInverse );
+		this.pdMaterial.uniforms.resolution.value.set( width, height );
+		this.pdMaterial.uniforms.cameraProjectionMatrixInverse.value.copy( this.camera.projectionMatrixInverse );
+	}
+	overrideVisibility() {
+		const scene = this.scene;
+		const cache = this._visibilityCache;
+		scene.traverse( function ( object ) {
+			cache.set( object, object.visible );
+			if ( object.isPoints || object.isLine ) object.visible = false;
+		} );
+	}
+	restoreVisibility() {
+		const scene = this.scene;
+		const cache = this._visibilityCache;
+		scene.traverse( function ( object ) {
+			const visible = cache.get( object );
+			object.visible = visible;
+		} );
+		cache.clear();
+	}
+	generateNoise( size = 64 ) {
+		const simplex = new SimplexNoise();
+		const arraySize = size * size * 4;
+		const data = new Uint8Array( arraySize );
+		for ( let i = 0; i < size; i ++ ) {
+			for ( let j = 0; j < size; j ++ ) {
+				const x = i;
+				const y = j;
+				data[ ( i * size + j ) * 4 ] = ( simplex.noise( x, y ) * 0.5 + 0.5 ) * 255;
+				data[ ( i * size + j ) * 4 + 1 ] = ( simplex.noise( x + size, y ) * 0.5 + 0.5 ) * 255;
+				data[ ( i * size + j ) * 4 + 2 ] = ( simplex.noise( x, y + size ) * 0.5 + 0.5 ) * 255;
+				data[ ( i * size + j ) * 4 + 3 ] = ( simplex.noise( x + size, y + size ) * 0.5 + 0.5 ) * 255;
+			}
+		}
+		const noiseTexture = new DataTexture( data, size, size, RGBAFormat, UnsignedByteType );
+		noiseTexture.wrapS = RepeatWrapping;
+		noiseTexture.wrapT = RepeatWrapping;
+		noiseTexture.needsUpdate = true;
+		return noiseTexture;
+	}
+}
+GTAOPass.OUTPUT = {
+	'Default': 0,
+	'Diffuse': 1,
+	'Depth': 2,
+	'Normal': 3,
+	'AO': 4,
+	'Denoise': 5,
+};
+Object.assign(ADD,{GTAOPass});
+}
+{ /* objects/Sky */
+const {BackSide,BoxGeometry,Mesh,ShaderMaterial,UniformsUtils,Vector3}=THREE;
+class Sky extends Mesh {
+	constructor() {
+		const shader = Sky.SkyShader;
+		const material = new ShaderMaterial( {
+			name: shader.name,
+			uniforms: UniformsUtils.clone( shader.uniforms ),
+			vertexShader: shader.vertexShader,
+			fragmentShader: shader.fragmentShader,
+			side: BackSide,
+			depthWrite: false
+		} );
+		super( new BoxGeometry( 1, 1, 1 ), material );
+		this.isSky = true;
+	}
+}
+Sky.SkyShader = {
+	name: 'SkyShader',
+	uniforms: {
+		'turbidity': { value: 2 },
+		'rayleigh': { value: 1 },
+		'mieCoefficient': { value: 0.005 },
+		'mieDirectionalG': { value: 0.8 },
+		'sunPosition': { value: new Vector3() },
+		'up': { value: new Vector3( 0, 1, 0 ) }
+	},
+	vertexShader: /* glsl */`
+		uniform vec3 sunPosition;
+		uniform float rayleigh;
+		uniform float turbidity;
+		uniform float mieCoefficient;
+		uniform vec3 up;
+		varying vec3 vWorldPosition;
+		varying vec3 vSunDirection;
+		varying float vSunfade;
+		varying vec3 vBetaR;
+		varying vec3 vBetaM;
+		varying float vSunE;
+		// constants for atmospheric scattering
+		const float e = 2.71828182845904523536028747135266249775724709369995957;
+		const float pi = 3.141592653589793238462643383279502884197169;
+		// wavelength of used primaries, according to preetham
+		const vec3 lambda = vec3( 680E-9, 550E-9, 450E-9 );
+		// this pre-calcuation replaces older TotalRayleigh(vec3 lambda) function:
+		// (8.0 * pow(pi, 3.0) * pow(pow(n, 2.0) - 1.0, 2.0) * (6.0 + 3.0 * pn)) / (3.0 * N * pow(lambda, vec3(4.0)) * (6.0 - 7.0 * pn))
+		const vec3 totalRayleigh = vec3( 5.804542996261093E-6, 1.3562911419845635E-5, 3.0265902468824876E-5 );
+		// mie stuff
+		// K coefficient for the primaries
+		const float v = 4.0;
+		const vec3 K = vec3( 0.686, 0.678, 0.666 );
+		// MieConst = pi * pow( ( 2.0 * pi ) / lambda, vec3( v - 2.0 ) ) * K
+		const vec3 MieConst = vec3( 1.8399918514433978E14, 2.7798023919660528E14, 4.0790479543861094E14 );
+		// earth shadow hack
+		// cutoffAngle = pi / 1.95;
+		const float cutoffAngle = 1.6110731556870734;
+		const float steepness = 1.5;
+		const float EE = 1000.0;
+		float sunIntensity( float zenithAngleCos ) {
+			zenithAngleCos = clamp( zenithAngleCos, -1.0, 1.0 );
+			return EE * max( 0.0, 1.0 - pow( e, -( ( cutoffAngle - acos( zenithAngleCos ) ) / steepness ) ) );
+		}
+		vec3 totalMie( float T ) {
+			float c = ( 0.2 * T ) * 10E-18;
+			return 0.434 * c * MieConst;
+		}
+		void main() {
+			vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
+			vWorldPosition = worldPosition.xyz;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+			gl_Position.z = gl_Position.w; // set z to camera.far
+			vSunDirection = normalize( sunPosition );
+			vSunE = sunIntensity( dot( vSunDirection, up ) );
+			vSunfade = 1.0 - clamp( 1.0 - exp( ( sunPosition.y / 450000.0 ) ), 0.0, 1.0 );
+			float rayleighCoefficient = rayleigh - ( 1.0 * ( 1.0 - vSunfade ) );
+			// extinction (absorbtion + out scattering)
+			// rayleigh coefficients
+			vBetaR = totalRayleigh * rayleighCoefficient;
+			// mie coefficients
+			vBetaM = totalMie( turbidity ) * mieCoefficient;
+		}`,
+	fragmentShader: /* glsl */`
+		varying vec3 vWorldPosition;
+		varying vec3 vSunDirection;
+		varying float vSunfade;
+		varying vec3 vBetaR;
+		varying vec3 vBetaM;
+		varying float vSunE;
+		uniform float mieDirectionalG;
+		uniform vec3 up;
+		// constants for atmospheric scattering
+		const float pi = 3.141592653589793238462643383279502884197169;
+		const float n = 1.0003; // refractive index of air
+		const float N = 2.545E25; // number of molecules per unit volume for air at 288.15K and 1013mb (sea level -45 celsius)
+		// optical length at zenith for molecules
+		const float rayleighZenithLength = 8.4E3;
+		const float mieZenithLength = 1.25E3;
+		// 66 arc seconds -> degrees, and the cosine of that
+		const float sunAngularDiameterCos = 0.999956676946448443553574619906976478926848692873900859324;
+		// 3.0 / ( 16.0 * pi )
+		const float THREE_OVER_SIXTEENPI = 0.05968310365946075;
+		// 1.0 / ( 4.0 * pi )
+		const float ONE_OVER_FOURPI = 0.07957747154594767;
+		float rayleighPhase( float cosTheta ) {
+			return THREE_OVER_SIXTEENPI * ( 1.0 + pow( cosTheta, 2.0 ) );
+		}
+		float hgPhase( float cosTheta, float g ) {
+			float g2 = pow( g, 2.0 );
+			float inverse = 1.0 / pow( 1.0 - 2.0 * g * cosTheta + g2, 1.5 );
+			return ONE_OVER_FOURPI * ( ( 1.0 - g2 ) * inverse );
+		}
+		void main() {
+			vec3 direction = normalize( vWorldPosition - cameraPosition );
+			// optical length
+			// cutoff angle at 90 to avoid singularity in next formula.
+			float zenithAngle = acos( max( 0.0, dot( up, direction ) ) );
+			float inverse = 1.0 / ( cos( zenithAngle ) + 0.15 * pow( 93.885 - ( ( zenithAngle * 180.0 ) / pi ), -1.253 ) );
+			float sR = rayleighZenithLength * inverse;
+			float sM = mieZenithLength * inverse;
+			// combined extinction factor
+			vec3 Fex = exp( -( vBetaR * sR + vBetaM * sM ) );
+			// in scattering
+			float cosTheta = dot( direction, vSunDirection );
+			float rPhase = rayleighPhase( cosTheta * 0.5 + 0.5 );
+			vec3 betaRTheta = vBetaR * rPhase;
+			float mPhase = hgPhase( cosTheta, mieDirectionalG );
+			vec3 betaMTheta = vBetaM * mPhase;
+			vec3 Lin = pow( vSunE * ( ( betaRTheta + betaMTheta ) / ( vBetaR + vBetaM ) ) * ( 1.0 - Fex ), vec3( 1.5 ) );
+			Lin *= mix( vec3( 1.0 ), pow( vSunE * ( ( betaRTheta + betaMTheta ) / ( vBetaR + vBetaM ) ) * Fex, vec3( 1.0 / 2.0 ) ), clamp( pow( 1.0 - dot( up, vSunDirection ), 5.0 ), 0.0, 1.0 ) );
+			// nightsky
+			float theta = acos( direction.y ); // elevation --> y-axis, [-pi/2, pi/2]
+			float phi = atan( direction.z, direction.x ); // azimuth --> x-axis [-pi/2, pi/2]
+			vec2 uv = vec2( phi, theta ) / vec2( 2.0 * pi, pi ) + vec2( 0.5, 0.0 );
+			vec3 L0 = vec3( 0.1 ) * Fex;
+			// composition + solar disc
+			float sundisk = smoothstep( sunAngularDiameterCos, sunAngularDiameterCos + 0.00002, cosTheta );
+			L0 += ( vSunE * 19000.0 * Fex ) * sundisk;
+			vec3 texColor = ( Lin + L0 ) * 0.04 + vec3( 0.0, 0.0003, 0.00075 );
+			vec3 retColor = pow( texColor, vec3( 1.0 / ( 1.2 + ( 1.2 * vSunfade ) ) ) );
+			gl_FragColor = vec4( retColor, 1.0 );
+			#include <tonemapping_fragment>
+			#include <colorspace_fragment>
+		}`
+};
+Object.assign(ADD,{Sky});
+}
+{ /* objects/Water */
+const {Color,FrontSide,Matrix4,Mesh,PerspectiveCamera,Plane,ShaderMaterial,UniformsLib,UniformsUtils,Vector3,Vector4,WebGLRenderTarget}=THREE;
+class Water extends Mesh {
+	constructor( geometry, options = {} ) {
+		super( geometry );
+		this.isWater = true;
+		const scope = this;
+		const textureWidth = options.textureWidth !== undefined ? options.textureWidth : 512;
+		const textureHeight = options.textureHeight !== undefined ? options.textureHeight : 512;
+		const clipBias = options.clipBias !== undefined ? options.clipBias : 0.0;
+		const alpha = options.alpha !== undefined ? options.alpha : 1.0;
+		const time = options.time !== undefined ? options.time : 0.0;
+		const normalSampler = options.waterNormals !== undefined ? options.waterNormals : null;
+		const sunDirection = options.sunDirection !== undefined ? options.sunDirection : new Vector3( 0.70707, 0.70707, 0.0 );
+		const sunColor = new Color( options.sunColor !== undefined ? options.sunColor : 0xffffff );
+		const waterColor = new Color( options.waterColor !== undefined ? options.waterColor : 0x7F7F7F );
+		const eye = options.eye !== undefined ? options.eye : new Vector3( 0, 0, 0 );
+		const distortionScale = options.distortionScale !== undefined ? options.distortionScale : 20.0;
+		const side = options.side !== undefined ? options.side : FrontSide;
+		const fog = options.fog !== undefined ? options.fog : false;
+		//
+		const mirrorPlane = new Plane();
+		const normal = new Vector3();
+		const mirrorWorldPosition = new Vector3();
+		const cameraWorldPosition = new Vector3();
+		const rotationMatrix = new Matrix4();
+		const lookAtPosition = new Vector3( 0, 0, - 1 );
+		const clipPlane = new Vector4();
+		const view = new Vector3();
+		const target = new Vector3();
+		const q = new Vector4();
+		const textureMatrix = new Matrix4();
+		const mirrorCamera = new PerspectiveCamera();
+		const renderTarget = new WebGLRenderTarget( textureWidth, textureHeight );
+		const mirrorShader = {
+			name: 'MirrorShader',
+			uniforms: UniformsUtils.merge( [
+				UniformsLib[ 'fog' ],
+				UniformsLib[ 'lights' ],
+				{
+					'normalSampler': { value: null },
+					'mirrorSampler': { value: null },
+					'alpha': { value: 1.0 },
+					'time': { value: 0.0 },
+					'size': { value: 1.0 },
+					'distortionScale': { value: 20.0 },
+					'textureMatrix': { value: new Matrix4() },
+					'sunColor': { value: new Color( 0x7F7F7F ) },
+					'sunDirection': { value: new Vector3( 0.70707, 0.70707, 0 ) },
+					'eye': { value: new Vector3() },
+					'waterColor': { value: new Color( 0x555555 ) }
+				}
+			] ),
+			vertexShader: /* glsl */`
+				uniform mat4 textureMatrix;
+				uniform float time;
+				varying vec4 mirrorCoord;
+				varying vec4 worldPosition;
+				#include <common>
+				#include <fog_pars_vertex>
+				#include <shadowmap_pars_vertex>
+				#include <logdepthbuf_pars_vertex>
+				void main() {
+					mirrorCoord = modelMatrix * vec4( position, 1.0 );
+					worldPosition = mirrorCoord.xyzw;
+					mirrorCoord = textureMatrix * mirrorCoord;
+					vec4 mvPosition =  modelViewMatrix * vec4( position, 1.0 );
+					gl_Position = projectionMatrix * mvPosition;
+				#include <beginnormal_vertex>
+				#include <defaultnormal_vertex>
+				#include <logdepthbuf_vertex>
+				#include <fog_vertex>
+				#include <shadowmap_vertex>
+			}`,
+			fragmentShader: /* glsl */`
+				uniform sampler2D mirrorSampler;
+				uniform float alpha;
+				uniform float time;
+				uniform float size;
+				uniform float distortionScale;
+				uniform sampler2D normalSampler;
+				uniform vec3 sunColor;
+				uniform vec3 sunDirection;
+				uniform vec3 eye;
+				uniform vec3 waterColor;
+				varying vec4 mirrorCoord;
+				varying vec4 worldPosition;
+				vec4 getNoise( vec2 uv ) {
+					vec2 uv0 = ( uv / 103.0 ) + vec2(time / 17.0, time / 29.0);
+					vec2 uv1 = uv / 107.0-vec2( time / -19.0, time / 31.0 );
+					vec2 uv2 = uv / vec2( 8907.0, 9803.0 ) + vec2( time / 101.0, time / 97.0 );
+					vec2 uv3 = uv / vec2( 1091.0, 1027.0 ) - vec2( time / 109.0, time / -113.0 );
+					vec4 noise = texture2D( normalSampler, uv0 ) +
+						texture2D( normalSampler, uv1 ) +
+						texture2D( normalSampler, uv2 ) +
+						texture2D( normalSampler, uv3 );
+					return noise * 0.5 - 1.0;
+				}
+				void sunLight( const vec3 surfaceNormal, const vec3 eyeDirection, float shiny, float spec, float diffuse, inout vec3 diffuseColor, inout vec3 specularColor ) {
+					vec3 reflection = normalize( reflect( -sunDirection, surfaceNormal ) );
+					float direction = max( 0.0, dot( eyeDirection, reflection ) );
+					specularColor += pow( direction, shiny ) * sunColor * spec;
+					diffuseColor += max( dot( sunDirection, surfaceNormal ), 0.0 ) * sunColor * diffuse;
+				}
+				#include <common>
+				#include <packing>
+				#include <bsdfs>
+				#include <fog_pars_fragment>
+				#include <logdepthbuf_pars_fragment>
+				#include <lights_pars_begin>
+				#include <shadowmap_pars_fragment>
+				#include <shadowmask_pars_fragment>
+				void main() {
+					#include <logdepthbuf_fragment>
+					vec4 noise = getNoise( worldPosition.xz * size );
+					vec3 surfaceNormal = normalize( noise.xzy * vec3( 1.5, 1.0, 1.5 ) );
+					vec3 diffuseLight = vec3(0.0);
+					vec3 specularLight = vec3(0.0);
+					vec3 worldToEye = eye-worldPosition.xyz;
+					vec3 eyeDirection = normalize( worldToEye );
+					sunLight( surfaceNormal, eyeDirection, 100.0, 2.0, 0.5, diffuseLight, specularLight );
+					float distance = length(worldToEye);
+					vec2 distortion = surfaceNormal.xz * ( 0.001 + 1.0 / distance ) * distortionScale;
+					vec3 reflectionSample = vec3( texture2D( mirrorSampler, mirrorCoord.xy / mirrorCoord.w + distortion ) );
+					float theta = max( dot( eyeDirection, surfaceNormal ), 0.0 );
+					float rf0 = 0.3;
+					float reflectance = rf0 + ( 1.0 - rf0 ) * pow( ( 1.0 - theta ), 5.0 );
+					vec3 scatter = max( 0.0, dot( surfaceNormal, eyeDirection ) ) * waterColor;
+					vec3 albedo = mix( ( sunColor * diffuseLight * 0.3 + scatter ) * getShadowMask(), ( vec3( 0.1 ) + reflectionSample * 0.9 + reflectionSample * specularLight ), reflectance);
+					vec3 outgoingLight = albedo;
+					gl_FragColor = vec4( outgoingLight, alpha );
+					#include <tonemapping_fragment>
+					#include <colorspace_fragment>
+					#include <fog_fragment>	
+				}`
+		};
+		const material = new ShaderMaterial( {
+			name: mirrorShader.name,
+			uniforms: UniformsUtils.clone( mirrorShader.uniforms ),
+			vertexShader: mirrorShader.vertexShader,
+			fragmentShader: mirrorShader.fragmentShader,
+			lights: true,
+			side: side,
+			fog: fog
+		} );
+		material.uniforms[ 'mirrorSampler' ].value = renderTarget.texture;
+		material.uniforms[ 'textureMatrix' ].value = textureMatrix;
+		material.uniforms[ 'alpha' ].value = alpha;
+		material.uniforms[ 'time' ].value = time;
+		material.uniforms[ 'normalSampler' ].value = normalSampler;
+		material.uniforms[ 'sunColor' ].value = sunColor;
+		material.uniforms[ 'waterColor' ].value = waterColor;
+		material.uniforms[ 'sunDirection' ].value = sunDirection;
+		material.uniforms[ 'distortionScale' ].value = distortionScale;
+		material.uniforms[ 'eye' ].value = eye;
+		scope.material = material;
+		scope.onBeforeRender = function ( renderer, scene, camera ) {
+			mirrorWorldPosition.setFromMatrixPosition( scope.matrixWorld );
+			cameraWorldPosition.setFromMatrixPosition( camera.matrixWorld );
+			rotationMatrix.extractRotation( scope.matrixWorld );
+			normal.set( 0, 0, 1 );
+			normal.applyMatrix4( rotationMatrix );
+			view.subVectors( mirrorWorldPosition, cameraWorldPosition );
+			// Avoid rendering when mirror is facing away
+			if ( view.dot( normal ) > 0 ) return;
+			view.reflect( normal ).negate();
+			view.add( mirrorWorldPosition );
+			rotationMatrix.extractRotation( camera.matrixWorld );
+			lookAtPosition.set( 0, 0, - 1 );
+			lookAtPosition.applyMatrix4( rotationMatrix );
+			lookAtPosition.add( cameraWorldPosition );
+			target.subVectors( mirrorWorldPosition, lookAtPosition );
+			target.reflect( normal ).negate();
+			target.add( mirrorWorldPosition );
+			mirrorCamera.position.copy( view );
+			mirrorCamera.up.set( 0, 1, 0 );
+			mirrorCamera.up.applyMatrix4( rotationMatrix );
+			mirrorCamera.up.reflect( normal );
+			mirrorCamera.lookAt( target );
+			mirrorCamera.far = camera.far; // Used in WebGLBackground
+			mirrorCamera.updateMatrixWorld();
+			mirrorCamera.projectionMatrix.copy( camera.projectionMatrix );
+			// Update the texture matrix
+			textureMatrix.set(
+				0.5, 0.0, 0.0, 0.5,
+				0.0, 0.5, 0.0, 0.5,
+				0.0, 0.0, 0.5, 0.5,
+				0.0, 0.0, 0.0, 1.0
+			);
+			textureMatrix.multiply( mirrorCamera.projectionMatrix );
+			textureMatrix.multiply( mirrorCamera.matrixWorldInverse );
+			// Now update projection matrix with new clip plane, implementing code from: http://www.terathon.com/code/oblique.html
+			// Paper explaining this technique: http://www.terathon.com/lengyel/Lengyel-Oblique.pdf
+			mirrorPlane.setFromNormalAndCoplanarPoint( normal, mirrorWorldPosition );
+			mirrorPlane.applyMatrix4( mirrorCamera.matrixWorldInverse );
+			clipPlane.set( mirrorPlane.normal.x, mirrorPlane.normal.y, mirrorPlane.normal.z, mirrorPlane.constant );
+			const projectionMatrix = mirrorCamera.projectionMatrix;
+			q.x = ( Math.sign( clipPlane.x ) + projectionMatrix.elements[ 8 ] ) / projectionMatrix.elements[ 0 ];
+			q.y = ( Math.sign( clipPlane.y ) + projectionMatrix.elements[ 9 ] ) / projectionMatrix.elements[ 5 ];
+			q.z = - 1.0;
+			q.w = ( 1.0 + projectionMatrix.elements[ 10 ] ) / projectionMatrix.elements[ 14 ];
+			// Calculate the scaled plane vector
+			clipPlane.multiplyScalar( 2.0 / clipPlane.dot( q ) );
+			// Replacing the third row of the projection matrix
+			projectionMatrix.elements[ 2 ] = clipPlane.x;
+			projectionMatrix.elements[ 6 ] = clipPlane.y;
+			projectionMatrix.elements[ 10 ] = clipPlane.z + 1.0 - clipBias;
+			projectionMatrix.elements[ 14 ] = clipPlane.w;
+			eye.setFromMatrixPosition( camera.matrixWorld );
+			// Render
+			const currentRenderTarget = renderer.getRenderTarget();
+			const currentXrEnabled = renderer.xr.enabled;
+			const currentShadowAutoUpdate = renderer.shadowMap.autoUpdate;
+			scope.visible = false;
+			renderer.xr.enabled = false; // Avoid camera modification and recursion
+			renderer.shadowMap.autoUpdate = false; // Avoid re-computing shadows
+			renderer.setRenderTarget( renderTarget );
+			renderer.state.buffers.depth.setMask( true ); // make sure the depth buffer is writable so it can be properly cleared, see #18897
+			if ( renderer.autoClear === false ) renderer.clear();
+			renderer.render( scene, mirrorCamera );
+			scope.visible = true;
+			renderer.xr.enabled = currentXrEnabled;
+			renderer.shadowMap.autoUpdate = currentShadowAutoUpdate;
+			renderer.setRenderTarget( currentRenderTarget );
+			// Restore viewport
+			const viewport = camera.viewport;
+			if ( viewport !== undefined ) {
+				renderer.state.viewport( viewport );
+			}
+		};
+	}
+}
+Object.assign(ADD,{Water});
+}
+return ADD})();
+<\/script>
+<script>
 /* Asset Village — original app data format, self-contained Three.js r160 (MIT). */
 'use strict';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)], esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -9611,8 +11969,30 @@ function terrainHeight(x,z){let h=rawHeight(x,z);for(const [px,pz,r] of padLocat
 try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.65));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;$('#world').appendChild(renderer.domElement)}catch(e){$('#loading').innerHTML='<p>3D 화면을 시작할 수 없습니다.</p><small>브라우저의 하드웨어 가속을 켜고 Chrome 또는 Safari에서 다시 열어 주세요.</small>';throw e}
 scene=new THREE.Scene();scene.background=new THREE.Color('#b8d7d8');scene.fog=new THREE.Fog('#b8d7d8',135,245);camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.08,500);
 const hemi=new THREE.HemisphereLight(0xfff9de,0x668d78,2.7);scene.add(hemi);const sun=new THREE.DirectionalLight(0xfff2cf,3);sun.position.set(-25,65,30);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-65,right:65,top:65,bottom:-65,near:1,far:150});sun.shadow.normalBias=.035;sun.shadow.bias=-.0002;scene.add(sun);
-const matCache=new Map();function mat(c){if(!matCache.has(c))matCache.set(c,new THREE.MeshStandardMaterial({color:c,roughness:.85}));return matCache.get(c)}
-function mesh(geo,c,parent=scene){const m=new THREE.Mesh(geo,typeof c==='string'||typeof c==='number'?mat(c):c);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
+/* ── 재질 — 코드로 그린 무늬(잔디 · 돌길 · 회벽 · 기와 · 나무 · 나무껍질 · 돌)와 그 결(노멀맵).
+   무늬는 흰색 가까이 그려 재질 색(계절 색 포함)에 곱해지게 하고, 같은 색 재질에는 한 번만 입힌다 ── */
+let texSeed=97;const trnd=()=>(texSeed=(texSeed*16807)%2147483647)/2147483647;
+function canvasTex(size,draw,rep=1){const c=document.createElement('canvas');c.width=c.height=size;const x=c.getContext('2d');draw(x,size);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;t.repeat.set(rep,rep);return t}
+function normalFrom(tex,strength){const src=tex.image,w=src.width,h=src.height,d=src.getContext('2d').getImageData(0,0,w,h).data,c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d'),o=x.createImageData(w,h),L=(i,j)=>d[(((j+h)%h)*w+((i+w)%w))*4]/255;for(let j=0;j<h;j++)for(let i=0;i<w;i++){const dx=(L(i+1,j)-L(i-1,j))*strength,dy=(L(i,j+1)-L(i,j-1))*strength,l=Math.hypot(dx,dy,1),k=(j*w+i)*4;o.data[k]=(-dx/l*.5+.5)*255;o.data[k+1]=(dy/l*.5+.5)*255;o.data[k+2]=(1/l*.5+.5)*255;o.data[k+3]=255}x.putImageData(o,0,0);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.copy(tex.repeat);t.anisotropy=4;return t}
+const grey=v=>`rgb(${v|0},${v|0},${v|0})`;
+const TEX={
+  grass:canvasTex(256,(x,s)=>{x.fillStyle=grey(232);x.fillRect(0,0,s,s);for(let i=0;i<60;i++){x.fillStyle=`rgba(${trnd()<.5?'255,255,255':'170,170,170'},.12)`;x.beginPath();x.arc(trnd()*s,trnd()*s,8+trnd()*26,0,7);x.fill()}for(let i=0;i<2600;i++){const v=180+trnd()*75;x.strokeStyle=grey(v);x.lineWidth=1+trnd();const px=trnd()*s,py=trnd()*s;x.beginPath();x.moveTo(px,py);x.lineTo(px+(trnd()-.5)*4,py-3-trnd()*6);x.stroke()}}),
+  paving:canvasTex(256,(x,s)=>{x.fillStyle=grey(175);x.fillRect(0,0,s,s);const n=6,g=s/n;for(let r=0;r<n;r++)for(let c=0;c<n;c++){const off=(r%2)*g/2,v=222+trnd()*30;x.fillStyle=grey(v);x.beginPath();x.roundRect?x.roundRect(c*g+off+2,r*g+2,g-4,g-4,6):x.rect(c*g+off+2,r*g+2,g-4,g-4);x.fill();if(off){x.beginPath();x.roundRect?x.roundRect(off-g+2,r*g+2,g-4,g-4,6):x.rect(off-g+2,r*g+2,g-4,g-4);x.fill()}for(let k=0;k<14;k++){x.fillStyle=`rgba(0,0,0,${.03+trnd()*.05})`;x.beginPath();x.arc(c*g+off+trnd()*g,r*g+trnd()*g,1+trnd()*3,0,7);x.fill()}}}),
+  plaster:canvasTex(128,(x,s)=>{x.fillStyle=grey(244);x.fillRect(0,0,s,s);for(let i=0;i<1400;i++){x.fillStyle=grey(225+trnd()*30);x.fillRect(trnd()*s,trnd()*s,1+trnd()*2,1+trnd()*2)}},1.5),
+  roof:canvasTex(256,(x,s)=>{x.fillStyle=grey(150);x.fillRect(0,0,s,s);const rh=32,tw=32;for(let r=0;r<s/rh;r++)for(let c=-1;c<s/tw+1;c++){const off=(r%2)*tw/2,v=205+trnd()*45,g=x.createLinearGradient(0,r*rh,0,r*rh+rh);g.addColorStop(0,grey(v));g.addColorStop(1,grey(v-45));x.fillStyle=g;x.beginPath();x.moveTo(c*tw+off+1,r*rh);x.lineTo(c*tw+off+tw-1,r*rh);x.lineTo(c*tw+off+tw-1,r*rh+rh*.6);x.quadraticCurveTo(c*tw+off+tw/2,r*rh+rh+4,c*tw+off+1,r*rh+rh*.6);x.closePath();x.fill()}},3),
+  wood:canvasTex(256,(x,s)=>{x.fillStyle=grey(236);x.fillRect(0,0,s,s);const ph=s/4;for(let p=0;p<4;p++){x.fillStyle=grey(222+trnd()*28);x.fillRect(0,p*ph+1,s,ph-2);for(let l=0;l<9;l++){x.strokeStyle=`rgba(0,0,0,${.05+trnd()*.07})`;x.lineWidth=1;x.beginPath();const y0=p*ph+trnd()*ph;for(let px=0;px<=s;px+=8)x.lineTo(px,y0+Math.sin(px/40+l)*2.5);x.stroke()}x.fillStyle='rgba(0,0,0,.22)';x.fillRect(0,p*ph,s,1.5)}}),
+  bark:canvasTex(128,(x,s)=>{x.fillStyle=grey(215);x.fillRect(0,0,s,s);for(let i=0;i<70;i++){x.strokeStyle=grey(150+trnd()*90);x.lineWidth=1+trnd()*3;const px=trnd()*s;x.beginPath();x.moveTo(px,0);x.bezierCurveTo(px+(trnd()-.5)*10,s*.3,px+(trnd()-.5)*10,s*.7,px+(trnd()-.5)*6,s);x.stroke()}},1),
+  stone:canvasTex(128,(x,s)=>{x.fillStyle=grey(232);x.fillRect(0,0,s,s);for(let i=0;i<260;i++){x.fillStyle=`rgba(${trnd()<.5?'0,0,0':'255,255,255'},${.03+trnd()*.07})`;x.beginPath();x.arc(trnd()*s,trnd()*s,2+trnd()*9,0,7);x.fill()}},1)};
+const NRM={};for(const [k,v] of Object.entries({grass:1.4,paving:2.5,plaster:.8,roof:3.2,wood:1.6,bark:3,stone:1.6}))NRM[k]=normalFrom(TEX[k],v);
+// 색 → 무늬 (이 색들은 이 무늬에만 쓰인다)
+const MAT_LOOK={grass:['#9fbb7c'],paving:['#e0d4ae','#dfd2ab','#eee1bc','#d5ceb2','#e8d9b3','#e6d4af','#c4c7b3','#eee2bd','#cdc5a6','#cdc5a0'],plaster:['#ece6cd','#f1d9b9','#e8e2c6','#dfe5cc','#b78165','#f6ebce','#d9b498','#d7d4b4','#e8e2c6'],roof:['#617f70','#bc795a','#386b5c','#4b8774','#7e8470'],wood:['#b18b5e','#c09969','#b79564','#936d4a','#8d6a47','#c9a372','#c09a6a','#9b7a55','#d8bf8f','#8f7654','#ddbf80'],bark:['#8d7854'],stone:['#d0c9a8','#d9d3af','#cdcaaa','#b7b99b','#ceb99a','#dad2ac','#d9d0b0','#e7dfc3','#cdc6a8','#c4c7b3']};
+const LOOK_OF={},LOOK_ROUGH={grass:.97,paving:.9,plaster:.88,roof:.62,wood:.72,bark:.95,stone:.9};for(const [k,cs] of Object.entries(MAT_LOOK))cs.forEach(c=>{LOOK_OF[c]=k});
+function dressMat(c,m){m.envMapIntensity=.55;const look=LOOK_OF[String(c).toLowerCase()];if(look){m.userData.look=look;m.map=TEX[look];m.normalMap=NRM[look];m.normalScale=new THREE.Vector2(.9,.9);m.roughness=LOOK_ROUGH[look]}if(c==='#789e9e'||c==='#35566b'||c==='#264e48'){m.roughness=.12;m.metalness=.45;m.envMapIntensity=1.6}if(c==='#71b8bd'||c==='#bfe6ec'||c==='#65afbb'){m.roughness=.08;m.metalness=.1;m.envMapIntensity=1.4}return m}
+// 지형 · 길 · 광장에도 무늬가 고르게 앉도록 월드 좌표로 UV 를 준다(면 방향에 따라 xz · zy · xy)
+function worldUV(geo,tile,roofish){if(geo.userData.wuv||!geo.attributes.normal)return;geo.userData.wuv=true;const p=geo.attributes.position,n=geo.attributes.normal,uv=new Float32Array(p.count*2);for(let i=0;i<p.count;i++){const ax=Math.abs(n.getX(i)),ay=Math.abs(n.getY(i)),az=Math.abs(n.getZ(i)),x=p.getX(i),y=p.getY(i),z=p.getZ(i);let u,v;if(roofish){if(az>ax&&az>ay){u=x;v=y*1.6}else{u=z;v=y*1.6}}else if(ay>=ax&&ay>=az){u=x;v=z}else if(ax>=az){u=z;v=y}else{u=x;v=y}uv[i*2]=u/tile;uv[i*2+1]=v/tile}geo.setAttribute('uv',new THREE.BufferAttribute(uv,2))}
+const LOOK_TILE={grass:4,paving:3,plaster:2.2,roof:2,wood:1.4,bark:1.2,stone:2};
+const matCache=new Map();function mat(c){if(!matCache.has(c)){const m=new THREE.MeshStandardMaterial({color:c,roughness:.85});m.userData.shared=true;dressMat(c,m);matCache.set(c,m)}return matCache.get(c)}
+function mesh(geo,c,parent=scene){const m=new THREE.Mesh(geo,typeof c==='string'||typeof c==='number'?mat(c):c),lk=m.material.userData&&m.material.userData.look;if(lk)worldUV(geo,LOOK_TILE[lk],lk==='roof');m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
 function box(p,x,y,z,w,h,d,c){let m=mesh(new THREE.BoxGeometry(w,h,d),c,p);m.position.set(x,y,z);return m}function cyl(p,x,y,z,rt,rb,h,c,n=16){let m=mesh(new THREE.CylinderGeometry(rt,rb,h,n),c,p);m.position.set(x,y,z);return m}function sphere(p,x,y,z,r,c,detail=1){let m=mesh(new THREE.IcosahedronGeometry(r,detail),c,p);m.position.set(x,y,z);return m}function beam(p,a,b,r,c){const v1=new THREE.Vector3(...a),v2=new THREE.Vector3(...b),v=v2.clone().sub(v1);let m=cyl(p,0,0,0,r,r,v.length(),c,8);m.position.copy(v1.add(v2).multiplyScalar(.5));m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize());return m}
 const dynamic=new THREE.Group();scene.add(dynamic);let objects=[],labels=[],obstacles=[],waterRipples=[],floaters=[],characterGroups=[],streetLamps=[],streetLampHeads=[];
 let weatherMode='neutral',fearGreedValue=50,fearGreedLabel='NEUTRAL',weatherIntensity=0,fearGreedUpdatedAt=0,weatherRoot,weatherSignRoot,weatherSign,rainPoints,snowPoints,cloudGroup,rainbowGroup,weatherTextLayers=[];
@@ -9658,7 +12038,7 @@ function debtStation(p,a){box(p,0,.25,0,3.4,.3,2.3,'#ceb99a');box(p,0,1.2,0,2.4,
 label('주택가',[-23,10,-15],{district:true,category:'부동산'});label('금고 산책길',[-24,1.1,19.5],{district:true,category:'예금'});label('오래오래 낚시터',[22,1.2,25.5],{district:true,category:'장기'});
 label('상환 정류장',[-7,4,22],{district:true,category:'부채'});
 const staticObstacles=obstacles.slice(),staticLabels=labels.slice();
-function clearDynamic(){while(dynamic.children.length){const root=dynamic.children[0];root.traverse(o=>{if(o.isMesh){o.geometry.dispose();if(o.material.map){o.material.map.dispose();o.material.dispose()}}});dynamic.remove(root)}labels.filter(l=>!staticLabels.includes(l)).forEach(l=>l.el.remove());labels=staticLabels.slice();obstacles=staticObstacles.slice();objects=[]}
+function clearDynamic(){while(dynamic.children.length){const root=dynamic.children[0];root.traverse(o=>{if(o.isMesh){o.geometry.dispose();if(o.material.map&&!o.material.userData.shared){o.material.map.dispose();o.material.dispose()}}});dynamic.remove(root)}labels.filter(l=>!staticLabels.includes(l)).forEach(l=>l.el.remove());labels=staticLabels.slice();obstacles=staticObstacles.slice();objects=[]}
 function pierSlot(i,n){if(n<=3)return {x:16+i*5,z:10,rot:0,scale:1};const lo=135,hi=320,span=Math.min(hi-lo,(n-1)*43),start=Math.min(hi-span,Math.max(lo,270-span/2)),angles=[...Array(n)].map((_,j)=>start+j*span/(n-1)).sort((a,b)=>Math.abs(a-270)-Math.abs(b-270)),t=angles[i]*Math.PI/180,nx=Math.cos(t)/10.2,nz=Math.sin(t)/7.34,nl=Math.hypot(nx,nz),ux=nx/nl,uz=nz/nl,x=22+Math.cos(t)*10.2+ux,z=17+Math.sin(t)*7.34+uz;return {x,z,rot:Math.atan2(-ux,-uz),scale:Math.min(1,span/(n-1)/22),approach:{x:x+ux*1.9,z:z+uz*1.9}}}
 /* ── 뱃지 기념물 ── 자산 현황의 뱃지(마일스톤)를 어울리는 구역에 기념물로 세운다 (소유자 필터와 상관없이 우리 집 전체 기록)
    억 돌파 → 광장 북동쪽 석탑(억마다 한 층) · 천만 돌파 · 신기록 → 광장 둘레 별 타일 · 목표 → 목표 언덕(10%마다 깃발, 정상 = 달성)
@@ -9734,18 +12114,18 @@ function buildMonthFx(){monthFx.forEach(f=>{f.sprite.material.map.dispose();f.sp
     monthFx.push(f)})}
 function updateMonthFx(){const show=prefs.month&&cameraMode!=='section';monthFx.forEach((f,i)=>{const on=show&&f.root.visible;f.sprite.visible=on;f.sprite.position.y=f.y+Math.sin(time*2+f.phase)*.12;const k=THREE.MathUtils.clamp(camera.position.distanceTo(f.sprite.position)/26,1,3.6);f.sprite.scale.set(2.9*k,.66*k,1);if(f.cloud){f.cloud.visible=on;f.drops.forEach((m,d)=>{m.position.y=-.4-((time*1.6+d*.37)%1)*1.4})}})}
 // 설정 패널
-const PREF_ROWS=[['month','이번 달 변화 표시','건물 위 ▲▼ 증감 · 줄어든 곳의 비구름 · 구역별 %'],['hide','금액 가리기','모든 금액을 ••• 로 — 다른 사람에게 보여 줄 때'],['light','가벼운 모드','그림자 · 주민 · 날씨 효과를 끄고 가볍게 (오래된 PC)'],['realTime','실제 시각 낮 · 밤','3분마다 도는 대신 지금 시각에 맞춰요'],['season','계절 풍경','봄 벚꽃 · 가을 단풍 · 겨울 눈밭'],['teleport','순간 이동','구역 · 건물을 누르면 걸어가지 않고 바로 가요'],['sfx','효과음','도착 · 사진 · 뉴스 · 기록 소리'],['bgm','배경음','잔잔한 산책 음악']];
+const PREF_ROWS=[['month','이번 달 변화 표시','건물 위 ▲▼ 증감 · 줄어든 곳의 비구름 · 구역별 %'],['hide','금액 가리기','모든 금액을 ••• 로 — 다른 사람에게 보여 줄 때'],['light','가벼운 모드','그림자 · 주민 · 날씨 · 하늘 · 물 반사 · 풀 · 화면 효과를 끄고 가볍게 (오래된 PC)'],['realTime','실제 시각 낮 · 밤','3분마다 도는 대신 지금 시각에 맞춰요'],['season','계절 풍경','봄 벚꽃 · 가을 단풍 · 겨울 눈밭'],['teleport','순간 이동','구역 · 건물을 누르면 걸어가지 않고 바로 가요'],['sfx','효과음','도착 · 사진 · 뉴스 · 기록 소리'],['bgm','배경음','잔잔한 산책 음악']];
 function renderPrefs(){$('#prefsList').innerHTML=PREF_ROWS.map(([k,t,s])=>`<label class="pref"><span><b>${t}</b><small>${s}</small></span><input type="checkbox" data-pref="${k}" ${prefs[k]?'checked':''}></label>`).join('');$('#hideBtn').classList.toggle('active',!!prefs.hide);$('#hideBtn').setAttribute('aria-pressed',!!prefs.hide)}
 let quiet=false;
 function softRebuild(){const oldSection=cameraMode==='section'?activeSection:null,pos={...player},sel=selectedAsset;quiet=true;refreshData();rebuildVillage();const sp=nearestWalkable(pos.x,pos.z);if(sp){player.x=sp.x;player.z=sp.z;placeCharacters(0,false)}drawRoute();if(oldSection){enterSection(oldSection);if(sel&&visible.some(a=>a.name===sel))showAsset(sel)}else{hideDetail();if(cameraMode==='overview')applySectionVisibility()}quiet=false}
 function setPref(k,v){prefs[k]=v;savePrefs();renderPrefs();if(k==='hide'||k==='month')softRebuild();else if(k==='light')applyLight();else if(k==='season'){applySeason();softRebuild()}else if(k==='bgm')syncBgm();else if(k==='sfx'&&v)sfx('click');if(k==='hide')toast(v?'금액을 가렸어요. 사진에도 가린 채로 찍혀요.':'금액을 다시 보여 줘요.')}
-function applyLight(){const on=!!prefs.light;renderer.shadowMap.enabled=!on;sun.castShadow=!on;scene.traverse(o=>{if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.needsUpdate=true)});renderer.setPixelRatio(on?1:Math.min(devicePixelRatio,1.65));npcGroups.forEach(n=>{n.root.visible=!on});resize()}
+function applyLight(){const on=!!prefs.light;renderer.shadowMap.enabled=!on;sun.castShadow=!on;scene.traverse(o=>{if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.needsUpdate=true)});renderer.setPixelRatio(on?1:Math.min(devicePixelRatio,1.65));npcGroups.forEach(n=>{n.root.visible=!on});applyFx();resize()}
 // 계절 — 나무 · 잔디 색 (같은 색 재질을 나무끼리만 쓰므로 한 번에 바뀐다)
 const SEASON_COLORS={spring:{'#79a566':'#86b06c','#8bb575':'#f3c6d3','#9abe7c':'#f7dbe4','#9fbb7c':'#a8c681'},autumn:{'#79a566':'#d98c3f','#8bb575':'#e2a84b','#9abe7c':'#c9683c','#9fbb7c':'#b9b97d','#78a375':'#8c9a5b'},winter:{'#79a566':'#b6c6ba','#8bb575':'#e3ebe6','#9abe7c':'#f3f7f4','#9fbb7c':'#dfe8e1','#5e8d63':'#9fb8a4','#78a375':'#e8efe9'}};
 const SEASON_NAME={spring:'봄',summer:'여름',autumn:'가을',winter:'겨울'};
 function seasonOf(){const m=Number(refDate().slice(5,7));return m>=3&&m<=5?'spring':m>=6&&m<=8?'summer':m>=9&&m<=11?'autumn':'winter'}
 function seasonTag(){return prefs.season?' · '+SEASON_NAME[seasonOf()]:''}
-function applySeason(){const s=prefs.season?seasonOf():'summer',map=SEASON_COLORS[s]||{};['#79a566','#8bb575','#9abe7c','#9fbb7c','#5e8d63','#78a375'].forEach(k=>{if(matCache.has(k))matCache.get(k).color.set(map[k]||k)});const b=$('#timeBadge');if(b)b.textContent=dayNightMode.toUpperCase()+seasonTag()}
+function applySeason(){const s=prefs.season?seasonOf():'summer',map=SEASON_COLORS[s]||{};['#79a566','#8bb575','#9abe7c','#9fbb7c','#5e8d63','#78a375'].forEach(k=>{if(matCache.has(k))matCache.get(k).color.set(map[k]||k)});realismSeason();const b=$('#timeBadge');if(b)b.textContent=dayNightMode.toUpperCase()+seasonTag()}
 function realClock(){const d=new Date();return (d.getHours()+d.getMinutes()/60+d.getSeconds()/3600)/24*dayNightCycle}
 // 소리 — 파일 없이 WebAudio 로 만든다 (처음 켤 때 브라우저가 소리를 허락)
 let actx=null,bgmTimer=null;const PENTA=[262,294,330,392,440,523,587,659,784];
@@ -9756,7 +12136,7 @@ function sfx(kind){if(!prefs.sfx||paused||quiet)return;({arrive:()=>{tone(660,0,
 function syncBgm(){const on=prefs.bgm&&!paused&&!document.hidden;if(on&&!bgmTimer){audio();bgmTimer=setInterval(()=>{if(Math.random()<.55)tone(PENTA[Math.floor(Math.random()*PENTA.length)]*(dayNightMode==='night'?.5:1),0,1.9,'sine',.03);if(Math.random()<.12)tone(131,0,3,'sine',.025)},650)}else if(!on&&bgmTimer){clearInterval(bgmTimer);bgmTimer=null}}
 document.addEventListener('visibilitychange',syncBgm);
 // 사진 — 3D 화면 + 이름표 + 아래 띠(날짜 · 순자산)를 한 장으로
-function takePhoto(){renderer.render(scene,camera);const src=renderer.domElement,W=src.width,H=src.height,k=W/innerWidth,foot=Math.round(56*k),c=document.createElement('canvas');c.width=W;c.height=H+foot;const x=c.getContext('2d'),F='-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif';x.filter=getComputedStyle(src).filter||'none';x.drawImage(src,0,0);x.filter='none';
+function takePhoto(){renderScene();const src=renderer.domElement,W=src.width,H=src.height,k=W/innerWidth,foot=Math.round(56*k),c=document.createElement('canvas');c.width=W;c.height=H+foot;const x=c.getContext('2d'),F='-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif';x.filter=getComputedStyle(src).filter||'none';x.drawImage(src,0,0);x.filter='none';
   $$('.world-label').forEach(el=>{if(el.style.display==='none')return;const r=el.getBoundingClientRect();if(!r.width||r.bottom<0||r.top>innerHeight)return;const cs=getComputedStyle(el);x.fillStyle=cs.backgroundColor;x.beginPath();x.roundRect?x.roundRect(r.left*k,r.top*k,r.width*k,r.height*k,9*k):x.rect(r.left*k,r.top*k,r.width*k,r.height*k);x.fill();x.beginPath();x.moveTo((r.left+r.width/2-5)*k,r.bottom*k);x.lineTo((r.left+r.width/2+5)*k,r.bottom*k);x.lineTo((r.left+r.width/2)*k,(r.bottom+5)*k);x.fill();x.fillStyle=cs.color;x.textBaseline='top';el.innerText.split('\n').filter(Boolean).forEach((t,i)=>{x.font=`${i?500:700} ${(i?10:12)*k}px ${F}`;x.fillText(t,(r.left+parseFloat(cs.paddingLeft||10))*k,(r.top+7+i*15)*k,(r.width-14)*k)})});
   const net=visible.reduce((s,a)=>s+(debtRow(a)?-a.amount:a.amount),0);x.fillStyle='#22675e';x.fillRect(0,H,W,foot);x.fillStyle='#fff6d8';x.textBaseline='middle';x.font=`800 ${20*k}px ${F}`;x.fillText('⌂ 자산마을',20*k,H+foot/2);x.font=`600 ${15*k}px ${F}`;x.textAlign='right';x.fillText(refDate()+' · '+(mode==='all'?'우리 집':ownerName(mode))+' 순자산 '+compact(net)+'원',W-20*k,H+foot/2);
   const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='asset-village-'+refDate()+'.png';document.body.appendChild(a);a.click();a.remove();$('#flash').classList.remove('go');void $('#flash').offsetWidth;$('#flash').classList.add('go');sfx('photo');toast('사진을 저장했어요'+(prefs.hide?' — 금액은 가렸어요':''))}
@@ -9848,20 +12228,116 @@ function weatherLetterColor(){return weatherMode==='snow'?'#ef233c':weatherMode=
 function weatherLetterDepth(){return weatherMode==='snow'?'#a80f28':weatherMode==='rain'?'#c52d61':weatherMode==='neutral'?'#1e7440':weatherMode==='clouds'?'#6f9729':'#174aa8'}
 weatherSignRoot=new THREE.Group();weatherSignRoot.position.set(0,terrainHeight(0,5)+.05,5);scene.add(weatherSignRoot);for(let i=0;i<11;i++){const front=i===10,m=new THREE.Mesh(new THREE.PlaneGeometry(20,5.15),new THREE.MeshBasicMaterial({map:weatherLetterTexture('NEUTRAL',front?'#43b36b':'#1e7440'),transparent:true,side:THREE.DoubleSide,depthWrite:false}));m.position.set(-(.1-i*.016),4.15-(.04*(10-i)),.25-(10-i)*.085);weatherSignRoot.add(m);weatherTextLayers.push(m)}weatherSign=weatherTextLayers[10];
 dayNightRoot=new THREE.Group();scene.add(dayNightRoot);const starPositions=new Float32Array(260*3);for(let i=0;i<260;i++){starPositions[i*3]=(Math.random()-.5)*190;starPositions[i*3+1]=28+Math.random()*78;starPositions[i*3+2]=(Math.random()-.5)*170}const starGeometry=new THREE.BufferGeometry();starGeometry.setAttribute('position',new THREE.BufferAttribute(starPositions,3));stars=new THREE.Points(starGeometry,new THREE.PointsMaterial({color:'#f7f0c4',size:.7,transparent:true,opacity:0,sizeAttenuation:true,depthWrite:false}));stars.frustumCulled=false;dayNightRoot.add(stars);moon=new THREE.Mesh(new THREE.SphereGeometry(3.2,24,16),new THREE.MeshBasicMaterial({color:'#e7edff',transparent:true,opacity:.95}));dayNightRoot.add(moon);moonLight=new THREE.DirectionalLight('#9cb9f2',0);scene.add(moonLight);
-function updateDayNight(dt){dayNightClock=prefs.realTime?realClock():(dayNightClock+dt)%dayNightCycle;const phase=dayNightClock/dayNightCycle,angle=phase*Math.PI*2-Math.PI/2,sunHeight=Math.sin(angle),daylight=THREE.MathUtils.clamp((sunHeight+.1)/.72,0,1),night=1-daylight;const sky=new THREE.Color(),daySky=new THREE.Color('#b8d7d8'),duskSky=new THREE.Color('#d89278'),nightSky=new THREE.Color('#111a38');if(daylight>.55)sky.copy(duskSky).lerp(daySky,(daylight-.55)/.45);else sky.copy(nightSky).lerp(duskSky,daylight/.55);scene.background.copy(sky);scene.fog.color.copy(sky);sun.position.set(Math.cos(angle)*58,Math.max(-16,sunHeight*72),Math.sin(angle)*42);sun.intensity=.28+daylight*2.72;hemi.intensity=.55+daylight*2.15;moon.position.set(Math.cos(angle+Math.PI)*52,Math.max(9,Math.sin(angle+Math.PI)*54),Math.sin(angle+Math.PI)*38);moon.visible=night>.08;moonLight.position.copy(moon.position);moonLight.intensity=night*.8;stars.visible=night>.25;stars.material.opacity=Math.min(1,night*1.7);streetLamps.forEach((light,i)=>{light.visible=night>.02&&!prefs.light;light.intensity=night*3.2;streetLampHeads[i].material.emissiveIntensity=.12+night*1.9});const next=night>.55?'night':daylight<.62?'dusk':'day';if(next!==dayNightMode){dayNightMode=next;const badge=$('#timeBadge');if(badge){badge.textContent=next.toUpperCase()+seasonTag();badge.dataset.mode=next}}}
+function updateDayNight(dt){dayNightClock=prefs.realTime?realClock():(dayNightClock+dt)%dayNightCycle;const phase=dayNightClock/dayNightCycle,angle=phase*Math.PI*2-Math.PI/2,sunHeight=Math.sin(angle),daylight=THREE.MathUtils.clamp((sunHeight+.1)/.72,0,1),night=1-daylight;const sky=new THREE.Color(),daySky=new THREE.Color('#b8d7d8'),duskSky=new THREE.Color('#d89278'),nightSky=new THREE.Color('#111a38');if(daylight>.55)sky.copy(duskSky).lerp(daySky,(daylight-.55)/.45);else sky.copy(nightSky).lerp(duskSky,daylight/.55);scene.background.copy(sky);scene.fog.color.copy(sky);sun.position.set(Math.cos(angle)*58,Math.max(-16,sunHeight*72),Math.sin(angle)*42);sun.intensity=.28+daylight*2.72;hemi.intensity=(.55+daylight*2.15)*(FX.level>=1?.3:1);moon.position.set(Math.cos(angle+Math.PI)*52,Math.max(9,Math.sin(angle+Math.PI)*54),Math.sin(angle+Math.PI)*38);moon.visible=night>.08;moonLight.position.copy(moon.position);moonLight.intensity=night*.8;stars.visible=night>.25;stars.material.opacity=Math.min(1,night*1.7);streetLamps.forEach((light,i)=>{light.visible=night>.02&&!prefs.light;light.intensity=night*3.2;streetLampHeads[i].material.emissiveIntensity=.12+night*1.9});const next=night>.55?'night':daylight<.62?'dusk':'day';if(next!==dayNightMode){dayNightMode=next;const badge=$('#timeBadge');if(badge){badge.textContent=next.toUpperCase()+seasonTag();badge.dataset.mode=next}}realismDay(daylight,night)}
+/* ── 사실감 — 하늘 · 주변광 · 물 · 후처리 · 바람 · 풀 · 계절 입자 · 나비 · 새.
+   품질 단계 3(전부) · 2(가림 그늘 끔) · 1(블룸 · 물 반사 끔) · 0(가볍게 모드 — 예전 화면). 느리면 스스로 한 단계씩 내린다 ── */
+const FXA=window.THREE_ADDONS||null;
+const FX={want:(matchMedia('(pointer:coarse)').matches||innerWidth<760)?2:3,level:-1,locked:false,warm:0,sum:0,n:0,lastT:0,toasted:false,envAt:-1e9,envSun:new THREE.Vector3(9,9,9),envRT:null,day:1,tilt:1};
+const WIND={value:0},WIND_AMP={value:1};
+renderer.shadowMap.autoUpdate=false;renderer.shadowMap.needsUpdate=true;
+// 하늘 — 해의 위치에 맞춰 낮 · 노을 · 밤 빛깔이 바뀐다
+let skyMesh=null,envScene=null,envGround=null,pmrem=null;
+if(FXA){skyMesh=new FXA.Sky();skyMesh.scale.setScalar(450);skyMesh.renderOrder=-1;skyMesh.frustumCulled=false;skyMesh.userData.noAO=true;const su=skyMesh.material.uniforms;su.turbidity.value=4.2;su.rayleigh.value=1.35;su.mieCoefficient.value=.004;su.mieDirectionalG.value=.84;su.skyGain={value:.42};su.nightTint={value:new THREE.Color('#0b1430')};skyMesh.material.fragmentShader=skyMesh.material.fragmentShader.replace('void main() {','uniform float skyGain;\nuniform vec3 nightTint;\nvoid main() {').replace('gl_FragColor = vec4( retColor, 1.0 );','gl_FragColor = vec4( retColor * skyGain + nightTint, 1.0 );');scene.add(skyMesh);
+  envScene=new THREE.Scene();const es=new THREE.Mesh(skyMesh.geometry,skyMesh.material);es.scale.setScalar(120);envScene.add(es);envGround=new THREE.Mesh(new THREE.CircleGeometry(150,24),new THREE.MeshBasicMaterial({color:'#6f8a5a'}));envGround.rotation.x=-Math.PI/2;envGround.position.y=-4;envScene.add(envGround);pmrem=new THREE.PMREMGenerator(renderer)}
+function refreshEnv(force){if(!pmrem||FX.level<1)return;const s=sun.position.clone().normalize(),now=performance.now();if(!force&&(s.angleTo(FX.envSun)<.05||now-FX.envAt<900))return;FX.envSun.copy(s);FX.envAt=now;envGround.material.color.set('#6f8a5a').multiplyScalar(.12+.88*FX.day);const rt=pmrem.fromScene(envScene,0,.1,300);if(FX.envRT)FX.envRT.dispose();FX.envRT=rt;scene.environment=rt.texture}
+// 호수 — 하늘과 마을이 비치는 물(반사), 물결 노멀맵은 코드로 만든다
+const waveTex=canvasTex(256,(x,s)=>{const d=x.createImageData(s,s);for(let j=0;j<s;j++)for(let i=0;i<s;i++){const u=i/s*Math.PI*2,v=j/s*Math.PI*2;let h=Math.sin(u*3+v*2)*.35+Math.sin(u*5-v*4+1.3)*.25+Math.sin(u*9+v*7+2.1)*.14+Math.sin(u*14-v*11+.4)*.08+Math.sin(u*2-v*6+.9)*.18;const g=(h*.5+.5)*255,k=(j*s+i)*4;d.data[k]=d.data[k+1]=d.data[k+2]=g;d.data[k+3]=255}x.putImageData(d,0,0)}),waterNormals=normalFrom(waveTex,3.2);
+let water=null;
+if(FXA){water=new FXA.Water(new THREE.CircleGeometry(10.2,72),{textureWidth:512,textureHeight:512,waterNormals,sunDirection:new THREE.Vector3(0,1,0),sunColor:0xfff2cf,waterColor:0x2c7580,distortionScale:1.1,fog:true,alpha:1});water.rotation.x=-Math.PI/2;water.scale.y=.72;water.position.set(22,.4,17);water.material.uniforms.size.value=2.4;water.receiveShadow=false;water.castShadow=false;water.userData.noAO=true;scene.add(water)}
+// 바다 — 하늘을 머금은 잔물결
+const oceanN=waterNormals.clone();oceanN.needsUpdate=true;oceanN.repeat.set(150,150);ocean.material=new THREE.MeshStandardMaterial({color:'#8fc1c8',roughness:.32,metalness:.05,normalMap:oceanN,normalScale:new THREE.Vector2(.35,.35),envMapIntensity:1.1});ocean.receiveShadow=false;ocean.castShadow=false;
+// 후처리 — 가림 그늘(GTAO) · 빛 번짐(bloom) · 미니어처 초점(tilt-shift) · 비네트 · 색 보정
+const GradeShader={uniforms:{tDiffuse:{value:null},uAmount:{value:1},uRes:{value:new THREE.Vector2(1,1)},uVig:{value:.34}},vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:`uniform sampler2D tDiffuse;uniform float uAmount;uniform vec2 uRes;uniform float uVig;varying vec2 vUv;
+void main(){vec3 col=texture2D(tDiffuse,vUv).rgb;float r=smoothstep(.16,.5,abs(vUv.y-.56))*uAmount*4.5;if(r>.1){vec3 acc=col;for(int i=1;i<14;i++){float a=float(i)*2.39996;float rr=sqrt(float(i))/3.6;acc+=texture2D(tDiffuse,vUv+vec2(cos(a),sin(a))*rr*r/uRes).rgb;}col=acc/14.;}
+float l=dot(col,vec3(.2126,.7152,.0722));col=mix(vec3(l),col,1.07)*vec3(1.02,1.,.97);vec2 d=vUv-.5;col*=1.-dot(d,d)*uVig;gl_FragColor=vec4(col,1.);}`};
+let composer=null,gtaoPass=null,bloomPass=null,gradePass=null;
+function buildComposer(){if(!FXA||composer)return;const pr=renderer.getPixelRatio(),rt=new THREE.WebGLRenderTarget(innerWidth*pr,innerHeight*pr,{type:THREE.HalfFloatType,samples:renderer.capabilities.isWebGL2?4:0});composer=new FXA.EffectComposer(renderer,rt);composer.setPixelRatio(pr);composer.setSize(innerWidth,innerHeight);composer.addPass(new FXA.RenderPass(scene,camera));
+  gtaoPass=new FXA.GTAOPass(scene,camera,innerWidth,innerHeight);const gs=gtaoPass.setSize.bind(gtaoPass);gtaoPass.setSize=(w,h)=>gs(Math.max(1,Math.round(w*.6)),Math.max(1,Math.round(h*.6)));gtaoPass.setSize(innerWidth*pr,innerHeight*pr);gtaoPass.updateGtaoMaterial({radius:1.1,distanceExponent:1.4,thickness:1.4,scale:1.1,samples:12,distanceFallOff:1,screenSpaceRadius:false});gtaoPass.updatePdMaterial({lumaPhi:10,depthPhi:2,normalPhi:3,radius:6,rings:2,samples:12});gtaoPass.blendIntensity=.9;
+  // 하늘 · 물 · 반투명 · 풀잎은 그늘 계산에서 뺀다(하늘 상자가 벽처럼 잡히지 않게, 물 반사가 두 번 그려지지 않게)
+  gtaoPass.overrideVisibility=function(){const c=this._visibilityCache;this.scene.traverse(o=>{c.set(o,o.visible);if(o.isPoints||o.isLine||o.isSprite||o.userData.noAO||(o.material&&!Array.isArray(o.material)&&o.material.transparent))o.visible=false})};
+  composer.addPass(gtaoPass);bloomPass=new FXA.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.26,.45,1.05);composer.addPass(bloomPass);gradePass=new FXA.ShaderPass(GradeShader);composer.addPass(gradePass);composer.addPass(new FXA.OutputPass())}
+function realismResize(){if(!composer)return;const pr=renderer.getPixelRatio();composer.setPixelRatio(pr);composer.setSize(innerWidth,innerHeight);gradePass.uniforms.uRes.value.set(innerWidth*pr,innerHeight*pr)}
+// 바람 — 나뭇잎 · 풀잎이 산들 흔들린다(버텍스에서만 움직여 가볍다)
+function windify(m,amp){m.onBeforeCompile=s=>{s.uniforms.uWind=WIND;s.uniforms.uWindAmp=WIND_AMP;s.vertexShader='uniform float uWind;uniform float uWindAmp;\n'+s.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+vec3 wO=(modelMatrix*vec4(0.,0.,0.,1.)).xyz;float wph=wO.x*.31+wO.z*.23;float wk=${amp.toFixed(3)}*uWindAmp*(.5+max(position.y,0.)*.4);
+transformed.x+=(sin(uWind*1.7+wph)*.7+sin(uWind*3.9+wph*1.7)*.3)*wk;transformed.z+=cos(uWind*1.3+wph*1.3)*.6*wk;`)};m.customProgramCacheKey=()=>'wind'+amp;m.needsUpdate=true}
+['#79a566','#8bb575','#9abe7c'].forEach(c=>windify(mat(c),.07));['#507b59','#5e8d63','#78a375'].forEach(c=>windify(mat(c),.045));
+// 풀 — 길 · 광장 · 호수 · 건물 자리를 피해 포기째 심는다
+const GRASS_N=9000,bladeGeo=new THREE.BufferGeometry();bladeGeo.setAttribute('position',new THREE.Float32BufferAttribute([-.035,0,0,.035,0,0,-.021,.15,0,.021,.15,0,0,.3,0],3));bladeGeo.setAttribute('normal',new THREE.Float32BufferAttribute(Array(5).fill([0,.94,.34]).flat(),3));bladeGeo.setIndex([0,1,2,1,3,2,2,3,4]);
+const grassMat=new THREE.MeshStandardMaterial({color:'#8cb168',side:THREE.DoubleSide,roughness:.95,envMapIntensity:.4});grassMat.onBeforeCompile=s=>{s.uniforms.uWind=WIND;s.uniforms.uWindAmp=WIND_AMP;s.vertexShader='uniform float uWind;uniform float uWindAmp;\n'+s.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+vec3 gO=(modelMatrix*instanceMatrix*vec4(0.,0.,0.,1.)).xyz;float gph=gO.x*.45+gO.z*.37;float gk=position.y*position.y*4.2*uWindAmp;
+transformed.x+=(sin(uWind*2.1+gph)*.13+sin(uWind*4.3+gph*1.9)*.045)*gk;transformed.z+=cos(uWind*1.7+gph)*.09*gk;`);s.fragmentShader=s.fragmentShader.replace('#include <normal_fragment_maps>','#include <normal_fragment_maps>\nnormal=normalize(vNormal);')};grassMat.customProgramCacheKey=()=>'grass';
+const grass=new THREE.InstancedMesh(bladeGeo,grassMat,GRASS_N);grass.castShadow=false;grass.receiveShadow=true;grass.frustumCulled=false;grass.userData.noAO=true;scene.add(grass);
+let pathBoxes=null;
+function grassOk(x,z){if(x*x/(44*44)+z*z/(34.5*34.5)>.88||Math.hypot(x,z)<7.4)return false;if((x-22)**2/(11.6**2)+(z-17)**2/(8.9**2)<1)return false;for(const b of pathBoxes)if(Math.abs(x-b.x)<b.w/2+.2&&Math.abs(z-b.z)<b.d/2+.2)return false;return !obstacles.some(o=>Math.abs(x-o.x)<o.w/2-.1&&Math.abs(z-o.z)<o.d/2-.1)}
+function layGrass(){if(!pathBoxes){pathBoxes=[];scene.traverse(o=>{if(o.userData.terrainPath){const g=o.geometry.parameters;pathBoxes.push({x:o.position.x,z:o.position.z,w:g.width,d:g.depth})}})}let seed=11;const r=()=>(seed=(seed*16807)%2147483647)/2147483647,m=new THREE.Matrix4(),q=new THREE.Quaternion(),e=new THREE.Euler(),v=new THREE.Vector3(),sc=new THREE.Vector3(),col=new THREE.Color();let n=0,tries=0;while(n<GRASS_N&&tries++<GRASS_N*3){const cx=(r()*2-1)*44,cz=(r()*2-1)*34.5;if(!grassOk(cx,cz))continue;const k=4+Math.floor(r()*5);for(let j=0;j<k&&n<GRASS_N;j++){const x=cx+(r()-.5)*.6,z=cz+(r()-.5)*.6;e.set((r()-.5)*.35,r()*Math.PI,(r()-.5)*.35);q.setFromEuler(e);const s=.55+r()*.5;sc.set(s,s*(.7+r()*.55),s);v.set(x,terrainHeight(x,z)-.02,z);m.compose(v,q,sc);grass.setMatrixAt(n,m);const b=.78+r()*.4;col.setRGB(b*(.95+r()*.1),b,b*(.9+r()*.1));grass.setColorAt(n,col);n++}}grass.count=n;grass.instanceMatrix.needsUpdate=true;if(grass.instanceColor)grass.instanceColor.needsUpdate=true}
+const GRASS_SEASON={spring:'#9dc46f',summer:'#86ad62',autumn:'#b5a862',winter:'#c9d6cc'};
+// 계절 입자 — 봄 꽃잎 · 가을 낙엽 · 여름밤 반딧불
+const FALL_N=150,fall=new THREE.InstancedMesh(new THREE.PlaneGeometry(.17,.11),new THREE.MeshStandardMaterial({side:THREE.DoubleSide,roughness:.8,color:'#ffffff'}),FALL_N);fall.castShadow=false;fall.receiveShadow=false;fall.frustumCulled=false;fall.userData.noAO=true;scene.add(fall);
+const fallP=Array.from({length:FALL_N},(_,i)=>({x:0,y:-99,z:0,s:.4+Math.random()*.6,ph:Math.random()*9,spin:.8+Math.random()*2}));let fallKind='';
+const flyGeo=new THREE.BufferGeometry();flyGeo.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(90*3),3));const flies=new THREE.Points(flyGeo,new THREE.PointsMaterial({color:'#fff4a3',size:.34,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending}));flies.frustumCulled=false;scene.add(flies);const flyP=Array.from({length:90},()=>({ox:(Math.random()-.5)*40,oz:(Math.random()-.5)*34,ph:Math.random()*9}));
+// 나비 · 새
+const wingGeo=new THREE.PlaneGeometry(.26,.2);wingGeo.translate(.13,0,0);wingGeo.rotateX(-Math.PI/2);
+const butterflies=['#f4d35e','#f6f1e6','#9ecbe8','#f2a7b8','#f4d35e','#c9a6e4','#f6f1e6'].map((c,i)=>{const g=new THREE.Group(),m=new THREE.MeshStandardMaterial({color:c,side:THREE.DoubleSide,roughness:.7});const l=new THREE.Mesh(wingGeo,m),r=new THREE.Mesh(wingGeo,m);r.scale.x=-1;g.add(l,r);g.userData={l,r,ax:[-10,6,-18,14,-4,26,-24][i],az:[14,20,-6,6,-18,4,10][i],ph:i*1.9,noAO:true};l.userData.noAO=r.userData.noAO=true;scene.add(g);return g});
+const birdGeo=new THREE.BufferGeometry();birdGeo.setAttribute('position',new THREE.Float32BufferAttribute([0,0,-.25,0,0,.3,.9,0,-.05],3));birdGeo.computeVertexNormals();const birdMat=new THREE.MeshBasicMaterial({color:'#5a6a64',side:THREE.DoubleSide,fog:true});
+const birds=Array.from({length:8},(_,i)=>{const g=new THREE.Group(),l=new THREE.Mesh(birdGeo,birdMat),r=new THREE.Mesh(birdGeo,birdMat);r.scale.x=-1;g.add(l,r);g.userData={l,r,noAO:true,off:[[0,0],[-1.6,-1.4],[1.6,-1.4],[-3.2,-2.8],[3.2,-2.8],[-4.8,-4.2],[4.8,-4.2],[0,-2.2]][i]};l.userData.noAO=r.userData.noAO=true;g.scale.setScalar(.62);scene.add(g);return g});
+const dotTex=canvasTex(64,(x,s)=>{const g=x.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.35,'rgba(255,255,255,.85)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,s,s)});stars.material.map=dotTex;stars.material.size*=.8;stars.material.needsUpdate=true;flies.material.map=dotTex;flies.material.needsUpdate=true;
+function realismSeason(){const s=prefs.season?seasonOf():'summer';grassMat.color.set(GRASS_SEASON[s]);grass.visible=FX.level>=1&&s!=='winter';fallKind=s==='spring'?'petal':s==='autumn'?'leaf':'';if(fallKind){const cs=fallKind==='petal'?['#f7c9d6','#fbe0e8','#f3b3c6','#fff3f6']:['#d98c3f','#e2a84b','#c9683c','#b9492f','#e9c35b'],c=new THREE.Color();for(let i=0;i<FALL_N;i++){fall.setColorAt(i,c.set(cs[i%cs.length]))}fall.instanceColor.needsUpdate=true;fall.scale.setScalar(1)}fallP.forEach(p=>p.y=-99)}
+// 날마다 — 해 · 달에 맞춰 하늘 · 물 · 주변광을 맞춘다(updateDayNight 에서 부른다)
+function realismDay(daylight,night){FX.day=daylight;ocean.material.color.set('#8fc1c8').multiplyScalar(.3+.7*daylight);if(skyMesh){const su=skyMesh.material.uniforms;su.sunPosition.value.copy(sun.position).normalize();su.nightTint.value.set('#0b1430').multiplyScalar(night*.55)}if(water){const w=water.material.uniforms;w.sunDirection.value.copy(sun.position).normalize();w.sunColor.value.set('#fff2cf').multiplyScalar(.08+daylight*.92)}refreshEnv(false)}
+function applyFx(){const lv=prefs.light||!FXA?0:FX.want;FX.level=lv;renderer.toneMappingExposure=lv>=1?1.02:1.18;if(typeof snowPoints!=='undefined'&&snowPoints&&!snowPoints.material.map){snowPoints.material.map=dotTex;snowPoints.material.needsUpdate=true}[...characterGroups,...npcGroups].forEach(c=>{c.shadow.material.opacity=lv>=1?.32:.15});if(lv>0)buildComposer();if(skyMesh)skyMesh.visible=lv>=1;if(lv>=1)refreshEnv(true);else scene.environment=null;const mirror=lv>=2&&!!water;if(water)water.visible=mirror;lake.visible=!mirror;waterRipples.forEach(r=>{r.visible=!mirror});if(composer){gtaoPass.enabled=lv>=3;bloomPass.enabled=lv>=2}realismSeason();[fall,flies,...butterflies,...birds].forEach(o=>{o.visible=lv>=1})}
+// 한 프레임 — 바람 · 입자 · 나비 · 새를 움직이고, 느린 기기면 효과를 한 단계 내린다
+const _dir=new THREE.Vector3(),_c=new THREE.Vector3(),_m=new THREE.Matrix4(),_q=new THREE.Quaternion(),_e=new THREE.Euler(),_v=new THREE.Vector3(),_s=new THREE.Vector3(1,1,1);
+function realismTick(dt){const now=performance.now(),gap=now-FX.lastT;FX.lastT=now;if(gap>250||document.hidden){FX.n=FX.sum=0;FX.warm=0}else if(++FX.warm>90){FX.sum+=gap;FX.n++;if(FX.n>=120){const avg=FX.sum/FX.n;FX.n=FX.sum=0;if(!FX.locked&&avg>38&&FX.level>1){FX.want=FX.level-1;applyFx();resize();if(!FX.toasted){FX.toasted=true;toast('화면이 버거워 보여서 효과를 조금 줄였어요. 설정의 가볍게 모드로 더 줄일 수 있어요')}}}}
+  WIND.value=time;WIND_AMP.value=1+weatherIntensity*1.3;if(FX.level<1)return;
+  oceanN.offset.x+=dt*.0035;oceanN.offset.y+=dt*.002;if(water&&water.visible)water.material.uniforms.time.value+=dt*.55;
+  const walking=cameraMode==='walking';FX.tilt=THREE.MathUtils.lerp(FX.tilt,walking?0:cameraMode==='section'?.45:1,Math.min(1,dt*3));if(gradePass)gradePass.uniforms.uAmount.value=FX.tilt;
+  // 보고 있는 땅 한가운데(시선과 땅이 만나는 곳)를 중심으로 입자를 뿌린다
+  camera.getWorldDirection(_dir);const tt=_dir.y<-.05?Math.min(70,-camera.position.y/_dir.y):30;_c.copy(camera.position).addScaledVector(_dir,tt);const R=walking?16:26;
+  if(fallKind){for(let i=0;i<FALL_N;i++){const p=fallP[i];if(p.y<terrainHeight(p.x,p.z)+.04||Math.abs(p.x-_c.x)>R||Math.abs(p.z-_c.z)>R){p.x=_c.x+(Math.random()*2-1)*R;p.z=_c.z+(Math.random()*2-1)*R;p.y=terrainHeight(p.x,p.z)+(p.y<-50?Math.random()*12:7+Math.random()*7)}p.y-=dt*(.28+p.s*.34);p.x+=(Math.sin(time*.9+p.ph)*.55+.35*WIND_AMP.value)*dt;p.z+=Math.cos(time*.7+p.ph)*.35*dt;_e.set(time*p.spin+p.ph,time*p.spin*.7,p.ph);_q.setFromEuler(_e);_v.set(p.x,p.y,p.z);_s.setScalar(fallKind==='leaf'?1.25:1);_m.compose(_v,_q,_s);fall.setMatrixAt(i,_m)}fall.instanceMatrix.needsUpdate=true;fall.visible=true}else fall.visible=false;
+  const s=prefs.season?seasonOf():'summer',night=1-FX.day;flies.visible=s==='summer'&&night>.4;if(flies.visible){const a=flyGeo.attributes.position;flyP.forEach((p,i)=>{const x=_c.x+p.ox+Math.sin(time*.4+p.ph)*1.5,z=_c.z+p.oz+Math.cos(time*.33+p.ph)*1.5;a.setXYZ(i,x,terrainHeight(x,z)+.8+Math.sin(time*.8+p.ph)*.5,z)});a.needsUpdate=true;flies.material.opacity=(night-.4)*1.6*(.65+.35*Math.sin(time*3.1))}
+  const bf=(s==='spring'||s==='summer')&&FX.day>.4;butterflies.forEach((g,i)=>{g.visible=bf;if(!bf)return;const u=g.userData,t=time*.45+u.ph,x=u.ax+Math.sin(t)*2.6+Math.sin(t*2.3)*.8,z=u.az+Math.cos(t*.8)*2.2;g.position.set(x,terrainHeight(x,z)+.9+Math.sin(time*2.2+u.ph)*.35,z);g.rotation.y=Math.atan2(Math.cos(t)*2.6,-Math.sin(t*.8)*1.76);const f=Math.sin(time*16+u.ph)*1.1;u.l.rotation.z=f;u.r.rotation.z=-f});
+  const bd=FX.day>.3;birds.forEach((g,i)=>{g.visible=bd;if(!bd)return;const u=g.userData,a=time*.07,cx=Math.cos(a)*34,cz=Math.sin(a)*24,hd=Math.atan2(-Math.sin(a)*34,Math.cos(a)*24);g.position.set(cx+Math.cos(hd)*u.off[0]+Math.sin(hd)*u.off[1],24+Math.sin(time*.5+i)*.6,cz-Math.sin(hd)*u.off[0]+Math.cos(hd)*u.off[1]);g.rotation.y=hd;const f=Math.sin(time*7+i*.8)*.55;u.l.rotation.z=f;u.r.rotation.z=-f})}
+function renderScene(){renderer.shadowMap.needsUpdate=true;if(composer&&FX.level>=1)composer.render();else renderer.render(scene,camera)}
+window.assetVillageFx={set(lv,lock=true){FX.want=Math.max(0,Math.min(3,lv|0));FX.locked=lock;applyFx();resize()},get level(){return FX.level}};
+{const _rebuildVillage=rebuildVillage;rebuildVillage=function(){_rebuildVillage();layGrass();refreshNpcLanes()}}
 updateDayNight(0);
 function setWeather(value,remember=true){const parsed=Number(value),n=Math.max(0,Math.min(100,Number.isFinite(parsed)?Math.round(parsed):50));fearGreedValue=n;if(n<=24){weatherMode='snow';fearGreedLabel='EXTREME FEAR';weatherIntensity=.18+(24-n)/24*.82}else if(n<=44){weatherMode='rain';fearGreedLabel='FEAR';weatherIntensity=.18+(44-n)/20*.82}else if(n<=55){weatherMode='neutral';fearGreedLabel='NEUTRAL';weatherIntensity=0}else if(n<=74){weatherMode='clouds';fearGreedLabel='GREED';weatherIntensity=(n-55)/19}else{weatherMode='rainbow';fearGreedLabel='EXTREME GREED';weatherIntensity=.55+(n-75)/25*.45}fearGreedUpdatedAt=Date.now();if(remember)try{localStorage.setItem('asset-village-fng',String(n))}catch{}const badge=$('#weatherBadge');if(badge){badge.textContent=`WEATHER · ${fearGreedLabel} ${n}`;badge.dataset.mode=weatherMode}const frontColor=weatherLetterColor(),depthColor=weatherLetterDepth();weatherTextLayers.forEach((m,i)=>{if(m.material.map)m.material.map.dispose();m.material.map=weatherLetterTexture(fearGreedLabel,i===weatherTextLayers.length-1?frontColor:depthColor);m.material.needsUpdate=true})}
 function updateWeather(dt){if(!weatherRoot)return;const isRain=weatherMode==='rain',isSnow=weatherMode==='snow';rainPoints.visible=isRain&&!prefs.light;snowPoints.visible=isSnow&&!prefs.light;cloudGroup.visible=weatherMode==='clouds'||weatherMode==='rainbow';rainbowGroup.visible=weatherMode==='rainbow';const ra=rainPoints.geometry.attributes.position.array,sa=snowPoints.geometry.attributes.position.array,rc=isRain?Math.floor(280*weatherIntensity):0,sc=isSnow?Math.floor(220*weatherIntensity):0;rainPoints.geometry.setDrawRange(0,rc);snowPoints.geometry.setDrawRange(0,sc);for(let i=0;i<rc;i++){const j=i*3;ra[j+1]-=dt*(10+weatherIntensity*10);if(ra[j+1]<terrainHeight(ra[j],ra[j+2])+.5){ra[j]=player.x+(Math.random()-.5)*70;ra[j+2]=player.z+(Math.random()-.5)*54;ra[j+1]=20+Math.random()*16}}for(let i=0;i<sc;i++){const j=i*3;sa[j+1]-=dt*(1.5+weatherIntensity*2);sa[j]+=Math.sin(time*1.2+i)*dt*.35;if(sa[j+1]<terrainHeight(sa[j],sa[j+2])+.35){sa[j]=player.x+(Math.random()-.5)*64;sa[j+2]=player.z+(Math.random()-.5)*50;sa[j+1]=20+Math.random()*15}}rainPoints.geometry.attributes.position.needsUpdate=true;snowPoints.geometry.attributes.position.needsUpdate=true;if(weatherSignRoot){const dx=camera.position.x-weatherSignRoot.position.x,dz=camera.position.z-weatherSignRoot.position.z;weatherSignRoot.rotation.y=Math.atan2(dx,dz)}cloudGroup.traverse(o=>{if(o.isMesh)o.material.color.set(weatherMode==='rainbow'?'#dce3df':'#929e9e')})}
 async function fetchFearGreed(){try{const res=await fetch('https://fearandgreedgraph.com/api/fear-greed',{cache:'no-store',headers:{Accept:'application/json'}});if(!res.ok)throw Error('HTTP '+res.status);const json=await res.json(),values=Array.isArray(json?.values)?json.values:[],value=Number(values[values.length-1]);if(!Number.isFinite(value))throw Error('invalid value');setWeather(value)}catch(e){console.warn('Fear & Greed update failed',e);if(!fearGreedUpdatedAt)setWeather(50)}}
 let cachedFearGreed=50;try{const cached=Number(localStorage.getItem('asset-village-fng'));if(Number.isFinite(cached))cachedFearGreed=cached}catch{}setWeather(cachedFearGreed,false);
-function makePerson(owner){const p=new THREE.Group();scene.add(p);const female=owner==='wife',shirt=female?'#d99b51':'#527d95',pants=female?'#5b7466':'#3c5362',skin='#e9bd97',hair=female?'#654b39':'#4d4234';const legs=[];[-.22,.22].forEach(x=>{const leg=new THREE.Group();leg.position.set(x,.87,0);p.add(leg);box(leg,0,-.36,0,.29,.73,.31,pants);box(leg,0,-.77,.09,.32,.16,.52,'#eee2c5');legs.push(leg)});box(p,0,1.31,0,.84,.94,.45,shirt);box(p,0,1.6,.24,.08,.5,.035,female?'#edc57c':'#86a6b3');const arms=[];[-1,1].forEach(side=>{const arm=new THREE.Group();p.add(arm);arm.position.set(side*.56,1.67,0);box(arm,0,-.3,0,.25,.7,.32,shirt);sphere(arm,0,-.75,0,.145,skin);arms.push(arm)});cyl(p,0,1.91,0,.16,.16,.25,skin,8);sphere(p,0,2.2,0,.38,skin,2);sphere(p,0,2.43,-.055,.365,hair,1);if(female){box(p,0,2.12,-.27,.65,.8,.22,hair);sphere(p,.26,2.15,-.15,.22,hair);sphere(p,-.26,2.15,-.15,.22,hair)}else{box(p,0,2.02,.25,.42,.18,.065,'#a97e5c')}for(let x of [-.12,.12])sphere(p,x,2.24,.338,.028,'#35423b',1);const shadow=mesh(new THREE.CircleGeometry(.63,20),new THREE.MeshBasicMaterial({color:'#345347',transparent:true,opacity:.15}));shadow.rotation.x=-Math.PI/2;shadow.position.y=.44;p.scale.setScalar(1.05);const obj={owner,root:p,legs,arms,shadow};characterGroups.push(obj);return obj}
+/* ── 사람 — 관절(엉덩이 · 허벅지 · 무릎 · 허리 · 어깨 · 팔꿈치 · 목)이 있는 몸. 앞은 +z.
+   걷기: 다리는 반대로 흔들리고, 앞으로 나가는 다리의 무릎이 굽고, 팔은 다리와 엇갈리며 골반이 오르내린다 ── */
+function buildHuman(o){const root=new THREE.Group(),J={},f=!!o.female;const cap=(par,r,len,y,c,sx=1,sz=1)=>{const m=mesh(new THREE.CapsuleGeometry(r,len,3,10),c,par);m.position.y=y;m.scale.set(sx,1,sz);return m};
+  const hips=new THREE.Group();hips.position.y=1.02;root.add(hips);J.hips=hips;cap(hips,.16,.1,0,o.pants,f?1.3:1.22,.8);
+  for(const [side,sx] of [['L',-1],['R',1]]){const th=new THREE.Group();th.position.set(sx*.12,-.04,0);hips.add(th);cap(th,.094,.32,-.24,o.pants);const kn=new THREE.Group();kn.position.y=-.5;th.add(kn);cap(kn,.078,.34,-.23,o.pants);box(kn,0,-.47,.055,.15,.09,.3,o.shoe);J['thigh'+side]=th;J['knee'+side]=kn}
+  const spine=new THREE.Group();spine.position.y=.1;hips.add(spine);J.spine=spine;cap(spine,.2,.3,.31,o.shirt,f?1.08:1.24,.72);cyl(spine,0,.71,0,.068,.078,.14,o.skin,8);
+  const head=new THREE.Group();head.position.y=.77;spine.add(head);J.head=head;const sk=sphere(head,0,.2,0,.205,o.skin,2);sk.scale.y=1.08;
+  const hair=mesh(new THREE.SphereGeometry(.222,14,8,0,Math.PI*2,0,Math.PI*.56),o.hair,head);hair.position.set(0,.215,-.012);hair.rotation.x=-.42;
+  if(o.long){cap(head,.15,.26,.02,o.hair,1.18,.62).position.z=-.12;sphere(head,0,.34,-.02,.13,o.hair,1)}
+  for(const x of [-.072,.072])sphere(head,x,.2,.19,.024,'#35423b',1);if(o.beard)box(head,0,.085,.185,.16,.045,.035,o.beard);
+  for(const [side,sx] of [['L',-1],['R',1]]){const sh=new THREE.Group();sh.position.set(sx*(f?.25:.29),.58,0);spine.add(sh);cap(sh,.072,.22,-.17,o.shirt);const el=new THREE.Group();el.position.y=-.35;sh.add(el);cap(el,.06,.22,-.16,o.skin);sphere(el,0,-.33,0,.066,o.skin,1);const hand=new THREE.Group();hand.position.y=-.36;el.add(hand);J['shoulder'+side]=sh;J['elbow'+side]=el;J['hand'+side]=hand}
+  if(o.accent)box(spine,0,.47,.148,.055,.24,.02,o.accent);
+  root.scale.setScalar(o.scale||1);return {root,J,base:1.02}}
+function animateHuman(h,p,a,t){const J=h.J,s=Math.sin(p),c=Math.cos(p),br=Math.sin(t*1.9)*(1-a);
+  J.thighL.rotation.x=-s*.62*a;J.thighR.rotation.x=s*.62*a;J.kneeL.rotation.x=a*(.08+.9*Math.max(0,c));J.kneeR.rotation.x=a*(.08+.9*Math.max(0,-c));
+  J.shoulderL.rotation.x=s*.5*a;J.shoulderR.rotation.x=-s*.5*a;J.shoulderL.rotation.z=-.07-br*.015;J.shoulderR.rotation.z=.07+br*.015;
+  J.elbowL.rotation.x=-(.2+.35*Math.max(0,-s))*a-.12*(1-a);J.elbowR.rotation.x=-(.2+.35*Math.max(0,s))*a-.12*(1-a);
+  J.hips.position.y=h.base-Math.abs(s)*.05*a+br*.004;J.hips.rotation.y=-s*.1*a;J.hips.rotation.z=s*.035*a;J.spine.rotation.y=s*.15*a;J.spine.rotation.x=.06*a+br*.012;J.head.rotation.y=-s*.09*a;J.head.rotation.x=-.05*a}
+// 주민 이름표 — 따로 만든 요소를 머리 위로 따라가게 한다(마을을 다시 그려도 지워지지 않게)
+function npcTag(name){const b=document.createElement('div');b.className='world-label district npc-label';b.textContent=name;b.style.display='none';$('#labels').appendChild(b);return b}
+// 큰길을 오가는 주민 — 길(차선)을 따라 걷다 끝에서 잠시 쉬고 돌아선다. 건물 · 시설에 막힌 구간은 빼고 가장 긴 구간만 쓴다
+const NPC_LANES={'굿플렉티스님':[[-1.7,-26],[-1.7,-8.2]],'롱베이케이션님':[[8.2,1.7],[31,1.7]],'편안하게님':[[1.7,8.2],[1.7,26]],'오키오키님':[[-31,-1.7],[-8.2,-1.7]]};
+function refreshNpcLanes(){for(const npc of npcGroups){const L=NPC_LANES[npc.name];npc.run=null;if(!L)continue;const [a,b]=L,len=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.ceil(len/.5);let best=null,cur=null;for(let i=0;i<=n;i++){const t=i/n,x=a[0]+(b[0]-a[0])*t,z=a[1]+(b[1]-a[1])*t;if(walkable(x,z)){if(!cur)cur=[t,t];cur[1]=t;if(!best||cur[1]-cur[0]>best[1]-best[0])best=cur.slice()}else cur=null}if(best&&(best[1]-best[0])*len>=4){const p=t=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];npc.run=[p(best[0]),p(best[1])]}}}
+const _tag=new THREE.Vector3();let npcLastT=0;
+function makePerson(owner){const female=owner==='wife',h=buildHuman({female,long:female,shirt:female?'#d99b51':'#527d95',pants:female?'#5b7466':'#3c5362',skin:'#e9bd97',hair:female?'#654b39':'#4d4234',shoe:'#eee2c5',accent:female?'#edc57c':'#86a6b3',beard:female?null:'#a97e5c',scale:1.2}),p=h.root;scene.add(p);const shadow=mesh(new THREE.CircleGeometry(.63,20),new THREE.MeshBasicMaterial({color:'#345347',transparent:true,opacity:.15}));shadow.castShadow=false;shadow.rotation.x=-Math.PI/2;shadow.position.y=.44;const obj={owner,root:p,h,shadow,walk:0,phase:0};characterGroups.push(obj);return obj}
 makePerson('me');makePerson('wife');
 const npcSpecs=[
   ['조만간은퇴님','신문',-13,-2,'#5c7d91'],['오키오키님','책',-8,3,'#b86c57'],['겸손히님','커피',7,3,'#6a8f70'],['아울러님','꽃',-10,14,'#a26d85'],['롱베이케이션님','신문',12,-3,'#758b5b'],['편안하게님','책',4,14,'#8b6e9e'],['굿플렉티스님','산책',-2,-12,'#a07054'],['우울라프님','카메라',15,10,'#607e90'],['까미유데물랭님','엽서',-25,8,'#ad7a57'],['해의호흡님','책',-29,12,'#697b73']
 ].map((s,i)=>({name:s[0],kind:s[1],baseX:s[2],baseZ:s[3],shirt:s[4],phase:i*1.71,speed:.18+(i%3)*.035}));
 const npcGroups=[],npcLabels=[];let newsItems=[],newsUpdatedAt=0,newsFetching=false,newsCooldown=0,newsOpenNpc=null;
-function makeNpc(spec){const p=new THREE.Group();p.position.set(spec.baseX,terrainHeight(spec.baseX,spec.baseZ)+.22,spec.baseZ);p.userData.npc=spec;const skin='#e6b78f',hair=['#4d3c32','#6a4935','#3d4744','#805c3c'][npcGroups.length%4],pants=['#465d68','#5b7466','#66536c','#7b6548'][npcGroups.length%4];box(p,0,.96,0,.58,.86,.38,spec.shirt);box(p,0,.57,0,.27,.65,.25,pants);box(p,-.18,.25,.08,.25,.12,.45,'#ecdec4');box(p,.18,.25,.08,.25,.12,.45,'#ecdec4');cyl(p,0,1.54,0,.14,.14,.22,skin,8);sphere(p,0,1.84,0,.31,skin,2);sphere(p,0,2.04,-.02,.31,hair,1);const arm=box(p,.43,1.03,.02,.18,.7,.22,spec.shirt);arm.rotation.z=-.35;const prop=new THREE.Group();prop.position.set(.64,1.04,.2);p.add(prop);if(spec.kind==='신문'){box(prop,0,0,0,.62,.48,.06,'#f3e8be');box(prop,0,.01,.035,.52,.03,.01,'#658575')}else if(spec.kind==='책'){box(prop,0,0,0,.5,.55,.12,'#879eb0');box(prop,0,0,.07,.42,.48,.02,'#e9d6a6')}else if(spec.kind==='커피'){cyl(prop,0,0,0,.12,.14,.25,'#f3e4bc',12);cyl(prop,0,.14,0,.12,.13,.06,'#774f3d',12)}else if(spec.kind==='꽃'){beam(prop,[0,0,0],[0,.35,0],.025,'#668660');sphere(prop,0,.41,0,.12,'#df9a9b')}else{box(prop,0,0,0,.35,.26,.14,'#d39c5e');sphere(prop,0,.21,.06,.09,'#9db7a0')}const shadow=mesh(new THREE.CircleGeometry(.45,16),new THREE.MeshBasicMaterial({color:'#345347',transparent:true,opacity:.14}));shadow.rotation.x=-Math.PI/2;shadow.position.y=.02;p.add(shadow);p.traverse(m=>{if(m.isMesh)m.userData.npc=spec});scene.add(p);const npc={...spec,root:p,shadow,prop,newsIndex:npcGroups.length%10};npcGroups.push(npc);const b=label(spec.name,[spec.baseX,2.35,spec.baseZ],{npc:true,district:true});b.classList.add('npc-label');npcLabels.push(b);return npc}
-npcSpecs.forEach(makeNpc);
+function makeNpc(spec){const i=npcGroups.length,female=i%3===1,hair=['#4d3c32','#6a4935','#3d4744','#805c3c'][i%4],pants=['#465d68','#5b7466','#66536c','#7b6548'][i%4],h=buildHuman({female,long:female,shirt:spec.shirt,pants,skin:'#e6b78f',hair,shoe:'#ecdec4',scale:1.08}),p=h.root;p.position.set(spec.baseX,terrainHeight(spec.baseX,spec.baseZ)+.03,spec.baseZ);p.userData.npc=spec;const hold=spec.kind!=='산책',prop=new THREE.Group();h.J.handR.add(prop);if(hold){prop.rotation.x=1.3;prop.position.set(0,-.05,.03)}else prop.position.set(0,-.14,0);prop.scale.setScalar(.8);if(spec.kind==='신문'){box(prop,0,0,0,.62,.48,.06,'#f3e8be');box(prop,0,.01,.035,.52,.03,.01,'#658575')}else if(spec.kind==='책'){box(prop,0,0,0,.5,.55,.12,'#879eb0');box(prop,0,0,.07,.42,.48,.02,'#e9d6a6')}else if(spec.kind==='커피'){cyl(prop,0,0,0,.12,.14,.25,'#f3e4bc',12);cyl(prop,0,.14,0,.12,.13,.06,'#774f3d',12)}else if(spec.kind==='꽃'){beam(prop,[0,0,0],[0,.35,0],.025,'#668660');sphere(prop,0,.41,0,.12,'#df9a9b')}else{box(prop,0,0,0,.35,.26,.14,'#d39c5e');sphere(prop,0,.21,.06,.09,'#9db7a0')}const shadow=mesh(new THREE.CircleGeometry(.45,16),new THREE.MeshBasicMaterial({color:'#345347',transparent:true,opacity:.14}));shadow.castShadow=false;shadow.rotation.x=-Math.PI/2;p.traverse(m=>{if(m.isMesh)m.userData.npc=spec});scene.add(p);const tag=npcTag(spec.name),npc={...spec,root:p,h,shadow,prop,hold,tag,newsIndex:i%10,run:null,walk:0,step:i*.7,heading:0,px:p.position.x,pz:p.position.z};npcGroups.push(npc);npcLabels.push(tag);return npc}
+npcSpecs.forEach(makeNpc);refreshNpcLanes();
 function decodeText(v){const t=document.createElement('textarea');t.innerHTML=String(v||'');return t.value}
 const fallbackNews=[['오늘의 증시를 움직이는 주요 재료를 살펴보세요','시장과 기업의 새 소식을 모아 전합니다.'],['반도체·전력 관련주 흐름에 관심이 모입니다','오늘 장에서 눈여겨볼 업종 소식입니다.'],['금리와 환율 변화가 투자자들의 시선을 끕니다','시장 변동을 차분히 확인해 보세요.'],['ETF로 분산투자하는 방법을 다시 생각해 봅니다','장기 투자에 참고할 만한 이야기입니다.'],['기업 실적 발표를 앞두고 기대와 경계가 공존합니다','새로운 실적 소식을 확인해 보세요.'],['외국인 수급 변화가 국내 증시에 영향을 주고 있습니다','수급 관련 최신 뉴스입니다.'],['이번 주 경제 일정과 주요 이벤트','투자 전에 일정을 확인해 보세요.'],['배당과 자사주 소각 소식이 이어집니다','주주환원 관련 소식입니다.'],['시장 전문가가 바라본 다음 달 투자 전략','뉴스 속 관점을 비교해 보세요.'],['오늘의 금융 한 줄 뉴스','마을 주민이 전하는 짧은 속보입니다.']].map((x,i)=>({title:x[0],summary:x[1],office:'자산마을 뉴스',datetime:'업데이트 전',url:'https://stock.naver.com/news/flashnews',fallback:true,id:i}));
 function renderAllNews(){const list=$('#newsList');if(!list)return;setNewsKind(false);list.innerHTML=newsItems.slice(0,10).map((n,i)=>`<a class="news-card" href="${esc(n.url)}" target="_blank" rel="noopener"><b>${i+1}. ${esc(n.title)}</b><p>${esc(n.summary||'')}</p><span class="news-meta"><span>${esc(n.office||'네이버 증권')}</span><span>${esc(n.datetime||'')}</span></span></a>`).join('');$('#newsStatus').textContent=newsUpdatedAt?`10개 뉴스 · ${new Date(newsUpdatedAt).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 갱신${newsItems[0]?.fallback?' · 연결이 지연되어 안내 뉴스를 표시 중':''}`:'뉴스를 불러오는 중…'}
@@ -9871,10 +12347,13 @@ async function fetchNewsLatest(){await fetchNewsDirect();if(!newsItems[0]?.fallb
 function renderNpcNews(npc){if(newsFact){setNewsKind(true);$('#newsTitle').textContent=newsFact[0];$('#newsList').innerHTML=factCard(newsFact);$('#newsStatus').textContent=`${npc.name}이 전하는 우리 집 소식`;return}setNewsKind(false);const n=newsItems[(npc.newsIndex||0)%Math.max(1,newsItems.length)]||fallbackNews[0];$('#newsTitle').textContent=n.title;$('#newsList').innerHTML=`<a class="news-card" href="${esc(n.url)}" target="_blank" rel="noopener"><b>${esc(n.title)}</b><p>${esc(n.summary||'')}</p><span class="news-meta"><span>${esc(n.office||'네이버 증권')}</span><span>${esc(n.datetime||'')}</span></span></a>`;$('#newsStatus').textContent=`${npc.name}이 전하는 뉴스`}
 function renderNewsList(){if(newsOpenNpc&&$('#newsDialog')?.open){renderNpcNews(newsOpenNpc);return}renderAllNews()}
 function openNewsForNpc(npc){newsOpenNpc=npc;meetCount++;newsFact=npc?pickFact(npc):null;sfx('news');if($('#newsDialog')&&!$('#newsDialog').open)$('#newsDialog').showModal();$('#newsTitle').textContent=npc?`${npc.name}이 전하는 뉴스 한 건`:'오늘의 실시간 속보';renderNewsList()}
-function updateNpcs(){for(const npc of npcGroups){const t=time*npc.speed+npc.phase,x=npc.baseX+Math.sin(t)*1.2,z=npc.baseZ+Math.cos(t*.77)*.85;npc.root.position.set(x,terrainHeight(x,z)+.22,z);npc.root.rotation.y=Math.atan2(Math.cos(t)*npc.speed*.8,-Math.sin(t));npc.shadow.position.set(x,terrainHeight(x,z)+.02,z);npcLabels[npcGroups.indexOf(npc)].style.display=(cameraMode==='section'||cameraMode==='overview')?'none':''}}
+function updateNpcs(dt=0){const show=cameraMode==='walking'&&!prefs.light,W=innerWidth,H=innerHeight;npcGroups.forEach((npc,i)=>{let x,z;if(npc.run){const [a,b]=npc.run,go=Math.hypot(b[0]-a[0],b[1]-a[1])/.95,rest=2.5,T=2*(go+rest),s=(time+i*13.7)%T,f=s<go?s/go:s<go+rest?1:s<2*go+rest?1-(s-go-rest)/go:0;x=a[0]+(b[0]-a[0])*f;z=a[1]+(b[1]-a[1])*f}else{const t=time*npc.speed+npc.phase;x=npc.baseX+Math.sin(t)*1.2;z=npc.baseZ+Math.cos(t*.77)*.85}
+const dx=x-npc.px,dz=z-npc.pz,d=Math.hypot(dx,dz);npc.px=x;npc.pz=z;if(d>2)npc.walk=0;else{npc.walk=THREE.MathUtils.lerp(npc.walk,dt>0?Math.min(1,d/dt/.55):0,Math.min(1,dt*5));npc.step+=d*4.2;if(d>1e-4){let dh=Math.atan2(dx,dz)-npc.heading;dh=Math.atan2(Math.sin(dh),Math.cos(dh));npc.heading+=dh*Math.min(1,dt*6)}}
+const y=terrainHeight(x,z);npc.root.position.set(x,y+.03,z);npc.root.rotation.y=npc.heading;animateHuman(npc.h,npc.step,npc.walk,time+i*1.3);if(npc.hold){const J=npc.h.J;J.shoulderR.rotation.x=-.4;J.shoulderR.rotation.z=.16;J.elbowR.rotation.x=-1.2}npc.shadow.position.set(x,y+.04,z);npc.shadow.visible=npc.root.visible;
+const tag=npc.tag;if(!show||!npc.root.visible){tag.style.display='none';return}_tag.set(x,y+2.8,z);const dist=_tag.distanceTo(camera.position);_tag.project(camera);if(_tag.z>1||dist>34||Math.abs(_tag.x)>1.05||Math.abs(_tag.y)>1.05){tag.style.display='none';return}tag.style.display='';tag.style.left=((_tag.x*.5+.5)*W)+'px';tag.style.top=((-_tag.y*.5+.5)*H)+'px'})}
 function checkNpcMeet(){if(prefs.light||cameraMode!=='walking'||$('#newsDialog')?.open||performance.now()<newsCooldown)return;let closest=null,dist=2.5;for(const npc of npcGroups){const d=Math.hypot(npc.root.position.x-player.x,npc.root.position.z-player.z);if(d<dist){dist=d;closest=npc}}if(closest){newsCooldown=performance.now()+12000;openNewsForNpc(closest)}}
 let player={x:0,z:6,angle:Math.PI},target=null,route=[],nearby=null,keys={},yaw=.65,zoom=39,follow=false,camFocus=new THREE.Vector3(1,0,1),cameraLook=new THREE.Vector3(1,0,1),time=0;
-function placeCharacters(dt,moving){const both=characterGroups.filter(c=>c.root.visible).length>1;characterGroups.forEach((c,i)=>{const offset=both?(i===0?-.65:.65):0;const tx=player.x+Math.cos(player.angle)*offset,tz=player.z-Math.sin(player.angle)*offset;if(dt===0)c.root.position.set(tx,terrainHeight(tx,tz)+.22,tz);else{c.root.position.x=THREE.MathUtils.lerp(c.root.position.x,tx,Math.min(1,dt*14));c.root.position.z=THREE.MathUtils.lerp(c.root.position.z,tz,Math.min(1,dt*14));c.root.position.y=terrainHeight(c.root.position.x,c.root.position.z)+.22+(moving?Math.abs(Math.sin(time*10))*.045:Math.sin(time*2)*.012)}let d=player.angle-c.root.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));c.root.rotation.y+=d*Math.min(1,dt*12||1);const swing=moving?Math.sin(time*10+i*.3)*.65:0;c.legs[0].rotation.x=swing;c.legs[1].rotation.x=-swing;c.arms[0].rotation.x=-swing*.75;c.arms[1].rotation.x=swing*.75;c.shadow.position.set(c.root.position.x,terrainHeight(c.root.position.x,c.root.position.z)+.2,c.root.position.z);c.shadow.visible=c.root.visible})}
+function placeCharacters(dt,moving){const both=characterGroups.filter(c=>c.root.visible).length>1;characterGroups.forEach((c,i)=>{const offset=both?(i===0?-.65:.65):0;const tx=player.x+Math.cos(player.angle)*offset,tz=player.z-Math.sin(player.angle)*offset;if(dt===0)c.root.position.set(tx,terrainHeight(tx,tz)+.03,tz);else{c.root.position.x=THREE.MathUtils.lerp(c.root.position.x,tx,Math.min(1,dt*14));c.root.position.z=THREE.MathUtils.lerp(c.root.position.z,tz,Math.min(1,dt*14));c.root.position.y=terrainHeight(c.root.position.x,c.root.position.z)+.03}let d=player.angle-c.root.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));c.root.rotation.y+=d*Math.min(1,dt*12||1);c.walk=THREE.MathUtils.lerp(c.walk,moving?1:0,dt?Math.min(1,dt*8):1);c.phase+=dt*10.5*c.walk;animateHuman(c.h,c.phase+i*.35,c.walk,time+i);c.shadow.position.set(c.root.position.x,terrainHeight(c.root.position.x,c.root.position.z)+.05,c.root.position.z);c.shadow.visible=c.root.visible})}
 function walkable(x,z){if(x*x/(43*43)+z*z/(32*32)>1)return false;if((x-22)**2/(10.7**2)+(z-17)**2/(8**2)<1)return false;return !obstacles.some(o=>Math.abs(x-o.x)<o.w/2+.25&&Math.abs(z-o.z)<o.d/2+.25)}
 function nearestWalkable(x,z){if(walkable(x,z))return {x,z};for(let r=1;r<10;r+=.5)for(let i=0;i<24;i++){const a=i/24*Math.PI*2,nx=x+Math.cos(a)*r,nz=z+Math.sin(a)*r;if(walkable(nx,nz))return{x:nx,z:nz}}return null}
 function findRoute(start,end){const s=nearestWalkable(Math.round(start.x),Math.round(start.z)),e=nearestWalkable(Math.round(end.x),Math.round(end.z));if(!s||!e)return[];const sx=Math.round(s.x),sz=Math.round(s.z),ex=Math.round(e.x),ez=Math.round(e.z),key=(x,z)=>x+','+z;const open=[{x:sx,z:sz,g:0,f:0}],nodes=new Map([[key(sx,sz),open[0]]]),closed=new Set();let result=null;for(let tries=0;open.length&&tries<10000;tries++){open.sort((a,b)=>b.f-a.f);let n=open.pop();if(n.x===ex&&n.z===ez){result=n;break}closed.add(key(n.x,n.z));for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){if(!dx&&!dz)continue;const x=n.x+dx,z=n.z+dz,k=key(x,z);if(closed.has(k)||!walkable(x,z))continue;if(dx&&dz&&(!walkable(n.x+dx,n.z)||!walkable(n.x,n.z+dz)))continue;const road=(Math.abs(z)<2.6&&Math.abs(x)<34)||(Math.abs(x)<2.6&&Math.abs(z)<29)||(Math.abs(x+23)<2.2&&Math.abs(z)<17)||(Math.abs(x-19)<2.2&&z<1&&z>-15)||(Math.abs(z-14)<2&&x>-1&&x<21)||(Math.abs(z-23)<2&&x>-27&&x<1)||Math.hypot(x,z)<6.8;const g=n.g+Math.hypot(dx,dz)*(road?1:2.25)+Math.abs(terrainHeight(x,z)-terrainHeight(n.x,n.z))*.35,old=nodes.get(k);if(!old||g<old.g){const node=old||{x,z};node.g=g;node.f=g+Math.hypot(ex-x,ez-z);node.parent=n;if(!old){nodes.set(k,node);open.push(node)}}}}if(!result)return[];let path=[];while(result.parent){path.push({x:result.x,z:result.z});result=result.parent}path.reverse();if(walkable(end.x,end.z))path.push(end);return path}
@@ -9895,7 +12374,7 @@ function showAsset(name){const a=visible.find(a=>a.name===name);if(!a)return;sel
 function showCategory(key){selectedAsset=null;selectedCategory=key;const c=categories.find(c=>c.key===key),assets=visible.filter(a=>categoryOf(a)===key),sum=assets.reduce((s,a)=>s+a.amount,0);openDetail(`<div class="eyebrow">구역 자산 정보</div><h2>${esc(c?.name||'기타 자산')}</h2><span class="tag">${mode==='all'?'모든 소유자':esc(ownerName(mode))} · ${assets.length}개 자산</span><div class="amount">${key==='부채'?'−':''}${compact(sum)}<span style="font-size:17px"> 원</span></div><div class="won">구역 합계 · ${key==='부채'?'−':''}${won(sum)}</div>${key==='증권'?`<div class="infobox">${esc(kospiText())} — 거래소 전광판에서도 흘러가요.</div>`:''}<div class="assetslist arrival-assets">${assets.map(a=>`<button data-asset="${esc(a.name)}"><span>${esc(a.name)}<small>${esc(ownerName(a.owner))} · ${a.date}</small></span><span class="asset-value"><b>${debtRow(a)?'−':''}${compact(a.amount)}원</b><small>${debtRow(a)?'−':''}${won(a.amount)}</small></span></button>`).join('')}</div><p class="footnote" style="margin-top:15px">${assets.length?'자산을 선택하면 전체 기록을 볼 수 있어요. 다시 산책하려면 이동 키를 놓았다가 새로 누르세요.':'이 소유자에게는 해당 구역의 자산이 없습니다.'}</p>`);$$('[data-asset]').forEach(b=>b.onclick=()=>goToAsset(b.dataset.asset))}
 
 function updateBounds(){resize()}
-function resize(){camera.aspect=innerWidth/innerHeight;camera.clearViewOffset();if(cameraMode==='section'){if(innerWidth<760)camera.setViewOffset(innerWidth,innerHeight,0,innerHeight*.15,innerWidth,innerHeight);else camera.setViewOffset(innerWidth,innerHeight,55,0,innerWidth,innerHeight)}camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}
+function resize(){camera.aspect=innerWidth/innerHeight;camera.clearViewOffset();if(cameraMode==='section'){if(innerWidth<760)camera.setViewOffset(innerWidth,innerHeight,0,innerHeight*.15,innerWidth,innerHeight);else camera.setViewOffset(innerWidth,innerHeight,55,0,innerWidth,innerHeight)}camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);realismResize()}
 function angleLerp(a,b,t){return a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*t}
 function updateCamera(dt){let desiredPos=new THREE.Vector3(),desiredAim=new THREE.Vector3(),fov=48;if(cameraMode==='overview'){const mobile=innerWidth<760,factor=mobile?Math.max(1,1.2/camera.aspect):1,d=zoom/39*factor;desiredPos.set(Math.sin(yaw)*77*d,76*d,Math.cos(yaw)*77*d);desiredAim.set(0,1,0)}else if(cameraMode==='section'){const d=sectionDistance*(innerWidth<760?Math.max(1,1.0/camera.aspect):1)*zoom/39;desiredPos.copy(sectionFocus).add(new THREE.Vector3(Math.sin(yaw)*d*.75,d*.85,Math.cos(yaw)*d*.75));desiredAim.copy(sectionFocus);fov=45}else{if(route.length)viewHeading=angleLerp(viewHeading,player.angle,Math.min(1,dt*2.8));const dx=Math.sin(viewHeading),dz=Math.cos(viewHeading),h=terrainHeight(player.x,player.z);let back=walkDist;for(let d=1;d<=walkDist;d+=.5)if(!walkable(player.x-dx*d,player.z-dz*d)){back=Math.max(.3,d-.7);break}desiredPos.set(player.x-dx*back,h+1.6+walkDist*.18,player.z-dz*back);desiredPos.y=Math.max(desiredPos.y,terrainHeight(desiredPos.x,desiredPos.z)+1.5);desiredAim.set(player.x+dx*10,h+2+lookPitch,player.z+dz*10);fov=63;if(cameraMode==='entering'&&performance.now()-entryAt>2100){cameraMode='walking';applySectionVisibility();$('#location').textContent='눈높이 산책 · 방향키로 걷고 드래그로 둘러보세요'}}if(!cameraInitialized){camera.position.copy(desiredPos);cameraAim.copy(desiredAim);cameraInitialized=true}else{const damping=cameraMode==='entering'?2.6:cameraMode==='walking'?6:3;const t=1-Math.exp(-dt*damping);camera.position.lerp(desiredPos,t);cameraAim.lerp(desiredAim,t)}camera.fov=THREE.MathUtils.lerp(camera.fov,fov,1-Math.exp(-dt*3));camera.updateProjectionMatrix();camera.lookAt(cameraAim);scene.fog.near=cameraMode==='overview'?camera.position.length()+55:130;scene.fog.far=scene.fog.near+200;$('#north').style.transform=`rotate(${-(cameraMode==='walking'||cameraMode==='entering'?viewHeading:yaw)*180/Math.PI}deg)`}
 const projection=new THREE.Vector3();function updateLabels(){const w=innerWidth,h=innerHeight,placed=[];for(const l of labels){projection.copy(l.pos).project(camera);let x=(projection.x*.5+.5)*w,y=(-projection.y*.5+.5)*h;const mobileOverview=innerWidth<760&&cameraMode==='overview';const cat=l.asset?categoryOf(l.asset):l.category;if((activeSection&&cat!==activeSection)||(cameraMode==='section'&&l.district)||(cameraMode!=='section'&&!l.district)){l.el.style.display='none';continue}const toLabel=l.pos.clone().sub(camera.position);if(toLabel.dot(camera.getWorldDirection(new THREE.Vector3()))<0){l.el.style.display='none';continue}if(projection.z>1||x<0||x>w||y<75||y>h-65||(mobileOverview&&!l.district)){l.el.style.display='none';continue}l.el.style.display='';if(!l.district)l.el.querySelector('small').style.display=(innerWidth<760&&cameraMode!=='section')?'none':'';const width=l.el.offsetWidth,height=l.el.offsetHeight;x=Math.max(width/2+6,Math.min(w-width/2-6,x));let tries=0;while(placed.some(r=>x+width/2+5>r.x1&&x-width/2-5<r.x2&&y>r.y1-6&&y-height<r.y2+6)&&tries++<10)y-=height+8;if(y<85){l.el.style.display='none';continue}placed.push({x1:x-width/2,x2:x+width/2,y1:y-height,y2:y});l.el.style.left=x+'px';l.el.style.top=y+'px'}}
@@ -9915,7 +12394,7 @@ $('#export').onclick=()=>{const output={...data,assets:data.assets.map(r=>({...r
 $('#editForm').onsubmit=e=>{e.preventDefault();const a=latest.find(a=>a.name===selectedAsset);if(!a)return;const amount=Number($('#editAmount').value),date=$('#editDate').value;if(!Number.isFinite(amount)||amount<0||!date)return;if(EMBED){$('#editDialog').close();appPendingShow=a.name;parent.postMessage({type:'asset-village:record',name:a.name,date,amount},'*');return}const row={date,name:a.name,amount,group:a.group,owner:a.owner};const index=data.assets.findIndex(r=>r.name===a.name&&r.date===date);if(index<0)data.assets.push(row);else data.assets[index]={...data.assets[index],...row};const keep=a.name;$('#editDialog').close();const pos={...player};refreshData();rebuildVillage();const safePos=nearestWalkable(pos.x,pos.z);if(safePos){player.x=safePos.x;player.z=safePos.z;placeCharacters(0,false)}drawRoute();const saved=persist();enterSection(categoryOf(a),keep);toast(saved?'새 금액을 기록했습니다. 내보내기로 파일에 보관할 수 있어요.':'새 금액을 기록했습니다. 내보내기로 보관해 주세요.')};
 window.addEventListener('resize',resize);
 let lastTime=performance.now();function frame(now){if(paused){pendingFrame=false;return}requestAnimationFrame(frame);const dt=Math.min(.05,(now-lastTime)/1000);lastTime=now;time+=dt;let moving=false;if(!inputBusy()&&cameraMode!=='section'){let turn=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),forward=(keys.w||keys.arrowup?1:0)-(keys.s||keys.arrowdown?1:0);if(turn&&forward===0)forward=1;if(turn)viewHeading-=turn*dt*2.35;if(turn||forward){if(route.length||target){route=[];target=null;drawRoute()}const heading=viewHeading;let dx=Math.sin(heading)*forward,dz=Math.cos(heading)*forward,len=Math.hypot(dx,dz);dx=dx/len*dt*4.5;dz=dz/len*dt*4.5;const ox=player.x,oz=player.z;if(walkable(player.x+dx,player.z+dz)){player.x+=dx;player.z+=dz}else{if(walkable(player.x+dx,player.z))player.x+=dx;if(walkable(player.x,player.z+dz))player.z+=dz}moving=player.x!==ox||player.z!==oz;if(moving)player.angle=Math.atan2(dx,dz)}else if(route.length){const p=route[0],dx=p.x-player.x,dz=p.z-player.z,dist=Math.hypot(dx,dz),step=dt*5.5;if(dist<=step){player.x=p.x;player.z=p.z;route.shift();if(!route.length)arrived()}else{player.x+=dx/dist*step;player.z+=dz/dist*step}player.angle=Math.atan2(dx,dz);moving=true}}
-placeCharacters(dt,moving);updateNpcs();checkNpcMeet();updateWeather(dt);updateDayNight(dt);updateExtras(dt);nearby=null;let min=3.6;for(const obj of objects){const d=Math.hypot(obj.approach.x-player.x,obj.approach.z-player.z);if(d<min){min=d;nearby=obj}}if(autoSuppressed&&!objects.some(o=>categoryOf(o.asset)===autoSuppressed&&Math.hypot(o.approach.x-player.x,o.approach.z-player.z)<6))autoSuppressed=null;if(cameraMode==='walking'&&!route.length&&!target&&nearby&&categoryOf(nearby.asset)!==autoSuppressed&&!inputBusy())enterSection(categoryOf(nearby.asset));$('#interaction').classList.remove('show');destinationRing.scale.setScalar(1+Math.sin(time*4)*.12);waterRipples.forEach((r,i)=>{r.scale.x=1+Math.sin(time*.8+i)*.12;r.material.opacity=.4+Math.sin(time+i)*.15});updateCamera(dt);updateLabels();npcLabels.forEach(l=>{l.style.display=cameraMode==='walking'&&!prefs.light?'':'none'});renderer.render(scene,camera)}
+placeCharacters(dt,moving);updateNpcs(dt);checkNpcMeet();updateWeather(dt);updateDayNight(dt);updateExtras(dt);nearby=null;let min=3.6;for(const obj of objects){const d=Math.hypot(obj.approach.x-player.x,obj.approach.z-player.z);if(d<min){min=d;nearby=obj}}if(autoSuppressed&&!objects.some(o=>categoryOf(o.asset)===autoSuppressed&&Math.hypot(o.approach.x-player.x,o.approach.z-player.z)<6))autoSuppressed=null;if(cameraMode==='walking'&&!route.length&&!target&&nearby&&categoryOf(nearby.asset)!==autoSuppressed&&!inputBusy())enterSection(categoryOf(nearby.asset));$('#interaction').classList.remove('show');destinationRing.scale.setScalar(1+Math.sin(time*4)*.12);waterRipples.forEach((r,i)=>{r.scale.x=1+Math.sin(time*.8+i)*.12;r.material.opacity=.4+Math.sin(time+i)*.15});updateCamera(dt);updateLabels();realismTick(dt);renderScene()}
 function closeNewsDialog(){newsOpenNpc=null;if($('#newsDialog').open)$('#newsDialog').close()}
 $('#closeNews').onclick=closeNewsDialog;
 // 지금 새로고침 — 창은 바로 닫고, 새 뉴스는 뒤에서 받아 다음에 주민을 만날 때 보여 준다
@@ -9927,7 +12406,7 @@ $('#prefsBtn').onclick=()=>togglePrefs($('#prefsPanel').hidden);$('#prefsList').
 document.addEventListener('pointerdown',e=>{if(!$('#prefsPanel').hidden&&!e.target.closest('#prefsPanel,#prefsBtn'))togglePrefs(false)});
 // Esc 는 설정 창 → (상세가 닫혀 있으면) 시간 여행 막대 순서로 닫고, 닫을 게 없을 때만 탐험을 닫는다
 addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('#prefsPanel').hidden)togglePrefs(false);else if(!$('#timebar').hidden&&!$('#detail').classList.contains('open'))toggleTimebar(false);else return;e.preventDefault();e.stopImmediatePropagation()},true);
-$('#minimap').onclick=minimapClick;$('#growthBtn').onclick=showDecor;buildBoard();fetchKospi();setInterval(()=>{if(!paused)fetchKospi()},18e5);renderPrefs();applySeason();if(prefs.light)applyLight();
+$('#minimap').onclick=minimapClick;$('#growthBtn').onclick=showDecor;buildBoard();fetchKospi();setInterval(()=>{if(!paused)fetchKospi()},18e5);renderPrefs();applySeason();if(prefs.light)applyLight();else applyFx();
 refreshData();rebuildVillage();resize();overviewReadyAt=performance.now()+600;applySectionVisibility();updateCamera(1);requestAnimationFrame(frame);if(!EMBED)$('#loading').remove();
 /* ── 자산 현황 연동 ──
    부모 창이 {owners, assets, isDemo} 를 보낸다 (자산 현황의 기록 그대로). 자산별 가장 최근 기록의 합 = 대시보드 순자산.
