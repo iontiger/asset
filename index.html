@@ -524,10 +524,80 @@
   @keyframes mtnBob { 50% { transform:translateY(-4px); } }
   @keyframes mtnPulse { 0% { transform:scale(.6); opacity:.7; } 100% { transform:scale(2.2); opacity:0; } }
   @media (prefers-reduced-motion: reduce) { .mtn-me, .mtn-pulse { animation:none; } }
-  #mountainSheet .sheet { max-width:1000px; padding:0; overflow:hidden; }
+  #mountainSheet .sheet { max-width:min(1180px, calc(100vw - 48px)); padding:0; overflow:hidden; }
   #mountainSheet .mtn-card { margin:0; border:none; border-radius:0; }
   .fc-mtn { margin-top:8px; font-size:.78rem; font-weight:700; color:var(--accent-deep); background:none; border:none; cursor:pointer; padding:0; }
   .fc-mtn:hover { text-decoration:underline; }
+  /* 3D 등산 지도 (three.js) — 하늘은 CSS 로 칠하고, 투명한 캔버스를 그 위에 */
+  .mtn-acts { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .mtn-seg button { padding:5px 11px; font-size:.76rem; }
+  .mtn-stage { position:relative; margin-top:12px; height:clamp(320px, 34vw, 500px); overflow:hidden; user-select:none; -webkit-user-select:none;
+    background:
+      radial-gradient(circle at 15% 16%, rgba(255,251,232,.95) 0 22px, rgba(255,236,170,.35) 24px, transparent 88px),
+      linear-gradient(180deg, #a8d1f2 0%, #d3e9f9 46%, #edf5fb 78%, var(--surface) 100%); }
+  :root[data-theme="dark"] .mtn-stage { background:
+      radial-gradient(1.4px 1.4px at 7% 12%, #fff 60%, transparent), radial-gradient(1px 1px at 19% 31%, #dfe6ff 60%, transparent),
+      radial-gradient(1.2px 1.2px at 33% 9%, #fff 60%, transparent), radial-gradient(1px 1px at 47% 22%, #cfd8ff 60%, transparent),
+      radial-gradient(1.3px 1.3px at 61% 7%, #fff 60%, transparent), radial-gradient(1px 1px at 72% 27%, #e6ebff 60%, transparent),
+      radial-gradient(1.2px 1.2px at 91% 12%, #fff 60%, transparent), radial-gradient(1px 1px at 56% 36%, #dfe6ff 60%, transparent),
+      radial-gradient(1px 1px at 26% 18%, #fff 60%, transparent), radial-gradient(1.2px 1.2px at 40% 30%, #eef0ff 60%, transparent),
+      radial-gradient(1px 1px at 12% 40%, #dfe6ff 60%, transparent), radial-gradient(1.1px 1.1px at 67% 44%, #fff 60%, transparent),
+      radial-gradient(circle at 84% 17%, #fbf6e4 0 15px, rgba(255,244,210,.16) 17px, transparent 64px),
+      linear-gradient(180deg, #070e1f 0%, #101a31 52%, #1c2640 82%, var(--surface) 100%); }
+  .mtn-stage.flat { height:auto; margin-top:0; background:none; }
+  #mountainSheet .mtn-stage:not(.flat) { height:min(600px, calc(100vh - 160px)); }
+  .m3-root { position:absolute; inset:0; }
+  .m3-root canvas { position:absolute; inset:0; display:block; width:100%; height:100%; cursor:grab; touch-action:pan-y; outline:none; }
+  .m3-root canvas.pick { cursor:pointer; }
+  .m3-root canvas.grab { cursor:grabbing; }
+  .m3-root canvas:focus-visible { outline:3px solid var(--accent); outline-offset:-3px; }
+  #mountainSheet .m3-root canvas { touch-action:none; }
+  .m3-labels { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+  .m3-lbl { position:absolute; left:0; top:0; white-space:nowrap; line-height:1.25; font-variant-numeric:tabular-nums; transition:opacity .22s; will-change:transform; }
+  .m3-lbl.off { opacity:0; }
+  .m3-lbl.dim { opacity:.4; }
+  .m3-flag { padding:3px 8px 4px; border-radius:8px; text-align:center; font-size:.72rem; font-weight:800; color:var(--muted);
+    background:color-mix(in srgb, var(--surface) 90%, transparent); border:1px solid var(--border); box-shadow:0 2px 8px rgba(0,0,0,.10); }
+  .m3-flag.on { color:var(--ink); border-color:rgba(34,163,90,.45); }
+  .m3-flag small { display:block; font-size:.64rem; font-weight:600; color:var(--muted); }
+  .m3-flag.hot { box-shadow:0 0 0 2px var(--accent), 0 4px 14px rgba(0,0,0,.16); }
+  .m3-me { margin-top:-8px; padding:7px 12px 8px; border-radius:12px; text-align:center; background:var(--ink); color:var(--bg); box-shadow:0 6px 18px rgba(0,0,0,.22); }
+  .m3-me b { display:block; font-size:.84rem; font-weight:800; }
+  .m3-me small { display:block; font-size:.7rem; opacity:.8; margin-top:1px; }
+  .m3-me::after { content:''; position:absolute; left:50%; bottom:-6px; margin-left:-6px; border:6px solid transparent; border-bottom:0; border-top-color:var(--ink); }
+  .m3-top { display:flex; align-items:center; gap:7px; padding:6px 11px 6px 8px; border-radius:11px; background:#fff7dc; color:#6b4a00; border:1px solid #f2d27a; box-shadow:0 4px 14px rgba(160,110,0,.18); }
+  .m3-top .ic { width:20px; height:20px; color:#d99a00; }
+  .m3-top b { display:block; font-size:.8rem; font-weight:800; }
+  .m3-top small { display:block; font-size:.66rem; font-weight:600; opacity:.8; }
+  :root[data-theme="dark"] .m3-top { background:#3a2f12; color:#ffe2a0; border-color:#7a5f1c; }
+  .m3-start { padding:3px 8px; border-radius:7px; font-size:.7rem; font-weight:700; color:var(--ink-2); background:color-mix(in srgb, var(--surface) 88%, transparent); border:1px solid var(--border); }
+  .m3-tools { position:absolute; top:12px; right:12px; display:flex; align-items:center; gap:2px; padding:4px; border-radius:12px;
+    background:color-mix(in srgb, var(--surface) 84%, transparent); border:1px solid var(--border); box-shadow:0 4px 14px rgba(0,0,0,.10);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+  .m3-tools button { width:32px; height:32px; border:none; border-radius:8px; background:none; color:var(--ink-2); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
+  .m3-tools button:hover { background:var(--hover); color:var(--ink); }
+  .m3-tools button[aria-pressed="true"] { background:var(--accent-wash); color:var(--accent-deep); }
+  .m3-tools .ic { width:18px; height:18px; }
+  .m3-tools i { align-self:stretch; width:1px; margin:5px 3px; background:var(--border); }
+  .m3-north { position:absolute; right:12px; bottom:12px; width:42px; height:42px; padding:0; border-radius:50%; cursor:pointer; color:var(--muted);
+    background:color-mix(in srgb, var(--surface) 86%, transparent); border:1px solid var(--border); box-shadow:0 4px 12px rgba(0,0,0,.10);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+  .m3-north:hover { color:var(--ink-2); }
+  .m3-needle { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .m3-needle i { font-style:normal; font-size:.58rem; font-weight:800; line-height:1; color:#e5484d; margin:-3px 0 -1px; }
+  .m3-needle svg { width:20px; height:20px; }
+  .m3-hint { position:absolute; left:12px; bottom:12px; padding:6px 12px; border-radius:999px; font-size:.72rem; color:var(--ink-2);
+    background:color-mix(in srgb, var(--surface) 86%, transparent); border:1px solid var(--border); pointer-events:none;
+    opacity:0; transform:translateY(6px); transition:opacity .3s, transform .3s; }
+  .m3-hint.on { opacity:1; transform:none; }
+  .m3-replay { position:absolute; left:12px; top:12px; width:min(250px, calc(100% - 24px)); padding:10px 14px 12px; border-radius:12px;
+    background:color-mix(in srgb, var(--surface) 92%, transparent); border:1px solid var(--border); box-shadow:0 6px 18px rgba(0,0,0,.12); }
+  .m3-replay b { display:block; font-size:1.02rem; font-weight:800; font-variant-numeric:tabular-nums; }
+  .m3-replay span { display:block; margin-top:2px; font-size:.76rem; color:var(--ink-2); font-variant-numeric:tabular-nums; }
+  .m3-bar { height:4px; margin:9px 0 10px; border-radius:2px; background:var(--grid); overflow:hidden; }
+  .m3-bar em { display:block; width:0; height:100%; background:var(--accent); }
+  @media (max-width:640px) { .m3-tools button { width:28px; height:28px; } .m3-tools .ic { width:16px; height:16px; } }
+  @media (prefers-reduced-motion: reduce) { .m3-lbl, .m3-hint { transition:none; } }
 
   /* ── 연말 결산 (Wrapped) ── */
   .wr-ov {
@@ -2792,7 +2862,14 @@ var ICONS = {
   person: '<circle cx="12" cy="4.5" r="1.8"/><path d="m9 21 3-6 3 6M6 9l6 2 6-2M12 11v4"/>',
   x: '<path d="M18 6 6 18M6 6l12 12"/>',
   refresh: '<path d="M21 12a9 9 0 0 1-15.5 6.3L3 16"/><path d="M3 21v-5h5"/><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8"/><path d="M21 3v5h-5"/>',
-  handsUp: '<circle cx="12" cy="7" r="1.8"/><path d="m9 21 3-6 3 6M12 11v4M5 3l3 6 4 2 4-2 3-6"/>'
+  handsUp: '<circle cx="12" cy="7" r="1.8"/><path d="m9 21 3-6 3 6M12 11v4M5 3l3 6 4 2 4-2 3-6"/>',
+  scan: '<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>',
+  locate: '<path d="M2 12h3M19 12h3M12 2v3M12 19v3"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/>',
+  map: '<path d="M14.1 6.3 9.9 3.7a2 2 0 0 0-1.8 0L3.5 6A1 1 0 0 0 3 7v12.4a1 1 0 0 0 1.5.9l3.6-2.1a2 2 0 0 1 1.8 0l4.2 2.6a2 2 0 0 0 1.8 0l4.6-2.3a1 1 0 0 0 .5-.9V5.2a1 1 0 0 0-1.5-.9l-3.6 2.1a2 2 0 0 1-1.8 0Z"/><path d="M15 5.8v15M9 3.2v15"/>',
+  footprints: '<path d="M4 16v-2.4C4 11.5 3 10.5 3 8c0-2.7 1.5-6 4.5-6C9.4 2 10 3.8 10 5.5c0 3.1-2 5.7-2 8.7V16a2 2 0 1 1-4 0Z"/><path d="M20 20v-2.4c0-2.1 1-3.1 1-5.6 0-2.7-1.5-6-4.5-6C14.6 6 14 7.8 14 9.5c0 3.1 2 5.7 2 8.7V20a2 2 0 1 0 4 0Z"/><path d="M16 17h4M4 13h4"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  minus: '<path d="M5 12h14"/>',
+  square: '<rect x="6" y="6" width="12" height="12" rx="1.5"/>'
 };
 function ico(name, cls) {
   return '<svg class="ic' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
@@ -7162,6 +7239,7 @@ function switchView(v) {
   if (v === 'badges') { renderBadges(); updateBadgeNav(); }
   document.body.classList.toggle('explore-on', v === 'explore');
   if (v === 'explore') villageShow(); else villagePost({ type: 'asset-village:visible', visible: false });
+  m3Update();   // 뱃지 화면을 떠나면 3D 등산 지도는 그리기를 멈춘다
   window.scrollTo(0, 0);
 }
 
@@ -7181,6 +7259,7 @@ function openSheet(id) { $(id).classList.add('open'); }
 function closeSheet(id) {
   if (id === 'monthSheet') { closeMonthSheet(); return; }
   $(id).classList.remove('open');
+  if (id === 'mountainSheet') m3Update();   // 3D 지도를 뱃지 화면 카드로 돌려놓거나 멈춘다
 }
 
 // 그룹이 '부채'일 때만 '부채 대상' 선택 필드를 보여줌
@@ -8142,8 +8221,8 @@ function applyTheme(redraw) {
   document.querySelectorAll('#themeSeg button').forEach(function (b) {
     b.classList.toggle('on', b.dataset.theme === themePref);
   });
-  // 차트는 그릴 때 색을 읽으므로 다시 그린다
-  if (changed && redraw) { renderHome(); drawDetailChart(); }
+  // 차트는 그릴 때 색을 읽으므로 다시 그린다 (3D 등산 지도는 빛 · 색만 바꾼다)
+  if (changed && redraw) { renderHome(); drawDetailChart(); m3Theme(); }
 }
 $('themeSeg').addEventListener('click', function (e) {
   var b = e.target.closest('button');
@@ -8418,7 +8497,8 @@ function weatherNode(s) {
 }
 
 /* ═══════════ 목표까지 등산 지도 ═══════════
-   정상 = 목표 금액, 등산로 위 내 위치 = 지금 순자산. 10%마다 깃발(넘어선 날짜와 함께) */
+   정상 = 목표 금액, 등산로 위 내 위치 = 지금 순자산. 10%마다 깃발(넘어선 날짜와 함께).
+   기본은 three.js 3D 지도(아래 '등산 지도 3D'), 헤더의 '평면'을 고르거나 WebGL 을 못 쓰면 이 SVG 지도 */
 function mtnTrail() {
   var pts = [], N = 360;
   for (var i = 0; i <= N; i++) {
@@ -8436,17 +8516,19 @@ function mtnAt(tr, f) {
   return { x: a[0] + (b[0] - a[0]) * k, y: a[1] + (b[1] - a[1]) * k, i: i };
 }
 var mtnSeq = 0;
-function renderMountain(box) {
-  var st = netStats();
-  if (!st.has) { box.innerHTML = ''; box.hidden = true; return; }
-  box.hidden = false;
-  var net = st.net, goal = goalAmount, frac = Math.max(0, Math.min(1, net / goal));
-  var tr = mtnTrail(), me = mtnAt(tr, frac);
-  var pctDate = {};
+// 두 지도(3D · 평면)가 함께 쓰는 값 — 10% 깃발마다 금액 · 넘었는지 · 넘어선 날짜(뱃지)
+function mtnData() {
+  var st = netStats(), net = st.net, goal = goalAmount, pctDate = {}, flags = [];
   (badges || []).forEach(function (b) {
     if (b.t === 'pct' && (!b.goal || b.goal === goal)) pctDate[b.n] = pctDate[b.n] && pctDate[b.n] < b.date ? pctDate[b.n] : b.date;
     if (b.t === 'goal') pctDate[100] = b.date;
   });
+  for (var k = 1; k <= 10; k++) flags.push({ k: k, f: k / 10, amt: goal * k / 10, reached: net >= goal * k / 10, date: pctDate[k * 10] || '' });
+  return { has: st.has, net: net, goal: goal, frac: Math.max(0, Math.min(1, net / goal)), pctDate: pctDate, flags: flags, months: st.has ? monthsToGoal(net) : null };
+}
+function mtnSvg(d) {
+  var net = d.net, goal = d.goal, frac = d.frac, pctDate = d.pctDate;
+  var tr = mtnTrail(), me = mtnAt(tr, frac);
   function path(from, to) {
     var s = '';
     for (var i = 0; i < tr.pts.length; i++) {
@@ -8496,22 +8578,1420 @@ function renderMountain(box) {
     '<text x="' + bubbleW / 2 + '" y="19" text-anchor="middle" font-size="13" font-weight="800" style="fill:var(--bg)">지금 ' + fmtHeaderTotal(net) + '원</text>' +
     '<text x="' + bubbleW / 2 + '" y="35" text-anchor="middle" font-size="11" style="fill:var(--bg)" opacity=".8">목표의 ' + (net / goal * 100).toFixed(1) + '% 지점</text></g></g>';
   svg += '</svg>';
-  var months = monthsToGoal(net);
-  box.innerHTML = '<div class="mtn-head"><div><div class="card-title">' + ico('mountain') + ' 목표까지 등산 지도</div>' +
-    '<div class="card-sub">정상 ' + fmtHeaderTotal(goal) + '원 · ' + (net >= goal ? '정상에 올랐어요!' : '남은 거리 ' + fmtHeaderTotal(goal - net) + '원 · ' + goalEtaText(months)) + '</div></div>' +
-    '<button type="button" class="btn btn-ghost btn-sm" data-mtn-goal>목표 바꾸기</button></div>' + svg;
+  return svg;
+}
+// 뱃지 화면 카드(#bdgMountain)와 창(#mountainBody)이 같은 모양 — 머리글 + 지도 자리(.mtn-stage)
+function renderMountain(box) {
+  var d = mtnData();
+  M3.data = d;
+  if (!d.has) { box.innerHTML = ''; box.hidden = true; m3Update(); return; }
+  box.hidden = false;
+  var head = box.querySelector('.mtn-head'), stage = box.querySelector('.mtn-stage');
+  if (!head || !stage) {
+    box.innerHTML = '<div class="mtn-head"></div><div class="mtn-stage"></div>';
+    head = box.querySelector('.mtn-head');
+    stage = box.querySelector('.mtn-stage');
+  }
+  var can3d = !M3.failed, use3d = can3d && lsGet(MTN_VIEW_KEY) !== 'flat';
+  head.innerHTML = '<div><div class="card-title">' + ico('mountain') + ' 목표까지 등산 지도</div>' +
+    '<div class="card-sub">정상 ' + fmtHeaderTotal(d.goal) + '원 · ' + (d.net >= d.goal ? '정상에 올랐어요!' : '남은 거리 ' + fmtHeaderTotal(d.goal - d.net) + '원 · ' + goalEtaText(d.months)) + '</div></div>' +
+    '<div class="mtn-acts">' + (can3d ? '<div class="seg mtn-seg" role="group" aria-label="지도 모양">' +
+      '<button type="button" data-mtn-mode="3d"' + (use3d ? ' class="on"' : '') + ' data-tip-t="3D 등산 지도" data-tip="끌어서 산을 돌려 보고, 깃발 · 등산객 · 정상석을 누르면 가까이 갑니다. 지도 보기 · 지난 발자취는 오른쪽 위 도구에서.">3D</button>' +
+      '<button type="button" data-mtn-mode="flat"' + (use3d ? '' : ' class="on"') + ' data-tip-t="평면 지도" data-tip="한 장짜리 그림 지도로 봅니다 — 가볍고 한눈에 들어와요.">평면</button></div>' : '') +
+    '<button type="button" class="btn btn-ghost btn-sm" data-mtn-goal>목표 바꾸기</button></div>';
+  stage.classList.toggle('flat', !use3d);
+  if (!use3d) stage.innerHTML = mtnSvg(d);
+  else if (!stage.querySelector('.m3-root')) stage.innerHTML = '';
+  m3Update();
 }
 function openMountain() {
-  renderMountain($('mountainBody'));
   openSheet('mountainSheet');
+  renderMountain($('mountainBody'));
 }
 document.addEventListener('click', function (e) {
   if (e.target.closest('[data-mtn-open]')) { openMountain(); return; }
+  var mode = e.target.closest('[data-mtn-mode]');
+  if (mode) {
+    lsSet(MTN_VIEW_KEY, mode.dataset.mtnMode);
+    if (!$('bdgMountain').hidden) renderMountain($('bdgMountain'));
+    if ($('mountainSheet').classList.contains('open')) renderMountain($('mountainBody'));
+    return;
+  }
   if (e.target.closest('[data-mtn-goal]')) {
     document.querySelectorAll('.sheet-back.open').forEach(function (s) { closeSheet(s.id); });
     openGoalSheet();
   }
 });
+
+/* ═══════════ 목표까지 등산 지도 — 3D (three.js) ═══════════
+   탐험(#villageSrc)에 함께 들어 있는 Three.js r160 을 처음 그릴 때 꺼내 쓴다 — 인터넷 없이, 여전히 index.html 한 파일.
+   - 네모난 땅 한 판(옆면에 지층이 보이는 받침) 가운데 큰 산 = 목표 금액. 둘레에 옆 봉우리 · 호수 · 숲.
+     등고선은 지형 셰이더로 긋고, '지도' 보기는 위에서 내려다보며 높이별 색(단채식)과 등고선을 진하게 칠한다.
+   - 등산로는 호숫가 들머리에서 앞면을 지그재그로 올라 정상까지 (평면 지도와 같은 4.5번 꺾임) — 길이의 f 지점 = 목표의 f.
+     지나온 길은 강조색, 남은 길은 점선. 10%마다 돌탑 위 깃발(넘어선 날짜), 정상에는 목표 금액을 새긴 정상석.
+   - 지금 순자산 자리에 등산객. '발자취'는 기록을 날짜순으로 따라 오르내리는 모습을 다시 보여 준다.
+   - 계절(이 PC 의 날짜)에 따라 숲 색이 바뀐다 — 봄 벚꽃 · 여름 신록 · 가을 단풍 · 겨울 눈. 어둡게 테마는 달밤(등산객 헤드랜턴).
+   - 캔버스는 하나 — 뱃지 화면 카드와 '등산 지도로 보기' 창 중 보이는 쪽으로 옮겨 붙인다.
+     보이지 않으면 그리기를 멈추고, 윈도우의 '애니메이션 효과 줄이기'면 움직임 없이 필요할 때만 그린다.
+   - WebGL 을 못 쓰거나 '평면'을 고르면 SVG 지도(mtnSvg)를 그린다. */
+var MTN_VIEW_KEY = 'asset_pc_mtn_view';
+var M3_SIZE = 160, M3_SEG = 200, M3_BASE = -9, M3_WATER = 0.9;
+var M3_PEAK = { x: 0, z: -12 }, M3_LAKE = { x: -45, z: 50, r: 10 };
+var M3_FACE = 0.32;     // 처음 보는 방향 — 정면에서 오른쪽으로 조금. 정상석도 이쪽을 본다
+var M3_WIND = -0.3;     // 깃발이 날리는 방향 (모든 깃발이 같은 바람을 맞는다)
+var M3 = {
+  T: null, ready: false, failed: false, root: null, cv: null, host: null, sheet: false, inView: true,
+  data: null, time: 0, last: 0, raf: 0, frame: 0, skip: 0, lastInput: 0, slow: 0,
+  cam: { tx: 0, ty: 7, tz: 7, r: 214, th: M3_FACE, ph: 1.07 }, tween: null,
+  ptrs: {}, drag: null, pinch: 0, map: 0, mapOn: false, preMap: null, replay: null,
+  lbls: [], flags: [], picks: [], cur: null, hot: null, hotUntil: 0, intro: false, hintTm: 0,
+  reduced: window.matchMedia('(prefers-reduced-motion: reduce)')
+};
+
+// 탐험 앱 원본(#villageSrc)의 Three.js 를 이 페이지에 한 번 실행해 window.THREE 를 만든다
+function m3LoadThree() {
+  if (window.THREE) return window.THREE;
+  if (m3LoadThree.tried) return null;
+  m3LoadThree.tried = true;
+  try {
+    var src = $('villageSrc').textContent;
+    var a = src.indexOf('Three.js MIT License'), s = src.indexOf('<script>', a), e = src.indexOf('<\\/script>', s);
+    if (a < 0 || s < 0 || e < 0) return null;
+    var tag = document.createElement('script');
+    // 옛 빌드 안내 경고(console.warn) 한 줄은 빼고 넣는다
+    tag.textContent = src.slice(s + 8, e).replace(/^\s*console\.warn\((['"]).*?\1\),/, '0,');
+    document.head.appendChild(tag);
+    tag.remove();
+  } catch (err) { console.warn('등산 지도: three.js 를 불러오지 못했습니다', err); }
+  return window.THREE || null;
+}
+
+/* ── 지형 ── */
+function m3Hash(x, y) { var s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); }
+function m3Grad(ix, iy, dx, dy) { var a = m3Hash(ix, iy) * 6.2832; return Math.cos(a) * dx + Math.sin(a) * dy; }
+// 그래디언트 노이즈 (대략 -1 ~ 1)
+function m3Noise(x, y) {
+  var xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  var u = xf * xf * xf * (xf * (xf * 6 - 15) + 10), v = yf * yf * yf * (yf * (yf * 6 - 15) + 10);
+  var a = m3Grad(xi, yi, xf, yf), b = m3Grad(xi + 1, yi, xf - 1, yf), c = m3Grad(xi, yi + 1, xf, yf - 1), d = m3Grad(xi + 1, yi + 1, xf - 1, yf - 1);
+  return (a + (b - a) * u + (c - a + (a - b - c + d) * u) * v) * 1.45;
+}
+function m3Fbm(x, y, oct) {
+  var s = 0, a = 0.5, n = 0;
+  for (var i = 0; i < oct; i++) {
+    s += a * m3Noise(x, y); n += a; a *= 0.5;
+    var nx = x * 1.62 - y * 1.18 + 3.1; y = x * 1.18 + y * 1.62 - 1.7; x = nx;   // 옥타브마다 돌려서 격자 무늬가 안 보이게
+  }
+  return s / n;
+}
+function m3Smooth(a, b, x) { var t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+function m3Clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+function m3Sq(v) { return v * v; }
+
+// 깎기 전의 땅 높이 — 큰 산(방사형 능선) + 옆 봉우리 셋 + 바위 결 + 들판 기복, 호수는 우묵하게
+function m3RawHeight(x, z) {
+  var dx = x - M3_PEAK.x, dz = z - M3_PEAK.z, d = Math.sqrt(dx * dx + dz * dz), ang = Math.atan2(dz, dx);
+  var rough = m3Smooth(1.5, 13, d);                          // 꼭대기는 매끈하게 (정상석 자리)
+  var spur = 1 + (0.15 * Math.sin(ang * 5 + 0.7 + m3Noise(d * 0.045, 2.3) * 2.4) + 0.07 * Math.sin(ang * 9 + 2.1)) * rough;
+  var dm = Math.sqrt(d * d + 10) * spur;
+  var h = 48 * (0.58 * Math.exp(-dm / 16.5) + 0.42 * Math.exp(-dm * dm / 1300));
+  h += 20 * Math.exp(-(m3Sq(x + 47) + m3Sq(z + 36)) / 400);   // 서쪽 봉우리
+  h += 16 * Math.exp(-(m3Sq(x - 50) + m3Sq(z + 28)) / 360);   // 동쪽 봉우리
+  h += 7 * Math.exp(-(m3Sq(x - 46) + m3Sq(z - 44)) / 300);    // 앞쪽 언덕
+  var mt = Math.min(1, h / 26), rid = 1 - Math.abs(m3Noise(x * 0.055 + 4.2, z * 0.055 - 1.3));
+  h += (mt * (rid * rid * 5.5 - 2.2) + m3Fbm(x * 0.03 + 7.7, z * 0.03 - 3.3, 4) * (2 + 2.5 * mt)) * rough;
+  h += 2.4;
+  var dl = Math.hypot(x - M3_LAKE.x, z - M3_LAKE.z);
+  if (dl < M3_LAKE.r + 10) {
+    var k = 1 - m3Smooth(M3_LAKE.r - 3, M3_LAKE.r + 9, dl), bed = -1.6 + 2.5 * m3Sq(dl / M3_LAKE.r);
+    h = h * (1 - k) + Math.min(h, bed) * k;
+  }
+  return h;
+}
+// 높이 격자에서 (x, z) 의 높이 — 깎은 뒤의 실제 땅
+function m3H(x, z) {
+  var g = M3.hf, n = g.n, fx = m3Clamp((x + g.half) / g.step, 0, n - 1.001), fz = m3Clamp((z + g.half) / g.step, 0, n - 1.001);
+  var i = Math.floor(fx), j = Math.floor(fz), tx = fx - i, tz = fz - j, k = j * n + i, h = g.h;
+  return (h[k] * (1 - tx) + h[k + 1] * tx) * (1 - tz) + (h[k + n] * (1 - tx) + h[k + n + 1] * tx) * tz;
+}
+function m3Slope(x, z) {
+  var e = 0.8, gx = (m3H(x + e, z) - m3H(x - e, z)) / (2 * e), gz = (m3H(x, z + e) - m3H(x, z - e)) / (2 * e);
+  return 1 - 1 / Math.sqrt(1 + gx * gx + gz * gz);
+}
+// 등산로까지의 거리 (5칸 안쪽만 알고, 그 밖은 99)
+function m3TrailDist(x, z) {
+  var g = M3.hf, i = Math.round((x + g.half) / g.step), j = Math.round((z + g.half) / g.step);
+  return i < 0 || j < 0 || i >= g.n || j >= g.n ? 99 : g.td[j * g.n + i];
+}
+// (x, z) 둘레 R 안의 격자점마다 fn(번호, 거리)
+function m3Stamp(x, z, R, fn) {
+  var g = M3.hf, n = g.n;
+  var i0 = Math.max(0, Math.floor((x - R + g.half) / g.step)), i1 = Math.min(n - 1, Math.ceil((x + R + g.half) / g.step));
+  var j0 = Math.max(0, Math.floor((z - R + g.half) / g.step)), j1 = Math.min(n - 1, Math.ceil((z + R + g.half) / g.step));
+  for (var j = j0; j <= j1; j++) for (var i = i0; i <= i1; i++) {
+    var d = Math.hypot(-g.half + i * g.step - x, -g.half + j * g.step - z);
+    if (d < R) fn(j * n + i, d);
+  }
+}
+function m3Flatten(x, z, r0, r1, y) {
+  var h = M3.hf.h;
+  m3Stamp(x, z, r1, function (v, d) { var w = 1 - m3Smooth(r0, r1, d); h[v] += (y - h[v]) * w; });
+}
+function m3Blur(a, r) {
+  var out = [];
+  for (var i = 0; i < a.length; i++) {
+    var s = 0;
+    for (var j = -r; j <= r; j++) s += a[m3Clamp(i + j, 0, a.length - 1)];
+    out.push(s / (2 * r + 1));
+  }
+  return out;
+}
+
+// 높이 격자 + 등산로. 등산로 높이는 땅을 따라가되 부드럽게 · 오르막으로만 고르고, 그 폭만큼 땅을 깎고 메운다
+function m3Ground() {
+  var n = M3_SEG + 1, half = M3_SIZE / 2, step = M3_SIZE / M3_SEG, h = new Float32Array(n * n), td = new Float32Array(n * n), i, j;
+  for (j = 0; j < n; j++) for (i = 0; i < n; i++) h[j * n + i] = m3RawHeight(-half + i * step, -half + j * step);
+  td.fill(99);
+  M3.hf = { n: n, half: half, step: step, h: h, td: td };
+  M3.topY = m3H(M3_PEAK.x, M3_PEAK.z);
+  // 평면 지도와 같은 지그재그 — 폭은 위로 갈수록 좁아지고 4.5번 꺾여 정상에서 끝난다
+  var B = { x: 3, z: 62 }, ax = M3_PEAK.x - B.x, az = M3_PEAK.z - B.z, al = Math.hypot(ax, az), px = -az / al, pz = ax / al, raw = [];
+  for (i = 0; i <= 3000; i++) {
+    var t = i / 3000, off = 37 * Math.pow(1 - t, 0.95) * Math.sin(Math.PI * 4.5 * t - Math.PI / 2);
+    raw.push([B.x + ax * t + px * off, B.z + az * t + pz * off]);
+  }
+  var cum = [0];
+  for (i = 1; i < raw.length; i++) cum.push(cum[i - 1] + Math.hypot(raw[i][0] - raw[i - 1][0], raw[i][1] - raw[i - 1][1]));
+  var L = cum[cum.length - 1], N = Math.ceil(L / 0.35), pts = [], k = 1;
+  for (i = 0; i <= N; i++) {
+    var s = L * i / N;
+    while (k < cum.length - 1 && cum[k] < s) k++;
+    var u = (s - cum[k - 1]) / (cum[k] - cum[k - 1] || 1);
+    pts.push({ x: raw[k - 1][0] + (raw[k][0] - raw[k - 1][0]) * u, y: 0, z: raw[k - 1][1] + (raw[k][1] - raw[k - 1][1]) * u });
+  }
+  var ys = m3Blur(m3Blur(pts.map(function (p) { return m3H(p.x, p.z); }), 9), 9);
+  for (i = 1; i < ys.length; i++) ys[i] = Math.max(ys[i], ys[i - 1]);
+  var tail = Math.min(40, ys.length - 1);
+  for (i = 0; i <= tail; i++) { var q = ys.length - 1 - tail + i, w = m3Smooth(0, 1, i / tail); ys[q] = ys[q] * (1 - w) + M3.topY * w; }
+  pts.forEach(function (p, i2) { p.y = ys[i2]; });
+  // 길 폭만큼 깎고 메운다 — 가운데 1.5 는 길 높이 그대로, 5.4 까지 원래 비탈로 이어진다
+  var R = 5.4, ty = new Float32Array(n * n);
+  pts.forEach(function (p) { m3Stamp(p.x, p.z, R, function (v, d) { if (d < td[v]) { td[v] = d; ty[v] = p.y; } }); });
+  for (i = 0; i < n * n; i++) if (td[i] < R) h[i] += (ty[i] - 0.04 - h[i]) * (1 - m3Smooth(1.5, R, td[i]));
+  m3Flatten(M3_PEAK.x, M3_PEAK.z, 4.2, 8.5, M3.topY);        // 정상 마당
+  m3Flatten(pts[0].x, pts[0].z, 2.5, 6, pts[0].y);           // 들머리
+  var c3 = [0];
+  for (i = 1; i < pts.length; i++) c3.push(c3[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y, pts[i].z - pts[i - 1].z));
+  M3.trail = { pts: pts, cum: c3, len: c3[c3.length - 1] };
+  var mx = 0;
+  for (i = 0; i < n * n; i++) if (h[i] > mx) mx = h[i];
+  M3.maxH = mx;
+}
+// 등산로의 f(0~1) 지점 — 위치와 진행 방향
+function m3TrailAt(f) {
+  var tr = M3.trail, s = m3Clamp(f, 0, 1) * tr.len, lo = 1, hi = tr.cum.length - 1;
+  while (lo < hi) { var mid = (lo + hi) >> 1; if (tr.cum[mid] < s) lo = mid + 1; else hi = mid; }
+  var a = tr.pts[lo - 1], b = tr.pts[lo], k = (s - tr.cum[lo - 1]) / (tr.cum[lo] - tr.cum[lo - 1] || 1);
+  return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, z: a.z + (b.z - a.z) * k, dx: b.x - a.x, dz: b.z - a.z };
+}
+
+function m3Season() {
+  var m = new Date().getMonth() + 1;
+  return m >= 3 && m <= 5 ? 'spring' : m >= 6 && m <= 8 ? 'summer' : m >= 9 && m <= 11 ? 'autumn' : 'winter';
+}
+function m3Palette() {
+  var T = M3.T, s = m3Season();
+  var P = {
+    spring: { g0: '#a9d57c', g1: '#88c265', f: '#62a153', al: '#a8b472', snow: 39.5 },
+    summer: { g0: '#93c768', g1: '#72ae53', f: '#4f8c46', al: '#9aaa66', snow: 43.5 },
+    autumn: { g0: '#b8c46e', g1: '#9cae58', f: '#86904a', al: '#c5a45c', snow: 41 },
+    winter: { g0: '#bdb99b', g1: '#a5a17f', f: '#7a8462', al: '#e4e9ed', snow: 25 }
+  }[s];
+  return {
+    season: s, snowY: P.snow, g0: new T.Color(P.g0), g1: new T.Color(P.g1), f: new T.Color(P.f), al: new T.Color(P.al),
+    sand: new T.Color('#dccf9f'), rock: new T.Color('#978d82'), rock2: new T.Color('#7d766e'), snow: new T.Color('#f4f7fa'), path: new T.Color('#d2b98e')
+  };
+}
+function m3GroundColor(P, x, y, z, slope, td, out) {
+  var n = m3Noise(x * 0.12, z * 0.12) * 0.5 + m3Noise(x * 0.5, z * 0.5) * 0.2, hy = y + n * 2.2;
+  if (hy < 9) out.copy(P.g0).lerp(P.g1, m3Smooth(2, 9, hy));
+  else if (hy < 22) out.copy(P.g1).lerp(P.f, m3Smooth(9, 18, hy));
+  else out.copy(P.f).lerp(P.al, m3Smooth(22, 29, hy)).lerp(P.rock, m3Smooth(29, 36, hy));
+  out.lerp(n > 0.1 ? P.rock : P.rock2, m3Smooth(0.34, 0.6, slope + n * 0.08));                   // 가파른 곳은 바위
+  var sn = m3Smooth(P.snowY - 1.2, P.snowY + 1.2, hy) * (1 - m3Smooth(0.5, 0.75, slope));
+  if (sn > 0) out.lerp(P.snow, sn);
+  if (y < M3_WATER + 0.8 && Math.hypot(x - M3_LAKE.x, z - M3_LAKE.z) < M3_LAKE.r + 4) out.lerp(P.sand, 0.85);   // 물가 모래
+  if (td < 2.3) out.lerp(P.path, (1 - m3Smooth(1.1, 2.3, td)) * 0.9);                               // 흙길
+  return out;
+}
+// '지도' 보기의 높이별 색 (단채식 지도처럼 초록 → 노랑 → 갈색 → 흰색)
+var M3_HYPSO = [[0, '#a9d49a'], [6, '#cfe4a3'], [13, '#eee7ab'], [21, '#efd198'], [29, '#e0b284'], [37, '#c8a089'], [44, '#f5f1ec']];
+function m3Hypso(y, out) {
+  var st = M3.hypso, i = 1;
+  while (i < st.length - 1 && st[i][0] < y) i++;
+  var a = st[i - 1], b = st[i];
+  return out.copy(a[1]).lerp(b[1], m3Clamp((y - a[0]) / (b[0] - a[0]), 0, 1));
+}
+
+function m3TerrainMesh(P) {
+  var T = M3.T, g = M3.hf, n = g.n, h = g.h, cnt = n * n, i, j, v;
+  var pos = new Float32Array(cnt * 3), col = new Float32Array(cnt * 3), hyp = new Float32Array(cnt * 3), idx = new Uint32Array((n - 1) * (n - 1) * 6), q = 0;
+  for (j = 0; j < n; j++) for (i = 0; i < n; i++) {
+    v = j * n + i;
+    pos[v * 3] = -g.half + i * g.step; pos[v * 3 + 1] = h[v]; pos[v * 3 + 2] = -g.half + j * g.step;
+  }
+  for (j = 0; j < n - 1; j++) for (i = 0; i < n - 1; i++) {
+    var a = j * n + i, b = a + 1, c = a + n, d = c + 1;
+    idx[q++] = a; idx[q++] = c; idx[q++] = b; idx[q++] = b; idx[q++] = c; idx[q++] = d;
+  }
+  var geo = new T.BufferGeometry();
+  geo.setAttribute('position', new T.BufferAttribute(pos, 3));
+  geo.setIndex(new T.BufferAttribute(idx, 1));
+  geo.computeVertexNormals();
+  var nor = geo.attributes.normal.array, c1 = new T.Color(), c2 = new T.Color();
+  for (v = 0; v < cnt; v++) {
+    m3GroundColor(P, pos[v * 3], pos[v * 3 + 1], pos[v * 3 + 2], 1 - nor[v * 3 + 1], g.td[v], c1);
+    m3Hypso(pos[v * 3 + 1], c2);
+    col[v * 3] = c1.r; col[v * 3 + 1] = c1.g; col[v * 3 + 2] = c1.b;
+    hyp[v * 3] = c2.r; hyp[v * 3 + 1] = c2.g; hyp[v * 3 + 2] = c2.b;
+  }
+  geo.setAttribute('color', new T.BufferAttribute(col, 3));
+  geo.setAttribute('hypso', new T.BufferAttribute(hyp, 3));
+  var mat = new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.94, metalness: 0 });
+  mat.extensions = { derivatives: true };   // fwidth (WebGL1 에서도)
+  // 등고선: 2.5 칸마다 가는 선, 4줄마다 굵은 계곡선. 너무 촘촘한 벼랑에서는 흐리게. 물 아래는 긋지 않는다
+  mat.onBeforeCompile = function (sh) {
+    sh.uniforms.uMap = M3.uMap;
+    sh.uniforms.uCon = M3.uCon;
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute vec3 hypso;\nvarying vec3 vHyp;\nvarying float vH;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvH = position.y;\nvHyp = hypso;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float uMap;\nuniform vec3 uCon;\nvarying vec3 vHyp;\nvarying float vH;')
+      .replace('#include <color_fragment>', '#include <color_fragment>\n' +
+        'diffuseColor.rgb = mix(diffuseColor.rgb, vHyp, uMap);\n' +
+        'float cH = vH / 2.5;\n' +
+        'float cW = max(fwidth(cH), 1e-4);\n' +
+        'float cD = abs(fract(cH + 0.5) - 0.5) / cW;\n' +
+        'float cMaj = step(mod(floor(cH + 0.5), 4.0), 0.5);\n' +
+        'float cL = 1.0 - smoothstep(0.3 + cMaj * 0.5, 1.05 + cMaj * 0.6, cD);\n' +
+        'cL *= (1.0 - smoothstep(0.3, 0.6, cW)) * step(' + (M3_WATER + 0.3).toFixed(2) + ', vH);\n' +
+        'diffuseColor.rgb = mix(diffuseColor.rgb, uCon, cL * mix(0.2 + 0.16 * cMaj, 0.5 + 0.25 * cMaj, uMap));');
+  };
+  var mesh = new T.Mesh(geo, mat);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+// 받침 옆면 — 위는 풀 · 겉흙, 아래로 모래 · 점토 · 바위 지층
+function m3Walls(colAttr) {
+  var T = M3.T, g = M3.hf, n = g.n, h = g.h;
+  var rows = [
+    { d: 0 }, { d: 0.3, c: '#566f38' }, { d: 1.0, c: '#6b4b31' }, { y: -0.6, c: '#80613f' }, { y: -0.6, c: '#b0935f' },
+    { y: -2.6, c: '#a38555' }, { y: -2.6, c: '#8a6a47' }, { y: -5.2, c: '#76593e' }, { y: -5.2, c: '#8d8274' }, { y: M3_BASE, c: '#6f665a' }
+  ].map(function (r) { if (r.c) r.col = new T.Color(r.c); return r; });
+  var pos = [], nor = [], col = [], idx = [];
+  // 네 변: 격자 번호를 주는 함수와 바깥쪽 법선
+  var sides = [
+    { at: function (i) { return (n - 1) * n + i; }, nx: 0, nz: 1, flip: true },
+    { at: function (i) { return i; }, nx: 0, nz: -1, flip: false },
+    { at: function (i) { return i * n + (n - 1); }, nx: 1, nz: 0, flip: false },
+    { at: function (i) { return i * n; }, nx: -1, nz: 0, flip: true }
+  ];
+  sides.forEach(function (sd) {
+    var base = pos.length / 3;
+    for (var i = 0; i < n; i++) {
+      var v = sd.at(i), x = -g.half + (v % n) * g.step, z = -g.half + Math.floor(v / n) * g.step, top = h[v], prev = top + 1;
+      rows.forEach(function (r, ri) {
+        var y = r.d !== undefined ? top - r.d : Math.min(r.y, top - 1.2);
+        y = Math.min(y, prev - (ri === 0 ? 0 : 0.0001));
+        if (ri === rows.length - 1) y = M3_BASE;
+        prev = y;
+        pos.push(x, y, z);
+        nor.push(sd.nx, 0, sd.nz);
+        var c = r.col || { r: colAttr[v * 3], g: colAttr[v * 3 + 1], b: colAttr[v * 3 + 2] };
+        col.push(c.r, c.g, c.b);
+      });
+    }
+    var R = rows.length;
+    for (i = 0; i < n - 1; i++) for (var r = 0; r < R - 1; r++) {
+      var a = base + i * R + r, b = a + R, c = a + 1, d = b + 1;
+      if (sd.flip) idx.push(a, c, b, b, c, d); else idx.push(a, b, c, b, d, c);
+    }
+  });
+  var geo = new T.BufferGeometry();
+  geo.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('normal', new T.Float32BufferAttribute(nor, 3));
+  geo.setAttribute('color', new T.Float32BufferAttribute(col, 3));
+  geo.setIndex(idx);
+  var m = new T.Mesh(geo, new T.MeshStandardMaterial({ vertexColors: true, roughness: 1 }));
+  m.receiveShadow = true;
+  return m;
+}
+
+// 등산로 띠 — 한 장의 띠에서 셰이더가 지나온 길(굵게, 강조색, 흐르는 빛)과 남은 길(가늘게, 점선)을 나눈다
+function m3TrailMesh() {
+  var T = M3.T, pts = M3.trail.pts, N = pts.length, W = 0.8, pos = [], aS = [], aV = [], idx = [];
+  for (var i = 0; i < N; i++) {
+    var a = pts[Math.max(0, i - 1)], b = pts[Math.min(N - 1, i + 1)], tx = b.x - a.x, tz = b.z - a.z, tl = Math.hypot(tx, tz) || 1;
+    for (var s = 0; s < 2; s++) {
+      var sg = s ? 1 : -1, x = pts[i].x - tz / tl * W * sg, z = pts[i].z + tx / tl * W * sg;
+      pos.push(x, Math.max(pts[i].y, m3H(x, z)) + 0.07, z);
+      aS.push(M3.trail.cum[i]);
+      aV.push(s);
+    }
+    if (i) idx.push((i - 1) * 2, (i - 1) * 2 + 1, i * 2, i * 2, (i - 1) * 2 + 1, i * 2 + 1);
+  }
+  var geo = new T.BufferGeometry();
+  geo.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('aS', new T.Float32BufferAttribute(aS, 1));
+  geo.setAttribute('aV', new T.Float32BufferAttribute(aV, 1));
+  geo.setIndex(idx);
+  M3.trailU = { uProg: { value: 0 }, uTime: { value: 0 }, uMap: M3.uMap, uWalk: { value: new T.Color('#2a78d6') }, uRest: { value: new T.Color('#7e7a70') }, uRed: { value: new T.Color('#d8342c') } };
+  var mat = new T.ShaderMaterial({
+    uniforms: M3.trailU, transparent: true, depthWrite: false, side: T.DoubleSide,
+    polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, extensions: { derivatives: true },
+    vertexShader: 'attribute float aS;\nattribute float aV;\nvarying float vS;\nvarying float vV;\n' +
+      'void main() { vS = aS; vV = aV; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    // '지도' 보기에서는 남은 길을 종이 등산 지도처럼 굵은 빨간 점선으로
+    fragmentShader: 'uniform float uProg;\nuniform float uTime;\nuniform float uMap;\nuniform vec3 uWalk;\nuniform vec3 uRest;\nuniform vec3 uRed;\nvarying float vS;\nvarying float vV;\n' +
+      'void main() {\n' +
+      '  float ac = abs(vV - 0.5) * 2.0, aa = max(fwidth(ac), 1e-3) * 1.3;\n' +
+      '  bool walked = vS <= uProg;\n' +
+      '  float hw = walked ? 0.9 : mix(0.5, 0.75, uMap);\n' +
+      '  float a = 1.0 - smoothstep(hw - aa, hw + aa, ac);\n' +
+      '  vec3 c = mix(uRest, uRed, uMap);\n' +
+      '  if (walked) {\n' +
+      '    float f = fract(vS / 9.0 - uTime * 0.28);\n' +
+      '    c = uWalk + smoothstep(0.0, 0.06, f) * (1.0 - smoothstep(0.06, 0.3, f)) * 0.45;\n' +
+      '  } else {\n' +
+      '    float d = fract(vS / 2.2), dw = max(fwidth(vS / 2.2), 1e-3);\n' +
+      '    a *= smoothstep(0.0, dw, d) * (1.0 - smoothstep(0.55 - dw, 0.55 + dw, d)) * mix(0.9, 1.0, uMap);\n' +
+      '  }\n' +
+      '  if (a < 0.01) discard;\n' +
+      '  gl_FragColor = vec4(c, a);\n' +
+      '  #include <colorspace_fragment>\n' +
+      '}'
+  });
+  var m = new T.Mesh(geo, mat);
+  m.renderOrder = 2;
+  return m;
+}
+
+// 여러 도형을 한 BufferGeometry 로 (위치 · 법선만)
+function m3Merge(list) {
+  var T = M3.T, pos = [], nor = [];
+  list.forEach(function (g) {
+    var ng = g.index ? g.toNonIndexed() : g;
+    pos.push(ng.attributes.position.array);
+    nor.push(ng.attributes.normal.array);
+  });
+  function cat(arr) { var n = 0, k = 0; arr.forEach(function (a) { n += a.length; }); var o = new Float32Array(n); arr.forEach(function (a) { o.set(a, k); k += a.length; }); return o; }
+  var out = new T.BufferGeometry();
+  out.setAttribute('position', new T.BufferAttribute(cat(pos), 3));
+  out.setAttribute('normal', new T.BufferAttribute(cat(nor), 3));
+  return out;
+}
+// '지도' 보기에서 나무가 제자리에서 작아지게 — 그림자용 재질에도 같은 코드를 넣는다
+function m3ShrinkMat(mat) {
+  mat.onBeforeCompile = function (sh) {
+    sh.uniforms.uTree = M3.uTree;
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uTree;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed *= uTree;');
+  };
+  return mat;
+}
+function m3Instanced(geo, mat, items, colors, shrink) {
+  var T = M3.T, mesh = new T.InstancedMesh(geo, mat, Math.max(1, items.length)), m = new T.Matrix4(), q = new T.Quaternion(), e = new T.Euler(), c = new T.Color();
+  items.forEach(function (it, i) {
+    e.set(it.tilt || 0, it.rot, 0);
+    q.setFromEuler(e);
+    m.compose(new T.Vector3(it.x, it.y, it.z), q, new T.Vector3(it.s * (it.sx || 1), it.s * (it.sy || 1), it.s * (it.sx || 1)));
+    mesh.setMatrixAt(i, m);
+    if (colors) mesh.setColorAt(i, c.set(colors[Math.floor(m3Hash(it.x * 3.1, it.z * 1.7) * colors.length) % colors.length]));
+  });
+  mesh.count = items.length;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  mesh.frustumCulled = false;
+  if (shrink) mesh.customDepthMaterial = m3ShrinkMat(new T.MeshDepthMaterial({ depthPacking: T.RGBADepthPacking }));
+  return mesh;
+}
+var M3_TREES = {
+  spring: { pine: ['#3f7a45', '#4a8a4f', '#447f4a'], round: ['#9ad26f', '#b5df86', '#f4b6cc', '#f8cadb', '#8cc867', '#f4b6cc'] },
+  summer: { pine: ['#2f6a3c', '#387545', '#2c6238'], round: ['#4e9a44', '#5aa84e', '#3f8b3a', '#66b257'] },
+  autumn: { pine: ['#34703f', '#3d7a47', '#2f6739'], round: ['#d9482b', '#ec7a22', '#f2b233', '#c93b2c', '#e89a2c', '#9bb34a', '#e0602a'] },
+  winter: { pine: ['#e6edf1', '#3b6a48', '#dde6eb', '#44744f'], round: null }   // 겨울 활엽수는 잎이 없다
+};
+function m3Forest(group, avoid) {
+  var T = M3.T, pal = M3_TREES[m3Season()], pines = [], rounds = [], rocks = [], sp = 2.6;
+  for (var z = -78; z <= 78; z += sp) for (var x = -78; x <= 78; x += sp) {
+    var jx = x + (m3Hash(x, z) - 0.5) * sp * 0.9, jz = z + (m3Hash(z + 7.1, x - 3.3) - 0.5) * sp * 0.9;
+    var h = m3H(jx, jz), sl = m3Slope(jx, jz), td = m3TrailDist(jx, jz);
+    if (h < M3_WATER + 1.2 || Math.hypot(jx - M3_LAKE.x, jz - M3_LAKE.z) < M3_LAKE.r + 5 || td < 3.2) continue;
+    if (Math.hypot(jx - M3_PEAK.x, jz - M3_PEAK.z) < 8.5) continue;
+    if (avoid.some(function (a) { return Math.hypot(jx - a.x, jz - a.z) < a.r; })) continue;
+    var dens = m3Fbm(jx * 0.026 + 11, jz * 0.026 - 5, 3) - 0.02 - Math.max(0, h - 22) * 0.09 - Math.max(0, sl - 0.4) * 1.3 - (td < 6 ? 0.12 : 0);
+    if (sl > 0.46 && m3Hash(jx + 5, jz) < 0.09 && td > 3.2) { rocks.push({ x: jx, y: h - 0.25, z: jz, s: 0.5 + m3Hash(jz, jx) * 0.9, sy: 0.7, rot: m3Hash(jx, 2) * 6.3, tilt: m3Hash(3, jz) * 0.6 }); continue; }
+    if (dens < 0 || sl > 0.62) continue;
+    var pine = h > 13 + m3Noise(jx * 0.1, jz * 0.1) * 5 || m3Hash(jx, jz + 3) < 0.16 || !pal.round;
+    var s = (0.62 + m3Hash(jx + 1, jz) * 0.5) * (1 - Math.max(0, h - 20) / 32);
+    (pine ? pines : rounds).push({ x: jx, y: h - 0.15, z: jz, s: s, rot: m3Hash(jx, jz) * 6.3 });
+  }
+  var trunkGeo = new T.CylinderGeometry(0.1, 0.16, 1.1, 6);
+  trunkGeo.translate(0, 0.55, 0);
+  var pineGeo = m3Merge([
+    new T.ConeGeometry(1.0, 1.7, 7).translate(0, 1.55, 0),
+    new T.ConeGeometry(0.78, 1.45, 7).translate(0, 2.3, 0),
+    new T.ConeGeometry(0.52, 1.15, 7).translate(0, 2.95, 0)
+  ]);
+  var roundGeo = new T.IcosahedronGeometry(1.0, 1);
+  roundGeo.scale(1, 1.1, 1);
+  roundGeo.translate(0, 1.85, 0);
+  var trunkMat = m3ShrinkMat(new T.MeshStandardMaterial({ color: '#6e5038', roughness: 0.95 }));
+  var leafMat = m3ShrinkMat(new T.MeshStandardMaterial({ roughness: 0.85, flatShading: true }));
+  var leafMat2 = m3ShrinkMat(new T.MeshStandardMaterial({ roughness: 0.8, flatShading: true }));
+  group.add(m3Instanced(trunkGeo, trunkMat, pines.concat(rounds), null, true));
+  group.add(m3Instanced(pineGeo, leafMat, pines, pal.pine, true));
+  if (pal.round && rounds.length) group.add(m3Instanced(roundGeo, leafMat2, rounds, pal.round, true));
+  var rockMesh = m3Instanced(new T.IcosahedronGeometry(1, 0), new T.MeshStandardMaterial({ color: '#8f877d', roughness: 0.95, flatShading: true }), rocks);
+  M3.scene.add(rockMesh);   // 바위는 '지도' 보기에도 남긴다
+  M3.treeCount = pines.length + rounds.length;
+}
+
+// 깃발 — 돌탑 위 깃대, 천은 바람에 펄럭인다
+function m3Flags() {
+  var T = M3.T, stoneGeo = new T.SphereGeometry(1, 10, 7), stoneMat = new T.MeshStandardMaterial({ color: '#9a958c', roughness: 0.95, flatShading: true });
+  var poleGeo = new T.CylinderGeometry(0.08, 0.1, 5.4, 8);
+  poleGeo.translate(0, 2.7, 0);
+  var poleMat = new T.MeshStandardMaterial({ color: '#57534c', roughness: 0.55, metalness: 0.35 });
+  M3.flags = [];
+  for (var k = 1; k <= 10; k++) {
+    var f = k / 10, tp = m3TrailAt(f), g = new T.Group(), bx, bz;
+    if (k === 10) { bx = M3_PEAK.x + 2.6; bz = M3_PEAK.z - 1.2; }
+    else {
+      // 오르막 쪽(산 안쪽)으로 비켜 세워 길을 가리지 않게
+      var tl = Math.hypot(tp.dx, tp.dz) || 1, nx = -tp.dz / tl, nz = tp.dx / tl;
+      if (nx * (M3_PEAK.x - tp.x) + nz * (M3_PEAK.z - tp.z) < 0) { nx = -nx; nz = -nz; }
+      bx = tp.x + nx * 2; bz = tp.z + nz * 2;
+    }
+    var by = m3H(bx, bz) - 0.12;
+    g.position.set(bx, by, bz);
+    [[0.78, 0.42, 0.0], [0.58, 0.34, 0.62], [0.4, 0.28, 1.1]].forEach(function (s, i) {
+      var m = new T.Mesh(stoneGeo, stoneMat);
+      m.scale.set(s[0], s[1], s[0] * 0.92);
+      m.position.y = s[2] + s[1] * 0.8;
+      m.rotation.y = k * 1.7 + i;
+      m.castShadow = true;
+      m.receiveShadow = true;
+      g.add(m);
+    });
+    var pole = new T.Mesh(poleGeo, poleMat);
+    pole.position.y = 1.25;
+    pole.castShadow = true;
+    g.add(pole);
+    var cg = new T.PlaneGeometry(2.9, 1.7, 12, 5);
+    cg.translate(1.45, 0, 0);
+    var cloth = new T.Mesh(cg, new T.MeshStandardMaterial({ color: '#cccccc', side: T.DoubleSide, roughness: 0.8 }));
+    cloth.position.set(0.05, 1.25 + 5.4 - 0.9, 0);
+    cloth.castShadow = true;
+    var wind = new T.Group();
+    wind.rotation.y = M3_WIND;
+    wind.add(cloth);
+    g.add(wind);
+    M3.scene.add(g);
+    M3.flags.push({ k: k, f: f, g: g, cloth: cloth, base: cg.attributes.position.array.slice(), phase: k * 1.3, pop: 0, reached: false,
+      top: new T.Vector3(bx, by + 1.25 + 5.4 + 0.4, bz) });
+  }
+}
+function m3Wave(fl, t) {
+  var pos = fl.cloth.geometry.attributes.position, a = pos.array, b = fl.base;
+  for (var i = 0; i < a.length; i += 3) {
+    var x = b[i], y = b[i + 1], k = x / 2.9;
+    a[i + 2] = Math.sin(x * 2.4 - t * 6 + fl.phase) * 0.24 * k + Math.sin(y * 3 + t * 4) * 0.04 * k;
+    a[i + 1] = y - k * k * 0.12 + Math.sin(x * 1.6 - t * 5 + fl.phase) * 0.05 * k;
+  }
+  pos.needsUpdate = true;
+  fl.cloth.geometry.computeVertexNormals();
+}
+function m3FlagColors() {
+  var on = new M3.T.Color('#1fb45c'), gold = new M3.T.Color('#f2b01e'), off = new M3.T.Color(M3.dark ? '#8d8b84' : '#d6d3ca');
+  M3.flags.forEach(function (fl) { fl.cloth.material.color.copy(fl.reached ? (fl.k === 10 ? gold : on) : off); });
+}
+
+// 정상석 — 앞면에 '목표봉'과 목표 금액을 새긴다
+function m3SummitStone() {
+  var T = M3.T, geo = new T.BoxGeometry(2.8, 3.6, 1.1), p = geo.attributes.position;
+  for (var i = 0; i < p.count; i++) if (p.getY(i) > 0) { p.setX(i, p.getX(i) * 0.86); p.setZ(i, p.getZ(i) * 0.88); }
+  geo.computeVertexNormals();
+  var side = new T.MeshStandardMaterial({ color: '#b3ada2', roughness: 0.9 });
+  var cv = document.createElement('canvas');
+  cv.width = 256; cv.height = 330;
+  M3.stoneTex = new T.CanvasTexture(cv);
+  M3.stoneTex.colorSpace = T.SRGBColorSpace;
+  M3.stoneTex.anisotropy = Math.min(8, M3.renderer.capabilities.getMaxAnisotropy());
+  var face = new T.MeshStandardMaterial({ map: M3.stoneTex, roughness: 0.85 });
+  var stone = new T.Mesh(geo, [side, side, side, side, face, side]);
+  var sx = M3_PEAK.x - 3.8, sz = M3_PEAK.z - 0.3, y = m3H(sx, sz);   // 등산로 끝(정상)의 왼쪽 — 올라선 등산객이 가리지 않게
+  stone.position.set(sx, y + 1.7, sz);
+  stone.rotation.y = M3_FACE;
+  stone.castShadow = true;
+  stone.receiveShadow = true;
+  var slab = new T.Mesh(new T.CylinderGeometry(2.4, 2.7, 0.5, 7), new T.MeshStandardMaterial({ color: '#8f887e', roughness: 1, flatShading: true }));
+  slab.position.set(stone.position.x, y + 0.05, stone.position.z);
+  slab.castShadow = true;
+  slab.receiveShadow = true;
+  M3.scene.add(stone, slab);
+  M3.stone = stone;
+}
+function m3DrawStone(goal) {
+  var cv = M3.stoneTex.image, x = cv.getContext('2d'), W = cv.width, H = cv.height;
+  x.fillStyle = '#b9b3a7';
+  x.fillRect(0, 0, W, H);
+  for (var i = 0; i < 1100; i++) {
+    x.fillStyle = (m3Hash(i, 1) < 0.5 ? 'rgba(60,55,50,' : 'rgba(250,245,235,') + (m3Hash(i, 2) * 0.2).toFixed(3) + ')';
+    x.fillRect(m3Hash(i, 3) * W, m3Hash(i, 4) * H, 2, 2);
+  }
+  var serif = '"Noto Serif KR", "Nanum Myeongjo", "Batang", serif';
+  function carve(t, y, size) {
+    x.font = '700 ' + size + 'px ' + serif;
+    x.textAlign = 'center';
+    x.textBaseline = 'middle';
+    var w = x.measureText(t).width, k = Math.min(1, (W - 36) / w);
+    x.save();
+    x.translate(W / 2, y);
+    x.scale(k, 1);
+    x.fillStyle = 'rgba(255,255,255,.45)';
+    x.fillText(t, 1.5, 1.5);
+    x.fillStyle = '#39352f';
+    x.fillText(t, 0, 0);
+    x.restore();
+  }
+  carve('목표봉', 72, 58);
+  x.fillStyle = 'rgba(57,53,47,.55)';
+  x.fillRect(52, 116, W - 104, 3);
+  carve(fmtCompact(goal), 186, 76);
+  carve(comma(goal) + '원', 268, 22);
+  M3.stoneTex.needsUpdate = true;
+}
+
+// 등산객 — 모자 · 배낭 · 스틱. 다리와 팔은 엉덩이 · 어깨에서 돈다
+function m3Hiker() {
+  var T = M3.T, g = new T.Group(), body = new T.Group();
+  function mat(c, r, m) { return new T.MeshStandardMaterial({ color: c, roughness: r || 0.8, metalness: m || 0 }); }
+  function part(geo, m, px, py, pz) { var me = new T.Mesh(geo, m); me.position.set(px || 0, py || 0, pz || 0); me.castShadow = true; return me; }
+  function limb(r, len, m) {
+    var geo = new T.CapsuleGeometry(r, len, 4, 10), j = new T.Group();
+    geo.translate(0, -len / 2 - r * 0.6, 0);
+    j.add(part(geo, m));
+    return j;
+  }
+  var jacket = mat('#2a78d6', 0.65), pants = mat('#39404c', 0.9), skin = mat('#f1c7a1', 0.75), hatM = mat('#f0c948', 0.8), boot = mat('#5b4636', 0.9);
+  var legL = limb(0.19, 0.72, pants), legR = limb(0.19, 0.72, pants);
+  legL.position.set(-0.2, 1.12, 0);
+  legR.position.set(0.2, 1.12, 0);
+  [legL, legR].forEach(function (L) { L.add(part(new T.BoxGeometry(0.3, 0.2, 0.44), boot, 0, -1.07, 0.07)); });
+  var torso = part(new T.CapsuleGeometry(0.4, 0.5, 4, 14), jacket, 0, 1.62, 0);
+  var pack = part(new T.BoxGeometry(0.72, 0.86, 0.42), mat('#e0703a'), 0, 1.72, -0.42);
+  var roll = part(new T.CylinderGeometry(0.16, 0.16, 0.8, 12), mat('#7a9a4a'), 0, 2.22, -0.42);
+  roll.rotation.z = Math.PI / 2;
+  var head = new T.Group();
+  head.position.y = 2.38;
+  head.add(part(new T.SphereGeometry(0.34, 20, 14), skin));
+  head.add(part(new T.CylinderGeometry(0.56, 0.56, 0.05, 24), hatM, 0, 0.16, 0));
+  head.add(part(new T.CylinderGeometry(0.3, 0.36, 0.3, 20), hatM, 0, 0.31, 0));
+  var eyeM = mat('#2b2b2b', 0.5);
+  head.add(part(new T.SphereGeometry(0.045, 8, 6), eyeM, -0.12, 0.02, 0.31), part(new T.SphereGeometry(0.045, 8, 6), eyeM, 0.12, 0.02, 0.31));
+  var lampM = new T.MeshBasicMaterial({ color: '#fff3c4' });
+  head.add(part(new T.SphereGeometry(0.075, 10, 8), lampM, 0, 0.12, 0.33));
+  var armL = limb(0.12, 0.58, jacket), armR = limb(0.12, 0.58, jacket);
+  armL.position.set(-0.52, 2.0, 0);
+  armR.position.set(0.52, 2.0, 0);
+  var pole = part(new T.CylinderGeometry(0.03, 0.03, 1.4, 6), mat('#c7ccd3', 0.35, 0.6), 0, -1.45, 0.08);
+  armR.add(pole);
+  body.add(legL, legR, torso, pack, roll, head, armL, armR);
+  g.add(body);
+  // 달밤에는 헤드랜턴이 앞길을 비춘다
+  var lamp = new T.SpotLight('#ffe3a3', 60, 22, 0.55, 0.6, 2);
+  lamp.position.set(0, 2.55, 0.35);
+  lamp.target.position.set(0, 0, 6);
+  lamp.visible = false;
+  g.add(lamp, lamp.target);
+  // 발밑에서 퍼지는 고리
+  var ring = new T.Mesh(new T.RingGeometry(0.85, 1.1, 40), new T.MeshBasicMaterial({ color: '#2a78d6', transparent: true, opacity: 0.6, depthWrite: false, side: T.DoubleSide }));
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.14;
+  g.add(ring);
+  g.scale.setScalar(1.8);
+  M3.scene.add(g);
+  return { g: g, body: body, legL: legL, legR: legR, armL: armL, armR: armR, head: head, torso: torso, jacket: jacket, ring: ring, lamp: lamp, phase: 0, swing: 0, dir: 0 };
+}
+
+// 목표를 이루면 정상에서 금빛 반짝이가 맴돌며 올라간다
+function m3Sparkles() {
+  var T = M3.T, n = 40, geo = new T.BufferGeometry(), cv = document.createElement('canvas'), x = cv.getContext('2d');
+  cv.width = cv.height = 32;
+  var gr = x.createRadialGradient(16, 16, 0, 16, 16, 16);
+  gr.addColorStop(0, 'rgba(255,255,255,1)');
+  gr.addColorStop(0.3, 'rgba(255,220,110,.9)');
+  gr.addColorStop(1, 'rgba(255,200,60,0)');
+  x.fillStyle = gr;
+  x.fillRect(0, 0, 32, 32);
+  geo.setAttribute('position', new T.BufferAttribute(new Float32Array(n * 3), 3));
+  var pts = new T.Points(geo, new T.PointsMaterial({ map: new T.CanvasTexture(cv), color: '#ffd35a', size: 1.5, transparent: true, depthWrite: false, blending: T.AdditiveBlending }));
+  pts.visible = false;
+  pts.frustumCulled = false;
+  M3.scene.add(pts);
+  M3.sparkles = pts;
+}
+function m3SparkleStep(t) {
+  var sp = M3.sparkles, on = !M3.replay && M3.data.net >= M3.data.goal && M3.cur >= 0.999;
+  sp.visible = on;
+  if (!on) return;
+  var a = sp.geometry.attributes.position.array, n = a.length / 3;
+  for (var i = 0; i < n; i++) {
+    var k = (t * 0.22 + i * 0.137) % 1, ang = t * 0.9 + i * 2.4, r = 2.2 + (i % 5) * 0.7 + k * 1.5;
+    a[i * 3] = M3_PEAK.x + Math.cos(ang) * r;
+    a[i * 3 + 1] = M3.topY + 0.6 + k * 9;
+    a[i * 3 + 2] = M3_PEAK.z + Math.sin(ang) * r;
+  }
+  sp.geometry.attributes.position.needsUpdate = true;
+  sp.material.opacity = 0.9;
+}
+
+// 들머리 이정표
+function m3Signpost(p) {
+  var T = M3.T, g = new T.Group(), wood = new T.MeshStandardMaterial({ color: '#7d5a3a', roughness: 0.9 }), board = new T.MeshStandardMaterial({ color: '#c99c5f', roughness: 0.85 });
+  function add(geo, m, x, y, z, ry) { var me = new T.Mesh(geo, m); me.position.set(x, y, z); me.rotation.y = ry || 0; me.castShadow = true; g.add(me); }
+  add(new T.BoxGeometry(0.24, 3, 0.24), wood, 0, 1.5, 0);
+  add(new T.BoxGeometry(1.8, 0.44, 0.09), board, 0.75, 2.5, 0, 0.35);
+  add(new T.BoxGeometry(1.6, 0.4, 0.09), board, -0.62, 1.95, 0, -0.5);
+  g.position.set(p.x, p.y - 0.05, p.z);
+  M3.scene.add(g);
+}
+
+// 구름 — 공 여러 개를 모은 뭉게구름. 산 뒤쪽에서 천천히 오간다
+function m3Clouds() {
+  var T = M3.T, grp = new T.Group(), sph = new T.SphereGeometry(1, 14, 10);
+  M3.cloudMat = new T.MeshStandardMaterial({ color: '#ffffff', roughness: 1, emissive: '#dfe8f0', emissiveIntensity: 0.35 });
+  [[-62, 40, -70, 1.35], [48, 46, -84, 1.2], [-96, 30, -18, 1.0], [92, 34, -40, 1.05]].forEach(function (c) {
+    var cl = new T.Group();
+    [[0, 0, 0, 4.2], [3.8, -0.4, 0.6, 3.2], [-3.9, -0.6, -0.2, 3.0], [1.6, 1.8, -0.4, 3.0], [-1.8, 1.2, 0.8, 2.6], [6.4, -1, 0.2, 2.2], [-6.2, -1.2, 0.4, 2.0]].forEach(function (b) {
+      var m = new T.Mesh(sph, M3.cloudMat);
+      m.position.set(b[0], b[1], b[2]);
+      m.scale.set(b[3], b[3] * 0.72, b[3] * 0.9);
+      cl.add(m);
+    });
+    cl.position.set(c[0], c[1], c[2]);
+    cl.scale.setScalar(c[3]);
+    cl.rotation.y = c[0] * 0.02;
+    grp.add(cl);
+  });
+  M3.scene.add(grp);
+  M3.clouds = grp;
+}
+
+// WebGL 을 쓸 수 있는지 먼저 본다 (못 쓰면 three.js 를 불러오지도 않고 평면으로)
+function m3HasWebGL() {
+  try {
+    var c = document.createElement('canvas'), g = c.getContext('webgl2') || c.getContext('webgl');
+    var lose = g && g.getExtension('WEBGL_lose_context');
+    if (lose) lose.loseContext();
+    return !!g;
+  } catch (e) { return false; }
+}
+function m3Build() {
+  if (!m3HasWebGL()) return false;
+  var T = M3.T = m3LoadThree();
+  if (!T) return false;
+  var cv = document.createElement('canvas'), renderer;
+  try {
+    renderer = new T.WebGLRenderer({ canvas: cv, antialias: true, alpha: true, powerPreference: 'high-performance' });
+  } catch (e) { return false; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setClearColor(0x000000, 0);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = T.PCFSoftShadowMap;
+  renderer.shadowMap.autoUpdate = false;     // 움직이는 것이 있을 때만 그림자를 다시 그린다
+  renderer.toneMapping = T.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  M3.renderer = renderer;
+  M3.cv = cv;
+  var scene = M3.scene = new T.Scene();
+  scene.fog = new T.Fog('#dcecf8', 260, 560);
+  M3.camera = new T.PerspectiveCamera(36, 2, 1, 1500);
+  M3.v = new T.Vector3();
+  M3.uMap = { value: 0 };
+  M3.uTree = { value: 1 };
+  M3.uCon = { value: new T.Color('#4d3b27') };
+  M3.hypso = M3_HYPSO.map(function (s) { return [s[0], new T.Color(s[1])]; });
+
+  var t0 = performance.now();
+  m3Ground();
+  var P = m3Palette();
+  M3.terrain = m3TerrainMesh(P);
+  scene.add(M3.terrain);
+  scene.add(m3Walls(M3.terrain.geometry.attributes.color.array));
+  scene.add(m3TrailMesh());
+  // 받침 아래 부드러운 그림자
+  var sc = document.createElement('canvas'), sx = sc.getContext('2d');
+  sc.width = sc.height = 256;
+  sx.shadowColor = '#000';
+  sx.shadowBlur = 34;
+  sx.shadowOffsetX = 512;
+  sx.fillRect(-512 + 44, 44, 168, 168);
+  M3.shadowPlane = new T.Mesh(new T.PlaneGeometry(M3_SIZE * 1.6, M3_SIZE * 1.6), new T.MeshBasicMaterial({ map: new T.CanvasTexture(sc), transparent: true, depthWrite: false, opacity: 0.32 }));
+  M3.shadowPlane.rotation.x = -Math.PI / 2;
+  M3.shadowPlane.position.y = M3_BASE - 0.3;
+  scene.add(M3.shadowPlane);
+  // 호수
+  M3.water = new T.Mesh(new T.CircleGeometry(M3_LAKE.r + 2.4, 48), new T.MeshStandardMaterial({ color: '#4f9fd6', roughness: 0.12, metalness: 0.05, transparent: true, opacity: 0.86 }));
+  M3.water.rotation.x = -Math.PI / 2;
+  M3.water.position.set(M3_LAKE.x, M3_WATER, M3_LAKE.z);
+  M3.water.receiveShadow = true;
+  scene.add(M3.water);
+
+  m3Flags();
+  m3SummitStone();
+  var start = M3.trail.pts[0], sp = { x: start.x - 2.4, z: start.z + 1.2 };
+  sp.y = m3H(sp.x, sp.z);
+  m3Signpost(sp);
+  M3.hiker = m3Hiker();
+  m3Sparkles();
+  var forest = new T.Group();
+  m3Forest(forest, M3.flags.map(function (fl) { return { x: fl.g.position.x, z: fl.g.position.z, r: 2.4 }; })
+    .concat([{ x: sp.x, z: sp.z, r: 3 }, { x: start.x, z: start.z, r: 4 }]));
+  scene.add(forest);
+  M3.forest = forest;
+  m3Clouds();
+
+  // 빛 — 하늘빛 + 왼쪽 앞 위에서 드는 해(그림자)
+  M3.hemi = new T.HemisphereLight('#dbeaff', '#6e7a4e', 1.25);
+  var sun = M3.sun = new T.DirectionalLight('#fff1d6', 2.7);
+  sun.position.set(-70, 115, 65);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  var scam = sun.shadow.camera;
+  scam.left = -105; scam.right = 105; scam.top = 105; scam.bottom = -105; scam.near = 10; scam.far = 340;
+  sun.shadow.bias = -0.0004;
+  sun.shadow.normalBias = 0.35;
+  scene.add(M3.hemi, sun, sun.target);
+
+  // 화면 요소 — 캔버스 · 라벨 · 도구 · 안내
+  var root = M3.root = el('div', 'm3-root');
+  cv.tabIndex = 0;
+  cv.setAttribute('role', 'img');
+  root.appendChild(cv);
+  root.insertAdjacentHTML('beforeend',
+    '<div class="m3-labels"></div>' +
+    '<div class="m3-tools" role="toolbar" aria-label="등산 지도 보기 도구">' +
+      m3Tool('home', 'scan', '처음 보기', '산 전체가 보이게 돌아갑니다 (0)') +
+      m3Tool('me', 'locate', '내 위치', '지금 순자산 자리의 등산객에게 다가갑니다.') +
+      m3Tool('top', 'mountain', '정상', '목표 금액을 새긴 정상석으로 갑니다.') +
+      m3Tool('map', 'map', '지도 보기', '위에서 내려다보며 높이별 색과 등고선을 진하게 — 종이 등산 지도처럼 봅니다.') +
+      m3Tool('replay', 'footprints', '지난 발자취', '첫 기록부터 지금까지, 기록한 순자산을 따라 오르내린 길을 다시 걸어 봅니다.') +
+      '<i></i>' + m3Tool('in', 'plus', '확대', '') + m3Tool('out', 'minus', '축소', '') +
+    '</div>' +
+    '<div class="m3-hint" aria-hidden="true"></div>' +
+    '<button type="button" class="m3-north" data-m3="north" aria-label="북쪽이 위로 오게 돌리기" data-tip-t="방위" data-tip="빨간 바늘이 북쪽입니다. 누르면 북쪽이 위로 오게 돌립니다.">' +
+      '<span class="m3-needle"><i>N</i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 15.4 12H8.6Z" fill="#e5484d"/><path d="M12 20.5 8.6 12h6.8Z" fill="currentColor"/></svg></span></button>' +
+    '<div class="m3-replay" hidden><div class="m3-rp-t"><b></b><span></span></div><div class="m3-bar"><em></em></div>' +
+      '<button type="button" class="btn btn-ghost btn-sm" data-m3="replay">' + ico('square') + ' 그만 보기</button></div>');
+  M3.ui = {
+    labels: root.querySelector('.m3-labels'), hint: root.querySelector('.m3-hint'), replay: root.querySelector('.m3-replay'), needle: root.querySelector('.m3-needle'),
+    mapBtn: root.querySelector('[data-m3="map"]'), replayBtn: root.querySelector('.m3-tools [data-m3="replay"]')
+  };
+  m3MakeLabels();
+  m3Events();
+  if (window.ResizeObserver) new ResizeObserver(m3Resize).observe(root);
+  if (window.IntersectionObserver) new IntersectionObserver(function (en) { M3.inView = en[en.length - 1].isIntersecting; m3Kick(); }).observe(root);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (M3.stoneGoal) m3DrawStone(M3.stoneGoal); m3Kick(); });
+  M3.ready = true;
+  m3Theme();
+  M3.buildMs = Math.round(performance.now() - t0);
+  return true;
+}
+function m3Tool(act, icon, name, tip) {
+  return '<button type="button" data-m3="' + act + '" aria-label="' + name + '"' + (act === 'map' || act === 'replay' ? ' aria-pressed="false"' : '') +
+    (tip ? ' data-tip-t="' + name + '" data-tip="' + tip + '"' : '') + '>' + ico(icon) + '</button>';
+}
+
+/* ── 라벨: 3D 위치를 화면에 옮겨 붙인다. 우선순위(나 → 정상 → 깃발 → 출발)대로 놓고, 겹치거나 산에 가리면 숨긴다 ── */
+function m3MakeLabels() {
+  var box = M3.ui.labels;
+  box.innerHTML = '';
+  M3.lbls = [];
+  M3.picks = [];
+  function add(cls, prio, anchor, pick, force, occ) {
+    var e = el('div', 'm3-lbl ' + cls + ' off');
+    box.appendChild(e);
+    var L = { el: e, prio: prio, anchor: anchor, pick: pick, force: !!force, occ: occ !== false, on: false, dim: false, x: -1, y: -1, w: 0, h: 0, want: true };
+    M3.lbls.push(L);
+    if (pick) M3.picks.push(pick);
+    return L;
+  }
+  var T = M3.T, s0 = M3.trail.pts[0];
+  M3.lblMe = add('m3-me', 100, new T.Vector3(), { kind: 'me', pos: new T.Vector3() }, true);
+  M3.lblTop = add('m3-top', 90, M3.stone.position.clone().add(new T.Vector3(0, 2.9, 0)), { kind: 'top', pos: M3.stone.position }, false, false);
+  M3.flags.forEach(function (fl) {
+    var pk = { kind: 'flag', fl: fl, pos: fl.top.clone().add(new T.Vector3(0, -1.6, 0)) };
+    if (fl.k < 10) fl.lbl = add('m3-flag', 50, fl.top, pk);
+    else M3.picks.push(pk);
+  });
+  M3.lblStart = add('m3-start', 10, new T.Vector3(s0.x, s0.y + 2.4, s0.z), null);
+}
+function m3LabelContent() {
+  var d = M3.data, R = M3.replay;
+  if (!d || !M3.ready) return;
+  var pct = function (v) { return (v / d.goal * 100).toFixed(1); };
+  M3.lblMe.el.innerHTML = R
+    ? '<b>' + fmtHeaderTotal(R.total || 0) + '원</b><small>' + m3DateText(R.date) + '</small>'
+    : d.net >= d.goal
+      ? '<b>정상 도착! 지금 ' + fmtHeaderTotal(d.net) + '원</b><small>목표 ' + fmtCompact(d.goal) + '원의 ' + pct(d.net) + '%' + (d.pctDate[100] ? ' · ' + escapeHtml(d.pctDate[100].replace(/-/g, '.')) + ' 등정' : '') + '</small>'
+      : '<b>지금 ' + fmtHeaderTotal(d.net) + '원</b><small>목표의 ' + pct(d.net) + '% 지점</small>';
+  var topSub;
+  if (d.net >= d.goal) topSub = d.pctDate[100] ? escapeHtml(d.pctDate[100].replace(/-/g, '.')) + ' 올랐어요' : '정상에 올랐어요!';
+  else if (d.months === null) topSub = '지금 속도로는 먼 길';
+  else { var ed = etaDate(d.months); topSub = ed.getFullYear() + '년 ' + (ed.getMonth() + 1) + '월 도달 예상'; }
+  M3.lblTop.el.innerHTML = ico('trophy') + '<span><b>정상 ' + fmtCompact(d.goal) + '원</b><small>' + topSub + '</small></span>';
+  M3.lblStart.el.innerHTML = '출발 0원';
+  M3.flags.forEach(function (fl, i) {
+    if (!fl.lbl) return;
+    var it = d.flags[i], hot = M3.hot === fl, sub = '';
+    var date = it.date && (!R || fl.reached) ? escapeHtml(it.date.replace(/-/g, '.')) : '';
+    if (hot) sub = (fl.k * 10) + '% · ' + (it.reached ? (date ? date + ' 넘어섬' : '넘어섬') : fmtCompact(it.amt - d.net) + '원 남음');
+    else if (fl.reached && date) sub = date;
+    fl.lbl.el.className = 'm3-lbl m3-flag' + (fl.reached ? ' on' : '') + (hot ? ' hot' : '') + (fl.lbl.on ? '' : ' off');
+    fl.lbl.el.innerHTML = '<b>' + fmtCompact(it.amt) + '원</b>' + (sub ? '<small>' + sub + '</small>' : '');
+    fl.lbl.dim = false;
+    fl.lbl.prio = 50 + (hot ? 30 : 0) + (fl.reached ? 5 : 0) + fl.k * 0.1;
+  });
+  M3.lbls.sort(function (a, b) { return b.prio - a.prio; });
+  M3.lbls.forEach(function (L) { L.w = 0; });
+}
+function m3DateText(d) { return d ? d.getFullYear() + '. ' + (d.getMonth() + 1) + '. ' + d.getDate() + '.' : ''; }
+// 라벨 자리에서 카메라 쪽으로 높이 격자를 따라가며 산에 가리는지 본다
+function m3Occluded(p) {
+  var c = M3.camera.position, dx = c.x - p.x, dy = c.y - p.y, dz = c.z - p.z, hd = Math.hypot(dx, dz), half = M3.hf.half;
+  if (hd < 1e-3) return false;
+  var steps = Math.min(160, Math.ceil(hd / 1.3));
+  for (var i = 1; i <= steps; i++) {
+    var t = i / steps, y = p.y + dy * t;
+    if (y > M3.maxH + 1) return false;
+    var x = p.x + dx * t, z = p.z + dz * t;
+    if (Math.abs(x) > half || Math.abs(z) > half) return false;
+    if (m3H(x, z) > y + 0.3) return true;
+  }
+  return false;
+}
+function m3LabelsFrame() {
+  var W = M3.w, H = M3.h, v = M3.v, placed = [];
+  var hp = M3.hiker.g.position;
+  M3.lblMe.anchor.set(hp.x, hp.y + 4.3, hp.z);
+  M3.lblMe.pick.pos.set(hp.x, hp.y + 1.8, hp.z);
+  M3.lblStart.want = !M3.replay && (M3.cur || 0) > 0.03;
+  M3.lblTop.want = M3.replay ? M3.replay.f < 0.97 : M3.data.net < M3.data.goal;   // 오르면 말풍선이 대신 알린다
+  M3.lbls.forEach(function (L) {
+    var show = L.want;
+    if (show) {
+      v.copy(L.anchor).project(M3.camera);
+      show = v.z < 1 && Math.abs(v.x) < 1.15 && Math.abs(v.y) < 1.15;
+    }
+    if (!show) { L.rect = null; m3LblShow(L, false); return; }
+    if (!L.w) { L.w = L.el.offsetWidth; L.h = L.el.offsetHeight; }
+    var sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * H, occ = L.occ && m3Occluded(L.anchor);
+    var r = { l: sx - L.w / 2 - 3, r: sx + L.w / 2 + 3, t: sy - L.h - 4, b: sy + 2 }, hit = false;
+    for (var i = 0; i < placed.length && !hit; i++) { var p = placed[i]; hit = r.l < p.r && r.r > p.l && r.t < p.b && r.b > p.t; }
+    show = L.force || (!hit && !occ);
+    if (show) placed.push(r);
+    L.rect = show ? r : null;
+    if (Math.abs(sx - L.x) > 0.25 || Math.abs(sy - L.y) > 0.25) {
+      L.x = sx; L.y = sy;
+      L.el.style.transform = 'translate(' + sx.toFixed(1) + 'px,' + sy.toFixed(1) + 'px) translate(-50%,-100%)';
+    }
+    m3LblShow(L, show);
+    var dim = show && occ;
+    if (dim !== L.dim) { L.dim = dim; L.el.classList.toggle('dim', dim); }
+  });
+}
+function m3LblShow(L, on) { if (L.on !== on) { L.on = on; L.el.classList.toggle('off', !on); } }
+
+/* ── 데이터 · 테마 ── */
+function m3SetData(d) {
+  if (!d || !M3.ready) return;
+  var first = M3.cur == null;
+  M3.data = d;
+  if (M3.stoneGoal !== d.goal) { M3.stoneGoal = d.goal; m3DrawStone(d.goal); }
+  if (first) M3.cur = d.frac;
+  if (!M3.replay) M3.flags.forEach(function (fl, i) {
+    var r = d.flags[i].reached;
+    if (!first && r && !fl.reached) fl.pop = 1;
+    fl.reached = r;
+  });
+  m3FlagColors();
+  m3LabelContent();
+  M3.cv.setAttribute('aria-label', '목표까지 3D 등산 지도 — 지금 ' + fmtHeaderTotal(d.net) + '원, 정상 ' + fmtHeaderTotal(d.goal) + '원의 ' +
+    (d.net / d.goal * 100).toFixed(1) + '% 지점. 끌거나 방향키로 돌려 보고, + − 로 확대합니다.');
+  M3.shadowDirty = true;
+  m3Kick();
+}
+function m3Theme() {
+  if (!M3.ready) return;
+  var dark = M3.dark = document.documentElement.dataset.theme === 'dark';
+  M3.hemi.color.set(dark ? '#5d71a3' : '#dbeaff');
+  M3.hemi.groundColor.set(dark ? '#1b2317' : '#6e7a4e');
+  M3.hemi.intensity = dark ? 0.75 : 1.25;
+  M3.sun.color.set(dark ? '#b8c7ff' : '#fff1d6');
+  M3.sun.intensity = dark ? 1.0 : 2.7;
+  M3.scene.fog.color.set(dark ? '#141d33' : '#dcecf8');
+  M3.cloudMat.color.set(dark ? '#8e98ae' : '#ffffff');
+  M3.cloudMat.emissive.set(dark ? '#161b2b' : '#dfe8f0');
+  M3.water.material.color.set(dark ? '#2d5f86' : '#4f9fd6');
+  M3.hiker.lamp.visible = dark;
+  var acc = cssVar('--accent') || '#2a78d6';
+  M3.trailU.uWalk.value.set(acc);
+  M3.trailU.uRest.value.set(dark ? '#aaa699' : '#7b776d');
+  M3.hiker.jacket.color.set(acc);
+  M3.hiker.ring.material.color.set(acc);
+  M3.shadowPlane.material.opacity = dark ? 0.55 : 0.32;
+  m3FlagColors();
+  M3.shadowDirty = true;
+  m3Kick();
+}
+
+/* ── 어디에 붙일지 · 크기 · 그리기 ── */
+// 창이 열려 있으면 창에, 아니면 뱃지 화면 카드에 — 둘 다 안 보이면 멈춘다
+function m3Update() {
+  var want = null;
+  if ($('mountainSheet').classList.contains('open')) want = $('mountainBody').querySelector('.mtn-stage:not(.flat)');
+  else if (currentView === 'badges' && !$('bdgMountain').hidden) want = $('bdgMountain').querySelector('.mtn-stage:not(.flat)');
+  if (!want) {
+    M3.host = null;
+    if (M3.replay) m3ReplayStop(true);
+    return;
+  }
+  if (!M3.ready) {
+    if (M3.failed) return;
+    var ok = false;
+    try { ok = m3Build(); } catch (e) { console.warn('등산 지도: 3D 를 만들지 못해 평면 지도로 보여 줍니다', e); }
+    if (!ok) {
+      M3.failed = true;   // 두 자리 모두 평면 지도로
+      ['bdgMountain', 'mountainBody'].forEach(function (id) { if ($(id).querySelector('.mtn-stage:not(.flat)')) renderMountain($(id)); });
+      return;
+    }
+  }
+  if (M3.root.parentNode !== want) want.appendChild(M3.root);
+  M3.host = want;
+  M3.sheet = !!want.closest('#mountainSheet');
+  m3SetData(M3.data);
+  m3Resize();
+  if (!M3.intro && M3.w) { M3.intro = true; m3Intro(); }
+  m3Kick();
+}
+function m3Resize() {
+  if (!M3.host) return;
+  var w = M3.root.clientWidth, h = M3.root.clientHeight;
+  if (!w || !h || (w === M3.w && h === M3.h)) return;
+  M3.w = w; M3.h = h; M3.aspect = w / h;
+  M3.renderer.setSize(w, h, false);
+  M3.camera.aspect = w / h;
+  M3.camera.updateProjectionMatrix();
+  M3.lbls.forEach(function (L) { L.x = -1; });
+  m3Kick();
+}
+function m3Kick() {
+  if (!M3.ready || M3.raf || !M3.host) return;
+  M3.raf = requestAnimationFrame(m3Frame);
+}
+function m3Frame(now) {
+  M3.raf = 0;
+  if (!M3.host || !M3.inView || document.hidden || !M3.w) { M3.last = 0; M3.gap = 0; return; }
+  if (M3.gap) m3Perf(now - M3.gap);
+  M3.gap = now;
+  var anim = !M3.reduced.matches, tgt = M3.replay ? M3.replay.f : M3.data.frac;
+  var calm = !M3.tween && !M3.replay && !M3.drag && M3.map === (M3.mapOn ? 1 : 0) && Math.abs((M3.cur || 0) - tgt) < 1e-4;
+  // 한동안 손대지 않으면 1/3 로만 그린다 (깃발 · 구름만 움직일 때)
+  if (anim && calm && now - M3.lastInput > 15000 && (M3.skip = (M3.skip + 1) % 3)) { M3.raf = requestAnimationFrame(m3Frame); return; }
+  var dt = M3.last ? Math.min(0.05, (now - M3.last) / 1000) : 1 / 60, busy = false;
+  M3.last = now;
+  if (anim) M3.time += dt;
+  if (M3.tween) { busy = true; m3TweenStep(dt); }
+  if (M3.replay) { busy = true; m3ReplayStep(dt); }
+  var mt = M3.mapOn ? 1 : 0;
+  if (M3.map !== mt) {
+    busy = true;
+    M3.map = !anim || Math.abs(mt - M3.map) < 0.01 ? mt : M3.map + (mt - M3.map) * Math.min(1, dt * 4.5);
+    M3.uMap.value = M3.map;
+    M3.uTree.value = Math.max(0.001, 1 - M3.map);
+    M3.forest.visible = M3.map < 0.99;
+    M3.clouds.visible = M3.map < 0.4;
+    M3.shadowDirty = true;
+  }
+  if (m3HikerStep(dt, anim)) busy = true;
+  if (anim) m3Ambient(dt);
+  if (M3.hot && now > M3.hotUntil && !M3.hotHover) { M3.hot = null; m3LabelContent(); }
+  m3CamApply();
+  M3.trailU.uTime.value = M3.time;
+  M3.frame++;
+  if (M3.shadowDirty || busy || (anim && M3.frame % 6 === 0)) { M3.renderer.shadowMap.needsUpdate = true; M3.shadowDirty = false; }
+  M3.renderer.render(M3.scene, M3.camera);
+  m3LabelsFrame();
+  if (anim || busy || M3.drag) M3.raf = requestAnimationFrame(m3Frame);
+  else { M3.last = 0; M3.gap = 0; }
+}
+// 너무 느리면 한 번만 해상도 · 그림자를 낮춘다
+function m3Perf(gap) {
+  if (M3.lowered) return;
+  M3.slow = gap > 48 ? M3.slow + 1 : Math.max(0, M3.slow - 1);
+  if (M3.slow > 40) {
+    M3.lowered = true;
+    M3.renderer.setPixelRatio(1);
+    M3.sun.shadow.mapSize.set(1024, 1024);
+    if (M3.sun.shadow.map) { M3.sun.shadow.map.dispose(); M3.sun.shadow.map = null; }
+    M3.shadowDirty = true;
+    M3.w = 0; m3Resize();
+  }
+}
+function m3CamApply() {
+  var c = M3.cam, half = M3_SIZE / 2 - 6;
+  c.r = m3Clamp(c.r, 16, 420);
+  c.ph = m3Clamp(c.ph, 0.02, 1.42);
+  c.tx = m3Clamp(c.tx, -half, half);
+  c.tz = m3Clamp(c.tz, -half, half);
+  c.ty = m3Clamp(c.ty, -2, 50);
+  var s = Math.sin(c.ph);
+  M3.camera.position.set(c.tx + c.r * s * Math.sin(c.th), c.ty + c.r * Math.cos(c.ph), c.tz + c.r * s * Math.cos(c.th));
+  M3.camera.lookAt(c.tx, c.ty, c.tz);
+  if (M3.needleTh !== c.th) { M3.needleTh = c.th; M3.ui.needle.style.transform = 'rotate(' + c.th.toFixed(3) + 'rad)'; }   // 화면에서 북쪽(-z)은 위에서 th 만큼 시계 방향
+}
+function m3Preset(name) {
+  var a = Math.max(0.3, M3.aspect || 2), fit = Math.max(1, 1.8 / a), p;
+  if (name === 'me') { p = M3.hiker.g.position; return { tx: p.x, ty: p.y + 2, tz: p.z, r: 44 * Math.min(fit, 1.6), th: m3OutAngle(p), ph: 0.98 }; }
+  if (name === 'top') return { tx: M3_PEAK.x, ty: M3.topY - 4, tz: M3_PEAK.z, r: 58 * Math.min(fit, 1.6), th: M3_FACE, ph: 0.92 };
+  if (name === 'map') return { tx: 0, ty: 0, tz: 4, r: 262 / Math.min(1, a), th: 0, ph: 0.02 };
+  return { tx: 0, ty: 7, tz: 7, r: 214 * fit, th: M3_FACE, ph: 1.07 };
+}
+function m3OutAngle(p) {
+  var dx = p.x - M3_PEAK.x, dz = p.z - M3_PEAK.z;
+  return Math.hypot(dx, dz) < 1 ? M3_FACE : Math.atan2(dx, dz);   // 산 바깥에서 안쪽을 보게
+}
+function m3Go(to, dur) {
+  var c = M3.cam, from = { tx: c.tx, ty: c.ty, tz: c.tz, r: c.r, th: c.th, ph: c.ph }, b = Object.assign({}, from, to);
+  b.th = c.th + Math.atan2(Math.sin(b.th - c.th), Math.cos(b.th - c.th));   // 가까운 쪽으로 돈다
+  M3.lastInput = performance.now();
+  if (M3.reduced.matches || dur === 0) { Object.assign(c, b); M3.tween = null; }
+  else M3.tween = { a: from, b: b, t: 0, dur: dur || 1.1 };
+  m3Kick();
+}
+function m3TweenStep(dt) {
+  var tw = M3.tween, t = tw.t = Math.min(1, tw.t + dt / tw.dur), k = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  ['tx', 'ty', 'tz', 'th', 'ph'].forEach(function (key) { M3.cam[key] = tw.a[key] + (tw.b[key] - tw.a[key]) * k; });
+  M3.cam.r = Math.exp(Math.log(tw.a.r) + (Math.log(tw.b.r) - Math.log(tw.a.r)) * k);
+  if (t >= 1) M3.tween = null;
+}
+function m3Intro() {
+  var home = m3Preset('home');
+  Object.assign(M3.cam, home);
+  if (!M3.reduced.matches) {
+    Object.assign(M3.cam, { r: home.r * 1.75, th: home.th - 0.95, ph: 0.62, ty: home.ty + 12 });
+    m3Go(home, 2.6);
+  }
+  m3Hint(M3.sheet ? '끌어서 돌려 보기 · 휠로 확대 · 깃발을 누르면 가까이' : '끌어서 돌려 보기 · Ctrl + 휠로 확대 · 깃발을 누르면 가까이', 6000);
+}
+function m3Hint(txt, ms) {
+  var h = M3.ui.hint;
+  h.textContent = txt;
+  h.classList.add('on');
+  clearTimeout(M3.hintTm);
+  M3.hintTm = setTimeout(function () { h.classList.remove('on'); }, ms || 1800);
+}
+
+/* ── 등산객 · 주변 움직임 ── */
+function m3HikerStep(dt, anim) {
+  var H = M3.hiker, R = M3.replay, tgt = R ? R.f : M3.data.frac, prev = M3.cur == null ? tgt : M3.cur, diff = tgt - prev;
+  if (!anim) M3.cur = tgt;
+  else if (Math.abs(diff) > 1e-5) {
+    var step = (R ? Math.max(Math.abs(diff) * 9, 0.05) : Math.max(Math.abs(diff) * 3, 0.03)) * dt;
+    M3.cur = prev + Math.sign(diff) * Math.min(step, Math.abs(diff));
+  } else M3.cur = tgt;
+  var moved = M3.cur - prev, moving = Math.abs(moved) > 1e-6, p = m3TrailAt(M3.cur), t = M3.time;
+  H.g.position.set(p.x, p.y + 0.02, p.z);
+  M3.trailU.uProg.value = M3.cur * M3.trail.len;
+  var atTop = M3.cur >= 0.999 && !moving, cam = M3.camera.position;
+  var dir = atTop ? Math.atan2(cam.x - p.x, cam.z - p.z) : Math.atan2(p.dx, p.dz) + (moved < -1e-6 || (!moving && H.back) ? Math.PI : 0);
+  if (moving) H.back = moved < 0;
+  var dd = Math.atan2(Math.sin(dir - H.g.rotation.y), Math.cos(dir - H.g.rotation.y));
+  H.g.rotation.y += anim ? dd * Math.min(1, dt * 7) : dd;
+  // 팔다리
+  H.swing += ((moving ? 0.6 : 0) - H.swing) * Math.min(1, dt * 8);
+  if (moving) H.phase += dt * (R ? 13 : 9);
+  var sw = Math.sin(H.phase) * H.swing;
+  H.legL.rotation.x = sw;
+  H.legR.rotation.x = -sw;
+  H.body.position.y = moving ? Math.abs(Math.sin(H.phase)) * 0.09 : 0;
+  var wave = anim && !moving && !atTop && (t % 9) > 7.4;          // 가끔 손을 흔든다
+  if (atTop) {   // 정상에서 만세 (움직임 줄이기면 가만히)
+    var wig = anim ? Math.sin(t * 8) * 0.12 : 0;
+    H.armL.rotation.set(-2.75 + wig, 0, -0.25);
+    H.armR.rotation.set(-2.75 - wig, 0, 0.25);
+    H.body.position.y = anim ? Math.abs(Math.sin(t * 3.4)) * 0.4 : 0;
+  } else {
+    H.armL.rotation.set(-sw * 0.8, 0, -0.08);
+    H.armR.rotation.set(wave ? -2.6 : sw * 0.8, 0, wave ? 0.35 + Math.sin(t * 12) * 0.35 : 0.08);
+  }
+  H.head.rotation.y = anim && !moving ? Math.sin(t * 0.55) * 0.55 : 0;
+  H.torso.scale.y = 1 + (anim ? Math.sin(t * 2.2) * 0.015 : 0);
+  if (moving) M3.shadowDirty = true;
+  return moving;
+}
+function m3Ambient(dt) {
+  var t = M3.time;
+  M3.flags.forEach(function (fl) {
+    m3Wave(fl, t);
+    if (fl.pop > 0) {
+      fl.pop = Math.max(0, fl.pop - dt * 1.4);
+      var s = 1 + Math.sin(fl.pop * Math.PI) * 0.5;
+      fl.cloth.scale.set(s, s, s);
+    }
+  });
+  M3.clouds.rotation.y = Math.sin(t * 0.035) * 0.22;
+  m3SparkleStep(t);
+  var ph = (t * 0.55) % 1, ring = M3.hiker.ring;
+  ring.scale.setScalar(1 + ph * 1.6);
+  ring.material.opacity = 0.55 * (1 - ph);
+}
+
+/* ── 지난 발자취: 첫 기록 → 오늘까지 순자산을 따라 오르내린다 ── */
+function m3ReplayStart() {
+  var d = M3.data, ser = totalSeries();
+  if (ser.length < 2) { showToast('기록한 날이 이틀 이상이어야 발자취를 볼 수 있어요'); return; }
+  var ts = ser.map(function (p) { return parseDate(p.date).getTime(); });
+  var f0 = m3Clamp(ser[0].total / d.goal, 0, 1);
+  M3.replay = { ser: ser, ts: ts, tau: 0, dur: m3Clamp(4 + ser.length * 0.05, 6, 12), i: 0, f: f0, max: f0, total: ser[0].total, date: new Date(ts[0]), hold: 0, follow: true, ui: 0 };
+  M3.cur = f0;
+  M3.flags.forEach(function (fl) { fl.reached = f0 >= fl.f - 1e-9; });
+  m3FlagColors();
+  if (M3.mapOn) m3SetMap(false);
+  var p = m3TrailAt(f0);
+  m3Go({ tx: p.x, ty: p.y + 2, tz: p.z, r: 62, ph: 0.95, th: m3OutAngle(p) }, 1.0);
+  M3.ui.replay.hidden = false;
+  M3.ui.replayBtn.setAttribute('aria-pressed', 'true');
+  m3ReplayUi();
+  m3LabelContent();
+  m3Kick();
+}
+function m3ReplayStep(dt) {
+  var R = M3.replay, d = M3.data, c = M3.cam;
+  if (R.hold > 0) { R.hold -= dt; if (R.hold <= 0) m3ReplayStop(); return; }
+  if (M3.tween) return;     // 출발점으로 날아가는 동안은 기다린다
+  R.tau = Math.min(1, R.tau + dt / R.dur);
+  var tm = R.ts[0] + (R.ts[R.ts.length - 1] - R.ts[0]) * R.tau;
+  while (R.i < R.ts.length - 2 && R.ts[R.i + 1] <= tm) R.i++;
+  var a = R.ser[R.i], b = R.ser[R.i + 1], ta = R.ts[R.i], tb = R.ts[R.i + 1];
+  var k = tb > ta ? m3Clamp((tm - ta) / (tb - ta), 0, 1) : 1;
+  R.total = a.total + (b.total - a.total) * k;
+  R.f = m3Clamp(R.total / d.goal, 0, 1);
+  R.date = new Date(tm);
+  var mx = Math.max(R.max, R.f), changed = false;
+  M3.flags.forEach(function (fl) {
+    if (R.max < fl.f - 1e-9 && mx >= fl.f - 1e-9) { fl.pop = 1; fl.reached = true; changed = true; }
+  });
+  R.max = mx;
+  if (changed) m3FlagColors();
+  if (R.follow) {
+    var hp = M3.hiker.g.position, e = Math.min(1, dt * 2.5);
+    c.tx += (hp.x - c.tx) * e; c.ty += (hp.y + 2 - c.ty) * e; c.tz += (hp.z - c.tz) * e;
+    c.r += (62 - c.r) * Math.min(1, dt * 1.5);
+  }
+  R.ui += dt;
+  if (R.ui > 0.1 || R.tau >= 1) { R.ui = 0; m3ReplayUi(); m3LabelContent(); }
+  if (R.tau >= 1) R.hold = 1.8;
+}
+function m3ReplayUi() {
+  var R = M3.replay, box = M3.ui.replay;
+  box.querySelector('b').textContent = m3DateText(R.date);
+  box.querySelector('span').textContent = fmtHeaderTotal(R.total) + '원 · 목표의 ' + (R.total / M3.data.goal * 100).toFixed(1) + '%';
+  box.querySelector('em').style.width = (R.tau * 100).toFixed(1) + '%';
+}
+function m3ReplayStop(quiet) {
+  if (!M3.replay) return;
+  M3.replay = null;
+  M3.ui.replay.hidden = true;
+  M3.ui.replayBtn.setAttribute('aria-pressed', 'false');
+  M3.flags.forEach(function (fl, i) { fl.reached = M3.data.flags[i].reached; });
+  m3FlagColors();
+  m3LabelContent();
+  if (!quiet) m3Go(m3Preset('me'), 1.2);
+}
+function m3SetMap(on) {
+  if (M3.mapOn === on) return;
+  M3.mapOn = on;
+  M3.ui.mapBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  if (on) { if (M3.replay) m3ReplayStop(true); M3.preMap = Object.assign({}, M3.cam); m3Go(m3Preset('map'), 1.3); }
+  else m3Go(M3.preMap || m3Preset('home'), 1.3);
+}
+
+/* ── 조작: 끌기 = 돌리기, 오른쪽 · Shift 끌기 = 옮기기, 휠 · 두 손가락 = 확대 ── */
+function m3PickAt(cx, cy) {
+  var rc = M3.cv.getBoundingClientRect(), x = cx - rc.left, y = cy - rc.top, best = null, bd = 24, v = M3.v, i;
+  for (i = 0; i < M3.lbls.length; i++) {
+    var L = M3.lbls[i];
+    if (L.rect && L.pick && x >= L.rect.l && x <= L.rect.r && y >= L.rect.t && y <= L.rect.b) return L.pick;
+  }
+  M3.picks.forEach(function (pk) {
+    v.copy(pk.pos).project(M3.camera);
+    if (v.z > 1) return;
+    var d = Math.hypot((v.x + 1) / 2 * M3.w - x, (1 - v.y) / 2 * M3.h - y);
+    if (d < bd) { bd = d; best = pk; }
+  });
+  return best;
+}
+function m3FocusPick(pk) {
+  if (pk.kind === 'me' || pk.kind === 'top') { m3Go(m3Preset(pk.kind)); return; }
+  var p = pk.fl.g.position;
+  m3Go({ tx: p.x, ty: p.y + 3, tz: p.z, r: 34, th: m3OutAngle(p), ph: 0.98 });
+  M3.hot = pk.fl;
+  M3.hotHover = false;
+  M3.hotUntil = performance.now() + 6000;
+  m3LabelContent();
+}
+function m3Pan(dx, dy) {
+  var c = M3.cam, k = c.r * 0.0017, rx = Math.cos(c.th), rz = -Math.sin(c.th), fx = -Math.sin(c.th), fz = -Math.cos(c.th);
+  c.tx += (-dx * rx + dy * fx) * k;
+  c.tz += (-dx * rz + dy * fz) * k;
+}
+function m3PinchDist() {
+  var ids = Object.keys(M3.ptrs);
+  if (ids.length < 2) return 0;
+  var a = M3.ptrs[ids[0]], b = M3.ptrs[ids[1]];
+  return Math.hypot(a.x - b.x, a.y - b.y) || 1;
+}
+// 화면의 한 점에서 땅까지 (두 번 누르면 그곳으로)
+function m3RayGround(cx, cy) {
+  var rc = M3.cv.getBoundingClientRect(), T = M3.T, o = M3.camera.position;
+  var d = new T.Vector3((cx - rc.left) / rc.width * 2 - 1, -((cy - rc.top) / rc.height) * 2 + 1, 0.5).unproject(M3.camera).sub(o).normalize();
+  for (var t = 0; t < 1200; t += 0.5) {
+    var x = o.x + d.x * t, y = o.y + d.y * t, z = o.z + d.z * t;
+    if (y < M3_BASE) return null;
+    if (Math.abs(x) <= M3.hf.half && Math.abs(z) <= M3.hf.half && y <= m3H(x, z)) return { x: x, y: y, z: z };
+  }
+  return null;
+}
+function m3Events() {
+  var cv = M3.cv, root = M3.root;
+  cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  // GPU 가 초기화된 뒤(드라이버 업데이트 · 절전 복귀) three.js 가 자원을 다시 올리면 그림자 · 화면도 다시 그린다
+  cv.addEventListener('webglcontextrestored', function () { M3.shadowDirty = true; m3Kick(); });
+  cv.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 2) return;
+    M3.ptrs[e.pointerId] = { x: e.clientX, y: e.clientY };
+    try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+    if (Object.keys(M3.ptrs).length === 1) M3.drag = { x0: e.clientX, y0: e.clientY, pan: e.button === 2 || e.shiftKey, moved: false };
+    else { if (M3.drag) M3.drag.moved = true; M3.pinch = m3PinchDist(); }
+    M3.tween = null;
+    if (M3.replay) M3.replay.follow = false;
+    M3.lastInput = performance.now();
+    cv.classList.add('grab');
+    m3Kick();
+  });
+  cv.addEventListener('pointermove', function (e) {
+    var p = M3.ptrs[e.pointerId];
+    if (!p) {
+      if (e.pointerType !== 'mouse') return;
+      var pk = m3PickAt(e.clientX, e.clientY), fl = pk && pk.kind === 'flag' ? pk.fl : null;
+      cv.classList.toggle('pick', !!pk);
+      if (fl !== M3.hoverFl) {
+        M3.hoverFl = fl;
+        if (fl) { M3.hot = fl; M3.hotHover = true; }
+        else if (M3.hotHover) { M3.hot = null; M3.hotHover = false; }
+        m3LabelContent();
+        m3Kick();
+      }
+      return;
+    }
+    var dx = e.clientX - p.x, dy = e.clientY - p.y, c = M3.cam;
+    p.x = e.clientX; p.y = e.clientY;
+    if (Object.keys(M3.ptrs).length >= 2) {
+      var dist = m3PinchDist();
+      if (M3.pinch) c.r *= M3.pinch / dist;
+      M3.pinch = dist;
+      m3Pan(dx / 2, dy / 2);
+    } else if (M3.drag) {
+      if (M3.drag.pan) m3Pan(dx, dy);
+      else { c.th -= dx * 0.0055; c.ph -= dy * 0.0045; }
+      if (Math.abs(e.clientX - M3.drag.x0) + Math.abs(e.clientY - M3.drag.y0) > 6) M3.drag.moved = true;
+    }
+    M3.lastInput = performance.now();
+    m3Kick();
+  });
+  function up(e) {
+    if (!M3.ptrs[e.pointerId]) return;
+    delete M3.ptrs[e.pointerId];
+    if (Object.keys(M3.ptrs).length) { M3.pinch = m3PinchDist(); return; }
+    M3.pinch = 0;
+    var dr = M3.drag;
+    M3.drag = null;
+    cv.classList.remove('grab');
+    if (dr && !dr.moved && e.type === 'pointerup') { var pk = m3PickAt(e.clientX, e.clientY); if (pk) m3FocusPick(pk); }
+    m3Kick();
+  }
+  cv.addEventListener('pointerup', up);
+  cv.addEventListener('pointercancel', up);
+  cv.addEventListener('pointerleave', function () {
+    if (!M3.hoverFl) return;
+    M3.hoverFl = null;
+    if (M3.hotHover) { M3.hot = null; M3.hotHover = false; }
+    m3LabelContent();
+    m3Kick();
+  });
+  cv.addEventListener('dblclick', function (e) {
+    var g = m3RayGround(e.clientX, e.clientY);
+    if (g) m3Go({ tx: g.x, ty: g.y, tz: g.z, r: Math.max(26, M3.cam.r * 0.55) }, 0.9);
+  });
+  // 뱃지 화면(스크롤되는 곳)에서는 Ctrl + 휠만 확대 — 그냥 휠은 화면을 내린다
+  cv.addEventListener('wheel', function (e) {
+    if (!M3.sheet && !e.ctrlKey && !e.metaKey) { m3Hint('Ctrl + 휠로 확대 · 축소', 1600); return; }
+    e.preventDefault();
+    M3.tween = null;
+    M3.cam.r *= Math.exp(m3Clamp(e.deltaY, -120, 120) * 0.0022);
+    M3.lastInput = performance.now();
+    m3Kick();
+  }, { passive: false });
+  cv.addEventListener('keydown', function (e) {
+    var c = M3.cam, k = e.key, used = true;
+    if (k === 'ArrowLeft') c.th += 0.12;
+    else if (k === 'ArrowRight') c.th -= 0.12;
+    else if (k === 'ArrowUp') c.ph -= 0.08;
+    else if (k === 'ArrowDown') c.ph += 0.08;
+    else if (k === '+' || k === '=') c.r /= 1.15;
+    else if (k === '-' || k === '_') c.r *= 1.15;
+    else if (k === '0' || k === 'Home') { m3SetMap(false); m3Go(m3Preset('home')); }
+    else if (k === 'Escape' && M3.replay) m3ReplayStop();
+    else used = false;
+    if (!used) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (k.indexOf('Arrow') === 0 || k === '+' || k === '=' || k === '-' || k === '_') M3.tween = null;
+    M3.lastInput = performance.now();
+    m3Kick();
+  });
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-m3]');
+    if (!b) return;
+    var a = b.dataset.m3;
+    if (M3.replay && a !== 'replay') M3.replay.follow = false;   // 발자취 중에 다른 곳을 보면 따라가기를 멈춘다
+    if (a === 'home') { m3SetMap(false); m3Go(m3Preset('home')); }
+    else if (a === 'me' || a === 'top') m3Go(m3Preset(a));
+    else if (a === 'map') m3SetMap(!M3.mapOn);
+    else if (a === 'replay') { if (M3.replay) m3ReplayStop(); else m3ReplayStart(); }
+    else if (a === 'in' || a === 'out') m3Go({ r: M3.cam.r * (a === 'in' ? 0.72 : 1.38) }, 0.35);
+    else if (a === 'north') m3Go({ th: 0 }, 0.8);
+  });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) m3Kick(); });
+  var onMotion = function () { m3Kick(); };
+  if (M3.reduced.addEventListener) M3.reduced.addEventListener('change', onMotion);
+}
 
 /* ═══════════ 연말 결산 (Wrapped) ═══════════
    한 해를 슬라이드로 넘겨 본다 — ← → · 클릭 · Esc. 마지막 장에서 이미지로 저장 */
@@ -9281,7 +10761,7 @@ var HELP = {
     '<li><b>월간 요약</b> — 막대를 눌러 달을 고르면 그 달 가장 많이 늘고 준 자산과 <b>자산 날씨</b>(맑음 ~ 폭풍우)가 나옵니다.</li>' +
     '<li><b>선 · 지층</b> — 순자산 추이 카드에서 "지층"을 고르면 부동산 · 증권 · 예금 · 장기 자산이 층으로 쌓인 모습을 봅니다 (점선 = 부채를 뺀 순자산).</li>' +
     '<li><b>기록 잔디</b> — 기록한 날을 칠한 1년 달력. 초록은 오른 날, 빨강은 내린 날이고 칸을 누르면 그달 요약이 열립니다.</li>' +
-    '<li><b>등산 지도</b> — 미래 자산 예상 카드의 "등산 지도로 보기"에서, 목표를 정상으로 한 내 위치를 봅니다.</li>' +
+    '<li><b>등산 지도</b> — 미래 자산 예상 카드의 "등산 지도로 보기"에서, 목표를 정상으로 한 내 위치를 3D 산으로 봅니다 (끌어서 돌리기 · 휠로 확대).</li>' +
     '<li>오른쪽 위 소유자 버튼으로 한 사람 것만 모아 볼 수 있습니다.</li></ul>',
     keys: HELP_KEYS_COMMON },
   list: { t: '자산', main:
@@ -9304,7 +10784,8 @@ var HELP = {
     '<h3>이 화면에서</h3><ul>' +
     '<li>그동안 넘어선 마일스톤이 카드로 쌓입니다. 카드를 누르면 그때의 축하를 다시 봅니다.</li>' +
     '<li>위 버튼으로 자산 · 목표 · 부채 등 종류별로 골라 봅니다.</li>' +
-    '<li>맨 위 <b>등산 지도</b>는 목표를 정상으로, 10%마다 깃발(넘어선 날짜)을 꽂아 보여 줍니다.</li>' +
+    '<li>맨 위 <b>등산 지도</b>는 목표를 정상으로, 10%마다 깃발(넘어선 날짜)을 꽂은 3D 산입니다. 끌어서 돌리고 <kbd>Ctrl</kbd> + 휠로 확대, 깃발 · 등산객 · 정상석을 누르면 가까이 갑니다.</li>' +
+    '<li>오른쪽 위 도구의 <b>지도 보기</b>는 위에서 내려다본 등고선 지도, <b>지난 발자취</b>는 첫 기록부터 순자산을 따라 오르내린 길을 다시 걷습니다. 헤더의 <b>평면</b>을 고르면 한 장짜리 그림 지도로 봅니다.</li>' +
     '<li><b>연간 결산</b> — 한 해를 슬라이드로 돌아보고 마지막 장에서 이미지로 저장합니다 (← → · 클릭으로 넘기기, Esc 닫기). 12월 · 1월에는 대시보드 위에도 버튼이 나와요.</li></ul>' +
     '<h3>이럴 때 받아요</h3><ul>' +
     '<li>순자산이 천만원 단위로 새 최고치를 넘을 때, 억 단위를 돌파할 때</li>' +
@@ -9532,7 +11013,9 @@ setTimeout(function () { checkUpdate(true); }, 4000);
 initStore();
 </script>
 <!-- ═════════════ 탐험: 자산마을 원본 (Three.js r160 · MIT 포함) ═════════════
-     통째로 교체할 때는 새 파일의 스크립트 닫는 태그와 주석 여는 표시의 "<" 뒤에 역슬래시를 넣는다 (villageShow 가 되돌린다). -->
+     통째로 교체할 때는 새 파일의 스크립트 닫는 태그와 주석 여는 표시의 "<" 뒤에 역슬래시를 넣는다 (villageShow 가 되돌린다).
+     등산 지도(3D)도 여기의 Three.js — "Three.js MIT License" 주석 바로 다음 <script> 블록 — 를 꺼내 쓴다 (m3LoadThree).
+     그 블록을 못 찾으면 등산 지도는 평면(SVG)으로 보인다. -->
 <script type="text/plain" id="villageSrc"><!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#edf3f2"><title>자산마을 · 우리 자산을 산책하다</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23226760'/%3E%3Cpath d='M6 16L16 7l10 9v10H6z' fill='%23f7d38b'/%3E%3Cpath d='M13 20h6v6h-6z' fill='%23226760'/%3E%3C/svg%3E"><style>
 :root{--ink:#213e3c;--muted:#71817c;--green:#22675e;--line:#dce5de;--paper:rgba(255,255,249,.94);--gold:#e9b861}*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--ink);overflow:hidden;background:#afced0}button,input,select{font:inherit}button{cursor:pointer;color:inherit}button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid #da8e29;outline-offset:3px}button{border:0}button:disabled{cursor:default;opacity:.55}#world{position:fixed;inset:0;touch-action:none}#world canvas{display:block}header{position:fixed;left:28px;right:28px;top:24px;display:flex;align-items:center;gap:18px;z-index:4;pointer-events:none}.brand{display:flex;gap:12px;align-items:center;pointer-events:auto;cursor:pointer;border-radius:16px;transition:transform .15s}.brand:hover{transform:translateY(-1px)}.brand:hover .brandmark{box-shadow:0 6px 18px #244b4540}.brand:focus-visible{outline:3px solid #da8e29;outline-offset:4px}.brandmark{width:45px;height:45px;background:var(--green);border-radius:15px;color:#ffe6a8;display:grid;place-items:center;font-size:26px;box-shadow:0 4px 14px #244b4520}.brand h1{font-size:23px;letter-spacing:-1px;margin:0}.brand small{display:block;font-size:11px;letter-spacing:2px;margin-top:3px;font-weight:700;color:#55736e}.headright{margin-left:auto;display:flex;align-items:center;gap:9px;pointer-events:auto}.pill,.tool{border:1px solid #ffffffb0;background:var(--paper);border-radius:13px;box-shadow:0 3px 12px #3758460a}.pill{padding:10px 13px;font-size:13px}.pill i{display:inline-block;width:6px;height:6px;background:#dba748;border-radius:50%;margin:0 5px 1px 0}.tool{padding:12px 15px;font-size:14px;font-weight:650}.tool:hover{background:white}.tool.primary{background:var(--green);color:white;border-color:var(--green)}.panel{background:var(--paper);border:1px solid #fff9;box-shadow:0 8px 32px #2144390c;border-radius:22px;backdrop-filter:blur(16px)}#overview{position:fixed;left:28px;top:102px;width:258px;z-index:3;padding:22px}.eyebrow{font-size:11px;letter-spacing:1.8px;font-weight:750;color:var(--muted)}.sectionlabel{font-size:14px;color:#657971;margin-bottom:10px}.sum{font-size:34px;font-weight:750;letter-spacing:-1.7px;margin:8px 0 14px;white-space:nowrap}.sum small{font-size:18px;letter-spacing:0;margin-left:3px}.subsum{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:8px}.subsum b{font-weight:600;color:#48615b}.divider{height:1px;background:var(--line);margin:19px 0}.switcher{display:grid;grid-template-columns:1.25fr 1fr 1fr;padding:4px;border-radius:12px;background:#e9eee7;gap:3px;margin:14px 0 10px}.switcher button{background:transparent;font-size:13px;padding:10px 2px;border-radius:9px;font-weight:600}.switcher button.active{background:white;box-shadow:0 2px 6px #30514a12;color:var(--green)}#modeNote{font-size:12px;text-align:center;color:#718077;margin:9px 0 19px;min-height:17px}.cat{background:none;width:100%;display:flex;align-items:center;text-align:left;padding:12px 0;gap:10px}.cat:hover{transform:translateX(3px)}.cat-icon{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:var(--bg);color:var(--color);font-size:18px}.cat-name{font-size:14px;font-weight:650;display:block}.cat-sub{font-size:11px;color:var(--muted);margin-top:3px;display:block}.cat b{font-size:14px;margin-left:auto;white-space:nowrap}.allocation{display:flex;height:7px;gap:3px;overflow:hidden;border-radius:5px;margin:18px 0 10px}.allocation span{height:100%;border-radius:3px}.footnote{font-size:11px;color:#748078;line-height:1.6}.smalllink{background:none;color:var(--green);padding:0;border-bottom:1px solid #a6bfb3;font-size:12px}.visit{display:flex;justify-content:space-between;margin-top:14px;font-size:12px;color:#647a71}.visit b{color:var(--green)}#labels{position:fixed;inset:0;pointer-events:none;z-index:2}.world-label{position:absolute;left:0;top:0;transform:translate(-50%,-100%);pointer-events:auto;background:rgba(255,255,251,.96);border:1px solid #fff9;border-radius:10px;padding:7px 11px;box-shadow:0 3px 10px #173f3720;font-size:12px;white-space:nowrap;text-align:left}.world-label:after{content:"";position:absolute;bottom:-5px;left:calc(50% - 4px);border-left:5px solid transparent;border-right:5px solid transparent;border-top:5px solid #fffffb}.world-label b{display:block;font-size:12px}.world-label small{display:block;font-size:10px;color:#778276;margin-top:3px}.world-label .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--c);margin-right:5px}.world-label.selected{outline:2px solid #d69938}.world-label.district{background:#2c564bea;color:#fff;border:0;font-size:12px;padding:8px 12px;letter-spacing:1px}.world-label.district:after{border-top-color:#2c564b}#bottom{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:4;display:flex;flex-direction:column;align-items:center;gap:10px;width:max-content;max-width:calc(100% - 40px)}#location{border-radius:999px;background:var(--paper);padding:9px 16px;font-size:12px;box-shadow:0 4px 18px #25473616;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#interaction{display:none;background:#22675e;color:white;border-radius:15px;padding:13px 20px;box-shadow:0 6px 20px #25473622;font-size:14px}#interaction.show{display:block}#interaction kbd{margin-left:6px;font-size:11px;color:#22675e}#interaction.bite{background:#d9544a;animation:bitePulse .45s ease-in-out infinite alternate}@keyframes bitePulse{to{transform:scale(1.07)}}@media(hover:none){#interaction kbd{display:none}}.controls{display:flex;gap:17px;align-items:center;background:var(--paper);border-radius:14px;padding:12px 18px;font-size:12px;color:#5c7168;box-shadow:0 3px 10px #29433a10}kbd{font:11px inherit;border:1px solid #cdd7ce;border-radius:4px;padding:2px 4px;background:white;color:#415c51}.cameratools{position:fixed;right:27px;bottom:27px;z-index:4;display:flex;gap:7px}.cameratools button{border-radius:12px;width:40px;height:40px;font-size:18px;background:var(--paper);box-shadow:0 3px 12px #23443812}.cameratools button.active{background:#22675e;color:white}#compass{position:fixed;right:32px;top:102px;z-index:2;text-align:center;color:#406c63;font-size:11px;letter-spacing:1px}#compass span{display:block;font-size:26px;margin-top:3px}#detail{position:fixed;right:26px;top:100px;bottom:88px;width:330px;z-index:6;overflow:auto;padding:25px;transition:transform .25s,opacity .25s;transform:translateX(380px);opacity:0;pointer-events:none}#detail.open{transform:translateX(0);opacity:1;pointer-events:auto}.close{position:absolute;top:17px;right:17px;background:#eaf0e8;border-radius:50%;width:29px;height:29px;font-size:18px}#detail h2{font-size:24px;letter-spacing:-.8px;margin:16px 0 6px;padding-right:14px;word-break:keep-all}#detail .amount{font-size:31px;letter-spacing:-1px;font-weight:750;margin:19px 0 7px}#detail .won{font-size:13px;color:#849184}.tag{display:inline-block;border-radius:6px;padding:5px 8px;font-size:11px;background:#e7eee1;color:#4a6a48;margin-right:5px}.detailrow{display:flex;justify-content:space-between;gap:15px;font-size:13px;margin:16px 0;color:#718071}.detailrow b{color:#345343;font-weight:600;text-align:right}.chart{margin:14px 0 8px;width:100%;height:105px}.chartdates{display:flex;justify-content:space-between;font-size:10px;color:#81907f}.positive{color:#2b8b6d}.negative{color:#c87353}.infobox{background:#eaf0e5;border-radius:12px;font-size:12px;line-height:1.75;color:#667963;padding:13px;margin-top:18px}.recordlist{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px}.recordlist th,.recordlist td{text-align:left;border-bottom:1px solid #e3eadd;padding:9px 0}.recordlist td:last-child,.recordlist th:last-child{text-align:right}details{margin-top:18px;font-size:13px}summary{cursor:pointer}.assetslist button{display:flex;justify-content:space-between;width:100%;padding:14px 0;gap:10px;text-align:left;border-bottom:1px solid var(--line);background:none;font-size:13px}.assetslist small{display:block;color:var(--muted);margin-top:5px}.assetslist b{white-space:nowrap;font-size:13px}.edit{background:#e5ede1;border-radius:9px;padding:11px 13px;font-size:13px;width:100%;margin-top:17px}dialog{border:1px solid white;background:#fffff9;border-radius:24px;padding:30px;max-width:500px;width:calc(100% - 32px);color:var(--ink);box-shadow:0 20px 80px #143f3830}dialog::backdrop{background:#153b3455;backdrop-filter:blur(5px)}dialog h2{font-size:23px;margin:0 0 15px}dialog p{font-size:14px;line-height:1.8;color:#6b7a6c}.actions{display:flex;gap:8px;margin-top:20px}.actions button{flex:1}.formrow{display:flex;flex-direction:column;gap:7px;margin:16px 0;font-size:13px}.formrow input{padding:12px;border:1px solid #cfd9cb;border-radius:10px;background:white;color:var(--ink);width:100%}#toast{position:fixed;top:84px;left:50%;transform:translate(-50%,-15px);z-index:20;background:#244e43;color:white;padding:12px 18px;border-radius:12px;font-size:13px;opacity:0;transition:.2s;pointer-events:none;max-width:90vw;text-align:center}#toast.show{opacity:1;transform:translate(-50%,0)}#sourcePill,#viewBadge,#weatherBadge,#timeBadge{display:none!important}.gem-pill{cursor:pointer;font:inherit;gap:6px}.gem-pill b{font-weight:800;color:#1f6f86}.gem-pill:hover{background:#eefaff}.gem-hint{font-size:12.5px;line-height:1.55;background:#e9f9ff;color:#135468;border:1px solid #bfe9f6;border-radius:12px;padding:10px 12px;margin:10px 0 4px}#gemPanel .pref.locked{opacity:.55;cursor:default}#gemPanel h3 b{color:#1f6f86;margin-left:4px}.gem-pill.active{background:#e9f9ff}.cameratools button.active,#mobilepad button.active{background:var(--green);color:#fff}@media(min-width:761px){.walking-view #overview:not(.open){width:auto;min-width:170px;padding:11px 16px 12px;cursor:pointer}.walking-view #overview:not(.open) .switcher,.walking-view #overview:not(.open) .footnote,.walking-view #overview:not(.open) #modeNote{display:none}.walking-view #overview:not(.open) .sectionlabel{font-size:11px;margin:0}.walking-view #overview:not(.open) .sum{font-size:21px;margin:3px 0 0}.walking-view #overview:not(.open):after{content:"펼치기 ▾";display:block;font-size:10px;color:var(--muted);margin-top:4px}.walking-view #overview.open{width:258px;max-height:calc(100dvh - 190px);overflow:auto}.walking-view #overview.open #cats{display:block}.walking-view #overview.open .allocation,.walking-view #overview.open .visit,.walking-view #overview.open .subsum{display:flex}.walking-view #overview.open #modeNote{display:block}.walking-view #overview.open:after{content:"접기 ▴";display:block;text-align:center;font-size:10px;color:var(--muted);margin-top:8px}}#toast.gem{background:#e9f9ff;color:#135468;border:1px solid #a9e3f5;box-shadow:0 6px 20px #1f6f8626;font-weight:600}#toast.news{background:#fff4d6;color:#6b4e16;border:1px solid #eed49a;box-shadow:0 6px 20px #7a5a1c26;font-weight:600}#mobilepad{display:none;position:fixed;bottom:95px;left:18px;z-index:4;grid-template-columns:repeat(4,37px);grid-template-rows:repeat(2,37px);gap:4px}#mobilepad button{background:#fffff2c9;border-radius:9px;font-size:18px;touch-action:none}.blank{grid-column:1}.fatal{position:fixed;inset:0;display:grid;place-items:center;background:#e9f1e9;z-index:30;padding:35px}.fatal p{max-width:470px;line-height:1.9}.hidden{display:none!important}#loading{position:fixed;inset:0;z-index:25;display:grid;place-content:center;text-align:center;gap:12px;background:#eff3e9;color:#356353;font-size:18px}#loading small{font-size:13px;color:#80947d}#loading .spinner{margin:auto;width:36px;height:36px;border:3px solid #d9e4d3;border-top-color:#36745d;border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}@media(max-height:770px) and (min-width:761px){#overview{top:91px;padding:18px}.divider{margin:13px 0}.cat{padding:8px 0}.sum{font-size:30px}.switcher{margin-top:10px}#modeNote{margin-bottom:12px}.allocation{margin-top:12px}.footnote{font-size:10px}}@media(max-width:1050px){header{left:18px;right:18px}#overview{left:18px;width:222px;padding:18px}.sum{font-size:28px}.controls{gap:9px;font-size:11px}.headright .optional{display:none}#detail{width:300px;right:18px}}@media(max-width:760px){header{top:14px;left:15px;right:15px;gap:6px}.brandmark{width:35px;height:35px;font-size:23px;border-radius:11px}.brand{gap:8px}.brand h1{font-size:19px}.brand small{font-size:8px;letter-spacing:1.3px}.headright{gap:5px}.headright .tool{font-size:12px;padding:10px}.pill{display:none}.headright .export{display:none}#overview{top:69px;left:13px;width:190px;border-radius:17px;padding:14px}.sectionlabel{font-size:12px;margin:0}.sum{font-size:27px;margin:6px 0 8px}.sum small{font-size:13px}.subsum{font-size:11px}.divider{margin:12px 0}.switcher{margin:10px 0 0}.switcher button{font-size:12px;padding:8px 1px}#modeNote{font-size:10px;margin:7px 0 0}#cats{display:none}#overview.expanded #cats{display:block}#overview .allocation,#overview .footnote,#overview .visit{display:none}#expand{display:block!important;background:none;font-size:11px;color:#6c826e;margin-top:9px;width:100%}#compass{top:77px;right:20px}#bottom{bottom:14px;gap:7px}.controls{padding:9px 11px;font-size:10px}.controls .desktop{display:none}#location{font-size:11px;padding:8px 12px;max-width:calc(100vw - 30px)}#interaction{font-size:12px;padding:10px 14px}#mobilepad{display:grid}.cameratools{bottom:100px;right:14px;flex-direction:column}.cameratools button{width:35px;height:35px}.world-label{font-size:10px;padding:6px 7px}.world-label b{font-size:10px}.world-label small{font-size:9px}.world-label.district{font-size:10px}#detail{top:auto;bottom:0;right:0;width:100%;max-height:62dvh;border-radius:23px 23px 0 0;padding:23px;transform:translateY(110%)}#detail.open{transform:translateY(0)}#detail h2{font-size:22px}.chart{height:70px}#detail .amount{font-size:28px}#toast{top:62px}.headright .helptext{display:none}}
