@@ -12050,7 +12050,7 @@ for(let i=0;i<9;i++){const r=mesh(new THREE.TorusGeometry(.5+i*.07,.027,4,32),ne
 for(let i=0;i<6;i++){const a=i*1.1,x=22+Math.cos(a)*10.5,z=17+Math.sin(a)*7.8;sphere(scene,x,.3,z,.6,'#b7b99b');for(let j=0;j<3;j++){beam(scene,[x+j*.22,.3,z],[x+j*.3,1.8+(j%2)*.4,z-.2],.04,'#7a9560');cyl(scene,x+j*.3,1.8+(j%2)*.4,z-.2,.095,.095,.45,'#9b8052',6)}}
 // Flowers and planted borders, deterministic placement.
 let randomSeed=843;function rnd(){randomSeed=(randomSeed*1664525+1013904223)>>>0;return randomSeed/4294967296}
-for(let i=0;i<46;i++){let a=i/46*Math.PI*2,x=Math.cos(a)*(38+rnd()*3),z=Math.sin(a)*(29+rnd()*2),sc=.65+rnd()*.6;if(!HOUSE_SLOTS.some(([hx,hz])=>Math.hypot(x-hx,z-hz)<8))tree(x,z,sc,i%3===0)}
+for(let i=0;i<46;i++){let a=i/46*Math.PI*2,x=Math.cos(a)*(38+rnd()*3),z=Math.sin(a)*(29+rnd()*2),sc=.65+rnd()*.6;if(!HOUSE_SLOTS.some(([hx,hz])=>Math.hypot(x-hx,z-hz)<8)&&!SAFE_SLOTS.some(([sx,sz])=>Math.hypot(x-sx,z-sz-3.2)<4.5))tree(x,z,sc,i%3===0)}
 [[-31,-8],[-11,-22],[-33,5],[-29,23],[7,-25],[30,-19],[34,6],[4,27],[-10,5],[3,-15],[32,23]].forEach(([x,z],i)=>tree(x,z,.8+(i%3)*.12,i%2===0));
 for(let i=0;i<110;i++){let x=rnd()*76-38,z=rnd()*54-27;if(Math.abs(x)<4||Math.abs(z)<4||((x-22)**2/125+(z-17)**2/70<1.2))continue;const c=['#f9df94','#f3efe1','#ddab85'][i%3];for(let j=0;j<3;j++)sphere(scene,x+j*.19,.42,z+(j%2)*.2,.14,c,0)}
 bench(-6,5,.3);bench(7.6,-3.3,-.2);bench(-35,9,Math.PI/2);bench(5.5,17.4,0);[-14,13,29,-30].forEach(x=>lamp(x,-3.5));lamp(-3.5,17);lamp(3.5,-23);
