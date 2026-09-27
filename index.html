@@ -7841,7 +7841,8 @@ function renderMonthBars(selKey, thisKey) {
   var known = data.filter(function (d) { return d.v !== null; });
   if (known.length < 2) { box.hidden = true; box.innerHTML = ''; return; }
   box.hidden = false;
-  var W = box.clientWidth || $('msCard').clientWidth - 44 || 600;
+  // 다른 화면(탐험 등)이 대시보드를 가리면 폭이 0 — 음수 대신 600 으로 그려 두고, 돌아올 때 renderHome 이 실제 폭으로 다시 그린다
+  var W = box.clientWidth || Math.max(0, $('msCard').clientWidth - 44) || 600;
   var H = 132, padT = 20, padB = 22, plotH = H - padT - padB;
   var maxPos = Math.max(0, Math.max.apply(null, known.map(function (d) { return d.v; })));
   var maxNeg = Math.max(0, -Math.min.apply(null, known.map(function (d) { return d.v; })));
