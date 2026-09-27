@@ -13681,7 +13681,7 @@ function mtnMinimap(x){if(!MTN.built)return;const kx=(MM.W/2-8)/WA,[ox,oz]=mmXY(
   line(MTN.limit,MTN.len,'#8f8b80',[3,3]);if(MTN.limit>0)line(0,MTN.limit,'#2a78d6');
   x.fillStyle='#6b5a44';x.beginPath();x.moveTo(cx,cz-9);x.lineTo(cx+8,cz+5);x.lineTo(cx-8,cz+5);x.closePath();x.fill();x.fillStyle='#f5f8fa';x.beginPath();x.moveTo(cx,cz-9);x.lineTo(cx+3.2,cz-3.4);x.lineTo(cx-3.2,cz-3.4);x.closePath();x.fill()}
 function mtnTick(dt){if(!MTN.built)return;const cam=camera.position,near=Math.hypot(cam.x-MTN.x,cam.z-MTN.z)<260;MTN.tu.uTime.value=time;if(MTN.viewEase>0)MTN.viewEase-=dt;
-  if(near){MTN.flags.forEach(fl=>{fl.g.visible=fl.g.position.distanceToSquared(cam)>20;mtnWave(fl,time);if(fl.pop>0){fl.pop=Math.max(0,fl.pop-dt*1.4);fl.cloth.scale.setScalar(1+Math.sin(fl.pop*Math.PI)*.5)}});const ph=(time*.55)%1;MTN.ring.scale.setScalar(1+ph*1.6);MTN.ring.material.opacity=.55*(1-ph)}
+  if(near){MTN.flags.forEach(fl=>{fl.g.visible=fl.top.distanceToSquared(cam)>49;mtnWave(fl,time);if(fl.pop>0){fl.pop=Math.max(0,fl.pop-dt*1.4);fl.cloth.scale.setScalar(1+Math.sin(fl.pop*Math.PI)*.5)}});const ph=(time*.55)%1;MTN.ring.scale.setScalar(1+ph*1.6);MTN.ring.material.opacity=.55*(1-ph)}
   const walk=cameraMode==='walking'||cameraMode==='entering',k=mtnCell(player.x,player.z),on=walk&&k>=0&&MTN.mask[k]>=.35&&MTN.td[k]<2.4&&MTN.ts[k]>3;
   if(on!==MTN.climbing){MTN.climbing=on;if(on&&!MTN.hinted){MTN.hinted=true;toast('목표봉 등산로예요 — 앞 · 뒤 키로 길을 따라 오르내리고, ⛰ 정상 버튼으로 정상석을 볼 수 있어요.')}}
   if(MTN.view&&!walk)mtnSetView(false);
