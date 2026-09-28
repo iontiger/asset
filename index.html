@@ -2092,6 +2092,13 @@
     body:not([data-view="home"]) .m-hello { display:none; }
     .m-hello h2 { font-size:1.3rem; font-weight:800; letter-spacing:-.025em; }
     .m-hello p { margin-top:5px; font-size:.87rem; color:var(--muted); }
+    /* 인사말 아래 투자 격언 — 두 줄 자리를 잡아 두어 격언이 바뀔 때 아래 카드가 들썩이지 않게. 누르면 다음 격언 */
+    #mHelloS {
+      min-height:2.9em; line-height:1.45; word-break:keep-all; overflow-wrap:anywhere;
+      cursor:pointer; -webkit-tap-highlight-color:transparent; transition:opacity .28s;
+    }
+    #mHelloS.fade { opacity:0; }
+    .m-q-by { white-space:nowrap; font-weight:700; }
 
     /* ── 홈: 새 카드 셋 + 기존 카드(순자산 · 작은 KPI · 자산 구성은 새 카드가 대신) ── */
     .m-home { display:flex; flex-direction:column; gap:14px; margin-bottom:14px; }
@@ -7959,7 +7966,7 @@ function switchView(v) {
   mSyncTabs();
   renderTopbar();
   updateSaveBar();
-  if (v === 'home') renderHome();
+  if (v === 'home') { renderHome(); mHelloOnShow(); }
   if (v === 'list') drawDetailChart();
   // 가격(전일 종가)은 리밸런싱 화면을 처음 열 때 불러온다 (앱 시작을 느리게 하지 않게)
   if (v === 'rebal') { if (!rb.prices && !rb.loading) rbLoadPrices(); renderRebal(); mNewsOnShow(); }
@@ -11786,29 +11793,315 @@ function mKorWon(n) {
     (man ? (ch ? ch + '천' : '') + (bk ? bk + '백' : '') + '만' : '') + '원';
 }
 
-function mGreet() {
-  var h = new Date().getHours();
-  if (h >= 5 && h < 11) return '좋은 아침입니다!';
-  if (h >= 11 && h < 17) return '좋은 오후입니다!';
-  if (h >= 17 && h < 22) return '좋은 저녁입니다!';
-  return '편안한 밤 보내세요!';
+/* ── 인사말 — 시각 · 요일 · 계절 · 날씨 · 장 시간 · 특별한 날에 맞춰 여러 문구 중 하나 ──
+   같은 상황(날짜 · 때 · 날씨 · 장 단계)이면 같은 문구를 두고, 상황이 바뀌거나 앱을 새로 열면 다시 고른다. */
+function mIeyo(w) {   // 받침이 있으면 '이에요', 없으면 '예요'
+  var c = w.charCodeAt(w.length - 1) - 0xAC00;
+  return w + (c >= 0 && c < 11172 && c % 28 ? '이에요' : '예요');
 }
-// 인사말 아래 한 줄 — 바로 아래 순자산 카드의 최근 1개월 증감과 같은 방향으로
-function mHelloSub(series, m1) {
-  if (!series.length) return '첫 자산을 등록하면 여기서 한눈에 볼 수 있어요.';
-  if (series[series.length - 1].total >= goalAmount) return '목표를 이뤘어요! 새 목표를 세워 볼까요?';
-  if (!m1 || m1.diff === null) return '오늘도 차근차근 자산을 기록해 보세요.';
-  if (m1.diff > 0) return '오늘도 당신의 자산이 성장하고 있어요.';
-  if (m1.diff < 0) return '잠시 쉬어 가는 중이에요. 길게 보면 괜찮아요.';
-  return '최근 한 달은 변화가 없었어요. 오늘 금액을 기록해 볼까요?';
+var M_WD = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+var M_KRX_OFF = [101, 301, 501, 505, 606, 815, 1003, 1009, 1225, 1231];   // 날짜가 정해진 휴장일 (설 · 추석 · 대체공휴일은 빠짐)
+function mWxCat(code) {   // Open-Meteo 날씨 코드(WMO) → 인사말 갈래
+  if (code == null) return '';
+  if (code <= 1) return 'clear';
+  if (code === 2) return 'partly';
+  if (code === 3) return 'overcast';
+  if (code === 45 || code === 48) return 'fog';
+  if (code >= 51 && code <= 57) return 'drizzle';
+  if (code === 65 || code === 67 || code === 82) return 'heavyrain';
+  if (code >= 61 && code <= 67 || code >= 80 && code <= 82) return 'rain';
+  if (code === 75 || code === 86) return 'heavysnow';
+  if (code >= 71 && code <= 77 || code === 85) return 'snow';
+  if (code >= 95) return 'storm';
+  return '';
 }
+// 지금 상황 — 인사말을 다시 고를지 정하는 열쇠(key)와 후보 문구(무게만큼 여러 번 들어감)
+function mGreetCtx(now, wx) {
+  var h = now.getHours(), mo = now.getMonth() + 1, md = mo * 100 + now.getDate(), wd = now.getDay();
+  var part = h < 5 ? '새벽' : h < 11 ? '아침' : h < 14 ? '한낮' : h < 17 ? '오후' : h < 22 ? '저녁' : '밤';
+  var season = mo >= 3 && mo <= 5 ? '봄' : mo >= 6 && mo <= 8 ? '여름' : mo >= 9 && mo <= 11 ? '가을' : '겨울';
+  var cat = wx ? mWxCat(wx.code) : '', t = wx && typeof wx.temp === 'number' ? wx.temp : null;
+  var day = wx ? wx.day : h >= 6 && h < 19, calm = !cat || cat === 'clear' || cat === 'partly' || cat === 'overcast';
+  // 한국 시간으로 장 단계 — 평일 8시 전후 · 9시 개장 · 15시 30분 마감
+  var k = new Date(now.getTime() + (now.getTimezoneOffset() + 540) * 60e3), km = k.getHours() * 60 + k.getMinutes();
+  var kmd = (k.getMonth() + 1) * 100 + k.getDate(), open = k.getDay() >= 1 && k.getDay() <= 5 && M_KRX_OFF.indexOf(kmd) < 0;
+  var mk = !open ? 'off' : km >= 480 && km < 540 ? 'pre' : km >= 540 && km < 570 ? 'bell' : km >= 930 && km < 1020 ? 'close' : '';
+  var c = [];
+  function add(w, s) { for (var i = 0; i < w; i++) c.push(s); }
+  var WX = {
+    clear: !day ? ['맑은', '별빛 좋은'] : season === '여름' ? ['햇볕 쨍쨍한', '맑은'] : ['맑은', '햇살 좋은', '화창한'],
+    partly: ['구름 조금 낀', '구름 흘러가는'],
+    overcast: ['흐린', '구름 잔뜩 낀'],
+    fog: ['안개 낀', '뿌연'],
+    drizzle: ['보슬비 내리는', '촉촉한'],
+    rain: ['비 내리는', '비 오는', '빗소리 들리는'],
+    heavyrain: ['비가 쏟아지는', '장대비 내리는'],
+    snow: ['눈 내리는', '눈 오는'],
+    heavysnow: ['함박눈 내리는', '눈이 펑펑 오는'],
+    storm: ['천둥 치는', '비바람 부는']
+  }[cat] || [];
+  var TA = [];
+  if (t != null) {
+    if (t >= 33) TA = ['푹푹 찌는', '무더운'];
+    else if (t >= 28) TA = ['무더운', '더운'];
+    else if (t <= -10) TA = ['꽁꽁 언', '매섭게 추운'];
+    else if (t <= 0) TA = ['영하의', '추운'];
+    else if (t < 10) TA = season === '여름' ? [] : ['쌀쌀한', '찬 바람 부는'];
+    else if (t < 18) TA = season === '가을' || season === '여름' ? ['선선한'] : ['포근한'];
+    else if (t < 25) TA = season === '봄' ? ['따스한', '기분 좋은'] : season === '가을' ? ['기분 좋은'] : [];
+  }
+  var sp = season + ' ' + part, wdp = M_WD[wd] + ' ' + part;
+  WX.forEach(function (a) { add(3, mIeyo(a + ' ' + sp)); add(1, mIeyo(a + ' ' + wdp)); });
+  TA.forEach(function (a) { add(calm ? 2 : 1, mIeyo(a + ' ' + sp)); });
+  add(1, mIeyo({ '봄': '싱그러운', '여름': '푸르른', '가을': '깊어 가는', '겨울': '고요한' }[season] + ' ' + sp));
+  ({
+    '새벽': ['고요한 새벽이에요', '깊은 밤이에요, 푹 쉬세요'],
+    '아침': ['좋은 아침이에요!', '상쾌한 아침이에요', '활기찬 아침이에요', '오늘도 힘찬 하루 보내세요', '커피 한 잔과 함께 시작해요'],
+    '한낮': ['점심 맛있게 드세요', '든든한 점심 드셨나요?', '반가운 점심시간이에요'],
+    '오후': ['나른한 오후예요', '여유로운 오후예요', '오후도 힘내세요', '잠깐 기지개 한번 켜요'],
+    '저녁': ['오늘 하루도 수고했어요', '편안한 저녁이에요', '편안한 저녁 보내세요'],
+    '밤': ['편안한 밤 보내세요', '고요한 밤이에요', '오늘 하루도 고생 많았어요', '오늘도 잘 해냈어요']
+  })[part].forEach(function (s) { add(1, s); });
+  add(1, mIeyo(sp));
+  if (wd === 1 && part === '아침') { add(3, '한 주를 여는 월요일이에요'); add(1, '힘찬 월요일 아침이에요'); }
+  if (wd === 5 && (part === '오후' || part === '저녁' || part === '밤')) { add(3, '즐거운 금요일 ' + part + ' 보내세요'); add(1, '이번 주도 수고 많았어요'); }
+  if (wd === 0 || wd === 6) add(2, mIeyo('여유로운 주말 ' + part));
+  if (wd === 0 && (part === '저녁' || part === '밤')) add(2, '내일은 월요일, 푹 쉬세요');
+  if (mk === 'pre') add(3, '곧 장이 열려요');
+  if (mk === 'bell') add(3, '장이 막 열렸어요');
+  if (mk === 'close') add(3, '오늘 장이 마감됐어요');
+  if (mk === 'off' && h >= 8 && h < 18) add(1, wd === 0 || wd === 6 ? '시장도 쉬어 가는 주말이에요' : '오늘은 증시가 쉬는 날이에요');
+  if (season === '여름' && t != null && t >= 25 && (part === '밤' || part === '새벽')) add(4, '잠 못 드는 열대야예요');
+  if (md >= 620 && md <= 725 && (cat === 'rain' || cat === 'heavyrain' || cat === 'drizzle')) add(4, '장맛비 내리는 여름이에요');
+  if (md >= 325 && md <= 410 && day && calm && cat !== 'overcast') add(4, '벚꽃 피는 봄날이에요');
+  if (md >= 1015 && md <= 1110 && day && calm) add(4, '단풍 물드는 가을이에요');
+  if (md === 101) add(12, '새해 복 많이 받으세요!');
+  else if (md <= 107) add(4, '새해 첫 주, 힘차게 시작해요');
+  if (md === 1224 && h >= 17) add(8, '설레는 크리스마스 이브예요');
+  if (md === 1225) add(12, '메리 크리스마스!');
+  if (md === 1231) add(8, '한 해의 마지막 날이에요');
+  var tb = t == null ? '' : t >= 33 ? 'h2' : t >= 28 ? 'h1' : t <= -10 ? 'c2' : t <= 0 ? 'c1' : t < 10 ? 'c0' : t < 18 ? 'm' : t < 25 ? 'w' : 'x';
+  return { key: [md, part, wd, cat, tb, mk, day ? 'd' : 'n'].join('|'), cands: c };
+}
+
+function mGreetTitle() {   // 지금 인사말 — 상황(key)이 그대로면 고른 문구를 그대로 둔다
+  var wx = mWx.data && Date.now() - mWx.data.t < 3 * 3600e3 ? mWx.data : null;   // 3시간 지난 날씨는 쓰지 않음
+  var g = mGreetCtx(new Date(), wx);
+  if (g.key !== mGreetPick.key) { mGreetPick.key = g.key; mGreetPick.text = g.cands[Math.floor(Math.random() * g.cands.length)]; }
+  return mGreetPick.text;
+}
+var mGreetPick = { key: '', text: '' };
+
+/* ── 날씨 — Open-Meteo (키 없이 브라우저에서 부를 수 있음). 30분마다 새로, 이 기기에 둔다.
+   위치는 이 브라우저에서 이미 허락해 둔 위치(묻는 창은 띄우지 않음), 아니면 서울. 한국 시간대가 아니면 날씨 없이. */
+var M_WX_KEY = 'asset_pc_m_wx';
+var mWx = { data: null, busy: false };
+try {
+  var mWxSaved = JSON.parse(lsGet(M_WX_KEY) || 'null');
+  if (mWxSaved && typeof mWxSaved.t === 'number' && typeof mWxSaved.code === 'number') mWx.data = mWxSaved;
+} catch (e) {}
+function mWxWhere(cb) {
+  var kst = false;
+  try { kst = Intl.DateTimeFormat().resolvedOptions().timeZone === 'Asia/Seoul'; } catch (e) {}
+  function fallback() { cb(kst ? [37.57, 126.98] : null); }
+  try {
+    navigator.permissions.query({ name: 'geolocation' }).then(function (p) {
+      if (p.state !== 'granted') return fallback();
+      navigator.geolocation.getCurrentPosition(function (g) {
+        cb([Math.round(g.coords.latitude * 100) / 100, Math.round(g.coords.longitude * 100) / 100]);   // 1km 남짓으로 뭉갬
+      }, fallback, { maximumAge: 3600e3, timeout: 8000 });
+    }, fallback);
+  } catch (e) { fallback(); }
+}
+function mWxLoad() {
+  if (!isMobile() || mWx.busy || mWx.data && Date.now() - mWx.data.t < 30 * 60e3) return;
+  mWx.busy = true;
+  mWxWhere(function (pos) {
+    if (!pos) { mWx.busy = false; return; }
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=' + pos[0] + '&longitude=' + pos[1] +
+          '&current=temperature_2m,weather_code,is_day&timezone=auto')
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (j) {
+        var c = j && j.current;
+        if (!c || typeof c.weather_code !== 'number') throw new Error('날씨 모양이 달라요');
+        mWx.data = { t: Date.now(), code: c.weather_code, temp: c.temperature_2m, day: c.is_day === 1 };
+        lsSet(M_WX_KEY, JSON.stringify(mWx.data));
+        $('mHelloT').textContent = mGreetTitle();
+      })
+      .catch(function () {})
+      .then(function () { mWx.busy = false; });
+  });
+}
+
+/* ── 인사말 아래 한 줄 — 투자 격언 100개를 섞어 돌린다 (다 볼 때까지 겹치지 않게, 섞은 순서는 이 기기에 둠).
+   홈에 올 때마다 · 15초마다 다음 격언, 누르면 바로 다음. "문구|말한 사람" */
+var M_QUOTES = [
+  // 시장이 내일 문을 닫는다면 — 버핏의 말과 그 생각
+  '내일 시장이 문을 닫고 5년간 열지 않는다고 생각하고 사라.|워런 버핏',
+  '내일 증시가 문을 닫아도 편히 잘 수 있는 자산인가요?',
+  '시장이 5년간 닫혀도 괜찮은 기업만 담으세요.',
+  '내일 장이 닫혀도 좋은 기업은 오늘처럼 돈을 법니다.',
+  '시세판이 꺼져도 흔들리지 않는 자산이 진짜 내 자산이에요.',
+  '오늘 산 주식을 5년간 못 판다면, 그래도 사시겠어요?',
+  '시장이 문을 닫아도 배당은 들어오고 기업은 자랍니다.',
+  '10년간 거래가 멈춰도 기꺼이 들고 있을 종목인가요?',
+  '증시가 쉬어도 좋은 기업은 쉬지 않고 일해요.',
+  '장이 닫힌 날에도 가치는 자라요. 멈추는 건 가격뿐이에요.',
+  '내일 거래가 멈춘다면? 남는 건 기업의 이익이에요.',
+  '시장이 5년간 쉰다고 생각하면 오늘의 등락은 소음이에요.',
+  '팔 수 없어도 괜찮은 주식만 사세요. 그게 장기투자예요.',
+  '증시는 문을 닫아도 복리는 문을 닫지 않아요.',
+  '장이 쉬는 주말에도 좋은 기업의 가치는 조용히 쌓여요.',
+  '내일 시장이 닫힌다고 상상하면, 조급함 대신 기업이 보여요.',
+  '시장이 사라져도 남는 것 — 좋은 기업, 꾸준한 저축, 인내.',
+  '주가를 5년간 못 본다면 무엇을 사겠어요? 그게 답이에요.',
+  '시장이 닫혀도 후회 없을 만큼만, 이해하는 만큼만 사세요.',
+  '오늘이 장이 열리는 마지막 날이라도 이 포트폴리오면 괜찮을까요?',
+  // 투자 대가들의 말
+  '첫째, 돈을 잃지 마라. 둘째, 첫째 규칙을 잊지 마라.|워런 버핏',
+  '남들이 욕심낼 때 두려워하고, 두려워할 때 욕심내라.|워런 버핏',
+  '10년 보유할 생각이 없다면 10분도 보유하지 마라.|워런 버핏',
+  '주식시장은 조급한 사람의 돈이 인내하는 사람에게 가는 곳.|워런 버핏',
+  '가격은 내가 내는 것이고, 가치는 내가 얻는 것이다.|워런 버핏',
+  '오늘 누군가 그늘에서 쉬는 건 오래전 나무를 심었기 때문.|워런 버핏',
+  '썰물이 빠져야 누가 벌거벗고 수영했는지 알 수 있다.|워런 버핏',
+  '위험은 자신이 무엇을 하는지 모르는 데서 온다.|워런 버핏',
+  '평범한 기업을 싸게 사느니 훌륭한 기업을 적정가에 사라.|워런 버핏',
+  '우리가 좋아하는 보유 기간은 영원이다.|워런 버핏',
+  '시간은 훌륭한 기업의 친구이고, 평범한 기업의 적이다.|워런 버핏',
+  '인생은 눈덩이, 젖은 눈과 긴 언덕만 찾으면 된다.|워런 버핏',
+  '이해할 수 없는 사업에는 투자하지 마라.|워런 버핏',
+  '훌륭한 기업이 잠시 어려울 때가 최고의 기회다.|워런 버핏',
+  '투자자에게 중요한 건 지능이 아니라 기질이다.|워런 버핏',
+  '큰돈은 사고파는 데가 아니라 기다림에서 나온다.|찰리 멍거',
+  '복리의 첫째 규칙 — 쓸데없이 끊지 마라.|찰리 멍거',
+  '거꾸로 생각하라, 언제나 거꾸로.|찰리 멍거',
+  '투자에 도움이 되는 건 기다림인데, 많은 이가 그걸 못 견딘다.|찰리 멍거',
+  '단기적으로 시장은 투표기, 장기적으로는 저울이다.|벤저민 그레이엄',
+  '투자자의 가장 큰 적은 바로 자기 자신이다.|벤저민 그레이엄',
+  '건전한 투자의 비결을 한마디로 줄이면, 안전마진.|벤저민 그레이엄',
+  '남들이 동의해서가 아니라, 근거가 옳아서 옳은 것이다.|벤저민 그레이엄',
+  '미스터 마켓의 기분에 휘둘리지 말고, 그 기분을 이용하라.|벤저민 그레이엄',
+  '무엇을 가졌는지, 왜 가졌는지 알아라.|피터 린치',
+  '조정에 대비하다 잃은 돈이 조정으로 잃은 돈보다 훨씬 많다.|피터 린치',
+  '주식으로 돈 버는 비결은 겁먹고 떠나지 않는 것이다.|피터 린치',
+  '모든 주식 뒤에는 기업이 있다. 그 기업이 뭘 하는지 알아보라.|피터 린치',
+  '이 바닥에선 열 번 중 여섯 번만 맞아도 잘하는 것이다.|피터 린치',
+  '바보도 경영할 수 있는 기업을 사라. 언젠가 바보가 경영할 테니.|피터 린치',
+  '강세장은 비관 속에 태어나 행복감 속에 죽는다.|존 템플턴',
+  '가장 위험한 말은 "이번엔 다르다"이다.|존 템플턴',
+  '비관이 최고조일 때가 가장 좋은 매수 시점이다.|존 템플턴',
+  '건초 더미에서 바늘을 찾지 말고, 건초 더미를 사라.|존 보글',
+  '시간은 당신의 친구이고, 충동은 당신의 적이다.|존 보글',
+  '주식을 사고 수면제를 먹어라. 몇 년 뒤엔 부자가 되어 있다.|코스톨라니',
+  '주가는 주인과 산책하는 개. 앞서도 뒤처져도 결국 곁으로 온다.|코스톨라니',
+  '제대로 산 주식이라면, 팔 때는 거의 오지 않는다.|필립 피셔',
+  '큰돈을 벌어 준 건 생각이 아니라 버티고 앉아 있던 것이다.|제시 리버모어',
+  '시장은 틀리지 않는다. 틀리는 건 의견이다.|제시 리버모어',
+  '예측할 수는 없어도, 대비할 수는 있다.|하워드 막스',
+  '너무 앞서가는 것은 틀린 것과 구별되지 않는다.|하워드 막스',
+  '수정 구슬에 기대는 사람은 깨진 유리를 먹게 된다.|레이 달리오',
+  '투자는 페인트가 마르는 걸 지켜보듯 지루해야 한다.|폴 새뮤얼슨',
+  // 증시 격언
+  '무릎에서 사서 어깨에서 팔아라.',
+  '달걀을 한 바구니에 담지 마라.',
+  '떨어지는 칼날은 잡지 마라.',
+  '소문에 사서 뉴스에 팔아라.',
+  '밀짚모자는 겨울에 사라.',
+  '산이 높으면 골도 깊다.',
+  '천장 3일, 바닥 100일.',
+  '남들이 가지 않는 뒤안길에 꽃길이 있다.',
+  '시세는 시세에게 물어라.',
+  '쉬는 것도 투자다.',
+  '현금도 종목이다.',
+  '빚내서 하는 투자는 버틸 힘을 빼앗는다.',
+  '여유 자금으로, 잃어도 잠잘 수 있는 만큼만.',
+  '사야 할 이유가 사라지면 그때 팔아라.',
+  '싸다고 사지 말고, 좋아서 사라.',
+  '좋은 주식은 비싸 보이고, 나쁜 주식은 싸 보인다.',
+  '모두가 주식 이야기를 할 때가 꼭지다.',
+  '오른 이유를 모르고 샀다면, 내린 이유도 모르고 팔게 된다.',
+  '시장 타이밍보다 시장에 머문 시간이 중요하다.',
+  '매일 주가를 보는 건 매일 키를 재는 것과 같다.',
+  '계좌를 덜 볼수록 마음은 편하고 수익은 커진다.',
+  '매매가 잦을수록 수익은 줄어든다.',
+  '투자는 마라톤이다. 단거리처럼 뛰지 마라.',
+  '하락장은 좋은 기업을 싸게 사는 할인 기간이다.',
+  '적립식 투자는 시장의 기분을 이기는 가장 쉬운 방법이다.',
+  '시장은 예측하는 곳이 아니라 대응하는 곳이다.',
+  '주가는 결국 기업 이익을 따라간다.',
+  '모르면 사지 마라. 알 때까지 기다려라.',
+  '손실은 짧게, 이익은 길게.',
+  '모두가 확신할 때가 가장 위험하다.',
+  '시장은 내가 버틸 수 있는 시간보다 오래 비이성적일 수 있다.',
+  '공포에 사서 환희에 팔아라.',
+  '뉴스가 요란할 때일수록 한 걸음 물러서라.',
+  '기다림은 가장 저평가된 투자 기술이다.',
+  '잃지 않는 것이 버는 것의 시작이다.',
+  '비관론자는 명성을 얻고, 낙관론자는 돈을 번다.'
+];
+var M_QUOTE_KEY = 'asset_pc_m_quote';
+var mQuote = { cur: -1, at: 0, fadeT: 0, empty: true };
+function mQuoteNext() {   // 섞은 순서에서 다음 번호 — 한 바퀴 돌면 다시 섞는다 (방금 본 것이 바로 또 나오지 않게)
+  var n = M_QUOTES.length, st = null;
+  try { st = JSON.parse(lsGet(M_QUOTE_KEY) || 'null'); } catch (e) {}
+  function shuffle(avoid) {
+    var o = [];
+    for (var i = 0; i < n; i++) o.push(i);
+    for (var j = n - 1; j > 0; j--) { var r = Math.floor(Math.random() * (j + 1)), tmp = o[j]; o[j] = o[r]; o[r] = tmp; }
+    if (o[0] === avoid) o.push(o.shift());
+    return o;
+  }
+  if (!st || !Array.isArray(st.o) || st.o.length !== n || typeof st.i !== 'number') st = { o: shuffle(-1), i: -1 };
+  st.i++;
+  if (st.i >= n) st = { o: shuffle(st.o[n - 1]), i: 0 };
+  lsSet(M_QUOTE_KEY, JSON.stringify(st));
+  return st.o[st.i] % n;
+}
+function mQuoteShow(fade) {
+  var box = $('mHelloS'), idx = mQuoteNext(), q = String(M_QUOTES[idx]).split('|');
+  mQuote.cur = idx;
+  mQuote.at = Date.now();
+  function put() {
+    box.textContent = '';
+    box.appendChild(el('span', 'm-q-t', q[0]));
+    if (q[1]) { box.appendChild(document.createTextNode(' ')); box.appendChild(el('span', 'm-q-by', '— ' + q[1])); }
+    box.classList.remove('fade');
+  }
+  clearTimeout(mQuote.fadeT);
+  if (!fade || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return put();
+  box.classList.add('fade');
+  mQuote.fadeT = setTimeout(put, 280);
+}
+// 홈 인사말 두 줄 — renderMobileHome() 에서 (자산이 없으면 아래 줄은 안내 문구)
+function mHelloRender(empty) {
+  mQuote.empty = empty;
+  mWxLoad();
+  $('mHelloT').textContent = mGreetTitle();
+  if (empty) { mQuote.cur = -1; $('mHelloS').textContent = '첫 자산을 등록하면 여기서 한눈에 볼 수 있어요.'; }
+  else if (mQuote.cur < 0 && isMobile()) mQuoteShow(false);
+}
+// 홈에 올 때 · 앱으로 돌아올 때 — 날씨를 새로 받고, 격언은 다음 것으로 (방금 바꿨으면 그대로)
+function mHelloOnShow() {
+  if (!mQuote || !isMobile() || currentView !== 'home') return;
+  mWxLoad();
+  $('mHelloT').textContent = mGreetTitle();
+  if (!mQuote.empty && (mQuote.cur < 0 || Date.now() - mQuote.at > 3000)) mQuoteShow(mQuote.cur >= 0);
+}
+$('mHelloS').addEventListener('click', function () { if (mQuote.cur >= 0) mQuoteShow(true); });
+// 15초마다 — 홈을 보고 있을 때만 격언을 넘기고, 시각 · 장 단계가 바뀌었으면 인사말도 다시
+setInterval(function () {
+  if (document.hidden || !isMobile() || currentView !== 'home') return;
+  $('mHelloT').textContent = mGreetTitle();
+  if (mQuote.cur >= 0 && Date.now() - mQuote.at >= 14000) mQuoteShow(true);
+}, 15000);
+document.addEventListener('visibilitychange', function () { if (!document.hidden) mHelloOnShow(); });
 
 // renderHomeInner() 에서 부른다 — 소유자별 보기면 rows 가 그 소유자 것으로 바뀌어 있다
 function renderMobileHome(series) {
   var s = series.length ? monthSummary(monthKeyOf(new Date())) : null;
   var m1 = series.length ? mLastMonth(series) : null;
-  $('mHelloT').textContent = mGreet();
-  $('mHelloS').textContent = mHelloSub(series, m1);
+  mHelloRender(!series.length);
   $('mHome').hidden = !series.length;
   if (!series.length) return;
   mRenderHero(series, m1);
@@ -12275,9 +12568,10 @@ function mSyncDots() {
    네이버페이 증권 AI 브리핑(시황)의 가장 최신 글 — 첫 카드는 제목, 다음 카드부터 요약 한 줄씩. 옆으로 밀거나 눌러서 넘긴다.
    브라우저에서는 네이버를 바로 부를 수 없어서(CORS) 배포할 때 · 매시 정각 무렵(3 · 23 · 43분)에 GitHub Actions 가
    briefing.json 으로 받아 둔다 (.github/scripts/briefing.py). 앱은 투자 탭을 열 때와 매시 정각 1분 뒤에 이 파일을 다시 읽고
-   (이번 시 글이 아직이면 30분까지 5분마다, 그 뒤로 10분마다), 마지막으로 받은 글은 이 기기에 두어 다음에 바로 보여 준다. */
+   (이번 시 글이 아직이면 30분까지 5분마다, 그 뒤로 10분마다), 이 파일이 이번 시보다 이르면 중계로 네이버를 직접 확인한다.
+   마지막으로 받은 글은 이 기기에 두어 다음에 바로 보여 준다. */
 var M_NEWS_KEY = 'asset_pc_m_news';
-var mNews = { data: null, busy: false, err: false, at: 0, timer: 0, raf: 0, shown: '' };
+var mNews = { data: null, busy: false, err: false, at: 0, timer: 0, raf: 0, shown: '', relayAt: 0 };
 // 모양이 맞는 브리핑만 — 이 기기에 둔 글이 깨져 있어도 앱 시작을 막지 않게
 function mNewsOk(d) {
   return !!d && typeof d.title === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.date) && d.hour >= 0 && d.hour < 24 &&
@@ -12359,6 +12653,44 @@ $('mNewsTrack').addEventListener('click', function (e) {
   var end = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
   track.scrollTo({ left: end ? 0 : track.scrollLeft + cards[1].offsetLeft - cards[0].offsetLeft, behavior: 'smooth' });
 });
+// 받은 글을 쓴다 — 지금 글보다 이르면 버림(사이트 파일이 이 기기에 둔 글보다 늦을 수 있어서)
+function mNewsUse(d) {
+  var old = mNews.data;
+  if (!mNewsOk(d) || old && (mNewsHour(d) < mNewsHour(old) || mNewsHour(d) === mNewsHour(old) && d.id < old.id)) return;
+  mNews.data = d;
+  mNews.err = false;
+  lsSet(M_NEWS_KEY, JSON.stringify(d));
+  // 같은 글이면 그대로 둔다 (보던 카드 자리 유지) — 날짜 표시(오늘 · 어제)가 바뀔 때만 다시 그림
+  if (!old || old.id !== d.id || old.title !== d.title || String(old.points) !== String(d.points) || mNews.shown !== mNewsWhen(d)) mNewsRender();
+}
+// 네이버에서 바로 — 브라우저에서는 막혀 있어서 중계(r.jina.ai, 마을 뉴스와 같은 방법)로. 사이트의 briefing.json 이
+// 이번 시보다 이를 때(GitHub 예약 실행이 늦거나 안 돌 때)만, 15분에 한 번까지. 오늘 글이 아직 없으면 어제 글
+function mNewsRelay() {
+  if (Date.now() - mNews.relayAt < 15 * 60e3) return null;
+  mNews.relayAt = Date.now();
+  var today = mNewsNowHour().slice(0, 10), yday = new Date(Date.parse(today) - 864e5).toISOString().slice(0, 10);
+  function plain(v) {
+    var t = document.createElement('textarea');
+    t.innerHTML = String(v || '').replace(/<[^>]+>/g, '');
+    return t.value.replace(/\s+/g, ' ').trim();
+  }
+  function one(day) {
+    return fetch('https://r.jina.ai/https://m.stock.naver.com/front-api/briefing/market/list?date=' + day + '%26pageSize=1', { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('중계 ' + r.status); return r.text(); })
+      .then(function (text) {
+        var a = text.indexOf('{'), b = text.lastIndexOf('}');
+        if (a < 0 || b < a) throw new Error('중계 응답');
+        var it = ((JSON.parse(text.slice(a, b + 1)).result || {}).items || [])[0];
+        if (!it) return null;
+        return {
+          id: it.id, date: it.briefingDate, hour: parseInt(it.briefingHour, 10), title: plain(it.title),
+          points: String(it.summary || '').split('\n').map(plain).filter(Boolean),
+          url: 'https://m.stock.naver.com/briefing/market/posts/' + it.id, fetched: new Date().toISOString()
+        };
+      });
+  }
+  return one(today).then(function (d) { return d || one(yday); });
+}
 function mNewsLoad() {
   if (location.protocol === 'file:' || mNews.busy) return;
   mNews.busy = true;
@@ -12366,19 +12698,14 @@ function mNewsLoad() {
   if (!mNews.data) mNewsRender();
   fetch('briefing.json?t=' + Date.now(), { cache: 'no-store' })
     .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(function (d) {
-      if (!mNewsOk(d)) throw new Error('브리핑 모양이 달라요');
-      var old = mNews.data;
-      mNews.data = d;
-      mNews.err = false;
-      lsSet(M_NEWS_KEY, JSON.stringify(d));
-      // 같은 글이면 그대로 둔다 (보던 카드 자리 유지) — 날짜 표시(오늘 · 어제)가 바뀔 때만 다시 그림
-      if (!old || old.id !== d.id || old.title !== d.title || String(old.points) !== String(d.points) || mNews.shown !== mNewsWhen(d)) mNewsRender();
-    })
-    .catch(function () { mNews.err = true; })
+    .then(mNewsUse)
+    .catch(function () {})
+    .then(function () { return mNews.data && mNewsHour(mNews.data) >= mNewsNowHour() ? null : mNewsRelay(); })
+    .then(function (d) { if (d) mNewsUse(d); })
+    .catch(function () {})
     .then(function () {
       mNews.busy = false;
-      if (!mNews.data) mNewsRender();
+      if (!mNews.data) { mNews.err = true; mNewsRender(); }
       mNewsPlan();
     });
 }
@@ -12401,6 +12728,7 @@ function mNewsOnShow() {
 }
 document.addEventListener('visibilitychange', function () { if (!document.hidden) mNewsOnShow(); });
 mMq.addEventListener('change', mNewsOnShow);   // PC 폭에서 휴대폰 폭으로 줄였을 때
+mMq.addEventListener('change', mHelloOnShow);
 if (mNews.data) mNewsRender();
 mNewsOnShow();
 
