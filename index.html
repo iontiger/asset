@@ -1888,7 +1888,7 @@
      사이드바 대신 위에는 상단바(브랜드 · 알림 · 테마), 아래에는 탭(홈 · 자산 · ＋ · 투자 · 더보기).
      대시보드 위쪽은 인사말 · 순자산 · 자산 구성 · 이번 달 자산 변화 카드로 바꾸고, 그 아래로 차트 · 미래 예상 등이 이어진다.
      넓은 화면에서는 이 요소들을 모두 숨긴다. */
-  .m-bar, .m-hello, .m-home, .m-tabs, .a-group .g-ic, .a-group .g-sum-k, .in-group .g-ic, .in-amt-m { display:none; }
+  .m-bar, .m-hello, .m-home, .m-tabs, .m-news, .a-group .g-ic, .a-group .g-sum-k, .in-group .g-ic, .in-amt-m { display:none; }
 
   /* 아래에서 올라오는 창 (＋ 기록하기 · 더보기 · 알림) — 휴대폰 메뉴에서만 열린다 */
   /* 창 밖(어두운 곳)을 끌어도 뒤 화면이 움직이지 않고, 창 안을 끝까지 넘겨도 뒤로 번지지 않게 */
@@ -2276,6 +2276,59 @@
     #inputList .in-last .d { margin-top:0; font-size:.76rem; }
     #inputList .in-diff .d { font-size:.76rem; }
 
+    /* ── 투자 탭 맨 위: AI 시황 브리핑 카드 뉴스 — 그림자 카드를 옆으로 밀어서 넘긴다 (다음 카드가 오른쪽에 살짝 보임) ── */
+    body[data-view="rebal"] .m-news:not([hidden]) { display:block; }
+    .m-news { margin:0 -16px 2px; }
+    .m-news-track {
+      display:flex; gap:12px; overflow-x:auto; overscroll-behavior-x:contain;
+      scroll-snap-type:x mandatory; scroll-padding-inline:16px; scrollbar-width:none;
+      padding:8px 16px 28px;   /* 아래 여백 = 그림자 자리 */
+    }
+    .m-news-track::-webkit-scrollbar { display:none; }
+    .m-news-card {
+      flex:0 0 min(calc(100% - 20px), 360px); min-height:184px; scroll-snap-align:start; scroll-snap-stop:always;
+      display:flex; flex-direction:column; gap:12px; padding:18px 18px 15px; border-radius:20px;
+      background:var(--surface); color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent;
+      box-shadow:0 16px 28px -12px rgba(16,24,40,.4), 0 4px 10px rgba(16,24,40,.1);
+    }
+    :root[data-theme="dark"] .m-news-card { box-shadow:0 0 0 1px rgba(255,255,255,.07), 0 16px 30px -12px rgba(0,0,0,.9); }
+    .m-news-lead {
+      color:#fff;
+      background:
+        radial-gradient(120% 80% at 100% 0%, rgba(96,140,255,.45), transparent 60%),
+        linear-gradient(165deg, #25385f 0%, #182545 52%, #0f1a31 100%);
+      box-shadow:0 18px 30px -12px rgba(15,26,49,.66), 0 4px 10px rgba(15,26,49,.18);
+    }
+    :root[data-theme="dark"] .m-news-lead { box-shadow:0 0 0 1px rgba(140,170,255,.16), 0 16px 32px -12px rgba(0,0,0,.9); }
+    .m-news-top { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:.8rem; font-weight:700; color:rgba(255,255,255,.72); }
+    .m-news-tag {
+      display:inline-flex; align-items:center; gap:5px; padding:4px 10px 4px 8px; border-radius:99px;
+      background:rgba(255,255,255,.14); color:#fff; font-size:.76rem; font-weight:800;
+    }
+    .m-news-tag svg { width:14px; height:14px; }
+    .m-news-title { margin:auto 0; font-size:1.26rem; line-height:1.42; font-weight:800; letter-spacing:-.02em; word-break:keep-all; overflow-wrap:anywhere; }
+    .m-news-foot { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:.78rem; font-weight:600; color:var(--muted); }
+    .m-news-lead .m-news-foot { color:rgba(255,255,255,.7); }
+    .m-news-lead .m-chev { width:18px; height:18px; color:rgba(255,255,255,.8); }
+    .m-news-no { font-size:1.5rem; line-height:1; font-weight:800; letter-spacing:-.02em; color:var(--accent); font-variant-numeric:tabular-nums; }
+    .m-news-no small { margin-left:3px; font-size:.8rem; font-weight:700; letter-spacing:0; color:var(--muted); }
+    .m-news-text { margin:auto 0; font-size:1.04rem; line-height:1.62; font-weight:600; letter-spacing:-.01em; word-break:keep-all; overflow-wrap:anywhere; }
+    .m-news-src { color:inherit; text-decoration:none; }
+    a.m-news-src:active { color:var(--accent); }
+    .m-news-retry {
+      align-self:flex-start; padding:8px 14px; border:none; border-radius:99px; cursor:pointer;
+      font:inherit; font-size:.84rem; font-weight:800; color:#fff; background:rgba(255,255,255,.18);
+    }
+    .m-news-sk { margin:auto 0; display:grid; gap:10px; }
+    .m-news-sk i { display:block; height:15px; border-radius:8px; background:rgba(255,255,255,.16); animation:mNewsSk 1.1s ease-in-out infinite alternate; }
+    .m-news-sk i + i { width:62%; }
+    @keyframes mNewsSk { to { opacity:.45; } }
+    .m-news-dots { display:flex; justify-content:center; gap:6px; margin:-16px 0 8px; }
+    .m-news-dots[hidden] { display:none; }
+    .m-news-dots i { width:6px; height:6px; border-radius:99px; background:var(--muted); opacity:.35; transition:width .25s, opacity .25s, background .25s; }
+    .m-news-dots i.on { width:18px; opacity:1; background:var(--accent); }
+    @media (prefers-reduced-motion: reduce) { .m-news-sk i { animation:none; } }
+
     /* 금액 가리기 (눈 아이콘) — 새 카드들의 금액만 흐리게 */
     body.m-masked .m-amt { filter:blur(9px); user-select:none; -webkit-user-select:none; }
 
@@ -2408,6 +2461,13 @@
 <!-- ═════════════ 메인 ═════════════ -->
 <main class="main">
 <div class="main-inner">
+  <!-- 휴대폰 투자 탭 맨 위 — AI 시황 브리핑 카드 뉴스 (연금 리밸런싱 제목보다 위). 첫 카드는 제목, 다음 카드부터 요약 한 줄씩.
+       옆으로 밀어서 넘긴다. 내용은 briefing.json — 배포할 때 · 매시 정각에 GitHub Actions 가 네이버에서 받아 둔다 -->
+  <section class="m-news" id="mNews" aria-label="AI 시황 브리핑" hidden>
+    <div class="m-news-track" id="mNewsTrack"></div>
+    <div class="m-news-dots" id="mNewsDots" aria-hidden="true"></div>
+  </section>
+
   <header class="topbar" id="topbar">
     <div>
       <h2 id="viewTitle">대시보드</h2>
@@ -7902,7 +7962,7 @@ function switchView(v) {
   if (v === 'home') renderHome();
   if (v === 'list') drawDetailChart();
   // 가격(전일 종가)은 리밸런싱 화면을 처음 열 때 불러온다 (앱 시작을 느리게 하지 않게)
-  if (v === 'rebal') { if (!rb.prices && !rb.loading) rbLoadPrices(); renderRebal(); }
+  if (v === 'rebal') { if (!rb.prices && !rb.loading) rbLoadPrices(); renderRebal(); mNewsOnShow(); }
   $('rbSaveBar').hidden = !(rb.dirty && v === 'rebal');
   if (v === 'badges') { renderBadges(); updateBadgeNav(); }
   document.body.classList.toggle('explore-on', v === 'explore');
@@ -12210,6 +12270,139 @@ function mSyncDots() {
   $('mMoreBadge').textContent = nB;
   $('mMoreBadge').classList.toggle('show', !!nB);
 }
+
+/* ── 투자 탭 맨 위: AI 시황 브리핑 카드 뉴스 ──
+   네이버페이 증권 AI 브리핑(시황)의 가장 최신 글 — 첫 카드는 제목, 다음 카드부터 요약 한 줄씩. 옆으로 밀거나 눌러서 넘긴다.
+   브라우저에서는 네이버를 바로 부를 수 없어서(CORS) 배포할 때 · 매시 정각에 GitHub Actions 가 briefing.json 으로 받아 둔다
+   (.github/scripts/briefing.py). 앱은 투자 탭을 열 때와 매시 정각 1분 뒤에 이 파일을 다시 읽고(이번 시 글이 아직이면
+   30분까지 5분마다), 마지막으로 받은 글은 이 기기에 두어 다음에 바로 보여 준다. */
+var M_NEWS_KEY = 'asset_pc_m_news';
+var mNews = { data: null, busy: false, err: false, at: 0, timer: 0, raf: 0, shown: '' };
+// 모양이 맞는 브리핑만 — 이 기기에 둔 글이 깨져 있어도 앱 시작을 막지 않게
+function mNewsOk(d) {
+  return !!d && typeof d.title === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.date) && d.hour >= 0 && d.hour < 24 &&
+    (d.points == null || Array.isArray(d.points));
+}
+try { var mNewsSaved = JSON.parse(lsGet(M_NEWS_KEY) || 'null'); if (mNewsOk(mNewsSaved)) mNews.data = mNewsSaved; } catch (e) {}
+function mNewsNowHour() { return new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 13); }   // 한국 시간 'YYYY-MM-DDTHH'
+function mNewsHour(d) { return d.date + 'T' + ('0' + d.hour).slice(-2); }
+function mNewsWhen(d) {   // 오늘 14:00 · 어제 23:00 · 9월 26일 12:00
+  var today = mNewsNowHour().slice(0, 10), yday = new Date(Date.parse(today) - 864e5).toISOString().slice(0, 10);
+  var p = d.date.split('-');
+  return (d.date === today ? '오늘' : d.date === yday ? '어제' : +p[1] + '월 ' + +p[2] + '일') + ' ' + ('0' + d.hour).slice(-2) + ':00';
+}
+function mNewsCard(cls) {
+  var c = el('article', 'm-news-card' + (cls ? ' ' + cls : ''));
+  $('mNewsTrack').appendChild(c);
+  return c;
+}
+var M_NEWS_TAG = '<span class="m-news-tag">' + ico('sparkles') + 'AI 시황 브리핑</span>';
+function mNewsRender() {
+  var d = mNews.data, track = $('mNewsTrack');
+  $('mNews').hidden = location.protocol === 'file:';
+  track.innerHTML = '';
+  if (!d) {   // 처음 — 불러오는 중이거나 못 불러옴
+    var c = mNewsCard('m-news-lead');
+    c.innerHTML = '<div class="m-news-top">' + M_NEWS_TAG + '</div>';
+    if (mNews.err && !mNews.busy) {
+      c.appendChild(el('p', 'm-news-title', '시황 브리핑을 불러오지 못했어요'));
+      var b = el('button', 'm-news-retry', '다시 시도');
+      b.type = 'button';
+      b.addEventListener('click', mNewsLoad);
+      c.appendChild(b);
+    } else c.insertAdjacentHTML('beforeend', '<div class="m-news-sk" role="status" aria-label="불러오는 중"><i></i><i></i></div>');
+    mNews.shown = '';
+  } else {
+    var pts = (d.points || []).slice(0, 9), n = pts.length, two = function (k) { return ('0' + k).slice(-2); };
+    var link = /^https:\/\/m\.stock\.naver\.com\//.test(d.url || '');
+    var lead = mNewsCard('m-news-lead');
+    lead.innerHTML = '<div class="m-news-top">' + M_NEWS_TAG + '<time></time></div><h3 class="m-news-title"></h3>' +
+      '<div class="m-news-foot"><span></span>' + (n ? M_CHEV : '') + '</div>';
+    lead.querySelector('time').textContent = mNews.shown = mNewsWhen(d);
+    lead.querySelector('h3').textContent = d.title;
+    lead.querySelector('.m-news-foot span').textContent = n ? '핵심 ' + n + '가지 · 옆으로 넘겨 보세요' : '네이버페이 증권 AI 브리핑';
+    lead.setAttribute('aria-label', '1 / ' + (n + 1));
+    pts.forEach(function (t, i) {
+      var c = mNewsCard();
+      c.innerHTML = '<div class="m-news-top"><span class="m-news-no">' + two(i + 1) + '<small>/' + two(n) + '</small></span></div>' +
+        '<p class="m-news-text"></p><div class="m-news-foot"></div>';
+      c.querySelector('p').textContent = t;
+      var src = el(link ? 'a' : 'span', 'm-news-src', '네이버페이 증권 AI 브리핑' + (link ? ' · 원문 ›' : ''));
+      if (link) { src.href = d.url; src.target = '_blank'; src.rel = 'noopener'; }
+      c.querySelector('.m-news-foot').appendChild(src);
+      c.setAttribute('aria-label', (i + 2) + ' / ' + (n + 1));
+    });
+  }
+  track.scrollLeft = 0;
+  mNewsDots();
+}
+// 아래 점 — 지금 보고 있는 카드
+function mNewsDots() {
+  var track = $('mNewsTrack'), cards = track.children, n = cards.length, box = $('mNewsDots');
+  if (box.children.length !== n) {
+    box.innerHTML = '';
+    for (var i = 0; i < n; i++) box.appendChild(el('i'));
+  }
+  box.hidden = n < 2;
+  if (n < 2) return;
+  var step = cards[1].offsetLeft - cards[0].offsetLeft || 1;
+  var at = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2 ? n - 1 : Math.round(track.scrollLeft / step);
+  [].forEach.call(box.children, function (dot, k) { dot.classList.toggle('on', k === at); });
+}
+$('mNewsTrack').addEventListener('scroll', function () {
+  if (!mNews.raf) mNews.raf = requestAnimationFrame(function () { mNews.raf = 0; mNewsDots(); });
+}, { passive: true });
+// 카드를 누르면 다음 카드로 (마지막 카드에서는 처음으로)
+$('mNewsTrack').addEventListener('click', function (e) {
+  var track = this, cards = track.children;
+  if (e.target.closest('a, button') || cards.length < 2) return;
+  var end = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
+  track.scrollTo({ left: end ? 0 : track.scrollLeft + cards[1].offsetLeft - cards[0].offsetLeft, behavior: 'smooth' });
+});
+function mNewsLoad() {
+  if (location.protocol === 'file:' || mNews.busy) return;
+  mNews.busy = true;
+  mNews.at = Date.now();
+  if (!mNews.data) mNewsRender();
+  fetch('briefing.json?t=' + Date.now(), { cache: 'no-store' })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (d) {
+      if (!mNewsOk(d)) throw new Error('브리핑 모양이 달라요');
+      var old = mNews.data;
+      mNews.data = d;
+      mNews.err = false;
+      lsSet(M_NEWS_KEY, JSON.stringify(d));
+      // 같은 글이면 그대로 둔다 (보던 카드 자리 유지) — 날짜 표시(오늘 · 어제)가 바뀔 때만 다시 그림
+      if (!old || old.id !== d.id || old.title !== d.title || String(old.points) !== String(d.points) || mNews.shown !== mNewsWhen(d)) mNewsRender();
+    })
+    .catch(function () { mNews.err = true; })
+    .then(function () {
+      mNews.busy = false;
+      if (!mNews.data) mNewsRender();
+      mNewsPlan();
+    });
+}
+// 다음에 다시 읽을 때 — 매시 정각 1분 뒤. 이번 시 글이 아직이면 30분까지는 5분마다 (정각 실행이 몇 분 늦게 돌기도 해서)
+function mNewsPlan() {
+  clearTimeout(mNews.timer);
+  var now = new Date(), min = now.getUTCMinutes();
+  var wait = (60 - min) * 60e3 - now.getUTCSeconds() * 1e3 + 60e3;
+  if ((!mNews.data || mNewsHour(mNews.data) < mNewsNowHour()) && min < 30) wait = Math.min(wait, 5 * 60e3);
+  mNews.timer = setTimeout(function () {
+    if (!document.hidden && isMobile() && currentView === 'rebal') mNewsLoad();
+  }, wait);
+}
+// 투자 탭을 열 때 · 앱으로 돌아올 때 — 5분이 지났거나 시가 바뀌었으면 다시 읽는다
+function mNewsOnShow() {
+  if (!mNews || !isMobile() || currentView !== 'rebal') return;
+  var due = !mNews.at || Date.now() - mNews.at > 5 * 60e3 || new Date(mNews.at).getUTCHours() !== new Date().getUTCHours();
+  if (due) mNewsLoad(); else mNewsPlan();
+}
+document.addEventListener('visibilitychange', function () { if (!document.hidden) mNewsOnShow(); });
+mMq.addEventListener('change', mNewsOnShow);   // PC 폭에서 휴대폰 폭으로 줄였을 때
+if (mNews.data) mNewsRender();
+mNewsOnShow();
+
 mSyncTabs();
 mSyncDots();
 
