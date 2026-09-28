@@ -4304,6 +4304,7 @@ function doAct(act) {
   else if (act === 'local') openLocal();
   else if (act === 'cloudReload') openCloud(store.mode, '다시 불러왔습니다');
   else if (act === 'cloudOff') disconnectCloud();
+  else if (act === 'copySql') copyText(SUPABASE_SQL, 'SQL을 복사했습니다 — Supabase SQL Editor 에 붙여넣고 Run');
   else if (act === 'cloud') {   // 설정 창의 클라우드 연동 칸으로
     openSettings();
     setTimeout(function () { $('cloudSec').scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 80);
@@ -11031,14 +11032,21 @@ async function sbLoad(cfg) {
       throw e;
     })
   ]);
-  var noState = r[2] === null, st = {};
-  if (noState) { try { st = JSON.parse(lsGet(SB_LOCAL_STATE) || '{}') || {}; } catch (e) { st = {}; } }
-  else r[2].forEach(function (x) { st[x.key] = x.value; });
+  var noState = r[2] === null, st = {}, local = {}, migrate = false;
+  try { local = JSON.parse(lsGet(SB_LOCAL_STATE) || '{}') || {}; } catch (e) { local = {}; }
+  if (noState) st = local;
+  else {
+    r[2].forEach(function (x) { st[x.key] = x.value; });
+    // app_state 를 나중에 만든 경우 — 표가 없을 때 이 브라우저에 두었던 목표 · 뱃지 · 연금을 옮겨 간다
+    ['settings', 'badges', 'pension'].forEach(function (k) {
+      if (st[k] == null && local[k] != null && !(Array.isArray(local[k]) && !local[k].length)) { st[k] = local[k]; migrate = true; }
+    });
+  }
   var owners = r[0].slice().sort(function (a, b) {
     return (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0) || String(a.id).localeCompare(String(b.id));
   });
   return {
-    noState: noState,
+    noState: noState, migrate: migrate,
     owners: owners.map(function (o) { return { id: String(o.id), name: String(o.name == null ? o.id : o.name) }; }),
     assets: r[1].map(function (a) {
       return { date: String(a.date).slice(0, 10), name: a.name, amount: Number(a.amount) || 0,
@@ -11187,9 +11195,30 @@ function applyCloudDb(db) {
   }
   applyDb({ owners: owners.length ? owners : undefined, assets: db.assets, settings: db.settings || {}, badges: db.badges, pension: db.pension });
   cloud.noState = !!db.noState;
+  cloud.migrate = !!db.migrate;
   cloud.count = (db.assets || []).length;
   cloud.updatedAt = db.updatedAt || null;
   cloud.snap = store.mode === 'supabase' ? sbShape(db).cur : null;
+}
+// 불러온 뒤: 이 브라우저에만 있던 값을 app_state 로 올리거나, app_state 가 없으면 그 사실을 알린다
+async function afterCloudLoad() {
+  if (store.mode !== 'supabase') return;
+  if (cloud.noState) {
+    setBanner('<span>' + ico('alert') + ' 이 Supabase 프로젝트에는 <b>app_state</b> 표가 없어서 <b>목표 · 뱃지 · 연금 포트폴리오</b>가 이 기기에만 저장되고 다른 기기와 맞춰지지 않습니다. ' +
+      '<b>SQL 복사</b> → Supabase <b>SQL Editor</b> 에 붙여넣고 <b>Run</b> 한 뒤 다시 불러오세요 (여러 번 실행해도 안전).</span>' +
+      '<span class="banner-acts"><button class="btn btn-ghost btn-sm" data-act="copySql">SQL 복사</button>' +
+      '<button class="btn btn-ghost btn-sm" data-act="cloudReload">↻ 다시 불러오기</button></span>');
+    return;
+  }
+  if (!cloud.migrate) return;
+  cloud.migrate = false;
+  try {
+    await persist();
+    lsDel(SB_LOCAL_STATE);
+    showToast('이 기기에 있던 목표 · 뱃지 · 연금을 Supabase 로 옮겼습니다 — 이제 다른 기기에서도 보여요');
+  } catch (e) {
+    cloud.migrate = true;   // 다음에 불러올 때 다시 시도
+  }
 }
 function startEmptyData() {
   OWNERS = DEFAULT_OWNERS.slice();
@@ -11215,6 +11244,7 @@ async function openCloud(m, okMsg) {
     setBanner('');
     setStoreState('loaded');
     if (okMsg) showToast(okMsg);
+    await afterCloudLoad();
   } catch (e) {
     rows = [];
     setStoreState('error', e.message);
@@ -11270,6 +11300,7 @@ async function connectCloud(m) {
     }
     setBanner('');
     setStoreState('saved');
+    await afterCloudLoad();
     renderAll();
     showToast(cloudName(m) + ' 에 연결했습니다' + (upload ? ' — 지금 기록을 올렸어요' : ''));
   } catch (e) {
