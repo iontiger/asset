@@ -1,0 +1,33 @@
+# 코스피·코스닥 슬로우 스토캐스틱(14,3,3) 매수/매도 신호 종목을 전 영업일 종가 기준, 시가총액 순으로 5개씩 뽑는다.
+# 사이트와는 상관없다 — 결과는 실행 로그와 요약(Summary)에만 남기고 커밋하지 않는다. 프로젝트 채팅의 루틴이 읽어 간다.
+# 이 컨테이너 밖(GitHub 러너)에서 돌리는 이유: 종목마스터(nhplug.com)·네이버 일봉을 받을 수 있어서.
+name: Slow stochastic screen
+
+on:
+  schedule:
+    - cron: '45 1 * * 1-5'   # 평일 10:45 KST. GitHub 사정으로 지연될 수 있음
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/scripts/stoch_screen.py
+      - .github/workflows/stoch-screen.yml
+
+permissions:
+  contents: read
+
+jobs:
+  screen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 스크린 실행
+        run: |
+          python3 .github/scripts/stoch_screen.py out
+          cat out/result.md >> "$GITHUB_STEP_SUMMARY"
+          echo "=== RESULT JSON ==="
+          cat out/result.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stoch-screen
+          path: out/
+          retention-days: 14
