@@ -12568,9 +12568,10 @@ function mSyncDots() {
    네이버페이 증권 AI 브리핑(시황)의 가장 최신 글 — 첫 카드는 제목, 다음 카드부터 요약 한 줄씩. 옆으로 밀거나 눌러서 넘긴다.
    브라우저에서는 네이버를 바로 부를 수 없어서(CORS) 배포할 때 · 매시 정각 무렵(3 · 23 · 43분)에 GitHub Actions 가
    briefing.json 으로 받아 둔다 (.github/scripts/briefing.py). 앱은 투자 탭을 열 때와 매시 정각 1분 뒤에 이 파일을 다시 읽고
-   (이번 시 글이 아직이면 30분까지 5분마다, 그 뒤로 10분마다), 마지막으로 받은 글은 이 기기에 두어 다음에 바로 보여 준다. */
+   (이번 시 글이 아직이면 30분까지 5분마다, 그 뒤로 10분마다), 이 파일이 이번 시보다 이르면 중계로 네이버를 직접 확인한다.
+   마지막으로 받은 글은 이 기기에 두어 다음에 바로 보여 준다. */
 var M_NEWS_KEY = 'asset_pc_m_news';
-var mNews = { data: null, busy: false, err: false, at: 0, timer: 0, raf: 0, shown: '' };
+var mNews = { data: null, busy: false, err: false, at: 0, timer: 0, raf: 0, shown: '', relayAt: 0 };
 // 모양이 맞는 브리핑만 — 이 기기에 둔 글이 깨져 있어도 앱 시작을 막지 않게
 function mNewsOk(d) {
   return !!d && typeof d.title === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.date) && d.hour >= 0 && d.hour < 24 &&
@@ -12652,6 +12653,44 @@ $('mNewsTrack').addEventListener('click', function (e) {
   var end = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
   track.scrollTo({ left: end ? 0 : track.scrollLeft + cards[1].offsetLeft - cards[0].offsetLeft, behavior: 'smooth' });
 });
+// 받은 글을 쓴다 — 지금 글보다 이르면 버림(사이트 파일이 이 기기에 둔 글보다 늦을 수 있어서)
+function mNewsUse(d) {
+  var old = mNews.data;
+  if (!mNewsOk(d) || old && (mNewsHour(d) < mNewsHour(old) || mNewsHour(d) === mNewsHour(old) && d.id < old.id)) return;
+  mNews.data = d;
+  mNews.err = false;
+  lsSet(M_NEWS_KEY, JSON.stringify(d));
+  // 같은 글이면 그대로 둔다 (보던 카드 자리 유지) — 날짜 표시(오늘 · 어제)가 바뀔 때만 다시 그림
+  if (!old || old.id !== d.id || old.title !== d.title || String(old.points) !== String(d.points) || mNews.shown !== mNewsWhen(d)) mNewsRender();
+}
+// 네이버에서 바로 — 브라우저에서는 막혀 있어서 중계(r.jina.ai, 마을 뉴스와 같은 방법)로. 사이트의 briefing.json 이
+// 이번 시보다 이를 때(GitHub 예약 실행이 늦거나 안 돌 때)만, 15분에 한 번까지. 오늘 글이 아직 없으면 어제 글
+function mNewsRelay() {
+  if (Date.now() - mNews.relayAt < 15 * 60e3) return null;
+  mNews.relayAt = Date.now();
+  var today = mNewsNowHour().slice(0, 10), yday = new Date(Date.parse(today) - 864e5).toISOString().slice(0, 10);
+  function plain(v) {
+    var t = document.createElement('textarea');
+    t.innerHTML = String(v || '').replace(/<[^>]+>/g, '');
+    return t.value.replace(/\s+/g, ' ').trim();
+  }
+  function one(day) {
+    return fetch('https://r.jina.ai/https://m.stock.naver.com/front-api/briefing/market/list?date=' + day + '%26pageSize=1', { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('중계 ' + r.status); return r.text(); })
+      .then(function (text) {
+        var a = text.indexOf('{'), b = text.lastIndexOf('}');
+        if (a < 0 || b < a) throw new Error('중계 응답');
+        var it = ((JSON.parse(text.slice(a, b + 1)).result || {}).items || [])[0];
+        if (!it) return null;
+        return {
+          id: it.id, date: it.briefingDate, hour: parseInt(it.briefingHour, 10), title: plain(it.title),
+          points: String(it.summary || '').split('\n').map(plain).filter(Boolean),
+          url: 'https://m.stock.naver.com/briefing/market/posts/' + it.id, fetched: new Date().toISOString()
+        };
+      });
+  }
+  return one(today).then(function (d) { return d || one(yday); });
+}
 function mNewsLoad() {
   if (location.protocol === 'file:' || mNews.busy) return;
   mNews.busy = true;
@@ -12659,19 +12698,14 @@ function mNewsLoad() {
   if (!mNews.data) mNewsRender();
   fetch('briefing.json?t=' + Date.now(), { cache: 'no-store' })
     .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(function (d) {
-      if (!mNewsOk(d)) throw new Error('브리핑 모양이 달라요');
-      var old = mNews.data;
-      mNews.data = d;
-      mNews.err = false;
-      lsSet(M_NEWS_KEY, JSON.stringify(d));
-      // 같은 글이면 그대로 둔다 (보던 카드 자리 유지) — 날짜 표시(오늘 · 어제)가 바뀔 때만 다시 그림
-      if (!old || old.id !== d.id || old.title !== d.title || String(old.points) !== String(d.points) || mNews.shown !== mNewsWhen(d)) mNewsRender();
-    })
-    .catch(function () { mNews.err = true; })
+    .then(mNewsUse)
+    .catch(function () {})
+    .then(function () { return mNews.data && mNewsHour(mNews.data) >= mNewsNowHour() ? null : mNewsRelay(); })
+    .then(function (d) { if (d) mNewsUse(d); })
+    .catch(function () {})
     .then(function () {
       mNews.busy = false;
-      if (!mNews.data) mNewsRender();
+      if (!mNews.data) { mNews.err = true; mNewsRender(); }
       mNewsPlan();
     });
 }
