@@ -8193,6 +8193,7 @@ $('goalForm').addEventListener('submit', function (e) {
   closeSheet('goalSheet');
   if (v === goalAmount) return;
   goalAmount = v;
+  if (isCloud()) lsSet(GOAL_LOCAL_KEY, String(v));   // 클라우드 연동 중에는 이 기기에만 둔다
   syncMarks();    // 새 목표 기준으로 10% 단계 기준선을 다시 잡는다 (바꾼 것만으로는 축하하지 않음)
   renderHome();   // 링 · 미래 예상 · 차트 목표선이 함께 바뀐다
   persistQuiet();
@@ -11023,6 +11024,7 @@ async function sbAll(cfg, path) {   // 한 번에 최대 1,000행이라 나눠 �
 }
 // app_state(목표 · 뱃지 · 연금) 테이블이 없는 예전 프로젝트면 그 값들은 이 브라우저에 저장한다
 var SB_LOCAL_STATE = 'asset_pc_sb_state';
+var GOAL_LOCAL_KEY = 'asset_pc_goal';   // 클라우드 연동 중 이 기기의 목표 자산
 async function sbLoad(cfg) {
   var r = await Promise.all([
     sbAll(cfg, 'owners?select=*'),
@@ -11194,22 +11196,21 @@ function applyCloudDb(db) {
     db.assets.forEach(function (a) { if (a.owner && !seen[a.owner]) { seen[a.owner] = 1; owners.push({ id: a.owner, name: a.owner }); } });
   }
   applyDb({ owners: owners.length ? owners : undefined, assets: db.assets, settings: db.settings || {}, badges: db.badges, pension: db.pension });
+  // 목표 자산은 클라우드 값을 쓰지 않고 기기마다 따로 둔다 (다른 기기의 저장이 목표를 20억으로 되돌리지 않게)
+  var myGoal = Number(lsGet(GOAL_LOCAL_KEY));
+  if (myGoal > 0) goalAmount = Math.round(myGoal);
+  else if (!db.noState) goalAmount = GOAL_DEFAULT;   // app_state 가 없으면 이미 이 브라우저 값(asset_pc_sb_state)이다
+  syncMarks();
   cloud.noState = !!db.noState;
   cloud.migrate = !!db.migrate;
   cloud.count = (db.assets || []).length;
   cloud.updatedAt = db.updatedAt || null;
   cloud.snap = store.mode === 'supabase' ? sbShape(db).cur : null;
 }
-// 불러온 뒤: 이 브라우저에만 있던 값을 app_state 로 올리거나, app_state 가 없으면 그 사실을 알린다
+// 불러온 뒤: 이 브라우저에만 있던 뱃지 · 연금 등을 app_state 로 올린다
 async function afterCloudLoad() {
   if (store.mode !== 'supabase') return;
-  if (cloud.noState) {
-    setBanner('<span>' + ico('alert') + ' 이 Supabase 프로젝트에는 <b>app_state</b> 표가 없어서 <b>목표 · 뱃지 · 연금 포트폴리오</b>가 이 기기에만 저장되고 다른 기기와 맞춰지지 않습니다. ' +
-      '<b>SQL 복사</b> → Supabase <b>SQL Editor</b> 에 붙여넣고 <b>Run</b> 한 뒤 다시 불러오세요 (여러 번 실행해도 안전).</span>' +
-      '<span class="banner-acts"><button class="btn btn-ghost btn-sm" data-act="copySql">SQL 복사</button>' +
-      '<button class="btn btn-ghost btn-sm" data-act="cloudReload">↻ 다시 불러오기</button></span>');
-    return;
-  }
+  if (cloud.noState) return;
   if (!cloud.migrate) return;
   cloud.migrate = false;
   try {
