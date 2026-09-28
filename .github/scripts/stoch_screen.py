@@ -5,6 +5,7 @@
  - 일봉(고가·저가·종가): 네이버 fchart
  - 매수 = %K 가 %D 를 위로 돌파(골든크로스), 매도 = 아래로 돌파(데드크로스). 마지막 완성 봉(오늘 봉 제외) 기준.
 사용: python3 .github/scripts/stoch_screen.py [출력폴더]   → result.json, result.md
+     python3 .github/scripts/stoch_screen.py _site --site <사이트 주소>   → _site/stoch.json (Pages 배포용, 휴대폰 투자 탭 카드)
 """
 import datetime as dt, json, os, re, sys, urllib.request
 
@@ -94,8 +95,7 @@ def cap_str(eok):
     return f"{eok / 10000:,.1f}조" if eok >= 10000 else f"{eok:,}억"
 
 
-def main():
-    outdir = sys.argv[1] if len(sys.argv) > 1 else "."
+def screen():
     now = dt.datetime.now(KST)
     today = now.strftime("%Y%m%d")
     stocks = universe()
@@ -121,20 +121,70 @@ def main():
         if sig and len(picks[sig[0]]) < TOP:
             picks[sig[0]].append({**s, "close": rows[-1][3], "k": round(sig[1], 1), "d": round(sig[2], 1)})
     b = f"{basis[:4]}-{basis[4:6]}-{basis[6:]}" if basis else None
-    res = {"runDate": now.date().isoformat(), "runAt": now.isoformat(timespec="seconds"),
-           "tradingToday": trading_today, "basisDate": b, "scanned": scanned, **picks}
-    lines = [f"슬로우 스토캐스틱(14,3,3) 신호, {b} 종가 기준, 시가총액 순 상위 {TOP}개"]
+    return {"runDate": now.date().isoformat(), "runAt": now.isoformat(timespec="seconds"),
+            "tradingToday": trading_today, "basisDate": b, "scanned": scanned, **picks}
+
+
+def to_md(res):
+    lines = [f"슬로우 스토캐스틱(14,3,3) 신호, {res['basisDate']} 종가 기준, 시가총액 순 상위 {TOP}개"]
     for key, title in (("buy", "매수 (골든크로스)"), ("sell", "매도 (데드크로스)")):
         lines.append(f"\n**{title}**")
-        if not picks[key]:
+        if not res[key]:
             lines.append("- 해당 종목 없음")
-        for i, p in enumerate(picks[key], 1):
+        for i, p in enumerate(res[key], 1):
             lines.append(f"{i}. {p['name']} ({p['market']}) 시총 {cap_str(p['cap'])}, 종가 {p['close']:,.0f}원, %K {p['k']} / %D {p['d']}")
+    return "\n".join(lines)
+
+
+def slot(run_at):
+    """같은 날 08시(KST) 전/후로 한 번씩만 새로 뽑는다 — 기준(전 영업일 종가)은 자정에만 바뀐다"""
+    d = dt.datetime.fromisoformat(run_at)
+    return d.date().isoformat() + ("am" if d.hour >= 8 else "early")
+
+
+def site_mode(outdir, site):
+    """Pages 배포용: <outdir>/stoch.json 을 쓰고 GITHUB_OUTPUT 에 changed=true|false.
+    이번 시간대에 이미 뽑아 둔 결과가 사이트에 있으면 다시 뽑지 않고, 못 뽑으면 사이트 것을 그대로 쓴다."""
+    live = None
+    try:
+        live = json.loads(get(f"{site.rstrip('/')}/stoch.json?t={int(dt.datetime.now().timestamp())}", 20).decode("utf-8"))
+    except Exception as e:
+        print(f"사이트에 있는 stoch.json 을 못 읽음 — {e}")
+    data = None
+    if live and live.get("runAt") and slot(live["runAt"]) == slot(dt.datetime.now(KST).isoformat()):
+        print("이번 시간대 결과가 이미 사이트에 있어 그대로 씁니다.")
+        data = live
+    else:
+        try:
+            data = screen()
+        except Exception as e:
+            print(f"::warning::스토캐스틱 신호를 뽑지 못했어요 — {e}")
+            data = live
+    if data:
+        os.makedirs(outdir, exist_ok=True)
+        json.dump(data, open(os.path.join(outdir, "stoch.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+        print(to_md(data))
+    same = bool(live and data) and all(live.get(k) == data.get(k) for k in ("basisDate", "buy", "sell"))
+    with open(os.environ.get("GITHUB_OUTPUT") or os.devnull, "a") as f:
+        f.write(f"changed={'false' if same else 'true'}\n")
+    print(f"changed={'false' if same else 'true'}")
+
+
+def main():
+    args = sys.argv[1:]
+    if "--site" in args:
+        i = args.index("--site")
+        site = args[i + 1]
+        del args[i:i + 2]
+        return site_mode(args[0] if args else ".", site)
+    outdir = args[0] if args else "."
+    res = screen()
+    md = to_md(res)
     os.makedirs(outdir, exist_ok=True)
     json.dump(res, open(os.path.join(outdir, "result.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-    open(os.path.join(outdir, "result.md"), "w", encoding="utf-8").write("\n".join(lines) + "\n")
-    print("\n".join(lines))
-    print(f"\n(tradingToday={trading_today}, scanned={scanned})")
+    open(os.path.join(outdir, "result.md"), "w", encoding="utf-8").write(md + "\n")
+    print(md)
+    print(f"\n(tradingToday={res['tradingToday']}, scanned={res['scanned']})")
 
 
 if __name__ == "__main__":
