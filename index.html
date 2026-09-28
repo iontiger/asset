@@ -1853,6 +1853,41 @@
     .a-group .g-count { display:none; }
   }
 
+  /* ── 자산 탭: PC 도 휴대폰처럼 그룹마다 카드, 한 칸 = 1줄 이름 · 금액 / 2줄 소유 · 최근 입력 · 증감.
+     항목을 누르면 PC 는 오른쪽 상세 패널, 휴대폰은 아래에서 올라오는 창 ── */
+  #listBody .a-table { background:none; border:0; border-radius:0; box-shadow:none; padding:0; }
+  #listBody .a-row.head { display:none; }
+  .a-gblock { background:var(--surface); border:1px solid var(--border); border-radius:18px; overflow:hidden; }
+  .a-gblock + .a-gblock { margin-top:12px; }
+  :root:not([data-theme="dark"]) .a-gblock { border-color:rgba(16,24,40,.06); box-shadow:0 1px 2px rgba(16,24,40,.04), 0 10px 24px -14px rgba(16,24,40,.12); }
+  /* 그룹 제목 칸 — 그룹 색으로 채워 카드 머리가 분명하게 (아이콘은 진한 원) */
+  #listBody .a-gblock .a-group {
+    padding:13px 16px 12px; gap:10px; font-size:1rem; font-weight:800; color:var(--ink);
+    background:color-mix(in srgb, var(--c) 18%, var(--surface));
+  }
+  :root[data-theme="dark"] #listBody .a-gblock .a-group { background:color-mix(in srgb, var(--c) 28%, var(--surface)); }
+  #listBody .a-group .g-dot, #listBody .a-group .g-sum, #listBody .a-group .g-share { display:none; }
+  #listBody .a-group .g-ic {
+    display:grid; place-items:center; width:30px; height:30px; border-radius:50%; flex:none;
+    color:#fff; background:var(--c);
+  }
+  #listBody .a-group .g-ic svg { width:17px; height:17px; }
+  #listBody .a-group .g-count { color:var(--ink-2); }
+  #listBody .a-group .g-sum-k { display:inline; margin-left:auto; font-size:.98rem; font-weight:800; white-space:nowrap; }
+  #listBody .a-group .g-sum-k.debt { color:var(--down); }
+  #listBody .a-item {
+    grid-template-columns:max-content max-content minmax(0,1fr) max-content;
+    grid-template-areas:"name name name amt" "owner date delta amt";
+    column-gap:10px; row-gap:4px; padding:12px 16px;
+  }
+  /* 로고 칸은 인라인 display:contents 래퍼라 안쪽 이미지까지 숨긴다 */
+  #listBody .a-item > :nth-child(1), #listBody .a-item > :nth-child(1) > *, #listBody .a-item > :nth-child(7) { display:none; }
+  #listBody .a-item > :nth-child(2) { grid-area:name; }
+  #listBody .a-item > :nth-child(3) { grid-area:owner; }
+  #listBody .a-item > :nth-child(4) { grid-area:date; }
+  #listBody .a-item > :nth-child(5) { grid-area:delta; text-align:left; }
+  #listBody .a-item > :nth-child(6) { grid-area:amt; }
+
   /* 입력 표 — 좁으면 변동을 금액 칸 아래로, 더 좁으면 마지막 기록을 이름 아래로 */
   @container intable (max-width: 760px) {
     .in-row {
@@ -1888,7 +1923,7 @@
      사이드바 대신 위에는 상단바(브랜드 · 알림 · 테마), 아래에는 탭(홈 · 자산 · ＋ · 투자 · 더보기).
      대시보드 위쪽은 인사말 · 순자산 · 자산 구성 · 이번 달 자산 변화 카드로 바꾸고, 그 아래로 차트 · 미래 예상 등이 이어진다.
      넓은 화면에서는 이 요소들을 모두 숨긴다. */
-  .m-bar, .m-hello, .m-home, .m-tabs, .m-news, .a-group .g-ic, .a-group .g-sum-k, .in-group .g-ic, .in-amt-m { display:none; }
+  .m-bar, .m-hello, .m-home, .m-tabs, .m-news, .in-group .g-ic, .in-amt-m { display:none; }
 
   /* 아래에서 올라오는 창 (＋ 기록하기 · 더보기 · 알림) — 휴대폰 메뉴에서만 열린다 */
   /* 창 밖(어두운 곳)을 끌어도 뒤 화면이 움직이지 않고, 창 안을 끝까지 넘겨도 뒤로 번지지 않게 */
@@ -2197,26 +2232,6 @@
     .list-toolbar .search input { width:100%; }
     .list-layout { display:block; }
     #detailPane { display:none; }
-    #listBody .a-table { background:none; border:0; border-radius:0; box-shadow:none; padding:0; }
-    .a-gblock { background:var(--surface); border:1px solid var(--border); border-radius:18px; overflow:hidden; }
-    .a-gblock + .a-gblock { margin-top:12px; }
-    :root:not([data-theme="dark"]) .a-gblock { border-color:rgba(16,24,40,.06); box-shadow:0 1px 2px rgba(16,24,40,.04), 0 10px 24px -14px rgba(16,24,40,.12); }
-    /* 그룹 제목 칸 — 그룹 색으로 채워 카드 머리가 분명하게 (아이콘은 진한 원) */
-    .a-gblock .a-group {
-      padding:13px 16px 12px; gap:10px; font-size:1rem; font-weight:800; color:var(--ink);
-      background:color-mix(in srgb, var(--c) 18%, var(--surface));
-    }
-    :root[data-theme="dark"] .a-gblock .a-group { background:color-mix(in srgb, var(--c) 28%, var(--surface)); }
-    .a-group .g-dot, .a-group .g-sum { display:none; }
-    .a-group .g-ic {
-      display:grid; place-items:center; width:30px; height:30px; border-radius:50%; flex:none;
-      color:#fff; background:var(--c);
-    }
-    .a-group .g-ic svg { width:17px; height:17px; }
-    .a-group .g-count { color:var(--ink-2); }
-    .a-group .g-sum-k { display:inline; margin-left:auto; font-size:.98rem; font-weight:800; white-space:nowrap; }
-    .a-group .g-sum-k.debt { color:var(--down); }
-    .a-gblock .a-item { padding-top:12px; padding-bottom:12px; }
     .a-item.sel { background:none; box-shadow:none; }
     .a-item:hover { background:none; }
     .a-item:active { background:var(--hover); }
