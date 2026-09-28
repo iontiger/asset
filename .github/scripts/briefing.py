@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # 네이버페이 증권 "AI 브리핑"(시황)의 가장 최신 글 하나를 briefing.json 으로 저장한다 — 휴대폰 투자 탭 맨 위 카드 뉴스.
-# 브라우저에서는 네이버 API 를 바로 부를 수 없어서(CORS 막힘) 배포할 때와 매시 정각에 GitHub Actions 가 받아 둔다.
+# 브라우저에서는 네이버 API 를 바로 부를 수 없어서(CORS 막힘) 배포할 때와 매시 정각 무렵(3 · 23 · 43분)에 GitHub Actions 가 받아 둔다.
 #
 #   python3 briefing.py <저장할 파일> <사이트 주소> <이벤트 이름> <커밋 7자리>
 #
 # - 오늘(한국 시간) 글이 아직 없으면(자정 넘어 첫 글 전 · 글이 없는 날) 하루씩 거슬러 올라가 찾는다
-# - 정각 실행인데 바로 전 시 글까지만 있으면(한 시간마다 올라오는 중) 이번 시 글을 15분까지 기다린다
+# - 그 시의 첫 예약 실행(20분 전)인데 바로 전 시 글까지만 있으면(한 시간마다 올라오는 중) 이번 시 글을 15분까지 기다린다
 #   (정각 글은 보통 10분 안에 올라온다. 장 마감 뒤처럼 더 안 올라오면 기다리기만 하고 끝)
 # - 네이버에서 못 받으면 지금 사이트에 있는 briefing.json 을 그대로 쓴다 (카드가 사라지지 않게)
-# - GITHUB_OUTPUT 에 deploy=true|false — 정각 실행에서 글이 그대로이고 사이트도 이 커밋이면 다시 올리지 않는다
+# - GITHUB_OUTPUT 에 deploy=true|false — 예약 실행에서 글이 그대로이고 사이트도 이 커밋이면 다시 올리지 않는다
 import datetime, html, json, os, re, sys, time, urllib.request
 
 API = 'https://m.stock.naver.com/front-api/briefing/market/list?date={}&pageSize=1'
@@ -46,8 +46,9 @@ def posted(it):
 
 def fetch(event):
     it = newest()
-    if it and event == 'schedule':
-        hour = datetime.datetime.now(KST).replace(minute=0, second=0, microsecond=0)
+    now = datetime.datetime.now(KST)
+    if it and event == 'schedule' and now.minute < 20:   # 그 시의 첫 확인에서만 (23 · 43분 확인은 기다리지 않음)
+        hour = now.replace(minute=0, second=0, microsecond=0)
         if posted(it) == hour - datetime.timedelta(hours=1):   # 한 시간마다 올라오는 중인데 이번 시 글은 아직
             print('이번 시 글을 기다려요 (지금 최신: %s시)' % it['briefingHour'])
             end = time.time() + WAIT
