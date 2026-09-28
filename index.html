@@ -2031,7 +2031,7 @@
       display:flex; align-items:center; gap:8px; min-width:0; padding:4px 0;
       border:none; background:none; color:var(--ink); font:inherit; cursor:pointer;
     }
-    .m-brand-ico { font-size:1.62rem; line-height:1; }
+    .m-brand-ico { width:32px; height:32px; border-radius:9px; flex:none; }
     .m-brand-t { font-size:1.3rem; font-weight:800; letter-spacing:-.025em; transition:color .4s; }
     .m-brand-t.kospi-up   { color:var(--kospi-up); }
     .m-brand-t.kospi-down { color:var(--kospi-down); }
@@ -2201,7 +2201,7 @@
 <!-- ═════════════ 휴대폰 상단바 — 폭 760px 이하에서만 (사이드바 대신) ═════════════ -->
 <header class="m-bar" id="mBar">
   <button type="button" class="m-brand" id="mBrand" aria-label="대시보드로">
-    <span class="m-brand-ico" aria-hidden="true">🐯</span><span class="m-brand-t" id="mBrandT">iontiger</span>
+    <img class="m-brand-ico" src="icon-192.png" alt=""><span class="m-brand-t" id="mBrandT">자산관리</span>
   </button>
   <div class="m-bar-act">
     <button type="button" class="m-ibtn" id="mBell" aria-label="알림" aria-haspopup="dialog">
