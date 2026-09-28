@@ -1,5 +1,5 @@
 # index.html · 아이콘 · logos/ 이미지를 GitHub Pages에 올리고 logos.json 목록을 만든다.
-# 매시 정각에는 네이버페이 증권 AI 시황 브리핑의 최신 글을 briefing.json 으로 받아 둔다 (휴대폰 투자 탭의 카드 뉴스).
+# 매시 정각 무렵에는 네이버페이 증권 AI 시황 브리핑의 최신 글을 briefing.json 으로 받아 둔다 (휴대폰 투자 탭의 카드 뉴스).
 # → https://iontiger.github.io/asset/
 # 처음 한 번: 저장소 Settings → Pages → Source 를 "GitHub Actions" 로 바꿔야 한다.
 name: Deploy to GitHub Pages
@@ -8,9 +8,10 @@ on:
   push:
   workflow_dispatch:
   schedule:
-    # 매시 정각 (UTC 로 적지만 한국 시간도 정각). GitHub 이 붐비면 몇 분 늦게 돌기도 한다.
+    # 매시 3분 · 23분 · 43분 (UTC 로 적지만 한국 시간도 같은 분). GitHub 은 정각(0분)에 실행이 몰려 크게 늦거나
+    # 아예 건너뛰기 쉬워서(GitHub 도 다른 분을 권함) 정각 바로 뒤에 돌고, 20분마다 한 번 더 확인한다.
     # 글이 새로 올라왔을 때만 다시 배포한다 (그대로면 건너뜀)
-    - cron: '0 * * * *'
+    - cron: '3,23,43 * * * *'
 
 permissions:
   contents: read
@@ -23,7 +24,7 @@ concurrency:
 
 jobs:
   build:
-    # 기본 브랜치에 올라온 것만 배포한다 (정각 실행은 늘 기본 브랜치에서 돈다)
+    # 기본 브랜치에 올라온 것만 배포한다 (예약 실행은 늘 기본 브랜치에서 돈다)
     if: github.event_name == 'schedule' || github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
     outputs:
@@ -38,7 +39,7 @@ jobs:
           mkdir _site
           cp index.html icon-192.png icon-512.png apple-touch-icon.png _site/
           # 버전 표시 · 새 버전 알림용 — 커밋 번호와 커밋 시각(한국 시간).
-          # 정각마다 브리핑만 바꿔 다시 올려도 같은 커밋이면 값이 같아서 "새 버전" 알림이 뜨지 않는다
+          # 브리핑만 바꿔 다시 올려도 같은 커밋이면 값이 같아서 "새 버전" 알림이 뜨지 않는다
           BUILD="${GITHUB_SHA::7} $(TZ=Asia/Seoul git log -1 --format=%cd --date=format-local:'%Y-%m-%d %H:%M')"
           sed -i "s|content=\"__BUILD__\"|content=\"$BUILD\"|" _site/index.html
           grep -o 'name="app-build" content="[^"]*"' _site/index.html
