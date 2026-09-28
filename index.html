@@ -1888,12 +1888,13 @@
      사이드바 대신 위에는 상단바(브랜드 · 알림 · 테마), 아래에는 탭(홈 · 자산 · ＋ · 투자 · 더보기).
      대시보드 위쪽은 인사말 · 순자산 · 자산 구성 · 이번 달 자산 변화 카드로 바꾸고, 그 아래로 차트 · 미래 예상 등이 이어진다.
      넓은 화면에서는 이 요소들을 모두 숨긴다. */
-  .m-bar, .m-hello, .m-home, .m-tabs { display:none; }
+  .m-bar, .m-hello, .m-home, .m-tabs, .a-group .g-ic { display:none; }
 
   /* 아래에서 올라오는 창 (＋ 기록하기 · 더보기 · 알림) — 휴대폰 메뉴에서만 열린다 */
-  .sheet-back.m-sb { align-items:flex-end; padding:0; }
+  /* 창 밖(어두운 곳)을 끌어도 뒤 화면이 움직이지 않고, 창 안을 끝까지 넘겨도 뒤로 번지지 않게 */
+  .sheet-back.m-sb { align-items:flex-end; padding:0; touch-action:none; }
   .m-sb .sheet.m-sheet {
-    max-width:560px; max-height:88vh; border-radius:24px 24px 0 0;
+    max-width:560px; max-height:calc(100% - 24px); border-radius:24px 24px 0 0; overscroll-behavior:contain; touch-action:pan-y;
     padding:4px max(18px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px));
     transform:translateY(100%); transition:transform .32s cubic-bezier(.22,1,.36,1);
   }
@@ -1904,6 +1905,15 @@
     border-radius:99px; background:var(--grid);
   }
   .m-sheet h2 { font-size:1.08rem; margin:2px 2px 14px; }
+  /* 자산 상세 창 — 위쪽 손잡이 · ✕ 는 스크롤해도 붙어 있다 */
+  .m-sb .sheet.m-asset { max-height:calc(100% - 12px); padding-top:0; }
+  .m-sheet-top {
+    position:sticky; top:0; z-index:3; height:44px;
+    margin:0 calc(-1 * max(18px, env(safe-area-inset-right, 0px))) 2px calc(-1 * max(18px, env(safe-area-inset-left, 0px)));
+    background:var(--surface);
+  }
+  .m-sheet-top .m-grab { position:absolute; inset:0; height:auto; }
+  .m-sheet-x { position:absolute; top:6px; right:10px; z-index:1; }
   .m-pill {
     display:none; min-width:20px; height:20px; padding:0 7px; border-radius:99px;
     background:var(--accent); color:#fff; font-size:.7rem; font-weight:800; font-style:normal;
@@ -2145,6 +2155,49 @@
     .m-chg-list .v.up { color:var(--up); }
     .m-chg-list .v.down { color:var(--down); }
     .m-chg-none { padding:8px 0 4px; font-size:.86rem; color:var(--muted); }
+
+    /* ── 자산 탭: 그룹마다 카드, 항목을 누르면 상세가 아래에서 올라온다 ── */
+    .list-toolbar .search { flex:1 1 180px; }
+    .list-toolbar .search input { width:100%; }
+    .list-layout { display:block; }
+    #detailPane { display:none; }
+    #listBody .a-table { background:none; border:0; border-radius:0; box-shadow:none; padding:0; }
+    .a-gblock { background:var(--surface); border:1px solid var(--border); border-radius:18px; overflow:hidden; }
+    .a-gblock + .a-gblock { margin-top:12px; }
+    :root:not([data-theme="dark"]) .a-gblock { border-color:rgba(16,24,40,.06); box-shadow:0 1px 2px rgba(16,24,40,.04), 0 10px 24px -14px rgba(16,24,40,.12); }
+    .a-gblock .a-group { padding:13px 16px 11px; gap:10px; font-size:.98rem; font-weight:800; color:var(--ink); border-bottom:1px solid var(--border); }
+    .a-group .g-dot { display:none; }
+    .a-group .g-ic {
+      display:grid; place-items:center; width:30px; height:30px; border-radius:50%; flex:none;
+      color:var(--c); background:color-mix(in srgb, var(--c) 14%, transparent);
+    }
+    .a-group .g-ic svg { width:17px; height:17px; }
+    .a-group .g-sum { font-size:.92rem; }
+    .a-gblock .a-item { padding-top:12px; padding-bottom:12px; }
+    .a-item.sel { background:none; box-shadow:none; }
+    .a-item:hover { background:none; }
+    .a-item:active { background:var(--hover); }
+    /* 상세 창: 날짜별 기록을 정보 수정보다 위로 */
+    #mAssetBody #detailBody { display:flex; flex-direction:column; }
+    #mAssetBody .dt-sec-hist { order:1; }
+    #mAssetBody .dt-sec-edit { order:2; }
+    /* 날짜별 기록 — 금액 칸은 줄지 않고 날짜 칸이 양보한다 (겹치지 않게). 창이 스크롤하니 안쪽 스크롤은 없앤다 */
+    #mAssetBody .hist { max-height:none; container:hist / inline-size; }
+    #mAssetBody .hist-row { grid-template-columns:minmax(0,1fr) max-content minmax(5.2em, max-content) 30px; padding:7px 4px 7px 12px; }
+    #mAssetBody .hist-date { overflow:hidden; text-overflow:ellipsis; }
+    #mAssetBody .hist-input { width:8.2em; }
+    #mAssetBody .hist-del { visibility:visible; width:30px; height:30px; }
+    /* 아주 좁으면(글자를 크게 해 둔 휴대폰 등) 증감을 금액 아래로 */
+    @container hist (max-width: 300px) {
+      #mAssetBody .hist-row {
+        grid-template-columns:minmax(0,1fr) max-content 30px; grid-template-areas:"date amt del" "date diff del";
+        row-gap:0; padding-top:6px; padding-bottom:6px;
+      }
+      #mAssetBody .hist-date { grid-area:date; }
+      #mAssetBody .hist-amt, #mAssetBody .hist-input { grid-area:amt; }
+      #mAssetBody .hist-diff { grid-area:diff; padding-right:6px; }   /* 금액 버튼 안쪽 여백만큼 맞춘다 */
+      #mAssetBody .hist-del { grid-area:del; }
+    }
 
     /* 금액 가리기 (눈 아이콘) — 새 카드들의 금액만 흐리게 */
     body.m-masked .m-amt { filter:blur(9px); user-select:none; -webkit-user-select:none; }
@@ -2548,7 +2601,7 @@
             <div class="tooltip"><div class="t-date"></div><div class="t-val"></div><div class="t-diff"></div></div>
           </div>
 
-          <div class="dt-sec">
+          <div class="dt-sec dt-sec-edit">
             <div class="dt-sec-title">정보 수정 <span>— 이 자산의 모든 기록에 적용</span></div>
             <div class="form-grid">
               <div class="field full">
@@ -2586,7 +2639,7 @@
             </div>
           </div>
 
-          <div class="dt-sec">
+          <div class="dt-sec dt-sec-hist">
             <div class="dt-sec-title">날짜별 기록 <span>— 금액을 누르면 고칠 수 있습니다</span></div>
             <div class="hist" id="dtHist"></div>
           </div>
@@ -2889,6 +2942,18 @@
     <button type="button" class="m-grab" data-close="mNoteSheet" aria-label="닫기"></button>
     <h2 id="mNoteT">알림</h2>
     <div class="m-notes" id="mNotes"></div>
+  </div>
+</div>
+
+<!-- 자산 상세 (휴대폰) — 자산 탭에서 항목을 누르면 아래에서 올라온다.
+     내용(#detailBody)은 폭에 따라 JS 가 이 창과 PC 오른쪽 패널(#detailPane) 사이로 옮긴다 -->
+<div class="sheet-back m-sb" id="mAssetSheet">
+  <div class="sheet m-sheet m-asset" role="dialog" aria-label="자산 상세">
+    <div class="m-sheet-top">
+      <button type="button" class="m-grab" data-close="mAssetSheet" aria-label="닫기"></button>
+      <button type="button" class="icon-btn m-sheet-x" data-close="mAssetSheet" aria-label="닫기">✕</button>
+    </div>
+    <div id="mAssetBody"></div>
   </div>
 </div>
 
@@ -5070,16 +5135,23 @@ function renderListTable() {
     items.sort(function (a, b) { return signedAmount(b) - signedAmount(a); });
     var subtotal = items.reduce(function (s, a) { return s + signedAmount(a); }, 0);
 
+    // 그룹 묶음 — PC 에서는 표 안의 한 구역, 휴대폰에서는 그룹마다 카드 (CSS)
+    var block = el('div', 'a-gblock');
     var gh = el('div', 'a-group');
+    gh.style.setProperty('--c', GROUP_COLOR[g] || GROUP_COLOR['기타']);
     var gd = el('span', 'g-dot');
     gd.style.background = GROUP_COLOR[g] || GROUP_COLOR['기타'];
     gh.appendChild(gd);
+    var gi = el('span', 'g-ic');   // 휴대폰에서만 보이는 그룹 아이콘
+    gi.innerHTML = mIco(g);
+    gh.appendChild(gi);
     gh.appendChild(document.createTextNode(g));
     gh.appendChild(el('span', 'g-count', items.length + '개'));
     gh.appendChild(el('span', 'g-sum' + (subtotal < 0 ? ' debt' : ''),
       (subtotal < 0 ? '−' : '') + comma(Math.abs(subtotal)) + '원'));
     gh.appendChild(el('span', 'g-share', gross > 0 && subtotal > 0 ? (subtotal / gross * 100).toFixed(1) + '%' : ''));
-    table.appendChild(gh);
+    block.appendChild(gh);
+    table.appendChild(block);
 
     items.forEach(function (a) {
       order.push(a.name);
@@ -5111,7 +5183,7 @@ function renderListTable() {
       row.appendChild(de);
       row.appendChild(el('div', 'a-amt' + (isDebt ? ' debt' : ''), (isDebt ? '−' : '') + comma(a.amount) + '원'));
       row.appendChild(el('span', 'chev', '›'));
-      table.appendChild(row);
+      block.appendChild(row);
     });
   });
   view.appendChild(table);
@@ -5132,6 +5204,7 @@ function selectAsset(name) {
     });
     renderDetail();
   }
+  if (isMobile()) { mOpenAsset(); return; }   // 휴대폰: 아래에서 올라오는 창으로
   // 상세가 목록 아래에 있는 좁은 화면이면 그쪽으로 스크롤
   var pane = $('detailPane');
   if (pane.getBoundingClientRect().left < $('listBody').getBoundingClientRect().right - 1) {
@@ -5276,7 +5349,7 @@ function deleteRecord(r) {
   if (!confirm(msg)) return;
   commit(function () {
     rows = rows.filter(function (x) { return x !== r; });
-  }, '기록 삭제 완료');
+  }, '기록 삭제 완료').then(function (ok) { if (ok && only) closeSheet('mAssetSheet'); });
 }
 
 // 수정: 같은 이름의 모든 기록에 이름/그룹/소유/로고 변경 적용
@@ -5315,7 +5388,7 @@ function deleteAsset() {
   commit(function () {
     rows = rows.filter(function (r) { return r.name !== name; });
     selectedName = null;
-  }, '삭제 완료');
+  }, '삭제 완료').then(function (ok) { if (ok) closeSheet('mAssetSheet'); });
 }
 
 /* ═══════════ 렌더: 입력 ═══════════ */
@@ -7671,7 +7744,8 @@ function renderTopbar() {
     sub = fmtLongDate(new Date());
   } else if (currentView === 'list') {
     var n = Object.keys(buildByName()).length;
-    sub = '자산 ' + n + '개 · 기록 ' + rows.length + '건 — 행을 고르면 ' + (isMobile() ? '아래' : '오른쪽') + '에서 기록을 보고 고칠 수 있습니다';
+    sub = '자산 ' + n + '개 · 기록 ' + rows.length + '건 — ' +
+      (isMobile() ? '항목을 누르면 기록을 보고 고칠 수 있습니다' : '행을 고르면 오른쪽에서 기록을 보고 고칠 수 있습니다');
   } else if (currentView === 'badges') {
     sub = '그동안 넘어선 마일스톤 ' + (badges || []).length + '개 — 카드를 누르면 그때의 축하를 다시 볼 수 있어요';
   } else if (currentView === 'explore') {
@@ -11769,6 +11843,23 @@ $('mMoreSheet').addEventListener('click', function (e) {
   else if (go === 'wrapped') openWrapped();
   else switchView(go);
 });
+// 자산 상세 — 휴대폰이면 아래에서 올라오는 창에, PC 면 오른쪽 패널에 (#detailBody 를 옮긴다)
+var mMq = window.matchMedia('(max-width: 760px)');
+function mPlaceDetail() {
+  var body = $('detailBody'), host = mMq.matches ? $('mAssetBody') : $('detailPane');
+  if (body.parentNode !== host) host.appendChild(body);
+  if (!mMq.matches) closeSheet('mAssetSheet');
+  drawDetailChart();
+}
+function mOpenAsset() {
+  var back = $('mAssetSheet');
+  if (back.classList.contains('open')) return;
+  back.querySelector('.sheet').scrollTop = 0;
+  openSheet('mAssetSheet');
+}
+mMq.addEventListener('change', function () { mPlaceDetail(); renderTopbar(); });
+mPlaceDetail();
+
 $('mStore').addEventListener('click', function (e) {
   var b = e.target.closest('[data-act]');
   if (!b) return;
