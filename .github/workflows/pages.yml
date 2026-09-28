@@ -1,5 +1,6 @@
 # index.html · 아이콘 · logos/ 이미지를 GitHub Pages에 올리고 logos.json 목록을 만든다.
 # 매시 정각 무렵에는 네이버페이 증권 AI 시황 브리핑의 최신 글을 briefing.json 으로 받아 둔다 (휴대폰 투자 탭의 카드 뉴스).
+# 스토캐스틱 매수/매도 신호 종목은 stoch.json 으로 (휴대폰 투자 탭의 신호 카드, .github/scripts/stoch_screen.py).
 # → https://iontiger.github.io/asset/
 # 처음 한 번: 저장소 Settings → Pages → Source 를 "GitHub Actions" 로 바꿔야 한다.
 name: Deploy to GitHub Pages
@@ -28,7 +29,7 @@ jobs:
     if: github.event_name == 'schedule' || github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
     outputs:
-      deploy: ${{ steps.briefing.outputs.deploy }}
+      deploy: ${{ steps.briefing.outputs.deploy == 'true' || steps.stoch.outputs.changed == 'true' }}
     steps:
       - uses: actions/checkout@v4
       - id: pages
@@ -57,7 +58,13 @@ jobs:
         id: briefing
         run: python3 .github/scripts/briefing.py _site/briefing.json "${{ steps.pages.outputs.base_url }}" "${{ github.event_name }}" "${GITHUB_SHA::7}"
 
-      - if: steps.briefing.outputs.deploy == 'true'
+      # 휴대폰 투자 탭의 스토캐스틱 신호 카드 — 전 영업일 종가 기준 매수/매도 신호 종목 (시가총액 순 5개씩).
+      # 하루 두 번(08시 KST 전/후)만 새로 뽑고, 그 사이에는 사이트의 stoch.json 을 그대로 쓴다. 못 뽑아도 배포는 멈추지 않는다
+      - name: 스토캐스틱 신호 받기
+        id: stoch
+        run: python3 .github/scripts/stoch_screen.py _site --site "${{ steps.pages.outputs.base_url }}"
+
+      - if: steps.briefing.outputs.deploy == 'true' || steps.stoch.outputs.changed == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site

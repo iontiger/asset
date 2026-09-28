@@ -1923,7 +1923,7 @@
      사이드바 대신 위에는 상단바(브랜드 · 알림 · 테마), 아래에는 탭(홈 · 자산 · ＋ · 투자 · 더보기).
      대시보드 위쪽은 인사말 · 순자산 · 자산 구성 · 이번 달 자산 변화 카드로 바꾸고, 그 아래로 차트 · 미래 예상 등이 이어진다.
      넓은 화면에서는 이 요소들을 모두 숨긴다. */
-  .m-bar, .m-hello, .m-home, .m-tabs, .m-news, .in-group .g-ic, .in-amt-m { display:none; }
+  .m-bar, .m-hello, .m-home, .m-tabs, .m-news, .m-sig, .in-group .g-ic, .in-amt-m { display:none; }
 
   /* 아래에서 올라오는 창 (＋ 기록하기 · 더보기 · 알림) — 휴대폰 메뉴에서만 열린다 */
   /* 창 밖(어두운 곳)을 끌어도 뒤 화면이 움직이지 않고, 창 안을 끝까지 넘겨도 뒤로 번지지 않게 */
@@ -2351,6 +2351,25 @@
     .m-news-dots i.on { width:18px; opacity:1; background:var(--accent); }
     @media (prefers-reduced-motion: reduce) { .m-news-sk i { animation:none; } }
 
+    /* ── 투자 탭: 스토캐스틱 신호 카드 — 브리핑 카드 바로 아래, 같은 모양으로 매수 · 매도 두 장 ── */
+    body[data-view="rebal"] .m-sig:not([hidden]) { display:block; }
+    .m-sig { margin:-10px -16px 2px; }
+    .m-sig .m-news-card { cursor:default; gap:10px; }
+    .m-sig .m-news-top { color:var(--muted); }
+    .m-sig-tag { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:99px; font-size:.76rem; font-weight:800; }
+    .m-sig-tag.buy  { background:color-mix(in srgb, var(--kospi-up) 13%, transparent); color:var(--kospi-up); }
+    .m-sig-tag.sell { background:color-mix(in srgb, var(--kospi-down) 13%, transparent); color:var(--kospi-down); }
+    .m-sig-list { list-style:none; margin:0; padding:0; display:grid; }
+    .m-sig-list a { display:flex; align-items:center; gap:10px; padding:7px 0; color:inherit; text-decoration:none; border-top:1px solid var(--border); }
+    .m-sig-list li:first-child a { border-top:0; }
+    .m-sig-list a:active { opacity:.6; }
+    .m-sig-no { width:16px; flex:none; font-size:.86rem; font-weight:800; color:var(--muted); font-variant-numeric:tabular-nums; }
+    .m-sig-nm { flex:1; min-width:0; font-size:.95rem; font-weight:700; letter-spacing:-.01em; }
+    .m-sig-nm b { display:block; font-weight:inherit; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .m-sig-nm small, .m-sig-px small { display:block; margin-top:1px; font-size:.72rem; font-weight:600; color:var(--muted); }
+    .m-sig-px { flex:none; text-align:right; font-size:.9rem; font-weight:700; font-variant-numeric:tabular-nums; }
+    .m-sig-none { margin:auto 0; font-size:.95rem; font-weight:600; color:var(--muted); text-align:center; }
+
     /* 금액 가리기 (눈 아이콘) — 새 카드들의 금액만 흐리게 */
     body.m-masked .m-amt { filter:blur(9px); user-select:none; -webkit-user-select:none; }
 
@@ -2488,6 +2507,11 @@
   <section class="m-news" id="mNews" aria-label="AI 시황 브리핑" hidden>
     <div class="m-news-track" id="mNewsTrack"></div>
     <div class="m-news-dots" id="mNewsDots" aria-hidden="true"></div>
+  </section>
+  <!-- 휴대폰 투자 탭 — 스토캐스틱 신호 카드 (매수 · 매도). 내용은 stoch.json — GitHub Actions 가 배포할 때 뽑아 둔다 -->
+  <section class="m-sig" id="mSig" aria-label="스토캐스틱 매수 · 매도 신호" hidden>
+    <div class="m-news-track" id="mSigTrack"></div>
+    <div class="m-news-dots" id="mSigDots" aria-hidden="true"></div>
   </section>
 
   <header class="topbar" id="topbar">
@@ -12767,8 +12791,95 @@ function mNewsPlan() {
     if (!document.hidden && isMobile() && currentView === 'rebal') mNewsLoad();
   }, wait);
 }
+/* ── 투자 탭: 스토캐스틱 신호 카드 ──
+   코스피·코스닥에서 슬로우 스토캐스틱(14,3,3) 매수(골든크로스) · 매도(데드크로스) 신호가 난 종목을 전 영업일 종가 기준,
+   시가총액 순으로 5개씩. 브라우저에서는 네이버 · NH Plug 를 바로 부를 수 없어서 GitHub Actions 가 배포할 때
+   stoch.json 으로 뽑아 둔다 (.github/scripts/stoch_screen.py). 앱은 투자 탭을 열 때 30분이 지났으면 다시 읽는다.
+   마지막으로 받은 결과는 이 기기에 두어 다음에 바로 보여 준다. 종목을 누르면 네이버 증권이 열린다. */
+var M_SIG_KEY = 'asset_pc_m_sig';
+var mSig = { data: null, at: 0, busy: false, raf: 0 };
+function mSigOk(d) {
+  return !!d && /^\d{4}-\d{2}-\d{2}$/.test(d.basisDate || '') && Array.isArray(d.buy) && Array.isArray(d.sell);
+}
+try { var mSigSaved = JSON.parse(lsGet(M_SIG_KEY) || 'null'); if (mSigOk(mSigSaved)) mSig.data = mSigSaved; } catch (e) {}
+function mSigCap(eok) { return eok >= 1e4 ? (eok / 1e4).toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '조' : Math.round(eok).toLocaleString('ko-KR') + '억'; }
+function mSigRender() {
+  var d = mSig.data, track = $('mSigTrack');
+  $('mSig').hidden = !d || location.protocol === 'file:';
+  if (!d) return;
+  track.innerHTML = '';
+  var p = d.basisDate.split('-'), when = +p[1] + '월 ' + +p[2] + '일 종가';
+  [['buy', '▲ 매수 신호', '골든크로스'], ['sell', '▼ 매도 신호', '데드크로스']].forEach(function (s, n) {
+    var c = el('article', 'm-news-card');
+    c.innerHTML = '<div class="m-news-top"><span class="m-sig-tag ' + s[0] + '"></span><time></time></div>' +
+      '<div class="m-news-foot"><span></span></div>';
+    c.querySelector('.m-sig-tag').textContent = s[1];
+    c.querySelector('time').textContent = when;
+    c.querySelector('.m-news-foot span').textContent = '슬로우 스토캐스틱 14·3·3 · ' + s[2] + ' · 시총 순';
+    var list = d[s[0]].slice(0, 5), body;
+    if (!list.length) body = el('p', 'm-sig-none', '신호가 난 종목이 없어요');
+    else {
+      body = el('ol', 'm-sig-list');
+      list.forEach(function (it, i) {
+        var a = el('a');
+        a.href = 'https://m.stock.naver.com/domestic/stock/' + encodeURIComponent(it.code) + '/total';
+        a.target = '_blank'; a.rel = 'noopener noreferrer';
+        var nm = el('span', 'm-sig-nm'), px = el('span', 'm-sig-px', Math.round(it.close).toLocaleString('ko-KR'));
+        nm.appendChild(el('b', null, it.name));
+        nm.appendChild(el('small', null, it.market + ' · ' + mSigCap(it.cap)));
+        px.appendChild(el('small', null, '%K ' + (+it.k).toFixed(1) + ' · %D ' + (+it.d).toFixed(1)));
+        a.appendChild(el('span', 'm-sig-no', String(i + 1)));
+        a.appendChild(nm);
+        a.appendChild(px);
+        var li = el('li');
+        li.appendChild(a);
+        body.appendChild(li);
+      });
+    }
+    c.insertBefore(body, c.lastChild);
+    c.setAttribute('aria-label', s[1] + ', ' + when + ' (' + (n + 1) + ' / 2)');
+    track.appendChild(c);
+  });
+  track.scrollLeft = 0;
+  mSigDots();
+}
+function mSigDots() {
+  var track = $('mSigTrack'), cards = track.children, n = cards.length, box = $('mSigDots');
+  if (box.children.length !== n) { box.innerHTML = ''; for (var i = 0; i < n; i++) box.appendChild(el('i')); }
+  box.hidden = n < 2;
+  if (n < 2) return;
+  var step = cards[1].offsetLeft - cards[0].offsetLeft || 1;
+  var at = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2 ? n - 1 : Math.round(track.scrollLeft / step);
+  [].forEach.call(box.children, function (dot, k) { dot.classList.toggle('on', k === at); });
+}
+$('mSigTrack').addEventListener('scroll', function () {
+  if (!mSig.raf) mSig.raf = requestAnimationFrame(function () { mSig.raf = 0; mSigDots(); });
+}, { passive: true });
+function mSigLoad() {
+  if (location.protocol === 'file:' || mSig.busy) return;
+  mSig.busy = true;
+  mSig.at = Date.now();
+  fetch('stoch.json?t=' + Date.now(), { cache: 'no-store' })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (d) {
+      if (!mSigOk(d)) return;
+      var old = mSig.data;
+      mSig.data = d;
+      lsSet(M_SIG_KEY, JSON.stringify(d));
+      if (!old || old.basisDate !== d.basisDate || JSON.stringify([old.buy, old.sell]) !== JSON.stringify([d.buy, d.sell])) mSigRender();
+    })
+    .catch(function () {})
+    .then(function () { mSig.busy = false; });
+}
+function mSigOnShow() {
+  if (!isMobile() || currentView !== 'rebal') return;
+  if (!mSig.at || Date.now() - mSig.at > 30 * 60e3) mSigLoad();
+}
+if (mSig.data) mSigRender();
+
 // 투자 탭을 열 때 · 앱으로 돌아올 때 — 5분이 지났거나 시가 바뀌었으면 다시 읽는다
 function mNewsOnShow() {
+  mSigOnShow();
   if (!mNews || !isMobile() || currentView !== 'rebal') return;
   var due = !mNews.at || Date.now() - mNews.at > 5 * 60e3 || new Date(mNews.at).getUTCHours() !== new Date().getUTCHours();
   if (due) mNewsLoad(); else mNewsPlan();
