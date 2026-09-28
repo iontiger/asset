@@ -1888,7 +1888,7 @@
      사이드바 대신 위에는 상단바(브랜드 · 알림 · 테마), 아래에는 탭(홈 · 자산 · ＋ · 투자 · 더보기).
      대시보드 위쪽은 인사말 · 순자산 · 자산 구성 · 이번 달 자산 변화 카드로 바꾸고, 그 아래로 차트 · 미래 예상 등이 이어진다.
      넓은 화면에서는 이 요소들을 모두 숨긴다. */
-  .m-bar, .m-hello, .m-home, .m-tabs, .a-group .g-ic, .a-group .g-sum-k { display:none; }
+  .m-bar, .m-hello, .m-home, .m-tabs, .a-group .g-ic, .a-group .g-sum-k, .in-group .g-ic, .in-amt-m { display:none; }
 
   /* 아래에서 올라오는 창 (＋ 기록하기 · 더보기 · 알림) — 휴대폰 메뉴에서만 열린다 */
   /* 창 밖(어두운 곳)을 끌어도 뒤 화면이 움직이지 않고, 창 안을 끝까지 넘겨도 뒤로 번지지 않게 */
@@ -1905,6 +1905,35 @@
     border-radius:99px; background:var(--grid);
   }
   .m-sheet h2 { font-size:1.08rem; margin:2px 2px 14px; }
+  /* 금액 입력 숫자 패드 */
+  .m-pad-head { text-align:center; margin:0 0 4px; }
+  .m-pad-name { font-size:1.02rem; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .m-pad-last { margin-top:3px; font-size:.78rem; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .m-pad-val {
+    margin:10px auto 0; width:fit-content; max-width:100%; padding:2px 10px; border-radius:10px;
+    font-size:2rem; font-weight:800; letter-spacing:-.02em; font-variant-numeric:tabular-nums; white-space:nowrap;
+    transition:background-color .15s;
+  }
+  .m-pad-val span { margin-left:4px; font-size:1.1rem; font-weight:700; color:var(--ink-2); }
+  .m-pad-val.fresh { background:var(--accent-wash); }   /* 다음 숫자가 통째로 바꾼다 (PC 의 전체 선택처럼) */
+  .m-pad-sub { display:flex; justify-content:center; flex-wrap:wrap; gap:4px 10px; min-height:1.35em; margin-top:4px; font-size:.8rem; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .m-pad-diff { font-weight:700; }
+  .m-pad-diff.up { color:var(--up); }
+  .m-pad-diff.down { color:var(--down); }
+  .m-pad-keys { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px; margin-top:14px; }
+  .m-pad-keys button {
+    height:54px; border:none; border-radius:14px; background:var(--bg); color:var(--ink); cursor:pointer;
+    font:inherit; font-size:1.45rem; font-weight:700; font-variant-numeric:tabular-nums;
+    display:flex; align-items:center; justify-content:center;
+    touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none;
+    transition:background-color .08s, transform .08s;
+  }
+  .m-pad-keys button:active { background:var(--grid); transform:scale(.96); }
+  .m-pad-keys button[data-k="000"] { font-size:1.15rem; }
+  .m-pad-keys button svg { width:26px; height:26px; }
+  .m-pad-acts { display:grid; grid-template-columns:1fr 1fr 1.3fr; gap:8px; margin-top:12px; }
+  .m-pad-acts .btn { padding:12px 10px; font-size:.92rem; }
+
   /* 자산 상세 창 — 위쪽 손잡이 · ✕ 는 스크롤해도 붙어 있다 */
   .m-sb .sheet.m-asset { max-height:calc(100% - 12px); padding-top:0; }
   .m-sheet-top {
@@ -2205,6 +2234,47 @@
       #mAssetBody .hist-diff { grid-area:diff; padding-right:6px; }   /* 금액 버튼 안쪽 여백만큼 맞춘다 */
       #mAssetBody .hist-del { grid-area:del; }
     }
+
+    /* ── 입력 화면: 그룹마다 카드, 한 칸 = 1줄 이름 · 금액 / 2줄 최종 입력 날짜 (로고 · 소유 · 입력 칸 없이) ── */
+    #view-input .in-date { flex-wrap:wrap; row-gap:2px; }
+    #view-input #todayLabel { white-space:nowrap; }
+    #view-input .in-date-note { flex-basis:100%; margin-left:26px; }
+    #view-input .in-table { background:none; border:0; border-radius:0; box-shadow:none; padding:0; }
+    #view-input .in-row.head { display:none; }
+    .in-gblock { background:var(--surface); border:1px solid var(--border); border-radius:18px; overflow:hidden; }
+    .in-gblock + .in-gblock { margin-top:12px; }
+    :root:not([data-theme="dark"]) .in-gblock { border-color:rgba(16,24,40,.06); box-shadow:0 1px 2px rgba(16,24,40,.04), 0 10px 24px -14px rgba(16,24,40,.12); }
+    #inputList .in-group {
+      padding:12px 16px 11px; gap:10px; font-size:1rem; font-weight:800; color:var(--ink);
+      background:color-mix(in srgb, var(--c) 18%, var(--surface));
+    }
+    :root[data-theme="dark"] #inputList .in-group { background:color-mix(in srgb, var(--c) 28%, var(--surface)); }
+    #inputList .in-group .g-dot { display:none; }
+    #inputList .in-group .g-ic {
+      display:grid; place-items:center; width:28px; height:28px; border-radius:50%; flex:none; color:#fff; background:var(--c);
+    }
+    #inputList .in-group .g-ic svg { width:16px; height:16px; }
+    #inputList .in-group .g-count { color:var(--ink-2); }
+    #inputList .in-item {
+      grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"name amt" "last diff";
+      column-gap:12px; row-gap:3px; padding:12px 16px; cursor:pointer; -webkit-tap-highlight-color:transparent;
+    }
+    #inputList .in-item:active, #inputList .in-item.m-on { background:var(--accent-wash); }
+    #inputList .in-item > .in-name { grid-area:name; }
+    #inputList .in-item > .in-last { grid-area:last; display:block; padding-left:0; }
+    #inputList .in-item > .amt-input { display:none; }
+    #inputList .in-item > .in-diff { grid-area:diff; align-self:center; text-align:right; }
+    #inputList .in-item > .in-amt-m {
+      grid-area:amt; display:block; justify-self:end; padding:0; border:0; background:none; cursor:pointer;
+      font:inherit; font-size:1rem; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; white-space:nowrap;
+    }
+    #inputList .in-item.debt > .in-amt-m { color:var(--down); }
+    #inputList .in-item > .in-amt-m.dirty { color:var(--accent-deep); }
+    #inputList .in-name .logo, #inputList .in-name .logo-fallback, #inputList .in-name .chip { display:none; }
+    #inputList .in-name .asset-name { font-size:.95rem; }
+    #inputList .in-last .v, #inputList .in-diff .in-words, #inputList .in-diff .in-revert { display:none; }
+    #inputList .in-last .d { margin-top:0; font-size:.76rem; }
+    #inputList .in-diff .d { font-size:.76rem; }
 
     /* 금액 가리기 (눈 아이콘) — 새 카드들의 금액만 흐리게 */
     body.m-masked .m-amt { filter:blur(9px); user-select:none; -webkit-user-select:none; }
@@ -2961,6 +3031,31 @@
       <button type="button" class="icon-btn m-sheet-x" data-close="mAssetSheet" aria-label="닫기">✕</button>
     </div>
     <div id="mAssetBody"></div>
+  </div>
+</div>
+
+<!-- 금액 입력 숫자 패드 (휴대폰) — 입력 화면에서 자산 칸을 누르면 올라온다. 값은 PC 와 같은 입력 칸에 들어가 저장 바로 저장한다 -->
+<div class="sheet-back m-sb" id="mPadSheet">
+  <div class="sheet m-sheet m-pad" role="dialog" aria-labelledby="mPadName">
+    <button type="button" class="m-grab" data-close="mPadSheet" aria-label="닫기"></button>
+    <div class="m-pad-head">
+      <div class="m-pad-name" id="mPadName"></div>
+      <div class="m-pad-last" id="mPadLast"></div>
+    </div>
+    <div class="m-pad-val" id="mPadVal" aria-live="polite"></div>
+    <div class="m-pad-sub"><span id="mPadWords"></span><span class="m-pad-diff" id="mPadDiff"></span></div>
+    <div class="m-pad-keys" id="mPadKeys">
+      <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button>
+      <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button>
+      <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button>
+      <button type="button" data-k="000">000</button><button type="button" data-k="0">0</button>
+      <button type="button" data-k="del" aria-label="한 자리 지우기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 5H9l-6 7 6 7h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1Z"/><path d="m17 9-6 6M11 9l6 6"/></svg></button>
+    </div>
+    <div class="m-pad-acts">
+      <button type="button" class="btn btn-ghost" id="mPadRevert">되돌리기</button>
+      <button type="button" class="btn btn-ghost" id="mPadDone">완료</button>
+      <button type="button" class="btn btn-primary" id="mPadNext">다음 ›</button>
+    </div>
   </div>
 </div>
 
@@ -5438,17 +5533,24 @@ function renderInput() {
     if (!items.length) return;
     items.sort(function (a, b) { return signedAmount(b) - signedAmount(a); });
 
+    // 그룹 묶음 — PC 에서는 표 안의 한 구역, 휴대폰에서는 그룹마다 카드 (CSS)
+    var block = el('div', 'in-gblock');
     var gh = el('div', 'in-group');
+    gh.style.setProperty('--c', GROUP_COLOR[g] || GROUP_COLOR['기타']);
     var gd = el('span', 'g-dot');
     gd.style.background = GROUP_COLOR[g] || GROUP_COLOR['기타'];
     gh.appendChild(gd);
+    var gi = el('span', 'g-ic');   // 휴대폰에서만 보이는 그룹 아이콘
+    gi.innerHTML = mIco(g);
+    gh.appendChild(gi);
     gh.appendChild(document.createTextNode(g));
     gh.appendChild(el('span', 'g-count', items.length + '개'));
-    wrap.appendChild(gh);
+    block.appendChild(gh);
+    wrap.appendChild(block);
 
     items.forEach(function (a) {
       var isDebt = isDebtRow(a);
-      var row = el('div', 'in-row in-item');
+      var row = el('div', 'in-row in-item' + (isDebt ? ' debt' : ''));
       var nameBox = el('div', 'in-name');
       nameBox.appendChild(logoNode(a, false));
       var nt = el('div', 'in-name-t');
@@ -5476,7 +5578,12 @@ function renderInput() {
       inp.setAttribute('aria-label', a.name + ' 금액');
       row.appendChild(inp);
       row.appendChild(el('div', 'in-diff'));
-      wrap.appendChild(row);
+      // 휴대폰: 입력 칸 대신 금액만 보이고, 누르면 아래에서 숫자 패드가 올라온다
+      var mb = el('button', 'in-amt-m');
+      mb.type = 'button';
+      mb.setAttribute('aria-label', a.name + ' 금액 입력');
+      row.appendChild(mb);
+      block.appendChild(row);
       paintAmtInput(inp);
       if (focusName === a.name) inp.focus();
     });
@@ -5522,6 +5629,11 @@ function paintAmtInput(inp) {
   var dirty = init !== undefined && v !== '' && v !== init;
   inp.classList.toggle('dirty', dirty);
   var row = inp.closest('.in-row');
+  var mb = row && row.querySelector('.in-amt-m');
+  if (mb) {
+    mb.textContent = v === '' ? '—' : comma(Number(v)) + '원';
+    mb.classList.toggle('dirty', dirty);
+  }
   var box = row ? row.querySelector('.in-diff') : $(inp.dataset.info || 'naInfo');
   box.innerHTML = '';
   if (dirty) {
@@ -7763,7 +7875,8 @@ function renderTopbar() {
   } else if (currentView === 'rebal') {
     sub = rbTopbarSub();
   } else {
-    sub = '바뀐 금액만 고치고 저장하세요 — 입력 안 한 자산은 직전 값이 그대로 이어집니다';
+    sub = isMobile() ? '자산을 눌러 오늘 금액을 넣으세요 — 안 고친 자산은 직전 금액이 이어집니다'
+      : '바뀐 금액만 고치고 저장하세요 — 입력 안 한 자산은 직전 값이 그대로 이어집니다';
   }
   $('viewSub').textContent = sub;
   $('btnTopAdd').hidden = currentView !== 'list' && currentView !== 'input';
@@ -7813,6 +7926,7 @@ function renderAll() {
 function openSheet(id) { $(id).classList.add('open'); }
 function closeSheet(id) {
   if (id === 'monthSheet') { closeMonthSheet(); return; }
+  if (id === 'mPadSheet') mPadClosed();
   $(id).classList.remove('open');
   if (id === 'mountainSheet') m3Update();   // 3D 지도를 뱃지 화면 카드로 돌려놓거나 멈춘다
 }
@@ -11878,6 +11992,89 @@ function mOpenAsset() {
 }
 mMq.addEventListener('change', function () { mPlaceDetail(); renderTopbar(); });
 mPlaceDetail();
+
+// 금액 입력 숫자 패드 — 입력 화면에서 자산 칸을 누르면 올라온다. PC 입력 칸(dataset.value)에 바로 넣으므로
+// 저장 바 · 오늘 날짜로 저장 · 입력 취소가 그대로 쓰인다. 처음 누르는 숫자는 기존 금액을 통째로 바꾼다 (PC 와 같이)
+var mPad = { inp: null, buf: '', fresh: true };
+function mPadOpen(inp) {
+  if (!inp) return;
+  mPad.inp = inp;
+  mPad.buf = inp.dataset.value || '';
+  mPad.fresh = true;
+  var last = latestByName()[inp.dataset.name], row = inp.closest('.in-item');
+  var debt = row && row.classList.contains('debt');
+  $('mPadName').textContent = inp.dataset.name + (debt ? ' · 부채 잔액' : '');
+  $('mPadLast').textContent = '마지막 기록 ' + comma(Number(inp.dataset.initial)) + '원' +
+    (last ? ' · ' + (last.date === fmtDateStr(new Date()) ? '오늘' : last.date) : '');
+  document.querySelectorAll('#inputList .in-item.m-on').forEach(function (r) { r.classList.remove('m-on'); });
+  if (row) row.classList.add('m-on');
+  var list = amtInputs();
+  $('mPadNext').disabled = list.indexOf(inp) >= list.length - 1;
+  mPadPaint();
+  if (!$('mPadSheet').classList.contains('open')) openSheet('mPadSheet');
+}
+function mPadPaint() {
+  var b = mPad.buf, init = mPad.inp.dataset.initial;
+  var val = $('mPadVal');
+  val.textContent = b === '' ? '0' : comma(Number(b));
+  val.appendChild(el('span', '', '원'));
+  val.classList.toggle('fresh', mPad.fresh);       // 다음 숫자가 통째로 바꾼다는 표시
+  $('mPadWords').textContent = b === '' ? '금액을 입력하세요' : fmtWonWords(Number(b));
+  var d = b === '' ? 0 : Number(b) - Number(init), df = $('mPadDiff');
+  df.textContent = d ? (d > 0 ? '▲ +' : '▼ −') + comma(Math.abs(d)) + '원' : '';
+  df.className = 'm-pad-diff ' + dirClass(d);
+}
+function mPadKey(k) {
+  if (k === '000' && (mPad.fresh || mPad.buf === '' || mPad.buf === '0')) return;   // 앞에 붙는 0 은 뜻이 없다
+  var b = mPad.fresh ? '' : mPad.buf;
+  if (k === 'del') b = b.slice(0, -1);
+  else if (k === '000') b = b === '' || b === '0' ? b : b + '000';
+  else b += k;
+  b = b.replace(/^0+(?=\d)/, '').slice(0, 15);
+  mPad.buf = b;
+  mPad.fresh = false;
+  mPad.inp.dataset.value = b;
+  paintAmtInput(mPad.inp);
+  updateSaveBar();
+  mPadPaint();
+}
+// 창이 닫힐 때(완료 · 당겨 닫기 · 바깥 · Esc) — 비워 둔 금액은 원래대로
+function mPadClosed() {
+  if (mPad.inp && (mPad.inp.dataset.value || '') === '') revertAmt(mPad.inp);
+  document.querySelectorAll('#inputList .in-item.m-on').forEach(function (r) { r.classList.remove('m-on'); });
+  mPad.inp = null;
+}
+$('mPadKeys').addEventListener('click', function (e) {
+  var b = e.target.closest('button[data-k]');
+  if (b && mPad.inp) mPadKey(b.dataset.k);
+});
+$('mPadRevert').addEventListener('click', function () {
+  if (!mPad.inp) return;
+  revertAmt(mPad.inp);
+  mPad.buf = mPad.inp.dataset.value;
+  mPad.fresh = true;
+  mPadPaint();
+});
+$('mPadDone').addEventListener('click', function () { closeSheet('mPadSheet'); });
+$('mPadNext').addEventListener('click', function () {
+  if (!mPad.inp) return;
+  var list = amtInputs(), next = list[list.indexOf(mPad.inp) + 1];
+  if ((mPad.inp.dataset.value || '') === '') revertAmt(mPad.inp);
+  if (next) mPadOpen(next); else closeSheet('mPadSheet');
+});
+// 휴대폰에서 자산 칸을 누르면 숫자 패드
+$('inputList').addEventListener('click', function (e) {
+  if (!isMobile()) return;
+  var row = e.target.closest('.in-item');
+  if (row) mPadOpen(row.querySelector('.amt-input'));
+});
+// 키보드가 있으면 숫자 · ← · Enter 도 된다
+document.addEventListener('keydown', function (e) {
+  if (!mPad.inp || !$('mPadSheet').classList.contains('open') || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (/^[0-9]$/.test(e.key)) { e.preventDefault(); mPadKey(e.key); }
+  else if (e.key === 'Backspace') { e.preventDefault(); mPadKey('del'); }
+  else if (e.key === 'Enter') { e.preventDefault(); ($('mPadNext').disabled ? $('mPadDone') : $('mPadNext')).click(); }
+});
 
 // 아래에서 올라오는 창을 아래로 당겨 닫기 — 손잡이 · 윗줄은 언제든, 내용은 맨 위까지 올라가 있을 때.
 // 창 높이의 30%(최대 140px)를 넘기거나 빠르게 튕기면 닫고, 아니면 제자리로 돌아간다.
