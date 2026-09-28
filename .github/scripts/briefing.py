@@ -5,7 +5,8 @@
 #   python3 briefing.py <저장할 파일> <사이트 주소> <이벤트 이름> <커밋 7자리>
 #
 # - 오늘(한국 시간) 글이 아직 없으면(자정 넘어 첫 글 전 · 글이 없는 날) 하루씩 거슬러 올라가 찾는다
-# - 정각 실행인데 바로 전 시 글까지만 있으면(한 시간마다 올라오는 중) 이번 시 글을 10분까지 기다린다
+# - 정각 실행인데 바로 전 시 글까지만 있으면(한 시간마다 올라오는 중) 이번 시 글을 15분까지 기다린다
+#   (정각 글은 보통 10분 안에 올라온다. 장 마감 뒤처럼 더 안 올라오면 기다리기만 하고 끝)
 # - 네이버에서 못 받으면 지금 사이트에 있는 briefing.json 을 그대로 쓴다 (카드가 사라지지 않게)
 # - GITHUB_OUTPUT 에 deploy=true|false — 정각 실행에서 글이 그대로이고 사이트도 이 커밋이면 다시 올리지 않는다
 import datetime, html, json, os, re, sys, time, urllib.request
@@ -15,7 +16,7 @@ POST = 'https://m.stock.naver.com/briefing/market/posts/{}'
 UA = ('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 '
       '(KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1')
 KST = datetime.timezone(datetime.timedelta(hours=9))
-WAIT = 10 * 60   # 이번 시 글을 기다리는 최대 시간 (초)
+WAIT = 15 * 60   # 이번 시 글을 기다리는 최대 시간 (초)
 
 
 def get(url, as_json=True):
