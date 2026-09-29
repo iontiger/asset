@@ -4,6 +4,6 @@ backups/
 
 # 테스트 스크린샷이 실수로 올라가지 않게 (아이콘은 예외)
 /*.png
-!/icon-192.png
-!/icon-512.png
-!/apple-touch-icon.png
+!/app-icon-192.png
+!/app-icon-512.png
+!/app-icon-180.png
