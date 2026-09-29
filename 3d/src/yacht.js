@@ -102,7 +102,7 @@ function land(done){if(!Y.on)return;Y.on=false;window.dpYachtOn=false;document.b
   if(cameraMode==='yacht'){beginWalk();cameraInitialized=false}placeCharacters(0,false);
   if(done){S.rides=(S.rides||0)+1;save();setTimeout(()=>{celebrate();try{sfx('arrive')}catch{}},250);toast(`⛵ 섬 한 바퀴 완주! (${S.rides}번째 항해)`)}else toast('⛵ 선착장에 내렸어요');hud()}
 window.gameYachtCam=function(pos,aim,dt){const fx=Math.sin(Y.head),fz=Math.cos(Y.head);let nx=-Y.x,nz=-Y.z;const nl=Math.hypot(nx,nz)||1;nx/=nl;nz/=nl;
-  const k=THREE.MathUtils.clamp(zoom/39,.5,1.6),o=yaw-Y.yaw0,co=Math.cos(o),so=Math.sin(o),bx0=-fx*22*k-nx*13*k,bz0=-fz*22*k-nz*13*k,bx=bx0*co-bz0*so,bz=bx0*so+bz0*co,lx=Y.vx/4,lz=Y.vz/4;
+  const k=THREE.MathUtils.clamp(zoom/39,.5,1.6)*(innerWidth<innerHeight?1.35:1),o=yaw-Y.yaw0,co=Math.cos(o),so=Math.sin(o),bx0=-fx*22*k-nx*13*k,bz0=-fz*22*k-nz*13*k,bx=bx0*co-bz0*so,bz=bx0*so+bz0*co,lx=Y.vx/4,lz=Y.vz/4;
   pos.set(Y.x+bx+lx,SEA+4+7.5*k,Y.z+bz+lz);aim.set(Y.x+fx*9+nx*10+lx,SEA+4.2,Y.z+fz*9+nz*10+lz);return innerWidth<innerHeight?68:55};
 window.gameYachtDamp=4;
 function shoot(){const fx=Math.sin(Y.head),fz=Math.cos(Y.head),n=Math.hypot(Y.x,Y.z)||1,nx=-Y.x/n,nz=-Y.z/n,f=30+rnd()*50,i=45+rnd()*60,x=Y.x+fx*f+nx*i,z=Y.z+fz*f+nz*i;

@@ -108,7 +108,7 @@ body.reeling #bottom,body.reeling #mobilepad{display:none!important}
 #yachtBar .yb-track i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2c6e8f,#5cc7d9)}
 #yachtBar #ybPct{min-width:34px;text-align:right;font-variant-numeric:tabular-nums}
 #yachtBar button{border:0;border-radius:11px;padding:8px 13px;background:#2c6e8f;color:#fff;font-weight:700;font-size:13px;cursor:pointer}
-body.yacht-ride #gameHud,body.yacht-ride #mobilepad,body.yacht-ride #interaction,body.yacht-ride #rushBar,body.yacht-ride #bottom,body.yacht-ride #reelGame{display:none!important}
+body.yacht-ride #gameHud,body.yacht-ride #mobilepad,body.yacht-ride #bikeBtn,body.yacht-ride #mobileBike,body.yacht-ride #interaction,body.yacht-ride #rushBar,body.yacht-ride #bottom,body.yacht-ride #reelGame{display:none!important}
 @media(max-width:760px){#yachtBar{bottom:14px;gap:9px;padding:8px 10px 8px 12px;font-size:12px}#yachtBar .yb-track{width:28vw}}
 </style></head><body>
 <div id="world" aria-label="DentPhoto 마을 3D 화면. 방향키 또는 WASD로 걷습니다." tabindex="0"></div><div id="labels"></div>
@@ -4290,7 +4290,7 @@ function land(done){if(!Y.on)return;Y.on=false;window.dpYachtOn=false;document.b
   if(cameraMode==='yacht'){beginWalk();cameraInitialized=false}placeCharacters(0,false);
   if(done){S.rides=(S.rides||0)+1;save();setTimeout(()=>{celebrate();try{sfx('arrive')}catch{}},250);toast(`⛵ 섬 한 바퀴 완주! (${S.rides}번째 항해)`)}else toast('⛵ 선착장에 내렸어요');hud()}
 window.gameYachtCam=function(pos,aim,dt){const fx=Math.sin(Y.head),fz=Math.cos(Y.head);let nx=-Y.x,nz=-Y.z;const nl=Math.hypot(nx,nz)||1;nx/=nl;nz/=nl;
-  const k=THREE.MathUtils.clamp(zoom/39,.5,1.6),o=yaw-Y.yaw0,co=Math.cos(o),so=Math.sin(o),bx0=-fx*22*k-nx*13*k,bz0=-fz*22*k-nz*13*k,bx=bx0*co-bz0*so,bz=bx0*so+bz0*co,lx=Y.vx/4,lz=Y.vz/4;
+  const k=THREE.MathUtils.clamp(zoom/39,.5,1.6)*(innerWidth<innerHeight?1.35:1),o=yaw-Y.yaw0,co=Math.cos(o),so=Math.sin(o),bx0=-fx*22*k-nx*13*k,bz0=-fz*22*k-nz*13*k,bx=bx0*co-bz0*so,bz=bx0*so+bz0*co,lx=Y.vx/4,lz=Y.vz/4;
   pos.set(Y.x+bx+lx,SEA+4+7.5*k,Y.z+bz+lz);aim.set(Y.x+fx*9+nx*10+lx,SEA+4.2,Y.z+fz*9+nz*10+lz);return innerWidth<innerHeight?68:55};
 window.gameYachtDamp=4;
 function shoot(){const fx=Math.sin(Y.head),fz=Math.cos(Y.head),n=Math.hypot(Y.x,Y.z)||1,nx=-Y.x/n,nz=-Y.z/n,f=30+rnd()*50,i=45+rnd()*60,x=Y.x+fx*f+nx*i,z=Y.z+fz*f+nz*i;
