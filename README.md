@@ -12,7 +12,7 @@ JavaScript가 윈도우 PC의 폴더에 `asset-data.json` 파일을 직접 만�
 | 파일 | 용도 |
 |---|---|
 | `index.html` | 앱 본체 (HTML + CSS + JS 단일 파일) |
-| `icon-192.png` `icon-512.png` `apple-touch-icon.png` | 앱 아이콘 (탭 아이콘은 `icon-192.png`) |
+| `app-icon-192.png` `app-icon-512.png` `app-icon-180.png` | 앱 아이콘 (탭 아이콘은 `app-icon-192.png`) |
 | `manifest.webmanifest` `sw.js` | 휴대폰 홈 화면에 앱으로 설치 · 인터넷이 끊겨도 열리게 (웹 주소로 열 때만). 클라우드 연동 중이면 마지막으로 받아 둔 기록을 읽기 전용으로 보여 준다 |
 | `.gitignore` | 저장소 폴더를 데이터 폴더로 써도 `asset-data.json`·`backups/` 가 커밋되지 않게 |
 | `.github/workflows/pages.yml` | 기본 브랜치에 푸시하면 GitHub Pages로 자동 배포 (`logos.json` 자동 생성). 매시 정각 무렵(3 · 23 · 43분)에는 AI 시황 브리핑(`briefing.json`)을 새로 받아 둔다 |
@@ -52,7 +52,7 @@ JavaScript가 윈도우 PC의 폴더에 `asset-data.json` 파일을 직접 만�
 > ```
 > 📁 문서\자산
 >  ├ index.html
->  ├ icon-192.png …
+>  ├ app-icon-192.png …
 >  ├ asset-data.json      ← 앱이 만든 데이터 파일
 >  ├ backups\             ← 하루 한 번 자동 백업
 >  └ logos\               ← 로고 이미지 (선택)

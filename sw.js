@@ -2,9 +2,9 @@
 // 같은 사이트의 파일(index.html · 아이콘 · briefing.json 등)은 늘 네트워크에서 먼저 받고 받은 것을 캐시에 둔다.
 // 인터넷이 끊기면 캐시에 둔 마지막 것을 쓴다 — 그래서 새 버전 배포 · 새로고침 알림은 지금처럼 바로 반영된다.
 // 서체(구글 폰트 · Pretendard)는 캐시에 있으면 그것을 쓴다. Supabase · 구글 시트 · 시세 API 등 다른 주소는 건드리지 않는다.
-var CACHE = 'asset-v1';
+var CACHE = 'asset-v2';
 var FONT_CACHE = 'asset-fonts-v1';
-var SHELL = ['./', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
+var SHELL = ['./', 'manifest.webmanifest', 'app-icon-192.png', 'app-icon-512.png', 'app-icon-180.png'];
 var FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com', 'cdn.jsdelivr.net'];
 
 self.addEventListener('install', function (e) {
