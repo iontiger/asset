@@ -1541,7 +1541,17 @@
   }
   .hist-row + .hist-row { border-top:1px solid var(--border); }
   .hist-row:hover { background:var(--hover); }
-  .hist-date { color:var(--ink-2); white-space:nowrap; }
+  .hist-date {
+    position:relative; justify-self:start; max-width:100%; color:var(--ink-2); white-space:nowrap; cursor:pointer;
+    padding:4px 6px; margin-left:-6px; border-radius:6px;
+  }
+  .hist-date:hover, .hist-date:focus-within { background:var(--accent-wash); color:var(--accent-deep); }
+  /* 날짜 칸 전체를 덮는 투명한 달력 입력 (눌리는 건 이 입력) */
+  .hist-date-pick {
+    position:absolute; inset:0; width:100%; height:100%; margin:0; padding:0; border:0;
+    opacity:0; cursor:pointer; font-size:16px; -webkit-appearance:none; appearance:none;
+  }
+  .hist-date-pick::-webkit-calendar-picker-indicator { position:absolute; inset:0; width:auto; height:auto; opacity:0; cursor:pointer; }
   .hist-date.today { color:var(--chip3-fg); font-weight:700; }
   .hist-amt {
     justify-self:end; border:none; background:none; color:var(--ink); cursor:text;
@@ -2937,7 +2947,7 @@
           </div>
 
           <div class="dt-sec dt-sec-hist">
-            <div class="dt-sec-title">날짜별 기록 <span>— 금액을 누르면 고칠 수 있습니다</span></div>
+            <div class="dt-sec-title">날짜별 기록 <span>— 날짜 · 금액을 누르면 고칠 수 있습니다</span></div>
             <div class="hist" id="dtHist"></div>
           </div>
         </div>
@@ -5628,8 +5638,9 @@ function renderHistory(hist, isDebt) {
   for (var i = hist.length - 1; i >= 0; i--) {
     (function (r, prev) {
       var row = el('div', 'hist-row');
-      var hd = el('span', 'hist-date' + (r.date === todayStr ? ' today' : ''), r.date);
-      if (r.date === todayStr) hd.title = '오늘';
+      var hd = el('label', 'hist-date' + (r.date === todayStr ? ' today' : ''), r.date);
+      hd.title = (r.date === todayStr ? '오늘 · ' : '') + '눌러서 날짜 수정';
+      hd.appendChild(histDatePicker(r, todayStr));
       row.appendChild(hd);
       var ab = el('button', 'hist-amt' + (isDebt ? ' debt' : ''), (isDebt ? '−' : '') + comma(r.amount));
       ab.type = 'button';
@@ -5657,6 +5668,33 @@ function renderHistory(hist, isDebt) {
       box.appendChild(row);
     })(hist[i], hist[i - 1]);
   }
+}
+
+// 날짜 칸 위에 투명한 달력 입력을 겹쳐 둔다 — 누르면 기기 기본 달력이 뜨고, 고르면 그 기록의 날짜를 옮긴다
+function histDatePicker(r, todayStr) {
+  var inp = el('input', 'hist-date-pick');
+  inp.type = 'date';
+  inp.value = r.date;
+  inp.max = todayStr;
+  inp.setAttribute('aria-label', r.date + ' 기록 날짜 수정');
+  inp.addEventListener('click', function () {
+    try { if (inp.showPicker) inp.showPicker(); } catch (e) {}
+  });
+  inp.addEventListener('change', function () { moveHistoryDate(r, inp.value); });
+  return inp;
+}
+
+function moveHistoryDate(r, nd) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(nd) || nd === r.date) { renderDetail(); return; }   // 지우기 등
+  if (nd > fmtDateStr(new Date())) { showToast('미래 날짜로는 옮길 수 없습니다'); renderDetail(); return; }
+  var from = r.date;
+  var clash = rows.filter(function (x) { return x !== r && x.name === r.name && x.date === nd; })[0];
+  if (clash && !confirm(nd + ' 에 이미 기록(' + comma(clash.amount) + '원)이 있습니다.\n' +
+      from + ' 기록(' + comma(r.amount) + '원)으로 덮어쓸까요?')) { renderDetail(); return; }
+  commitWithMilestones(function () {
+    if (clash) rows = rows.filter(function (x) { return x !== clash; });
+    r.date = nd;
+  }, from + ' → ' + nd + ' 날짜 수정 완료');
 }
 
 function editHistoryAmount(btn, r) {
