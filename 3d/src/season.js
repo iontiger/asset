@@ -25,7 +25,7 @@ seasonTag=function(){return ' · '+(monthIdx()+1)+'월 '+SEASON_NAME[seasonOf()]
 window.gameDateText=function(){const m=monthIdx(),y=Y0+Math.floor(GT.t/MONTH_SEC/12);return `${y}년 ${m+1}월 · ${SEASON_NAME[MONTHS[m].s]} ${MONTHS[m].w}`};
 window.gameMonth=()=>({m:monthIdx(),year:Y0+Math.floor(GT.t/MONTH_SEC/12),frac:(GT.t/MONTH_SEC)%1,...MONTHS[monthIdx()]});
 // 낮 · 밤: 7달(105초)에 한 바퀴 — 12와 서로소라 해마다 같은 달이 늘 밤이 되지는 않는다. 낮을 65%로 늘린다
-const DAY=MONTH_SEC*7;realClock=function(){const p=(GT.t/DAY+.35)%1,w=p<.65?p/.65*.6+.2:(p-.65)/.35*.6+.8;return (w%1)*dayNightCycle};
+const DAY=MONTH_SEC*7;realClock=function(){const p=(GT.t/DAY+.35)%1,w=p<.65?p/.65*.6+.2:(p-.65)/.35*.4+.8;return (w%1)*dayNightCycle};
 // 광장 날씨판 — 공포 · 탐욕 지수 대신 마을 달력
 setWeather=function(){};
 drawWeatherBoard=function(){if(!weatherBoardCtx)return;const x=weatherBoardCtx,Wd=512,H=256,m=monthIdx(),M=MONTHS[m],F='-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif';x.fillStyle='#fbf6e8';x.fillRect(0,0,Wd,H);x.fillStyle={spring:'#e98aa6',summer:'#e9a93a',autumn:'#c8743a',winter:'#6f9cc9'}[M.s];x.fillRect(0,0,Wd,18);x.textAlign='center';x.textBaseline='middle';x.fillStyle='#56756a';x.font=`700 30px ${F}`;x.fillText('DentPhoto 마을 날씨',Wd/2,60);x.fillStyle='#213e3c';x.font=`900 92px ${F}`;x.fillText((m+1)+'월',130,166);x.font=`800 40px ${F}`;x.fillText(M.w.replace(/^\S+\s/,''),350,150,300);x.font=`700 32px ${F}`;x.fillStyle='#71817c';x.fillText(M.t+'°C',350,204);weatherBoardTex.needsUpdate=true};
@@ -47,19 +47,20 @@ const _rv=rebuildVillage;rebuildVillage=function(){_rv.apply(this,arguments);try
 /* ── 계절 색 — 원래는 달이 바뀌면 한 번에 바뀌지만, 여기서는 매 프레임 조금씩 따라간다 ── */
 const _tc=new THREE.Color(),_gc=new THREE.Color();
 const _rs=realismSeason;realismSeason=function(){_gc.copy(grassMat.color);_rs();grassMat.color.copy(_gc)};
-applySeason=function(){const s=seasonOf(),m=monthIdx();realismSeason();coastSeason(s);
-  window.gameSnowAt=m===0||m===1?-6:m===11?6:m===2?22:null;
+// 같은 계절 · 같은 눈 높이면 다시 칠하지 않는다 (산 정점 4만 개를 15초마다 다시 올리면 휴대폰이 끊긴다)
+let seasonKey='';
+applySeason=function(){const s=seasonOf(),m=monthIdx();window.gameSnowAt=m===0||m===1?-6:m===11?6:m===2?22:null;const key=s+'|'+window.gameSnowAt;if(key===seasonKey)return;seasonKey=key;realismSeason();coastSeason(s);
   _tc.copy(terrain.material.color);terrain.material.color.set((SEASON_COLORS[s]||{})['#9fbb7c']||'#9fbb7c');try{mtnRecolor()}catch(e){console.error(e)}terrain.material.color.copy(_tc)};
 
 /* ── 눈 · 비 알갱이 (GPU) ── */
 const touch=matchMedia('(hover:none)').matches;
-const SN=touch?1600:3400,BOX=new THREE.Vector3(44,26,44);
+const SN=touch?1600:3400,BOX=new THREE.Vector3(44,26,44);let gustAt=0;
 function boxGeo(n,perDrop){const pos=new Float32Array(n*perDrop*3),rr=new Float32Array(n*perDrop),end=new Float32Array(n*perDrop);for(let i=0;i<n;i++){const x=Math.random()*BOX.x,y=Math.random()*BOX.y,z=Math.random()*BOX.z,r=Math.random();for(let j=0;j<perDrop;j++){const k=i*perDrop+j;pos[k*3]=x;pos[k*3+1]=y;pos[k*3+2]=z;rr[k]=r;end[k]=j}}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('aR',new THREE.BufferAttribute(rr,1));g.setAttribute('aEnd',new THREE.BufferAttribute(end,1));g.boundingSphere=new THREE.Sphere(new THREE.Vector3(),1e6);return g}
-const SU={uT:{value:0},uC:{value:new THREE.Vector3()},uBox:{value:BOX},uWind:{value:new THREE.Vector2()},uFall:{value:2.4},uSize:{value:.3},uScale:{value:400},uAmt:{value:0},uCol:{value:new THREE.Color(1,1,1)},uMap:{value:dotTex}};
+const SU={uT:{value:0},uC:{value:new THREE.Vector3()},uBox:{value:BOX},uWind:{value:new THREE.Vector2(3.4*.35,1.2*.35)},uGust:{value:new THREE.Vector2()},uFall:{value:2.4},uSize:{value:.3},uScale:{value:400},uAmt:{value:0},uCol:{value:new THREE.Color(1,1,1)},uMap:{value:dotTex}};
 const snowLayer=new THREE.Points(boxGeo(SN,1),new THREE.ShaderMaterial({uniforms:SU,transparent:true,depthWrite:false,
-  vertexShader:`uniform float uT,uFall,uSize,uScale;uniform vec3 uC,uBox;uniform vec2 uWind;attribute float aR;varying float vA;
-  void main(){float t=uT*(.7+.6*aR);vec3 p=position;p.y-=t*uFall;p.xz+=uWind*t+vec2(sin(uT*1.3+aR*40.),cos(uT*1.1+aR*31.))*.8;
+  vertexShader:`uniform float uT,uFall,uSize,uScale;uniform vec3 uC,uBox;uniform vec2 uWind,uGust;attribute float aR;varying float vA;
+  void main(){float t=uT*(.7+.6*aR);vec3 p=position;p.y-=t*uFall;p.xz+=uWind*t+uGust*(.7+.6*aR)+vec2(sin(uT*1.3+aR*40.),cos(uT*1.1+aR*31.))*.8;
   vec3 o=uC-uBox*.5;p=o+mod(p-o,uBox);vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;float d=-mv.z;
   gl_PointSize=min(uSize*(.55+.9*aR)*uScale/max(d,.1),30.);vA=smoothstep(.5,2.,d)*(1.-smoothstep(uBox.x*.32,uBox.x*.5,d));}`,
   fragmentShader:`uniform sampler2D uMap;uniform vec3 uCol;uniform float uAmt;varying float vA;void main(){float a=texture2D(uMap,gl_PointCoord).a*vA*uAmt;if(a<.02)discard;gl_FragColor=vec4(uCol,a);}`}));
@@ -94,7 +95,7 @@ realismTick=function(dt){_rt(dt);try{
   if(snowPoints)snowPoints.visible=false;if(rainPoints)rainPoints.visible=false;
   // 알갱이
   const light=prefs.light;renderer.getDrawingBufferSize(_dbs);SU.uScale.value=_dbs.y*.5;
-  SU.uT.value=time%3000;SU.uC.value.copy(camera.position);SU.uWind.value.set(3.4,1.2).multiplyScalar(.35+W.snow*gust*1.2);SU.uAmt.value=Math.min(1,W.snow*1.5);SU.uCol.value.setScalar(.4+.6*FX.day);
+  SU.uT.value=time%3000;SU.uC.value.copy(camera.position);{const gd=Math.max(0,Math.min(.1,time-gustAt));gustAt=time;const u=SU.uGust.value;u.x=(u.x+3.4*W.snow*gust*1.2*gd)%BOX.x;u.y=(u.y+1.2*W.snow*gust*1.2*gd)%BOX.z}SU.uAmt.value=Math.min(1,W.snow*1.5);SU.uCol.value.setScalar(.4+.6*FX.day);
   snowLayer.geometry.setDrawRange(0,Math.floor(SN*Math.min(1,W.snow*1.15)*(light?.5:1)));snowLayer.visible=W.snow>.02;
   RU.uT.value=time%3000;RU.uC.value.copy(camera.position);RU.uWind.value.set(1.6,.6);RU.uAmt.value=Math.min(1,W.rain*1.4);RU.uCol.value.set('#b9cfdc').multiplyScalar(.45+.55*FX.day);
   rainLayer.geometry.setDrawRange(0,2*Math.floor(RN*Math.min(1,W.rain*1.1)*(light?.5:1)));rainLayer.visible=W.rain>.02;
@@ -109,4 +110,5 @@ realismTick=function(dt){_rt(dt);try{
 }catch(e){console.error(e)}};
 window.dpSeason={GT,W,MONTHS,MONTH_SEC};
 applySeason();drawWeatherBoard();
+const _uw=updateWeather;updateWeather=function(){const wi=weatherIntensity;weatherIntensity=0;try{return _uw.apply(this,arguments)}finally{weatherIntensity=wi}};
 })();

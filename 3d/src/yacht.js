@@ -95,7 +95,7 @@ $('#ybExit').onclick=()=>land(false);
 function startRide(force){if(Y.on)return;if(!force&&!unlocked()){const c=counts();toast(`⛵ 요트는 낚시 도감 ${c.f}/${c.F} · 숨은 다이아 ${c.g}/${c.G} 를 모두 채우면 열려요`);return}
   const G=window.dpGame||{};try{if(PLAY.mode)endPlay();if(riding)toggleBike(false);if(G.RUSH&&G.RUSH.on)G.endRush(false);if(G.reelStop)G.reelStop();if(G.closeModal)G.closeModal();toggleGemPanel(false)}catch(e){console.error(e)}
   route=[];target=null;drawRoute();keys={};moor();
-  Object.assign(Y,{on:true,phase:'sail',t:0,s:0,yaw0:yaw,fw:2.2,fin:false});window.dpYachtOn=true;cameraMode='yacht';cameraInitialized=false;document.body.classList.add('yacht-ride');bar.classList.add('on');flash();
+  Object.assign(Y,{on:true,phase:'sail',t:0,s:0,yaw0:yaw,fw:2.2,fin:false});window.dpYachtOn=true;cameraMode='yacht';cameraInitialized=false;try{resize();applySectionVisibility()}catch(e){}document.body.classList.add('yacht-ride');bar.classList.add('on');flash();
   $('#location').textContent='⛵ 요트로 섬 한 바퀴 · 드래그로 둘러보고 Esc 로 내려요';toast('⛵ 출항! 섬을 한 바퀴 돌아요');beep(196,0,.7,'sawtooth',.025);beep(247,.05,.7,'sawtooth',.02);tick(0)}
 function land(done){if(!Y.on)return;Y.on=false;window.dpYachtOn=false;document.body.classList.remove('yacht-ride');bar.classList.remove('on');flash();moor();
   {const w=nearestWalkable(GATE.x-OUT.x*2.5,GATE.z-OUT.z*2.5)||GATE;player.x=w.x;player.z=w.z}player.angle=H0;viewHeading=H0;keys={};characterGroups.forEach(c=>{c.root.rotation.x=0;c.root.rotation.z=0});dog.x=GATE.x-OUT.x*2+SIDE.x*1.5;dog.z=GATE.z-OUT.z*2+SIDE.z*1.5;
@@ -137,8 +137,11 @@ const _fp=findPlay;findPlay=function(){if(!Y.on&&near()){PLAY_TXT.yacht=unlocked
 const _da=doAction;doAction=function(){if(!Y.on&&!inputBusy()&&!PLAY.mode&&walkish()&&near()){startRide();return}return _da()};
 const _tb=toggleBike;toggleBike=function(on){if(Y.on)return;return _tb(on)};
 const _tt=travelTo;travelTo=function(p,d){if(Y.on){toast('요트에서 내린 뒤에 이동해요');return}return _tt(p,d)};
+const _es=enterSection;enterSection=function(){if(Y.on){toast('요트에서 내린 뒤에 이동해요');return}return _es.apply(this,arguments)};
+if(typeof fullOverview==='function'){const _fo=fullOverview;fullOverview=function(){if(Y.on)land(false);return _fo.apply(this,arguments)}}
+const _ud=updateDog;updateDog=function(dt){if(Y.on)return;return _ud(dt)};
 if(typeof mmIcons==='function'){const _mi=mmIcons;mmIcons=function(x){_mi(x);try{const [a,b]=mmXY(Y.x,Y.z);x.font='17px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('⛵',a,b)}catch{}}}
-addEventListener('keydown',e=>{if(!Y.on)return;if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();land(false);return}const k=(e.key||'').toLowerCase();if(e.code==='Space'||['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','f','b',' ','h','e','enter'].includes(k)){e.preventDefault();e.stopImmediatePropagation()}},true);
+addEventListener('keydown',e=>{if(!Y.on||inputBusy())return;const ae=document.activeElement;if((e.key==='Enter'||e.key===' '||e.code==='Space')&&ae&&/^(BUTTON|A)$/.test(ae.tagName))return;if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();land(false);return}const k=(e.key||'').toLowerCase();if(e.code==='Space'||['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','f','b',' ','h','e','enter'].includes(k)){e.preventDefault();e.stopImmediatePropagation()}},true);
 const _ue=updateExtras;updateExtras=function(dt){_ue(dt);try{chk-=dt;if(chk<=0){chk=1;checkUnlock();hud()}if(Y.on){if(cameraMode!=='yacht')land(false);else tick(dt)}else{place();sparkTick(dt,false)}}catch(e){console.error(e)}};
 moor();hud();
 window.dpYacht={start:()=>startRide(true),stop:()=>land(false),Y,S,GATE,L,T,path:()=>SP,

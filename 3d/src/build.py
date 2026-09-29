@@ -106,6 +106,24 @@ rep("}else if(cameraMode==='section'){const d=sectionDistance","}else if(cameraM
 rep("cameraMode==='entering'?2.2:cameraMode==='walking'?6:3","cameraMode==='entering'?2.2:cameraMode==='walking'?6:cameraMode==='yacht'?(window.gameYachtDamp||4):3")
 rep("FX.tilt=THREE.MathUtils.lerp(FX.tilt,walking?0:","FX.tilt=THREE.MathUtils.lerp(FX.tilt,walking||cameraMode==='yacht'?0:")
 
+# 검토 후속 — 남아 있던 자산앱 흔적 · 요트 나침반
+rep("label('증권거래소',[20,8.2,-17]","label('상점가',[20,8.2,-17]")
+rep("label('금고 산책길',[-24,1.1,19.5]","label('보물 창고길',[-24,1.1,19.5]")
+rep("label('상환 정류장',[-7,4,22]","label('버스 정류장',[-7,4,22]")
+rep("예금:'금고 산책길 ›',증권:'증권거래소 ›',장기:'오래오래 낚시터 ›',부채:'상환 정류장 ›'","예금:'보물 창고길 ›',증권:'상점가 ›',장기:'오래오래 낚시터 ›',부채:'버스 정류장 ›'")
+rep("예금:['gold','금고 산책길','#8a6a2a'],증권:['glass','증권거래소','#2c6856']","예금:['gold','보물 창고길','#8a6a2a'],증권:['glass','상점가','#2c6856']")
+rep("부채:['bus','상환 정류장','#35566b']","부채:['bus','버스 정류장','#35566b']")
+rep("['month','이번 달 변화 표시','건물 위 ▲▼ 증감 · 줄어든 곳의 비구름 · 구역별 %'],['hide','금액 가리기','모든 금액을 ••• 로 — 다른 사람에게 보여 줄 때'],","")
+rep("'도착 · 사진 · 뉴스 · 기록 소리'","'도착 · 사진 · 다이아 · 낚시 소리'")
+rep("buildBoard();fetchKospi();setInterval(()=>{if(!paused)fetchKospi()},18e5);","buildBoard();")
+rep("function kospiText(){","function kospiText(){return '🛍 DentPhoto 마을 상점가 · 어서 오세요!  💎 숨은 다이아 10개를 찾아보세요  ⛵ 요트가 선착장에서 기다려요';")
+rep("섬 구석 · 언덕 꼭대기 · 숲속 · 모래사장에 9개가 숨어 있어요.","섬 구석 · 언덕 꼭대기 · 숲속 · 모래사장, 목표봉 정상 바로 아래에 10개가 숨어 있어요.")
+rep('💎 <b id="gemTop">0 / 9</b>','💎 <b id="gemTop">0 / 10</b>')
+rep("{n:9,name:'다이아몬드 왕관',sub:'반짝이는 왕관 — 섬 탐험 완료 기념'}","{n:10,name:'다이아몬드 왕관',sub:'반짝이는 왕관 — 다이아 10개, 섬 탐험 완료 기념'}")
+rep("hk=rewardOn(9)?'crownD'","hk=rewardOn(10)?'crownD'")
+rep("m.rotation.set(0,F.a+Math.PI/2,Math.sin(F.t*14)*.4)","m.rotation.set(0,F.a,Math.sin(F.t*14)*.4)")
+rep("`rotate(${-(cameraMode==='walking'||cameraMode==='entering'?viewHeading:yaw)*180/Math.PI}deg)`","`rotate(${-(cameraMode==='walking'||cameraMode==='entering'?viewHeading:cameraMode==='yacht'?Math.atan2(cameraAim.x-camera.position.x,cameraAim.z-camera.position.z):yaw)*180/Math.PI}deg)`")
+
 # 스타일 · 미니게임 스크립트
 # 덧붙이는 스크립트 — 순서대로 각자 <script>. 원본 스크립트의 최상위 const/let · 함수를 그대로 쓰고, 함수는 다시 대입해 덮어쓴다
 JS_FILES=['game.js','fx.js','talk.js','hero.js','summit.js','season.js','npc.js','yacht.js']
