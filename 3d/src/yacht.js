@@ -95,9 +95,9 @@ $('#ybExit').onclick=()=>land(false);
 function startRide(force){if(Y.on)return;if(!force&&!unlocked()){const c=counts();toast(`⛵ 요트는 낚시 도감 ${c.f}/${c.F} · 숨은 다이아 ${c.g}/${c.G} 를 모두 채우면 열려요`);return}
   const G=window.dpGame||{};try{if(PLAY.mode)endPlay();if(riding)toggleBike(false);if(G.RUSH&&G.RUSH.on)G.endRush(false);if(G.reelStop)G.reelStop();if(G.closeModal)G.closeModal();toggleGemPanel(false)}catch(e){console.error(e)}
   route=[];target=null;drawRoute();keys={};moor();
-  Object.assign(Y,{on:true,phase:'sail',t:0,s:0,yaw0:yaw,fw:2.2,fin:false});window.dpYachtOn=true;cameraMode='yacht';cameraInitialized=false;try{resize();applySectionVisibility()}catch(e){}document.body.classList.add('yacht-ride');bar.classList.add('on');flash();
+  Object.assign(Y,{on:true,phase:'sail',t:0,s:0,yaw0:yaw,fw:2.2,fin:false});window.dpYachtOn=true;try{dpSeason.holdSpring()}catch{}cameraMode='yacht';cameraInitialized=false;try{resize();applySectionVisibility()}catch(e){}document.body.classList.add('yacht-ride');bar.classList.add('on');flash();
   $('#location').textContent='⛵ 요트로 섬 한 바퀴 · 드래그로 둘러보고 Esc 로 내려요';toast('⛵ 출항! 섬을 한 바퀴 돌아요');beep(196,0,.7,'sawtooth',.025);beep(247,.05,.7,'sawtooth',.02);tick(0)}
-function land(done){if(!Y.on)return;Y.on=false;window.dpYachtOn=false;document.body.classList.remove('yacht-ride');bar.classList.remove('on');flash();moor();
+function land(done){if(!Y.on)return;Y.on=false;window.dpYachtOn=false;try{dpSeason.release()}catch{}document.body.classList.remove('yacht-ride');bar.classList.remove('on');flash();moor();
   {const w=nearestWalkable(GATE.x-OUT.x*2.5,GATE.z-OUT.z*2.5)||GATE;player.x=w.x;player.z=w.z}player.angle=H0;viewHeading=H0;keys={};characterGroups.forEach(c=>{c.root.rotation.x=0;c.root.rotation.z=0});dog.x=GATE.x-OUT.x*2+SIDE.x*1.5;dog.z=GATE.z-OUT.z*2+SIDE.z*1.5;
   if(cameraMode==='yacht'){beginWalk();cameraInitialized=false}placeCharacters(0,false);
   if(done){S.rides=(S.rides||0)+1;save();setTimeout(()=>{celebrate();try{sfx('arrive')}catch{}},250);toast(`⛵ 섬 한 바퀴 완주! (${S.rides}번째 항해)`)}else toast('⛵ 선착장에 내렸어요');hud()}

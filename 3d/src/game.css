@@ -123,3 +123,13 @@ body.yacht-ride #gameHud,body.yacht-ride #mobilepad,body.yacht-ride #bikeBtn,bod
 #dentGame .dg-foot{display:flex;align-items:center;justify-content:space-between;font-weight:700}
 #dentGame .dg-foot button{border:0;border-radius:11px;padding:8px 12px;background:#e4efec;color:#22675e;font:inherit;font-weight:700;cursor:pointer}
 body.dent-on #mobilepad,body.dent-on #interaction{display:none!important}
+/* 포토 스팟 앨범 */
+.game-modal .pa-note{font-size:12px;color:#5d7a70;margin:0 0 10px}
+.game-modal .pa-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
+.game-modal .pa-cell{position:relative;aspect-ratio:1.9;border-radius:12px;overflow:hidden;background:#ece6d6;display:flex;align-items:center;justify-content:center}
+.game-modal .pa-cell img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.game-modal .pa-cell i{font-style:normal;font-size:22px;opacity:.35}
+.game-modal .pa-cell span{position:absolute;left:0;right:0;bottom:0;padding:3px 6px;font-size:11px;font-weight:700;color:#fff;background:linear-gradient(transparent,#0008);text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.game-modal .pa-cell:not(.on) span{color:#5d7a70;background:none}
+#photoBtn.spot{box-shadow:0 0 0 3px #ffd76a,0 6px 18px #22675e33;animation:spotPulse 1.2s ease-in-out infinite alternate}
+@keyframes spotPulse{from{transform:scale(1)}to{transform:scale(1.08)}}
