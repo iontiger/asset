@@ -992,11 +992,8 @@
     margin:0 -32px; padding:24px 32px 18px;
     background:var(--bg); transition:box-shadow .2s, background-color .2s;
   }
-  .topbar.scrolled {
-    background:color-mix(in srgb, var(--bg) 86%, transparent);
-    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-    box-shadow:0 1px 0 var(--border);
-  }
+  /* 스크롤해도 본문 글자가 비치지 않게 불투명한 바탕 */
+  .topbar.scrolled { background:var(--bg); box-shadow:0 1px 0 var(--border); }
   .topbar h2 { font-size:1.6rem; font-weight:800; letter-spacing:-.025em; }
   .topbar-sub { font-size:.85rem; color:var(--muted); margin-top:4px; }
   .topbar-actions { display:flex; gap:8px; flex:none; }
