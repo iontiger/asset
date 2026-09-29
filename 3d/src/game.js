@@ -1,6 +1,6 @@
 /* ═══════ 자산마을 3D · 미니게임 에디션 ═══════
    자산 금액 · 기록 · 목표 화면은 모두 숨기고, 마을을 걸으며 노는 것만 남긴다.
-   - 숨은 다이아몬드 9개 (원래 있던 것) + 다이아 러시 (60초 동안 주변에 나타나는 다이아 모으기)
+   - 숨은 다이아몬드 10개 (원래 9개 + 목표봉 정상 아래) + 다이아 러시 (60초 동안 주변에 나타나는 다이아 모으기)
    - 낚시: 찌가 흔들릴 때 F → 릴 감기 (누르고 있으면 초록 칸이 오른쪽으로, 떼면 왼쪽으로). 물고기를 칸 안에 잡아 두면 게이지가 찬다
    - 낚시 도감: 호수 · 개울 물고기별 마릿수와 최고 크기
    조작: PC 는 방향키/WASD · Shift 달리기 · F 놀기 · Space 점프 · B 자전거, 모바일은 화면 아래 버튼 */
@@ -14,14 +14,14 @@ const beep=(f,d=0,l=.1,w='triangle',v=.04)=>{try{if(playLoud())tone(f,d,l,w,v)}c
 /* ── 자산 화면 대신: 구역에 가면 인사만, 자산 상세는 열지 않는다 ── */
 enterSection=function(key){const c=categories.find(c=>c.key===key);autoSuppressed=key;toast('📍 '+(c?.name||key)+'에 왔어요'+(key==='장기'?' · 부두 끝에서 F 를 누르면 낚시해요':''));if(cameraMode!=='walking'&&cameraMode!=='entering')beginWalk()};
 showAsset=function(){};showCategory=function(){};
-villageFacts=function(){const tips=[['다이아 러시','💎 러시를 시작하면 60초 동안 주변에 다이아가 나타나요. 자전거(B)를 타면 더 빨리 모아요!'],['낚시 팁','찌가 흔들리면 F! 그다음엔 꾹 눌러 초록 칸으로 물고기를 따라가요.'],['숨은 보물','섬 구석 · 언덕 꼭대기 · 숲속에 다이아몬드 9개가 숨어 있대요.'],['황금 잉어','호수 부두에서 아주 가끔 황금 잉어가 잡힌대요.'],['개울 물고기','개울가와 다리 위에서는 호수와 다른 물고기가 잡혀요.']];return {due:null,list:[tips[Math.floor(Math.random()*tips.length)]]}};
+villageFacts=function(){const tips=[['다이아 러시','💎 러시를 시작하면 60초 동안 주변에 다이아가 나타나요. 자전거(B)를 타면 더 빨리 모아요!'],['낚시 팁','찌가 흔들리면 F! 그다음엔 꾹 눌러 초록 칸으로 물고기를 따라가요.'],['숨은 보물','섬 구석 · 언덕 꼭대기 · 숲속에 다이아몬드 10개가 숨어 있대요.'],['황금 잉어','호수 부두에서 아주 가끔 황금 잉어가 잡힌대요.'],['개울 물고기','개울가와 다리 위에서는 호수와 다른 물고기가 잡혀요.']];return {due:null,list:[tips[Math.floor(Math.random()*tips.length)]]}};
 
 /* ── 미니게임판 ── */
 const hud=document.createElement('aside');hud.id='gameHud';hud.className='panel';
 hud.innerHTML=`<div class="gh-head"><b>🎮 미니게임</b><button class="gh-fold" id="ghFold" aria-expanded="true">접기 ▴</button></div><div class="gh-date" id="ghDate" title="15초마다 한 달"></div><div class="gh-datebar"><i id="ghDateBar"></i></div><div class="gh-body">
 <div class="gh-row"><span><b>⚡ 다이아 러시</b><small id="ghRush">60초 동안 다이아 모으기</small></span><button class="gh-btn" id="ghRushBtn">시작</button></div>
 <div class="gh-row"><span><b>🎣 낚시</b><small id="ghFish">도감 0 / 0</small></span><span style="flex-direction:row;gap:6px"><button class="gh-btn soft" id="ghDexBtn">도감</button><button class="gh-btn" id="ghPierBtn">낚시터로</button></span></div>
-<div class="gh-row"><span><b>💎 숨은 다이아몬드</b><small id="ghGems">0 / 9</small></span><button class="gh-btn soft" id="ghGemBtn">힌트</button></div>
+<div class="gh-row"><span><b>💎 숨은 다이아몬드</b><small id="ghGems">0 / 10</small></span><button class="gh-btn soft" id="ghGemBtn">힌트</button></div>
 <div class="gh-row"><span><b>👤 주인공</b><small id="ghHero">남 · 여 중 한 명</small></span><button class="gh-btn soft" id="ghHeroBtn">바꾸기</button></div>
 <p class="gh-tip" id="ghTip"></p></div>`;
 document.body.appendChild(hud);
@@ -95,7 +95,7 @@ window.dpGame={showModal,closeModal,hudText,endRush,reelStop,RUSH,R,fishCount:()
 
 /* ── 도움말 ── */
 const help=$('#helpDialog');if(help){help.querySelectorAll('p').forEach(p=>p.remove());help.querySelector('h2').textContent='마을에서 놀아요';help.querySelector('.eyebrow').textContent='WELCOME TO THE VILLAGE';
-  help.querySelector('h2').insertAdjacentHTML('afterend',`<p><b>걷기</b> — PC 는 방향키 · WASD (Shift 달리기, Space 점프, B 자전거, H 손 흔들기). 모바일은 왼쪽 아래 화살표 버튼. 드래그로 둘러보고 휠 · ＋/− 로 확대해요. 건물이나 구역 이름을 누르면 그곳까지 걸어가요.</p><p><b>⚡ 다이아 러시</b> — 미니게임판의 시작을 누르면 60초 동안 주변에 빛기둥이 선 다이아가 나타나요. 닿으면 모아요 (황금 다이아는 3개). 위쪽 화살표가 가장 가까운 다이아 방향이에요.</p><p><b>🎣 낚시</b> — 호수 부두 끝 · 개울가 · 다리 위에서 F (모바일은 아래 가운데 알림). 찌가 흔들릴 때 한 번 더 누르면 릴 감기가 시작돼요. 누르고 있으면 초록 칸이 오른쪽, 떼면 왼쪽으로 가요 — 물고기를 칸 안에 두면 게이지가 차고, 다 차면 낚아요. 잡은 물고기는 도감에 모여요.</p><p><b>💎 숨은 다이아몬드</b> — 섬 구석 · 언덕 꼭대기 · 숲속 · 모래사장에 9개. 오른쪽 위 💎 를 누르면 힌트와 보상(모자 · 강아지 · 왕관)이 나와요.</p><p><b>⛰ 목표봉</b> — 북쪽 큰길의 등산로를 따라 정상까지 올라요. 정상석에는 “덴포토”, 그 옆엔 다이아몬드가 반짝여요.</p><p><b>⛵ 요트 섬 일주</b> — 낚시 도감 11종과 숨은 다이아 9개를 모두 모으면 남쪽 해변 DentPhoto 선착장의 요트가 열려요. F 로 타면 섬을 한 바퀴 돌며 불꽃놀이를 해요 (Esc 로 내리기).</p><p><b>📅 계절</b> — 15초마다 한 달이 지나 3분이면 1년이에요. 겨울엔 폭설이 쌓이고, 장마엔 비가 와요 (비 올 때만 우산).</p><p><b>그 밖의 놀이</b> — F 로 벤치에 앉기 · 잔디에 눕기 · 오리 먹이 주기. 주민에게 다가가면 게임 도움말이나 주식 격언을 들려줘요. 주인공은 미니게임판의 👤 바꾸기로 바꿔요. 기록은 이 기기의 브라우저에 저장돼요.</p>`);
+  help.querySelector('h2').insertAdjacentHTML('afterend',`<p><b>걷기</b> — PC 는 방향키 · WASD (Shift 달리기, Space 점프, B 자전거, H 손 흔들기). 모바일은 왼쪽 아래 화살표 버튼. 드래그로 둘러보고 휠 · ＋/− 로 확대해요. 건물이나 구역 이름을 누르면 그곳까지 걸어가요.</p><p><b>⚡ 다이아 러시</b> — 미니게임판의 시작을 누르면 60초 동안 주변에 빛기둥이 선 다이아가 나타나요. 닿으면 모아요 (황금 다이아는 3개). 위쪽 화살표가 가장 가까운 다이아 방향이에요.</p><p><b>🎣 낚시</b> — 호수 부두 끝 · 개울가 · 다리 위에서 F (모바일은 아래 가운데 알림). 찌가 흔들릴 때 한 번 더 누르면 릴 감기가 시작돼요. 누르고 있으면 초록 칸이 오른쪽, 떼면 왼쪽으로 가요 — 물고기를 칸 안에 두면 게이지가 차고, 다 차면 낚아요. 잡은 물고기는 도감에 모여요.</p><p><b>💎 숨은 다이아몬드</b> — 섬 구석 · 언덕 꼭대기 · 숲속 · 모래사장, 목표봉 정상 바로 아래에 10개. 오른쪽 위 💎 를 누르면 힌트와 보상(모자 · 강아지 · 왕관)이 나와요.</p><p><b>⛰ 목표봉</b> — 북쪽 큰길의 등산로를 따라 정상까지 올라요. 정상석에는 “덴포토”, 그 옆엔 다이아몬드가 반짝여요.</p><p><b>⛵ 요트 섬 일주</b> — 낚시 도감 11종과 숨은 다이아 10개를 모두 모으면 남쪽 해변 DentPhoto 선착장의 요트가 열려요. F 로 타면 섬을 한 바퀴 돌며 불꽃놀이를 해요 (Esc 로 내리기).</p><p><b>📅 계절</b> — 15초마다 한 달이 지나 3분이면 1년이에요. 겨울엔 폭설이 쌓이고, 장마엔 비가 와요 (비 올 때만 우산).</p><p><b>그 밖의 놀이</b> — F 로 벤치에 앉기 · 잔디에 눕기 · 오리 먹이 주기. 주민에게 다가가면 게임 도움말이나 주식 격언을 들려줘요. 주인공은 미니게임판의 👤 바꾸기로 바꿔요. 기록은 이 기기의 브라우저에 저장돼요.</p>`);
   const hb=help.querySelector('button.primary');if(hb)hb.textContent='놀러 가기'}
 
 /* ── 매 프레임 ── */
