@@ -3962,12 +3962,13 @@ function totalSeries() {
   });
 }
 
-function filteredSeries() {
-  var all = totalSeries();
-  if (!all.length || currentRange === 'all') return all;
+function filteredSeries() { return seriesInRange(totalSeries(), currentRange); }
+// 마지막 기록일에서 days일 전부터 — 순자산 추이 차트와 휴대폰 순자산 카드의 추세선이 같이 쓴다
+function seriesInRange(all, days) {
+  if (!all.length || days === 'all') return all;
   var last = parseDate(all[all.length - 1].date);
   var cutoff = new Date(last);
-  cutoff.setDate(cutoff.getDate() - currentRange);
+  cutoff.setDate(cutoff.getDate() - days);
   var cut = fmtDateStr(cutoff);
   var out = all.filter(function (p) { return p.date >= cut; });
   // 범위 시작 직전 값이 있으면 시작점으로 이어붙여 선이 끊기지 않게
@@ -12499,20 +12500,18 @@ function mRenderHero(series, m1) {
   $('mGoal').setAttribute('aria-label', '목표 자산 ' + fmtHeaderTotal(goalAmount) + '원 · 달성률 ' +
     Math.max(0, gp).toFixed(1) + '% — 눌러서 목표 금액 수정');
 }
-// 최근 1개월 — 대시보드 순자산 카드의 "최근 1개월"과 같은 기준(마지막 기록일의 한 달 전).
+// 최근 1개월 — 순자산 추이 차트의 "1개월"(마지막 기록일의 30일 전부터)과 같은 점들.
 // 그날 이전 마지막 값을 시작점으로 이어 붙여, 추세선의 처음과 끝의 차이가 곧 증감이 된다.
-// full: 한 달 전 값이 있는지 (없으면 첫 기록부터의 변화)
+// full: 30일 전 값이 있는지 (없으면 첫 기록부터의 변화)
 function mLastMonth(series) {
   var last = series[series.length - 1], cut = parseDate(last.date);
-  cut.setMonth(cut.getMonth() - 1);
-  var c = fmtDateStr(cut), prev = null;
-  var pts = series.filter(function (p) { return p.date >= c; });
-  for (var i = 0; i < series.length && series[i].date < c; i++) prev = series[i];
-  if (prev && pts[0].date > c) pts.unshift({ date: c, total: prev.total });
-  var p0 = pts[0], diff = pts.length >= 2 ? last.total - p0.total : null;
-  return { pts: pts, full: p0.date === c, diff: diff,
+  cut.setDate(cut.getDate() - 30);
+  var pts = seriesInRange(series, 30), p0 = pts[0];
+  var diff = pts.length >= 2 ? last.total - p0.total : null;
+  return { pts: pts, full: p0.date === fmtDateStr(cut), diff: diff,
            pct: diff !== null && p0.total ? diff / Math.abs(p0.total) * 100 : null };
 }
+function mdLabel(ds) { var d = parseDate(ds); return (d.getMonth() + 1) + '.' + d.getDate(); }
 function mDrawHeroChart(pts) {
   var box = $('mHeroChart');
   var W = box.clientWidth, H = box.clientHeight;
@@ -12522,7 +12521,8 @@ function mDrawHeroChart(pts) {
   var vals = pts.map(function (p) { return p.total; });
   var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
   if (mn === mx) { mn -= 1; mx += 1; }
-  var px = 6, pt = 9, pb = 9;
+  var sp = mx - mn; mn -= sp * 0.12; mx += sp * 0.08;   // 순자산 추이 차트와 같은 위아래 여백
+  var px = 6, pt = 9, pb = 18;
   var xy = pts.map(function (p) {
     return [px + (parseDate(p.date).getTime() - t0) / span * (W - px * 2),
             pt + (1 - (p.total - mn) / (mx - mn)) * (H - pt - pb)];
@@ -12539,7 +12539,11 @@ function mDrawHeroChart(pts) {
     '<path d="' + line + 'L' + f(lq[0]) + ' ' + H + 'L' + f(xy[0][0]) + ' ' + H + 'Z" fill="url(#mHeroFill)"/>' +
     '<path d="' + line + '" fill="none" stroke="#c5d6ff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' + dots +
     '<circle cx="' + f(lq[0]) + '" cy="' + f(lq[1]) + '" r="8" fill="rgba(255,255,255,.2)"/>' +
-    '<circle cx="' + f(lq[0]) + '" cy="' + f(lq[1]) + '" r="4.3" fill="#fff"/></svg>';
+    '<circle cx="' + f(lq[0]) + '" cy="' + f(lq[1]) + '" r="4.3" fill="#fff"/>' +
+    // 기간이 보이게 처음 · 끝 날짜
+    '<text x="' + px + '" y="' + (H - 2) + '" font-size="10" fill="rgba(255,255,255,.55)">' + mdLabel(pts[0].date) + '</text>' +
+    '<text x="' + (W - px) + '" y="' + (H - 2) + '" font-size="10" fill="rgba(255,255,255,.55)" text-anchor="end">' +
+    mdLabel(pts[pts.length - 1].date) + '</text></svg>';
 }
 
 // 자산 구성 — 대시보드 자산 구성 카드와 같은 계산 (연동 부채는 그 그룹에서 차감)
