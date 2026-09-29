@@ -415,6 +415,113 @@
   .rb-ext { display:inline-block; margin-top:14px; font-size:.8rem; font-weight:700; color:var(--accent-deep); text-decoration:none; }
   .rb-ext:hover { text-decoration:underline; }
 
+  /* ── 투자 정보 (PC): AI 시황 브리핑 + 스토캐스틱 신호 종목 · 차트 ───────── */
+  .inv-brief {
+    display:grid; grid-template-columns:minmax(0,5fr) minmax(0,7fr); gap:28px; margin-bottom:18px;
+    padding:24px 26px; border-radius:18px; color:#fff; min-height:190px;
+    background:
+      radial-gradient(90% 120% at 100% 0%, rgba(96,140,255,.40), transparent 60%),
+      linear-gradient(165deg, #25385f 0%, #182545 52%, #0f1a31 100%);
+    box-shadow:0 18px 30px -16px rgba(15,26,49,.55), 0 4px 10px rgba(15,26,49,.12);
+  }
+  :root[data-theme="dark"] .inv-brief { box-shadow:0 0 0 1px rgba(140,170,255,.16), 0 16px 32px -14px rgba(0,0,0,.9); }
+  .inv-brief-l { display:flex; flex-direction:column; gap:14px; min-width:0; }
+  .inv-brief-top { display:flex; align-items:center; gap:10px; font-size:.8rem; font-weight:700; color:rgba(255,255,255,.72); }
+  .inv-brief .m-news-tag {
+    display:inline-flex; align-items:center; gap:5px; padding:4px 10px 4px 8px; border-radius:99px;
+    background:rgba(255,255,255,.14); color:#fff; font-size:.76rem; font-weight:800;
+  }
+  .inv-brief .m-news-tag svg { width:14px; height:14px; }
+  .inv-brief-title { margin:auto 0; font-size:1.42rem; line-height:1.42; font-weight:800; letter-spacing:-.02em; word-break:keep-all; overflow-wrap:anywhere; }
+  .inv-brief-src { font-size:.78rem; font-weight:600; color:rgba(255,255,255,.66); text-decoration:none; }
+  a.inv-brief-src:hover { color:#fff; text-decoration:underline; }
+  .inv-brief-pts { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:1fr 1fr; gap:10px 22px; align-content:center; counter-reset:ib; }
+  .inv-brief-pts li {
+    display:flex; gap:10px; padding:10px 12px; border-radius:12px; background:rgba(255,255,255,.07);
+    font-size:.86rem; line-height:1.55; font-weight:500; color:rgba(255,255,255,.92); word-break:keep-all; overflow-wrap:anywhere;
+  }
+  .inv-brief-pts li::before {
+    counter-increment:ib; content:counter(ib, decimal-leading-zero); flex:none;
+    font-weight:800; color:#9fbaff; font-variant-numeric:tabular-nums;
+  }
+  .inv-brief-pts.one { grid-template-columns:1fr; }
+  .inv-brief-empty { margin:auto 0; font-size:1rem; font-weight:600; color:rgba(255,255,255,.8); }
+  .inv-brief .m-news-retry { align-self:flex-start; padding:7px 14px; border-radius:99px; border:0; background:rgba(255,255,255,.16); color:#fff; font:inherit; font-size:.82rem; font-weight:700; cursor:pointer; }
+  .inv-sk { display:grid; gap:10px; margin:auto 0; }
+  .inv-sk i { display:block; height:16px; border-radius:8px; background:rgba(255,255,255,.14); animation:invSk 1.1s ease-in-out infinite alternate; }
+  @keyframes invSk { to { opacity:.45; } }
+  .inv-sk i + i { width:62%; }
+  @media (prefers-reduced-motion: reduce) { .inv-sk i { animation:none; } }
+
+  .inv-main { display:grid; grid-template-columns:minmax(300px, 360px) minmax(0,1fr); gap:18px; align-items:start; }
+  .inv-sig .card-head { margin-bottom:8px; }
+  .inv-sig-group + .inv-sig-group { margin-top:16px; }
+  .inv-sig-h { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .inv-tag { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:99px; font-size:.76rem; font-weight:800; }
+  .inv-tag.buy  { background:color-mix(in srgb, var(--kospi-up) 13%, transparent); color:var(--kospi-up); }
+  .inv-tag.sell { background:color-mix(in srgb, var(--kospi-down) 13%, transparent); color:var(--kospi-down); }
+  .inv-sig-h small { font-size:.72rem; color:var(--muted); }
+  .inv-sig-list { list-style:none; margin:0; padding:0; display:grid; gap:2px; }
+  .inv-sig-list button {
+    width:100%; display:grid; grid-template-columns:18px minmax(0,1fr) auto; align-items:center; gap:10px;
+    padding:9px 10px; border:1px solid transparent; border-radius:11px; background:none; color:inherit; font:inherit; text-align:left; cursor:pointer;
+  }
+  .inv-sig-list button:hover { background:var(--hover); }
+  .inv-sig-list button.on { background:var(--bg); border-color:var(--border); }
+  .inv-sig-list button.on.buy  { box-shadow:inset 3px 0 0 var(--kospi-up); }
+  .inv-sig-list button.on.sell { box-shadow:inset 3px 0 0 var(--kospi-down); }
+  .inv-no { font-size:.84rem; font-weight:800; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .inv-nm { min-width:0; }
+  .inv-nm b { display:block; font-size:.92rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .inv-nm small { display:block; margin-top:1px; font-size:.72rem; color:var(--muted); }
+  .inv-px { text-align:right; font-size:.9rem; font-weight:700; font-variant-numeric:tabular-nums; }
+  .inv-px small { display:block; margin-top:1px; font-size:.7rem; font-weight:600; color:var(--muted); }
+  .inv-none { padding:14px 10px; font-size:.86rem; color:var(--muted); }
+
+  .inv-ch-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+  .inv-ch-name { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .inv-ch-name b { font-size:1.25rem; font-weight:800; letter-spacing:-.02em; }
+  .inv-ch-name small { font-size:.8rem; color:var(--muted); font-weight:600; }
+  .inv-ch-px { margin-top:4px; font-size:1.55rem; font-weight:800; font-variant-numeric:tabular-nums; }
+  .inv-ch-px small { margin-left:8px; font-size:.86rem; font-weight:700; }
+  .inv-ch-px small.up { color:var(--kospi-up); }
+  .inv-ch-px small.down { color:var(--kospi-down); }
+  .inv-ch-leg { display:flex; gap:14px; flex-wrap:wrap; align-items:center; margin:12px 0 4px; font-size:.74rem; color:var(--muted); }
+  .inv-ch-leg span { display:inline-flex; align-items:center; gap:5px; }
+  .inv-ch-leg .a-buy { color:var(--kospi-up); font-weight:800; }
+  .inv-ch-leg .a-sell { color:var(--kospi-down); font-weight:800; }
+  .inv-ch-leg i { display:inline-block; width:16px; border-top:2px solid var(--accent); }
+  .inv-ch-leg i.d { border-top:2px dashed #e08a2c; }
+  .inv-ch-box { position:relative; }
+  .inv-ch-box svg { display:block; width:100%; }
+  .inv-ch-box text { font-family:inherit; font-variant-numeric:tabular-nums; }
+  .inv-tip {
+    position:absolute; top:6px; z-index:2; pointer-events:none; min-width:150px;
+    padding:9px 11px; border-radius:10px; background:var(--surface); border:1px solid var(--border);
+    box-shadow:0 8px 24px -8px rgba(0,0,0,.28); font-size:.75rem; line-height:1.6; font-variant-numeric:tabular-nums;
+  }
+  .inv-tip[hidden] { display:none; }
+  .inv-tip b { display:block; margin-bottom:3px; font-size:.78rem; }
+  .inv-tip div { display:flex; justify-content:space-between; gap:14px; }
+  .inv-tip span { color:var(--muted); }
+  .inv-tip .sig { margin-top:4px; font-weight:800; }
+  .inv-ch-stats { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; margin-top:12px; }
+  .inv-ch-stats > div { padding:10px 12px; border-radius:11px; background:var(--bg); border:1px solid var(--border); min-width:0; }
+  .inv-ch-stats label { display:block; font-size:.7rem; color:var(--muted); font-weight:600; }
+  .inv-ch-stats b { display:block; margin-top:3px; font-size:.95rem; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .inv-ch-foot { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-top:12px; font-size:.74rem; color:var(--muted); }
+  .inv-ch-foot a { font-size:.8rem; font-weight:700; color:var(--accent-deep); text-decoration:none; }
+  .inv-ch-foot a:hover { text-decoration:underline; }
+  .inv-empty { padding:40px 10px; text-align:center; font-size:.9rem; color:var(--muted); line-height:1.7; }
+  @media (max-width: 1180px) {
+    .inv-brief { grid-template-columns:1fr; }
+    .inv-main { grid-template-columns:1fr; }
+  }
+  @media (max-width: 760px) {
+    .inv-brief-pts { grid-template-columns:1fr; }
+    .inv-ch-stats { grid-template-columns:1fr 1fr; }
+  }
+
   @container rebal (max-width: 1320px) {
     #rbHoldTable .rb-c-price { display:none; }
     .rb-etf b { max-width:220px; }
@@ -2477,6 +2584,11 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21.2 15.9A10 10 0 1 1 8 2.8"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
       연금 리밸런싱<span class="nav-badge due" id="navBadgeRebal"></span><kbd>6</kbd>
     </button>
+    <button data-view="invest" data-tip-side="right" data-tip-t="투자 정보 · 7" data-tip="AI 시황 브리핑과 스토캐스틱 매수 · 매도 신호 종목을 봅니다.
+종목을 누르면 신호가 난 자리에 화살표를 표시한 차트가 나옵니다.">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 15 4-5 3 3 5-6"/><path d="M15 7h4v4"/></svg>
+      투자 정보<kbd>7</kbd>
+    </button>
   </nav>
   <div class="side-foot">
     <div class="store-card" id="storeCard" data-tip-side="right" data-tip-t="데이터 파일" data-tip="기록은 이 PC의 폴더에 asset-data.json 파일 하나로 저장됩니다 (서버 · 계정 없음).
@@ -3026,6 +3138,24 @@
   </section>
 
   <!-- ── 입력: 기존 자산의 오늘 금액만 ── -->
+  <!-- ── 투자 정보 (PC): AI 시황 브리핑 + 스토캐스틱 신호 종목 · 차트. 내용은 휴대폰 투자 탭 카드와 같은 briefing.json · stoch.json ── -->
+  <section class="view" id="view-invest">
+    <article class="inv-brief" id="invBrief" aria-label="AI 시황 브리핑"></article>
+    <div class="inv-main">
+      <div class="card inv-sig">
+        <div class="card-head">
+          <div>
+            <div class="card-title">매수 · 매도 신호<span class="qm" tabindex="0" data-tip-t="스토캐스틱 신호" data-tip="코스피 · 코스닥에서 슬로우 스토캐스틱(14, 3, 3)의 %K 가 %D 를 위로 뚫으면 매수(골든크로스), 아래로 뚫으면 매도(데드크로스) 신호입니다.
+전 영업일 종가 기준으로 시가총액이 큰 순서대로 5개씩 보여 줍니다. 투자 판단의 참고용이에요.">?</span></div>
+            <div class="card-sub" id="invSigSub"></div>
+          </div>
+        </div>
+        <div id="invSigLists"></div>
+      </div>
+      <div class="card inv-chart" id="invChart"></div>
+    </div>
+  </section>
+
   <section class="view" id="view-input">
     <div class="in-info">
       <div class="in-date">
@@ -3210,6 +3340,7 @@
       <button type="button" data-help="badges">뱃지</button>
       <button type="button" data-help="explore">탐험</button>
       <button type="button" data-help="rebal">연금 리밸런싱</button>
+      <button type="button" data-help="invest">투자 정보</button>
       <button type="button" data-help="cloud">클라우드 연동</button>
     </div>
     <div class="help-body" id="helpBody"></div>
@@ -7962,8 +8093,8 @@ window.addEventListener('message', function (e) {
 });
 
 /* ═══════════ 화면 전환 · 공통 ═══════════ */
-var VIEW_TITLES = { home: '대시보드', list: '자산', input: '입력', badges: '뱃지', explore: '탐험', rebal: '연금 리밸런싱' };
-var VIEW_KEYS = { 1: 'home', 2: 'list', 3: 'input', 4: 'badges', 5: 'explore', 6: 'rebal' };
+var VIEW_TITLES = { home: '대시보드', list: '자산', input: '입력', badges: '뱃지', explore: '탐험', rebal: '연금 리밸런싱', invest: '투자 정보' };
+var VIEW_KEYS = { 1: 'home', 2: 'list', 3: 'input', 4: 'badges', 5: 'explore', 6: 'rebal', 7: 'invest' };
 
 function renderTopbar() {
   $('viewTitle').textContent = VIEW_TITLES[currentView];
@@ -7980,6 +8111,8 @@ function renderTopbar() {
     sub = '자산이 마을이 됩니다 — 대시보드와 같은 최신 금액으로 집 · 금고 · 거래소가 세워져요';
   } else if (currentView === 'rebal') {
     sub = rbTopbarSub();
+  } else if (currentView === 'invest') {
+    sub = '네이버페이 증권 AI 시황 브리핑과, 전 영업일 종가 기준 스토캐스틱 매수 · 매도 신호 종목';
   } else {
     sub = isMobile() ? '자산을 눌러 오늘 금액을 넣으세요 — 안 고친 자산은 직전 금액이 이어집니다'
       : '바뀐 금액만 고치고 저장하세요 — 입력 안 한 자산은 직전 값이 그대로 이어집니다';
@@ -8009,6 +8142,7 @@ function switchView(v) {
   if (v === 'list') drawDetailChart();
   // 가격(전일 종가)은 리밸런싱 화면을 처음 열 때 불러온다 (앱 시작을 느리게 하지 않게)
   if (v === 'rebal') { if (!rb.prices && !rb.loading) rbLoadPrices(); renderRebal(); mNewsOnShow(); }
+  if (v === 'invest') { invRender(); mNewsOnShow(); }
   $('rbSaveBar').hidden = !(rb.dirty && v === 'rebal');
   if (v === 'badges') { renderBadges(); updateBadgeNav(); }
   document.body.classList.toggle('explore-on', v === 'explore');
@@ -11550,7 +11684,7 @@ document.addEventListener('click', function (e) {
 function hk(keys, what) {
   return '<tr><td>' + keys.split(' ').map(function (k) { return k === '/' || k === '~' || k === '+' ? k : '<kbd>' + k + '</kbd>'; }).join(' ') + '</td><td>' + what + '</td></tr>';
 }
-var HELP_KEYS_COMMON = hk('1 ~ 6', '대시보드 · 자산 · 입력 · 뱃지 · 탐험 · 연금 리밸런싱') + hk('N', '새 자산 추가') + hk('?', '이 사용법 창') + hk('Esc', '열린 창 닫기');
+var HELP_KEYS_COMMON = hk('1 ~ 7', '대시보드 · 자산 · 입력 · 뱃지 · 탐험 · 연금 리밸런싱 · 투자 정보') + hk('N', '새 자산 추가') + hk('?', '이 사용법 창') + hk('Esc', '열린 창 닫기');
 var HELP = {
   start: { t: '처음 시작하기', main:
     '<h3>이렇게 시작하세요</h3><ol class="guide-steps">' +
@@ -11662,6 +11796,16 @@ var HELP = {
     '<li>주기가 지나면 메뉴에 빨간 <b>!</b> 가 뜹니다. 밴드를 두면 작은 차이는 거래하지 않아요.</li></ul>',
     keys: hk('Ctrl + S', '종목 · 설정 저장') + hk('↑ ↓ Enter', 'ETF 검색 결과 고르기') + HELP_KEYS_COMMON }
 };
+HELP.invest = { t: '투자 정보', main:
+  '<h3>무엇을 보여 주나요</h3><ul>' +
+  '<li><b>AI 시황 브리핑</b> — 네이버페이 증권 AI 브리핑(시황)의 가장 최신 글입니다. 매시 정각 무렵 새 글로 바뀌어요.</li>' +
+  '<li><b>매수 · 매도 신호</b> — 코스피 · 코스닥에서 슬로우 스토캐스틱(14, 3, 3) %K 가 %D 를 위로 뚫은(매수) · 아래로 뚫은(매도) 종목을 전 영업일 종가 기준, 시가총액 순으로 5개씩 보여 줍니다.</li></ul>' +
+  '<h3>차트 보는 법</h3><ul>' +
+  '<li>왼쪽 목록에서 종목을 누르면 오른쪽에 일봉 차트와 스토캐스틱이 나옵니다.</li>' +
+  '<li>진한 화살표가 이번 신호, 옅은 화살표는 같은 기간의 지난 교차입니다. 빨간 ▲ = 골든크로스(매수), 파란 ▼ = 데드크로스(매도).</li>' +
+  '<li>차트 위에 마우스를 올리면 그날의 시가 · 고가 · 저가 · 종가와 %K · %D 가 보여요.</li>' +
+  '<li>신호는 참고용입니다. 투자 판단과 책임은 본인에게 있어요.</li></ul>',
+  keys: hk('↑ ↓', '신호 종목 옮겨 가며 차트 보기') + HELP_KEYS_COMMON };
 HELP.cloud = { t: '클라우드 연동', main:
   '<h3>가장 쉬운 방법 — 동기화 폴더에 두기 (PC끼리)</h3><ol class="guide-steps">' +
   '<li><span>PC에 <b>OneDrive</b> · <b>Google Drive 데스크톱</b> · <b>Dropbox</b> 중 하나가 로그인돼 있는지 확인합니다.</span></li>' +
@@ -12662,6 +12806,7 @@ function mNewsCard(cls) {
 }
 var M_NEWS_TAG = '<span class="m-news-tag">' + ico('sparkles') + 'AI 시황 브리핑</span>';
 function mNewsRender() {
+  invBriefRender();
   var d = mNews.data, track = $('mNewsTrack');
   $('mNews').hidden = location.protocol === 'file:';
   track.innerHTML = '';
@@ -12787,7 +12932,7 @@ function mNewsPlan() {
   var wait = (60 - min) * 60e3 - now.getUTCSeconds() * 1e3 + 60e3;
   if (!mNews.data || mNewsHour(mNews.data) < mNewsNowHour()) wait = Math.min(wait, (min < 30 ? 5 : 10) * 60e3);
   mNews.timer = setTimeout(function () {
-    if (!document.hidden && isMobile() && currentView === 'rebal') mNewsLoad();
+    if (!document.hidden && mInvShown()) mNewsLoad();
   }, wait);
 }
 /* ── 투자 탭: 스토캐스틱 신호 카드 ──
@@ -12802,6 +12947,7 @@ function mSigOk(d) {
 }
 try { var mSigSaved = JSON.parse(lsGet(M_SIG_KEY) || 'null'); if (mSigOk(mSigSaved)) mSig.data = mSigSaved; } catch (e) {}
 function mSigRender() {
+  invSigRender();
   var d = mSig.data, track = $('mSigTrack');
   $('mSig').hidden = !d || location.protocol === 'file:';
   if (!d) return;
@@ -12863,18 +13009,313 @@ function mSigLoad() {
       if (!old || old.basisDate !== d.basisDate || JSON.stringify([old.buy, old.sell]) !== JSON.stringify([d.buy, d.sell])) mSigRender();
     })
     .catch(function () {})
-    .then(function () { mSig.busy = false; });
+    .then(function () { mSig.busy = false; if (!mSig.data) invSigRender(); });
 }
+// 브리핑 · 신호가 보이는 화면 — 휴대폰은 투자 탭, PC 는 투자 정보
+function mInvShown() { return isMobile() ? currentView === 'rebal' : currentView === 'invest'; }
 function mSigOnShow() {
-  if (!isMobile() || currentView !== 'rebal') return;
+  if (!mInvShown()) return;
   if (!mSig.at || Date.now() - mSig.at > 30 * 60e3) mSigLoad();
 }
 if (mSig.data) mSigRender();
 
+/* ═══════════ 투자 정보 (PC) ═══════════
+   휴대폰 투자 탭의 두 카드(AI 시황 브리핑 · 스토캐스틱 신호)를 PC 폭에 맞게 — 위는 브리핑 한 장, 아래 왼쪽은 신호 종목 목록,
+   오른쪽은 고른 종목의 일봉 차트. 차트 일봉은 stoch.json 에 종목마다 함께 담겨 온다(bars: [날짜, 시가, 고가, 저가, 종가, 거래량]).
+   슬로우 스토캐스틱(14,3,3)을 다시 계산해 %K 가 %D 를 뚫은 자리마다 화살표를 올린다 — 진한 것이 이번 신호, 옅은 것은 지난 교차. */
+var inv = { code: null, resizeT: 0 };
+var INV_WD = ['일', '월', '화', '수', '목', '금', '토'];
+function invNum(v) { return Math.round(v).toLocaleString('ko-KR'); }
+function invCap(eok) { return eok >= 10000 ? (eok / 10000).toFixed(1) + '조' : Number(eok).toLocaleString('ko-KR') + '억'; }
+function invYmd(d, long) {   // '20260925' → '9/25' · '2026.09.25 (금)'
+  var y = +d.slice(0, 4), m = +d.slice(4, 6), dd = +d.slice(6, 8);
+  return long ? d.slice(0, 4) + '.' + d.slice(4, 6) + '.' + d.slice(6, 8) + ' (' + INV_WD[new Date(y, m - 1, dd).getDay()] + ')' : m + '/' + dd;
+}
+function invRender() {
+  if (!inv) return;
+  invBriefRender();
+  invSigRender();
+}
+
+// ── 브리핑: 왼쪽 제목, 오른쪽 핵심 요약 (두 줄씩)
+function invBriefRender() {
+  var box = $('invBrief');
+  if (!inv || !box) return;
+  var d = mNews.data;
+  box.innerHTML = '<div class="inv-brief-l"><div class="inv-brief-top">' + M_NEWS_TAG + '<time></time></div></div>';
+  var left = box.firstChild;
+  if (location.protocol === 'file:') {
+    left.appendChild(el('p', 'inv-brief-empty', '파일로 연 화면에서는 볼 수 없어요 — 사이트 주소로 열어 주세요'));
+    return;
+  }
+  if (!d) {
+    if (mNews.err && !mNews.busy) {
+      left.appendChild(el('p', 'inv-brief-empty', '시황 브리핑을 불러오지 못했어요'));
+      var b = el('button', 'm-news-retry', '다시 시도');
+      b.type = 'button';
+      b.addEventListener('click', mNewsLoad);
+      left.appendChild(b);
+    } else left.insertAdjacentHTML('beforeend', '<div class="inv-sk" role="status" aria-label="불러오는 중"><i></i><i></i></div>');
+    return;
+  }
+  left.querySelector('time').textContent = mNewsWhen(d);
+  left.appendChild(el('h3', 'inv-brief-title', d.title));
+  var link = /^https:\/\/m\.stock\.naver\.com\//.test(d.url || '');
+  var src = el(link ? 'a' : 'span', 'inv-brief-src', '네이버페이 증권 AI 브리핑' + (link ? ' · 원문 보기 ↗' : ''));
+  if (link) { src.href = d.url; src.target = '_blank'; src.rel = 'noopener'; }
+  left.appendChild(src);
+  var pts = (d.points || []).slice(0, 8);
+  if (pts.length) {
+    var ol = el('ol', 'inv-brief-pts' + (pts.length < 3 ? ' one' : ''));
+    pts.forEach(function (t) { ol.appendChild(el('li', null, t)); });
+    box.appendChild(ol);
+  }
+}
+
+// ── 신호 종목 목록
+function invAll() {
+  var d = mSig.data;
+  if (!d) return [];
+  return d.buy.slice(0, 5).map(function (it) { return { it: it, side: 'buy' }; })
+    .concat(d.sell.slice(0, 5).map(function (it) { return { it: it, side: 'sell' }; }));
+}
+function invSigRender() {
+  var box = $('invSigLists');
+  if (!inv || !box) return;
+  var d = mSig.data;
+  box.innerHTML = '';
+  $('invSigSub').textContent = d ? (+d.basisDate.slice(5, 7)) + '월 ' + (+d.basisDate.slice(8, 10)) + '일 종가 기준 · 시가총액 순' : '';
+  if (!d) {
+    box.appendChild(el('div', 'inv-none', location.protocol === 'file:' ? '파일로 연 화면에서는 볼 수 없어요' : mSig.busy || !mSig.at ? '신호 종목을 불러오는 중…' : '신호 종목을 불러오지 못했어요'));
+    invChartRender();
+    return;
+  }
+  [['buy', '▲ 매수 신호', '골든크로스'], ['sell', '▼ 매도 신호', '데드크로스']].forEach(function (s) {
+    var g = el('div', 'inv-sig-group');
+    g.innerHTML = '<div class="inv-sig-h"><span class="inv-tag ' + s[0] + '">' + s[1] + '</span><small>%K ' + (s[0] === 'buy' ? '↗' : '↘') + ' %D ' + s[2] + '</small></div>';
+    var list = d[s[0]].slice(0, 5);
+    if (!list.length) g.appendChild(el('div', 'inv-none', '신호가 난 종목이 없어요'));
+    else {
+      var ol = el('ol', 'inv-sig-list');
+      list.forEach(function (it, i) {
+        var b = el('button', s[0]);
+        b.type = 'button';
+        b.dataset.code = it.code;
+        b.innerHTML = '<span class="inv-no">' + (i + 1) + '</span><span class="inv-nm"><b></b><small></small></span>' +
+          '<span class="inv-px">' + invNum(it.close) + '<small>%K ' + it.k + ' · %D ' + it.d + '</small></span>';
+        b.querySelector('b').textContent = it.name;
+        b.querySelector('.inv-nm small').textContent = it.market + ' · 시총 ' + invCap(it.cap);
+        var li = el('li');
+        li.appendChild(b);
+        ol.appendChild(li);
+      });
+      g.appendChild(ol);
+    }
+    box.appendChild(g);
+  });
+  var all = invAll();
+  if (!all.some(function (x) { return x.it.code === inv.code; })) inv.code = all.length ? all[0].it.code : null;
+  invMark();
+  invChartRender();
+}
+function invMark() {
+  document.querySelectorAll('#invSigLists button[data-code]').forEach(function (b) { b.classList.toggle('on', b.dataset.code === inv.code); });
+}
+function invPick(code) {
+  if (!code || code === inv.code) return;
+  inv.code = code;
+  invMark();
+  invChartRender();
+}
+$('invSigLists').addEventListener('click', function (e) {
+  var b = e.target.closest('button[data-code]');
+  if (b) invPick(b.dataset.code);
+});
+// ↑ ↓ 로 종목을 옮겨 가며 차트 보기
+document.addEventListener('keydown', function (e) {
+  if (currentView !== 'invest' || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (document.querySelector('.sheet-back.open') || (e.target.closest && e.target.closest('input, select, textarea, [contenteditable="true"]'))) return;
+  var all = invAll(), i = all.findIndex(function (x) { return x.it.code === inv.code; });
+  if (!all.length) return;
+  e.preventDefault();
+  i = Math.max(0, Math.min(all.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)));
+  invPick(all[i].it.code);
+  var b = document.querySelector('#invSigLists button.on');
+  if (b) b.focus({ preventScroll: true });
+});
+
+// ── 차트
+// 슬로우 스토캐스틱(14,3,3) — stoch_screen.py 와 같은 계산. 값이 없는 앞쪽은 null
+function invStoch(b) {
+  var n = b.length, fk = [], K = [], D = [];
+  for (var i = 0; i < n; i++) {
+    fk[i] = K[i] = D[i] = null;
+    if (i >= 13) {
+      var hh = -Infinity, ll = Infinity;
+      for (var j = i - 13; j <= i; j++) { hh = Math.max(hh, b[j][2]); ll = Math.min(ll, b[j][3]); }
+      fk[i] = hh > ll ? 100 * (b[i][4] - ll) / (hh - ll) : 50;
+    }
+    if (i >= 15) K[i] = (fk[i] + fk[i - 1] + fk[i - 2]) / 3;
+    if (i >= 17) D[i] = (K[i] + K[i - 1] + K[i - 2]) / 3;
+  }
+  var cross = {};   // 교차한 봉 → 'buy' | 'sell'
+  for (i = 18; i < n; i++) {
+    if (K[i - 1] <= D[i - 1] && K[i] > D[i]) cross[i] = 'buy';
+    else if (K[i - 1] >= D[i - 1] && K[i] < D[i]) cross[i] = 'sell';
+  }
+  return { K: K, D: D, cross: cross };
+}
+function invCur() {
+  var all = invAll();
+  for (var i = 0; i < all.length; i++) if (all[i].it.code === inv.code) return all[i];
+  return null;
+}
+function invChartRender() {
+  var box = $('invChart'), cur = invCur();
+  if (!box) return;
+  if (!cur) {
+    box.innerHTML = '<div class="inv-empty">' + (mSig.data ? '왼쪽에서 종목을 고르면 차트가 나와요' : '신호 종목을 불러오면 여기에 차트가 나와요') + '</div>';
+    return;
+  }
+  var it = cur.it, side = cur.side, bars = Array.isArray(it.bars) ? it.bars : [];
+  var naver = 'https://m.stock.naver.com/domestic/stock/' + encodeURIComponent(it.code) + '/total';
+  var prev = bars.length > 1 ? bars[bars.length - 2][4] : null, chg = prev ? it.close - prev : 0, rate = prev ? chg / prev * 100 : 0;
+  box.innerHTML =
+    '<div class="inv-ch-head"><div><div class="inv-ch-name"><b></b><small></small></div>' +
+      '<div class="inv-ch-px">' + invNum(it.close) + '원' + (prev ? '<small class="' + (chg > 0 ? 'up' : chg < 0 ? 'down' : '') + '">' +
+        (chg > 0 ? '▲ ' : chg < 0 ? '▼ ' : '') + invNum(Math.abs(chg)) + ' (' + (rate > 0 ? '+' : '') + rate.toFixed(2) + '%)</small>' : '') + '</div></div>' +
+      '<span class="inv-tag ' + side + '">' + (side === 'buy' ? '▲ 매수 신호 · 골든크로스' : '▼ 매도 신호 · 데드크로스') + '</span></div>' +
+    (bars.length >= 25
+      ? '<div class="inv-ch-leg"><span><b class="a-buy">▲</b>골든크로스(매수)</span><span><b class="a-sell">▼</b>데드크로스(매도)</span>' +
+          '<span>진한 화살표가 이번 신호, 옅은 것은 지난 교차</span><span><i></i>%K</span><span><i class="d"></i>%D</span></div>' +
+        '<div class="inv-ch-box" id="invChBox"><div class="inv-tip" id="invTip" hidden></div></div>'
+      : '<div class="inv-empty">이 종목의 차트 데이터가 아직 없어요.<br>다음 신호 갱신(오전 8시 무렵) 때 함께 받아 옵니다.</div>') +
+    '<div class="inv-ch-stats"><div><label>종가</label><b>' + invNum(it.close) + '원</b></div>' +
+      '<div><label>%K / %D</label><b>' + it.k + ' / ' + it.d + '</b></div>' +
+      '<div><label>시장</label><b>' + rbEsc(it.market) + '</b></div>' +
+      '<div><label>시가총액</label><b>' + invCap(it.cap) + '</b></div></div>' +
+    '<div class="inv-ch-foot"><span>슬로우 스토캐스틱(14, 3, 3) · 일봉 · 투자 판단의 참고용이에요</span>' +
+      '<a href="' + naver + '" target="_blank" rel="noopener noreferrer">네이버 증권에서 자세히 보기 ↗</a></div>';
+  box.querySelector('.inv-ch-name b').textContent = it.name;
+  box.querySelector('.inv-ch-name small').textContent = it.code + ' · ' + it.market;
+  if (bars.length >= 25) invDraw();
+}
+function invDraw() {
+  var box = $('invChBox'), cur = invCur();
+  if (!box || !cur) return;
+  var all = cur.it.bars, st = invStoch(all), side = cur.side;
+  var s0 = Math.max(17, all.length - 90), b = all.slice(s0), n = b.length, last = all.length - 1;
+  var W = Math.max(320, Math.round(box.clientWidth || 800));
+  var L = 6, R = 62, T = 34, PH = 290, G = 26, SH = 104, B = 24, H = T + PH + G + SH + B;
+  var step = (W - L - R) / n, cw = Math.max(1.5, Math.min(12, step * 0.62));
+  var X = function (k) { return L + step * (k + 0.5); };
+  var hi = -Infinity, lo = Infinity;
+  b.forEach(function (r) { hi = Math.max(hi, r[2]); lo = Math.min(lo, r[3]); });
+  if (hi === lo) { hi += 1; lo -= 1; }
+  var pad = (hi - lo) * 0.14; hi += pad; lo -= pad;
+  var Y = function (v) { return T + (hi - v) / (hi - lo) * PH; };
+  var sTop = T + PH + G, YS = function (v) { return sTop + (100 - v) / 100 * SH; };
+  var UP = 'var(--kospi-up)', DN = 'var(--kospi-down)', out = [];
+  // 가격 눈금 (오른쪽)
+  var yl = Y(all[last][4]);   // 마지막 종가 — 그 옆 눈금 글자는 가려지니 뺀다
+  for (var g = 0; g <= 4; g++) {
+    var v = lo + (hi - lo) * (1 - g / 4) , yy = Y(v).toFixed(1);
+    out.push('<line x1="' + L + '" x2="' + (W - R) + '" y1="' + yy + '" y2="' + yy + '" stroke="var(--grid)" stroke-dasharray="3 4"/>' +
+      (Math.abs(yy - yl) < 16 ? '' : '<text x="' + (W - R + 8) + '" y="' + (+yy + 4) + '" font-size="11" fill="var(--muted)">' + invNum(v) + '</text>'));
+  }
+  // 스토캐스틱 판: 20 · 50 · 80
+  out.push('<rect x="' + L + '" y="' + sTop + '" width="' + (W - L - R) + '" height="' + SH + '" fill="var(--bg)" rx="6"/>');
+  [80, 50, 20].forEach(function (v) {
+    var yy = YS(v).toFixed(1);
+    out.push('<line x1="' + L + '" x2="' + (W - R) + '" y1="' + yy + '" y2="' + yy + '" stroke="var(--grid)"' + (v === 50 ? ' stroke-dasharray="3 4"' : '') + '/>' +
+      '<text x="' + (W - R + 8) + '" y="' + (+yy + 4) + '" font-size="11" fill="var(--muted)">' + v + '</text>');
+  });
+  out.push('<text x="' + L + '" y="' + (sTop - 8) + '" font-size="11" font-weight="700" fill="var(--muted)">Slow Stoch 14 · 3 · 3</text>');
+  // 이번 신호 자리 — 두 판을 가로지르는 옅은 띠
+  var xs = X(last - s0).toFixed(1), sc = side === 'buy' ? UP : DN;
+  out.push('<rect x="' + (X(last - s0) - Math.max(step, 10) / 2).toFixed(1) + '" y="' + (T - 8) + '" width="' + Math.max(step, 10).toFixed(1) + '" height="' + (PH + G + SH + 8) +
+    '" fill="' + sc + '" opacity=".08" rx="4"/>');
+  // 날짜
+  var every = Math.max(1, Math.ceil(n / Math.max(3, Math.floor((W - L - R) / 90))));
+  for (var k = n - 1; k >= 0; k -= every) {
+    out.push('<text x="' + X(k).toFixed(1) + '" y="' + (H - 6) + '" font-size="11" text-anchor="middle" fill="var(--muted)">' + invYmd(b[k][0]) + '</text>');
+  }
+  // 봉
+  b.forEach(function (r, k) {
+    var up = r[4] >= r[1], col = up ? UP : DN, x = X(k).toFixed(1);
+    var yo = Y(r[1]), yc = Y(r[4]), top = Math.min(yo, yc), h = Math.max(1, Math.abs(yc - yo));
+    out.push('<line x1="' + x + '" x2="' + x + '" y1="' + Y(r[2]).toFixed(1) + '" y2="' + Y(r[3]).toFixed(1) + '" stroke="' + col + '" stroke-width="1"/>' +
+      '<rect x="' + (X(k) - cw / 2).toFixed(1) + '" y="' + top.toFixed(1) + '" width="' + cw.toFixed(1) + '" height="' + h.toFixed(1) + '" fill="' + col + '"/>');
+  });
+  // %K · %D
+  var line = function (arr, attrs) {
+    var d = '';
+    for (var k = 0; k < n; k++) if (arr[s0 + k] != null) d += (d ? 'L' : 'M') + X(k).toFixed(1) + ' ' + YS(arr[s0 + k]).toFixed(1);
+    return '<path d="' + d + '" fill="none" ' + attrs + ' stroke-linejoin="round" stroke-linecap="round"/>';
+  };
+  out.push(line(st.D, 'stroke="#e08a2c" stroke-width="1.6" stroke-dasharray="4 3"'));
+  out.push(line(st.K, 'stroke="var(--accent)" stroke-width="1.8"'));
+  // 교차 화살표 — ▲ 는 봉 아래(매수), ▼ 는 봉 위(매도)
+  var arrow = function (x, yTip, dir, s, col, op) {
+    var h1 = s * 1.15 * dir, h2 = s * 2.3 * dir, w = s * 0.38;
+    return '<path d="M' + x.toFixed(1) + ' ' + yTip.toFixed(1) + ' L' + (x + s).toFixed(1) + ' ' + (yTip + h1).toFixed(1) + ' L' + (x + w).toFixed(1) + ' ' + (yTip + h1).toFixed(1) +
+      ' L' + (x + w).toFixed(1) + ' ' + (yTip + h2).toFixed(1) + ' L' + (x - w).toFixed(1) + ' ' + (yTip + h2).toFixed(1) + ' L' + (x - w).toFixed(1) + ' ' + (yTip + h1).toFixed(1) +
+      ' L' + (x - s).toFixed(1) + ' ' + (yTip + h1).toFixed(1) + 'Z" fill="' + col + '" opacity="' + op + '" stroke="var(--surface)" stroke-width="1.2" stroke-linejoin="round"/>';
+  };
+  Object.keys(st.cross).forEach(function (key) {
+    var i = +key, k = i - s0;
+    if (k < 0) return;
+    var dirBuy = st.cross[i] === 'buy', now = i === last, col = dirBuy ? UP : DN, s = now ? 9 : 5.5, op = now ? 1 : 0.38, x = X(k), r = all[i];
+    out.push(dirBuy ? arrow(x, Y(r[3]) + 5, 1, s, col, op) : arrow(x, Y(r[2]) - 5, -1, s, col, op));
+    out.push('<circle cx="' + x.toFixed(1) + '" cy="' + YS(st.K[i]).toFixed(1) + '" r="' + (now ? 5 : 3.2) + '" fill="' + col + '" opacity="' + op + '" stroke="var(--surface)" stroke-width="1.5"/>');
+    if (now) {
+      var ly = dirBuy ? Y(r[3]) + 5 + s * 2.3 + 15 : Y(r[2]) - 5 - s * 2.3 - 7;
+      out.push('<text x="' + (x - 4).toFixed(1) + '" y="' + ly.toFixed(1) + '" font-size="12.5" font-weight="800" text-anchor="end" fill="' + col + '">' +
+        (dirBuy ? '매수 신호' : '매도 신호') + '</text>');
+    }
+  });
+  // 마지막 종가 표시 (오른쪽 눈금 자리)
+  out.push('<line x1="' + L + '" x2="' + (W - R) + '" y1="' + yl.toFixed(1) + '" y2="' + yl.toFixed(1) + '" stroke="' + sc + '" stroke-width="1" stroke-dasharray="2 3" opacity=".6"/>' +
+    '<rect x="' + (W - R + 2) + '" y="' + (yl - 10).toFixed(1) + '" width="' + (R - 4) + '" height="20" rx="5" fill="' + sc + '"/>' +
+    '<text x="' + (W - R / 2) + '" y="' + (yl + 4).toFixed(1) + '" font-size="11" font-weight="700" text-anchor="middle" fill="#fff">' + invNum(all[last][4]) + '</text>');
+  // 마우스 따라가는 세로줄
+  out.push('<g id="invHover" style="display:none"><line id="invHoverL" y1="' + (T - 8) + '" y2="' + (sTop + SH) + '" stroke="var(--ink-2)" stroke-width="1" stroke-dasharray="3 3" opacity=".6"/></g>' +
+    '<rect id="invHit" x="' + L + '" y="0" width="' + (W - L - R) + '" height="' + H + '" fill="transparent"/>');
+  var old = box.querySelector('svg');
+  if (old) old.remove();
+  box.insertAdjacentHTML('afterbegin', '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' +
+    rbEsc(cur.it.name) + ' 일봉과 스토캐스틱 차트">' + out.join('') + '</svg>');
+  var svg = box.querySelector('svg'), tip = $('invTip'), hov = svg.querySelector('#invHover'), hl = svg.querySelector('#invHoverL');
+  tip.hidden = true;
+  var hit = svg.querySelector('#invHit');
+  hit.addEventListener('mousemove', function (e) {
+    var rc = svg.getBoundingClientRect(), px = (e.clientX - rc.left) * W / rc.width;
+    var k = Math.max(0, Math.min(n - 1, Math.floor((px - L) / step))), i = s0 + k, r = all[i], x = X(k);
+    hov.style.display = '';
+    hl.setAttribute('x1', x.toFixed(1)); hl.setAttribute('x2', x.toFixed(1));
+    var c = st.cross[i];
+    tip.innerHTML = '<b>' + invYmd(r[0], true) + '</b>' +
+      '<div><span>시가</span>' + invNum(r[1]) + '</div><div><span>고가</span>' + invNum(r[2]) + '</div>' +
+      '<div><span>저가</span>' + invNum(r[3]) + '</div><div><span>종가</span>' + invNum(r[4]) + '</div>' +
+      (r[5] ? '<div><span>거래량</span>' + invNum(r[5]) + '</div>' : '') +
+      '<div><span>%K / %D</span>' + st.K[i].toFixed(1) + ' / ' + st.D[i].toFixed(1) + '</div>' +
+      (c ? '<div class="sig" style="color:' + (c === 'buy' ? UP : DN) + '">' + (c === 'buy' ? '▲ 골든크로스' : '▼ 데드크로스') + (i === last ? ' · 이번 신호' : '') + '</div>' : '');
+    tip.hidden = false;
+    var sx = x * rc.width / W, tw = tip.offsetWidth;
+    tip.style.left = (sx + 14 + tw > rc.width ? sx - 14 - tw : sx + 14) + 'px';
+  });
+  hit.addEventListener('mouseleave', function () { hov.style.display = 'none'; tip.hidden = true; });
+}
+window.addEventListener('resize', function () {
+  if (currentView !== 'invest') return;
+  clearTimeout(inv.resizeT);
+  inv.resizeT = setTimeout(invDraw, 120);
+});
+
 // 투자 탭을 열 때 · 앱으로 돌아올 때 — 5분이 지났거나 시가 바뀌었으면 다시 읽는다
 function mNewsOnShow() {
   mSigOnShow();
-  if (!mNews || !isMobile() || currentView !== 'rebal') return;
+  if (!mNews || !mInvShown()) return;
   var due = !mNews.at || Date.now() - mNews.at > 5 * 60e3 || new Date(mNews.at).getUTCHours() !== new Date().getUTCHours();
   if (due) mNewsLoad(); else mNewsPlan();
 }

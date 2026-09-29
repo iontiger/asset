@@ -4,13 +4,14 @@
  - 종목·시가총액: NH Plug 종목마스터 m_new_stock.mst (인증 불필요, 전일 시가총액 prdy_avls)
  - 일봉(고가·저가·종가): 네이버 fchart
  - 매수 = %K 가 %D 를 위로 돌파(골든크로스), 매도 = 아래로 돌파(데드크로스). 마지막 완성 봉(오늘 봉 제외) 기준.
+ - 신호 종목마다 최근 일봉(BARS개, [날짜, 시가, 고가, 저가, 종가, 거래량])을 함께 담는다 — PC 투자 정보 화면의 차트용
 사용: python3 .github/scripts/stoch_screen.py [출력폴더]   → result.json, result.md
      python3 .github/scripts/stoch_screen.py _site --site <사이트 주소>   → _site/stoch.json (Pages 배포용, 휴대폰 투자 탭 카드)
 """
 import datetime as dt, json, os, re, sys, urllib.request
 
 MST_URL = "https://www.nhplug.com/instruments/m_new_stock.mst"
-FCHART = "https://fchart.stock.naver.com/sise.nhn?symbol={}&timeframe=day&count=60&requestType=0"
+FCHART = "https://fchart.stock.naver.com/sise.nhn?symbol={}&timeframe=day&count=120&requestType=0"
 FIELDS = [
     ("sCode", 6), ("sMarket", 1), ("sKorName", 41), ("sEngName", 41), ("sOldName", 40),
     ("eCapSize", 1), ("sUpCodeM", 6), ("sUpCodeS", 6), ("sGroup", 2), ("gManuf", 1),
@@ -26,6 +27,7 @@ RECORD = sum(n for _, n in FIELDS)  # 237
 MARKET = {"1": "코스피", "4": "코스닥"}
 KST = dt.timezone(dt.timedelta(hours=9))
 N, KS, DS, TOP = 14, 3, 3, 5
+BARS = 100  # 차트용으로 담는 일봉 수
 UA = {"User-Agent": "Mozilla/5.0"}
 
 
@@ -61,7 +63,8 @@ def bars(code):
     for m in re.finditer(r'data="([^"]+)"', xml):
         d, o, h, l, c, v = m.group(1).split("|")
         if c and float(c) > 0:
-            rows.append((d, float(h), float(l), float(c)))
+            # 앞 네 칸(날짜·고가·저가·종가)은 스토캐스틱 계산용, 뒤는 차트용 시가·거래량
+            rows.append((d, float(h), float(l), float(c), float(o or c), int(float(v or 0))))
     return rows
 
 
@@ -119,7 +122,8 @@ def screen():
             continue
         sig = signal(rows)
         if sig and len(picks[sig[0]]) < TOP:
-            picks[sig[0]].append({**s, "close": rows[-1][3], "k": round(sig[1], 1), "d": round(sig[2], 1)})
+            picks[sig[0]].append({**s, "close": rows[-1][3], "k": round(sig[1], 1), "d": round(sig[2], 1),
+                                  "bars": [[r[0], *(round(x) for x in (r[4], r[1], r[2], r[3])), r[5]] for r in rows[-BARS:]]})
     b = f"{basis[:4]}-{basis[4:6]}-{basis[6:]}" if basis else None
     return {"runDate": now.date().isoformat(), "runAt": now.isoformat(timespec="seconds"),
             "tradingToday": trading_today, "basisDate": b, "scanned": scanned, **picks}
@@ -151,7 +155,9 @@ def site_mode(outdir, site):
     except Exception as e:
         print(f"사이트에 있는 stoch.json 을 못 읽음 — {e}")
     data = None
-    if live and live.get("runAt") and slot(live["runAt"]) == slot(dt.datetime.now(KST).isoformat()):
+    # 차트용 일봉(bars)이 없는 예전 결과는 다시 뽑는다
+    has_bars = bool(live) and all("bars" in p for p in live.get("buy", []) + live.get("sell", []))
+    if has_bars and live.get("runAt") and slot(live["runAt"]) == slot(dt.datetime.now(KST).isoformat()):
         print("이번 시간대 결과가 이미 사이트에 있어 그대로 씁니다.")
         data = live
     else:
@@ -162,7 +168,7 @@ def site_mode(outdir, site):
             data = live
     if data:
         os.makedirs(outdir, exist_ok=True)
-        json.dump(data, open(os.path.join(outdir, "stoch.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+        json.dump(data, open(os.path.join(outdir, "stoch.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
         print(to_md(data))
     same = bool(live and data) and all(live.get(k) == data.get(k) for k in ("basisDate", "buy", "sell"))
     with open(os.environ.get("GITHUB_OUTPUT") or os.devnull, "a") as f:
