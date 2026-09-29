@@ -3142,7 +3142,7 @@
       <div class="card inv-sig">
         <div class="card-head">
           <div>
-            <div class="card-title">매수 · 매도 신호<span class="qm" tabindex="0" data-tip-t="스토캐스틱 신호" data-tip="코스피 · 코스닥에서 슬로우 스토캐스틱(14, 3, 3)의 %K 가 %D 를 위로 뚫으면 매수(골든크로스), 아래로 뚫으면 매도(데드크로스) 신호입니다.
+            <div class="card-title">매수 · 매도 신호<span class="qm" tabindex="0" data-tip-t="스토캐스틱 신호" data-tip="코스피 · 코스닥에서 슬로우 스토캐스틱(10, 5, 5)의 %K 가 %D 를 위로 뚫으면 매수(골든크로스), 아래로 뚫으면 매도(데드크로스) 신호입니다.
 전 영업일 종가 기준으로 시가총액이 큰 순서대로 5개씩 보여 줍니다. 투자 판단의 참고용이에요.">?</span></div>
             <div class="card-sub" id="invSigSub"></div>
           </div>
@@ -11796,7 +11796,7 @@ var HELP = {
 HELP.invest = { t: '투자 정보', main:
   '<h3>무엇을 보여 주나요</h3><ul>' +
   '<li><b>AI 시황 브리핑</b> — 네이버페이 증권 AI 브리핑(시황)의 가장 최신 글입니다. 매시 정각 무렵 새 글로 바뀌어요.</li>' +
-  '<li><b>매수 · 매도 신호</b> — 코스피 · 코스닥에서 슬로우 스토캐스틱(14, 3, 3) %K 가 %D 를 위로 뚫은(매수) · 아래로 뚫은(매도) 종목을 전 영업일 종가 기준, 시가총액 순으로 5개씩 보여 줍니다.</li></ul>' +
+  '<li><b>매수 · 매도 신호</b> — 코스피 · 코스닥에서 슬로우 스토캐스틱(10, 5, 5) %K 가 %D 를 위로 뚫은(매수) · 아래로 뚫은(매도) 종목을 전 영업일 종가 기준, 시가총액 순으로 5개씩 보여 줍니다.</li></ul>' +
   '<h3>차트 보는 법</h3><ul>' +
   '<li>왼쪽 목록에서 종목을 누르면 오른쪽에 일봉 차트와 스토캐스틱이 나옵니다.</li>' +
   '<li>진한 화살표가 이번 신호, 옅은 화살표는 같은 기간의 지난 교차입니다. 빨간 ▲ = 골든크로스(매수), 파란 ▼ = 데드크로스(매도).</li>' +
@@ -12934,7 +12934,7 @@ function mNewsPlan() {
   }, wait);
 }
 /* ── 투자 탭: 스토캐스틱 신호 카드 ──
-   코스피·코스닥에서 슬로우 스토캐스틱(14,3,3) 매수(골든크로스) · 매도(데드크로스) 신호가 난 종목을 전 영업일 종가 기준,
+   코스피·코스닥에서 슬로우 스토캐스틱(10,5,5) 매수(골든크로스) · 매도(데드크로스) 신호가 난 종목을 전 영업일 종가 기준,
    시가총액 순으로 5개씩. 브라우저에서는 네이버 · NH Plug 를 바로 부를 수 없어서 GitHub Actions 가 배포할 때
    stoch.json 으로 뽑아 둔다 (.github/scripts/stoch_screen.py). 앱은 투자 탭을 열 때 30분이 지났으면 다시 읽는다.
    마지막으로 받은 결과는 이 기기에 두어 다음에 바로 보여 준다. 종목을 누르면 네이버 증권이 열린다. */
@@ -13020,7 +13020,7 @@ if (mSig.data) mSigRender();
 /* ═══════════ 투자 정보 (PC) ═══════════
    휴대폰 투자 탭의 두 카드(AI 시황 브리핑 · 스토캐스틱 신호)를 PC 폭에 맞게 — 위는 브리핑 한 장, 아래 왼쪽은 신호 종목 목록,
    오른쪽은 고른 종목의 일봉 차트. 차트 일봉은 stoch.json 에 종목마다 함께 담겨 온다(bars: [날짜, 시가, 고가, 저가, 종가, 거래량]).
-   슬로우 스토캐스틱(14,3,3)을 다시 계산해 %K 가 %D 를 뚫은 자리마다 화살표를 올린다 — 진한 것이 이번 신호, 옅은 것은 지난 교차. */
+   슬로우 스토캐스틱(10,5,5)을 다시 계산해 %K 가 %D 를 뚫은 자리마다 화살표를 올린다 — 진한 것이 이번 신호, 옅은 것은 지난 교차. */
 var inv = { code: null, resizeT: 0 };
 var INV_WD = ['일', '월', '화', '수', '목', '금', '토'];
 function invNum(v) { return Math.round(v).toLocaleString('ko-KR'); }
@@ -13143,21 +13143,23 @@ document.addEventListener('keydown', function (e) {
 });
 
 // ── 차트
-// 슬로우 스토캐스틱(14,3,3) — stoch_screen.py 와 같은 계산. 값이 없는 앞쪽은 null
+// 슬로우 스토캐스틱(10,5,5) — stoch_screen.py 와 같은 계산. 값이 없는 앞쪽은 null
+var INV_STO = [10, 5, 5];   // %K 기간 · %K 평활 · %D 평활 (stoch_screen.py 의 N, KS, DS 와 같게)
 function invStoch(b) {
-  var n = b.length, fk = [], K = [], D = [];
+  var n = b.length, N = INV_STO[0], KS = INV_STO[1], DS = INV_STO[2], fk = [], K = [], D = [];
+  function avg(a, i, m) { var s = 0; for (var j = i - m + 1; j <= i; j++) s += a[j]; return s / m; }
   for (var i = 0; i < n; i++) {
     fk[i] = K[i] = D[i] = null;
-    if (i >= 13) {
+    if (i >= N - 1) {
       var hh = -Infinity, ll = Infinity;
-      for (var j = i - 13; j <= i; j++) { hh = Math.max(hh, b[j][2]); ll = Math.min(ll, b[j][3]); }
+      for (var j = i - N + 1; j <= i; j++) { hh = Math.max(hh, b[j][2]); ll = Math.min(ll, b[j][3]); }
       fk[i] = hh > ll ? 100 * (b[i][4] - ll) / (hh - ll) : 50;
     }
-    if (i >= 15) K[i] = (fk[i] + fk[i - 1] + fk[i - 2]) / 3;
-    if (i >= 17) D[i] = (K[i] + K[i - 1] + K[i - 2]) / 3;
+    if (i >= N + KS - 2) K[i] = avg(fk, i, KS);
+    if (i >= N + KS + DS - 3) D[i] = avg(K, i, DS);
   }
   var cross = {};   // 교차한 봉 → 'buy' | 'sell'
-  for (i = 18; i < n; i++) {
+  for (i = N + KS + DS - 2; i < n; i++) {
     if (K[i - 1] <= D[i - 1] && K[i] > D[i]) cross[i] = 'buy';
     else if (K[i - 1] >= D[i - 1] && K[i] < D[i]) cross[i] = 'sell';
   }
@@ -13192,7 +13194,7 @@ function invChartRender() {
       '<div><label>%K / %D</label><b>' + it.k + ' / ' + it.d + '</b></div>' +
       '<div><label>시장</label><b>' + rbEsc(it.market) + '</b></div>' +
       '<div><label>시가총액</label><b>' + invCap(it.cap) + '</b></div></div>' +
-    '<div class="inv-ch-foot"><span>슬로우 스토캐스틱(14, 3, 3) · 일봉 · 투자 판단의 참고용이에요</span>' +
+    '<div class="inv-ch-foot"><span>슬로우 스토캐스틱(10, 5, 5) · 일봉 · 투자 판단의 참고용이에요</span>' +
       '<a href="' + naver + '" target="_blank" rel="noopener noreferrer">네이버 증권에서 자세히 보기 ↗</a></div>';
   box.querySelector('.inv-ch-name b').textContent = it.name;
   box.querySelector('.inv-ch-name small').textContent = it.code + ' · ' + it.market;

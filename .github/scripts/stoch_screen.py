@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-코스피·코스닥 슬로우 스토캐스틱(14,3,3) 신호 스크린 — 전 영업일 종가 기준, 시가총액 순 상위 5개.
+코스피·코스닥 슬로우 스토캐스틱(10,5,5) 신호 스크린 — 전 영업일 종가 기준, 시가총액 순 상위 5개.
  - 종목·시가총액: NH Plug 종목마스터 m_new_stock.mst (인증 불필요, 전일 시가총액 prdy_avls)
  - 일봉(고가·저가·종가): 네이버 fchart
  - 매수 = %K 가 %D 를 위로 돌파(골든크로스), 매도 = 아래로 돌파(데드크로스). 마지막 완성 봉(오늘 봉 제외) 기준.
@@ -26,7 +26,7 @@ FIELDS = [
 RECORD = sum(n for _, n in FIELDS)  # 237
 MARKET = {"1": "코스피", "4": "코스닥"}
 KST = dt.timezone(dt.timedelta(hours=9))
-N, KS, DS, TOP = 14, 3, 3, 5
+N, KS, DS, TOP = 10, 5, 5, 5  # index.html 의 INV_STO 와 같게
 BARS = 100  # 차트용으로 담는 일봉 수
 UA = {"User-Agent": "Mozilla/5.0"}
 
@@ -126,11 +126,11 @@ def screen():
                                   "bars": [[r[0], *(round(x) for x in (r[4], r[1], r[2], r[3])), r[5]] for r in rows[-BARS:]]})
     b = f"{basis[:4]}-{basis[4:6]}-{basis[6:]}" if basis else None
     return {"runDate": now.date().isoformat(), "runAt": now.isoformat(timespec="seconds"),
-            "tradingToday": trading_today, "basisDate": b, "scanned": scanned, **picks}
+            "tradingToday": trading_today, "params": [N, KS, DS], "basisDate": b, "scanned": scanned, **picks}
 
 
 def to_md(res):
-    lines = [f"슬로우 스토캐스틱(14,3,3) 신호, {res['basisDate']} 종가 기준, 시가총액 순 상위 {TOP}개"]
+    lines = [f"슬로우 스토캐스틱({N},{KS},{DS}) 신호, {res['basisDate']} 종가 기준, 시가총액 순 상위 {TOP}개"]
     for key, title in (("buy", "매수 (골든크로스)"), ("sell", "매도 (데드크로스)")):
         lines.append(f"\n**{title}**")
         if not res[key]:
@@ -157,7 +157,7 @@ def site_mode(outdir, site):
     data = None
     # 차트용 일봉(bars)이 없는 예전 결과는 다시 뽑는다
     has_bars = bool(live) and all("bars" in p for p in live.get("buy", []) + live.get("sell", []))
-    if has_bars and live.get("runAt") and slot(live["runAt"]) == slot(dt.datetime.now(KST).isoformat()):
+    if has_bars and live.get("params") == [N, KS, DS] and live.get("runAt") and slot(live["runAt"]) == slot(dt.datetime.now(KST).isoformat()):
         print("이번 시간대 결과가 이미 사이트에 있어 그대로 씁니다.")
         data = live
     else:
