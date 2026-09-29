@@ -3923,7 +3923,7 @@ window.dpGame={showModal,closeModal,hudText,endRush,reelStop,RUSH,R,fishCount:()
 
 /* ── 도움말 ── */
 const help=$('#helpDialog');if(help){help.querySelectorAll('p').forEach(p=>p.remove());help.querySelector('h2').textContent='마을에서 놀아요';help.querySelector('.eyebrow').textContent='WELCOME TO THE VILLAGE';
-  help.querySelector('h2').insertAdjacentHTML('afterend',`<p><b>걷기</b> — PC 는 방향키 · WASD (Shift 달리기, Space 점프, B 자전거, H 손 흔들기). 모바일은 왼쪽 아래 화살표 버튼. 드래그로 둘러보고 휠 · ＋/− 로 확대해요. 건물이나 구역 이름을 누르면 그곳까지 걸어가요.</p><p><b>⚡ 다이아 러시</b> — 미니게임판의 시작을 누르면 60초 동안 주변에 빛기둥이 선 다이아가 나타나요. 닿으면 모아요 (황금 다이아는 3개). 위쪽 화살표가 가장 가까운 다이아 방향이에요.</p><p><b>🎣 낚시</b> — 호수 부두 끝 · 개울가 · 다리 위에서 F (모바일은 아래 가운데 알림). 찌가 흔들릴 때 한 번 더 누르면 릴 감기가 시작돼요. 누르고 있으면 초록 칸이 오른쪽, 떼면 왼쪽으로 가요 — 물고기를 칸 안에 두면 게이지가 차고, 다 차면 낚아요. 잡은 물고기는 도감에 모여요.</p><p><b>💎 숨은 다이아몬드</b> — 섬 구석 · 언덕 꼭대기 · 숲속 · 모래사장, 목표봉 정상 바로 아래에 10개. 미니게임판의 💎 힌트를 누르면 힌트와 보상(모자 · 강아지 · 왕관)이 나와요.</p><p><b>⛰ 목표봉</b> — 북쪽 큰길의 등산로를 따라 정상까지 올라요. 정상석에는 “덴포토”, 그 옆엔 다이아몬드가 반짝여요.</p><p><b>⛵ 요트 섬 일주</b> — 낚시 도감 11종과 숨은 다이아 10개를 모두 모으면 남쪽 해변 DentPhoto 선착장의 요트가 열려요. F 로 타면 섬을 한 바퀴 돌며 불꽃놀이를 해요. 타는 동안은 늘 화창한 봄 한낮이고 시간도 멈춰요 (Esc 로 내리기).</p><p><b>🦷 DentPhoto 치과</b> — 광장 서북쪽 하얀 치과에 이가 아픈 주민이 찾아와요. 치과 문 앞에서 F (미니게임판의 치과로) → 25초 안에 입속 🦠 충치균 10마리를 눌러 잡으면 치료 도장을 받아요. 도장 5개면 간판이 반짝, 10개면 지붕 이빨이 금빛이 돼요.</p><p><b>📷 포토 스팟</b> — 마을 명소 10곳에 📷 표지판이 있어요. 가까이에서 사진 버튼을 누르면 사진 아래 띠에 장소 이름이 찍히고 미니게임판의 앨범에 모여요. 10곳을 모두 찍으면 광장 동북쪽 DentPhoto 사진관이 열리고 내 사진이 액자에 걸려요.</p><p><b>📅 계절</b> — 15초마다 한 달이 지나 3분이면 1년이에요. 겨울엔 폭설이 쌓이고, 장마엔 비가 와요 (비 올 때만 우산).</p><p><b>그 밖의 놀이</b> — F 로 벤치에 앉기 · 잔디에 눕기 · 오리 먹이 주기. 주민에게 다가가면 게임 도움말이나 주식 격언을 들려줘요. 주인공은 미니게임판의 👤 바꾸기로 바꿔요. 기록은 이 기기의 브라우저에 저장돼요.</p>`);
+  help.querySelector('h2').insertAdjacentHTML('afterend',`<p><b>걷기</b> — PC 는 방향키 · WASD (Shift 달리기, Space 점프, B 자전거, H 손 흔들기). 모바일은 왼쪽 아래 화살표 버튼. 드래그로 둘러보고 휠 · ＋/− 로 확대해요. 건물이나 구역 이름을 누르면 그곳까지 걸어가요.</p><p><b>⚡ 다이아 러시</b> — 미니게임판의 시작을 누르면 60초 동안 주변에 빛기둥이 선 다이아가 나타나요. 닿으면 모아요 (황금 다이아는 3개). 위쪽 화살표가 가장 가까운 다이아 방향이에요.</p><p><b>🎣 낚시</b> — 호수 부두 끝 · 개울가 · 다리 위에서 F (모바일은 아래 가운데 알림). 찌가 흔들릴 때 한 번 더 누르면 릴 감기가 시작돼요. 누르고 있으면 초록 칸이 오른쪽, 떼면 왼쪽으로 가요 — 물고기를 칸 안에 두면 게이지가 차고, 다 차면 낚아요. 잡은 물고기는 도감에 모여요.</p><p><b>💎 숨은 다이아몬드</b> — 섬 구석 · 언덕 꼭대기 · 숲속 · 모래사장, 목표봉 정상 바로 아래에 10개. 미니게임판의 💎 힌트를 누르면 힌트와 보상(모자 · 강아지 · 왕관)이 나와요.</p><p><b>⛰ 목표봉</b> — 북쪽 큰길의 등산로를 따라 정상까지 올라요. 정상석에는 “덴포토”, 그 옆엔 다이아몬드가 반짝여요.</p><p><b>⛵ 요트 섬 일주</b> — 낚시 도감 11종과 숨은 다이아 10개를 모두 모으면 남쪽 해변 DentPhoto 선착장의 요트가 열려요. F 로 타면 섬을 한 바퀴 돌며 불꽃놀이를 해요. 타는 동안은 늘 화창한 봄 한낮이고 시간도 멈춰요 (Esc 로 내리기).</p><p><b>🦷 DentPhoto 치과</b> — 광장 서북쪽 하얀 치과에 이가 아픈 주민이 찾아와요. 치과 문 앞에서 F (미니게임판의 치과로) → 25초 안에 입속 🦠 충치균 10마리를 눌러 잡으면 치료 도장을 받아요. 도장 5개면 간판이 반짝, 10개면 지붕 이빨이 금빛이 돼요.</p><p><b>📷 포토 스팟</b> — 마을 명소 10곳에 📷 표지판이 있어요. 가까이에서 사진 버튼을 누르면 사진 아래 띠에 장소 이름이 찍히고 미니게임판의 앨범에 모여요. 10곳을 모두 찍으면 광장 동북쪽 DentPhoto 사진관이 열리고 내 사진이 액자에 걸려요.</p><p><b>🌠 밤하늘</b> — 밤이면 가끔 별똥별이 떨어져요. 소원을 빌면 반딧불이가 주인공 곁으로 모여들어요. 겨울밤엔 북쪽 하늘에 오로라가 일렁여요.</p><p><b>📅 계절</b> — 15초마다 한 달이 지나 3분이면 1년이에요. 겨울엔 폭설이 쌓이고, 장마엔 비가 와요 (비 올 때만 우산).</p><p><b>그 밖의 놀이</b> — F 로 벤치에 앉기 · 잔디에 눕기 · 오리 먹이 주기. 주민에게 다가가면 게임 도움말이나 주식 격언을 들려줘요. 주인공은 미니게임판의 👤 바꾸기로 바꿔요. 기록은 이 기기의 브라우저에 저장돼요.</p>`);
   const hb=help.querySelector('button.primary');if(hb)hb.textContent='놀러 가기'}
 
 /* ── 매 프레임 ── */
@@ -3998,6 +3998,7 @@ const TIPS=[
   ['💎 숨은 다이아','섬 구석 · 언덕 꼭대기 · 숲속 · 모래사장, 그리고 목표봉 정상 바로 아래까지 10개. 미니게임판의 💎 힌트를 누르면 힌트가 나와요.'],
   ['🦷 치과','"이가 아파요" 하는 주민이 보이면 광장 옆 DentPhoto 치과 문 앞에서 F! 충치균 10마리를 잡으면 도장을 받아요.'],
   ['📷 포토 스팟','📷 표지판 옆에서 사진을 찍으면 앨범에 모여요. 10곳을 다 찍으면 사진관에 내 사진이 걸려요!'],
+  ['🌠 밤하늘','밤에 하늘을 올려다보세요. 별똥별에 소원을 빌면 반딧불이가 모여요. 겨울밤엔 오로라도!'],
   ['🚲 자전거','B 키(모바일은 🚲)로 자전거를 타요. 러시 기록을 깨려면 필수!'],
 ];
 let deckP=[],deckT=[];
@@ -4482,7 +4483,7 @@ const top=mtnAt(Math.max(0,MTN.len-3)/MTN.len);
 const SPOTS=[
   {id:'summit',name:'목표봉 정상',p:{x:top.x,z:top.z},r:12},
   {id:'dock',name:'DentPhoto 선착장',p:window.dpYacht?dpYacht.GATE:W(0,250)},
-  {id:'fountain',name:'광장 분수',p:W(0,8)},
+  {id:'fountain',name:'광장 분수',p:W(8.5,-8.5)},
   {id:'lake',name:'호수 부두',p:W(LAKE.x,LAKE.z)},
   {id:'mill',name:'풍차 언덕',p:W(MILL.x,MILL.z)},
   {id:'cabin',name:'숲속 오두막',p:W(CABIN.x,CABIN.z)},
@@ -4543,9 +4544,71 @@ hud();
 let was=null,told={};
 const _ue=updateExtras;updateExtras=function(dt){_ue(dt);try{
   const s=spotNow();if(s!==was){was=s;if(s&&!told[s.id]){told[s.id]=1;toast(P.shots[s.id]?`📷 ${s.name} — 이미 앨범에 있어요 (다시 찍으면 바뀌어요)`:`📷 포토 스팟 ${s.name} — 사진 버튼을 눌러 찍어요`)}$('#photoBtn').classList.toggle('spot',!!s&&!P.shots[s.id])}
-  {const w=walkish();SPOTS.forEach(s=>{s.sp.visible=w&&Math.hypot(camera.position.x-s.x,camera.position.z-s.z)<55})}
+  {const w=walkish();SPOTS.forEach(s=>{{const d=Math.hypot(camera.position.x-s.x,camera.position.z-s.z);s.sp.visible=w&&d<55&&d>6}})}
   }catch(e){console.error(e)}};
 window.dpPhoto={SPOTS,P,album,spotNow,count,open:openShow,frames,GALLERY,save};
+})();
+</script>
+<script>
+/* sky.js */
+/* ═══════ 밤하늘 — 별똥별 · 소원 · 반딧불이 · 겨울밤 오로라 ═══════
+   밤(FX.day<.35)이면 7~15초마다 별똥별이 떨어진다. 걷는 중이면 가끔 "소원을 빌어 보세요" — 주인공 머리 위에 ✨, 반딧불이가 모여든다.
+   겨울밤에는 북쪽 하늘에 초록 · 보라 오로라 커튼이 일렁인다. 요트는 늘 봄 한낮이라 보이지 않는다. */
+'use strict';
+(function(){
+const dayv=()=>typeof FX!=='undefined'?FX.day:1;
+const hero=()=>characterGroups.find(c=>c.root.visible)||null;
+const add=THREE.AdditiveBlending;
+
+/* ── 별똥별 — 머리 스프라이트 + 꼬리 스프라이트 줄 ── */
+const TAIL=16,star={on:false,t:0,d:1,a:new THREE.Vector3(),b:new THREE.Vector3(),parts:[]};
+for(let i=0;i<TAIL;i++){const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,color:i?'#bfe3ff':'#ffffff',transparent:true,depthWrite:false,blending:add,fog:false}));sp.visible=false;sp.renderOrder=2;scene.add(sp);star.parts.push(sp)}
+let nextStar=4,wishes=0;
+const _v=new THREE.Vector3();
+function launch(){const c=camera.position,a=Math.random()*Math.PI*2,R=260,el=.35+Math.random()*.35;
+  star.a.set(c.x+Math.sin(a)*R*Math.cos(el),c.y+R*Math.sin(el),c.z+Math.cos(a)*R*Math.cos(el));
+  const side=a+(Math.random()<.5?1:-1)*(.5+Math.random()*.4);star.b.set(c.x+Math.sin(side)*R*Math.cos(el-.18),c.y+R*Math.sin(el-.18),c.z+Math.cos(side)*R*Math.cos(el-.18));
+  Object.assign(star,{on:true,t:0,d:.9+Math.random()*.5});star.parts.forEach(p=>p.visible=true);
+  if(walkish()&&!inputBusy()&&(wishes===0||Math.random()<.45))setTimeout(wish,650)}
+function starTick(dt){if(!star.on)return;star.t+=dt;const f=star.t/star.d;if(f>=1.25){star.on=false;star.parts.forEach(p=>p.visible=false);return}
+  const fade=Math.min(1,f*5)*Math.max(0,Math.min(1,(1.25-f)*4));
+  star.parts.forEach((p,i)=>{const k=Math.max(0,Math.min(1,f-i*.018));_v.lerpVectors(star.a,star.b,k);p.position.copy(_v);const s=(i?6*(1-i/TAIL):9);p.scale.setScalar(s);p.material.opacity=fade*(i?.85*(1-i/TAIL):1)})}
+
+/* ── 소원 · 반딧불이 ── */
+const FN=36,fpos=new Float32Array(FN*3),fly=new THREE.Points(new THREE.BufferGeometry(),new THREE.PointsMaterial({map:dotTex,color:'#e6ff8a',size:.42,transparent:true,opacity:0,depthWrite:false,blending:add,fog:false}));
+fly.geometry.setAttribute('position',new THREE.BufferAttribute(fpos,3));fly.frustumCulled=false;fly.visible=false;scene.add(fly);
+const FS=[...Array(FN)].map(()=>({a:Math.random()*6.3,h:Math.random()*1.6+.3,s:.4+Math.random()*.9,p:Math.random()*6.3,r:4+Math.random()*4}));
+const F={t:0,on:false,dur:10};
+function wish(){wishes++;const h=hero();toast('🌠 별똥별이에요! 소원을 빌어 보세요');if(h){emote(h,'✨ 소원');setTimeout(()=>{try{emote(h,'heart')}catch{}},1800)}
+  try{if(playLoud())[1568,1976,2637].forEach((f,i)=>tone(f,i*.12,.25,'sine',.025))}catch{}F.on=true;F.t=0;fly.visible=true}
+function flyTick(dt){if(!F.on)return;F.t+=dt;const k=F.t/F.dur;if(k>=1){F.on=false;fly.visible=false;fly.material.opacity=0;return}
+  fly.material.opacity=Math.min(1,F.t*.8)*Math.min(1,(1-k)*5)*(.75+.25*Math.sin(time*9));const gather=Math.min(1,F.t/3.2),px=player.x,pz=player.z,py=terrainHeight(px,pz);
+  FS.forEach((s,i)=>{s.a+=dt*s.s*(1+gather);const r=s.r*(1-gather)+ (1.1+.5*Math.sin(time*1.3+s.p))*gather;fpos[i*3]=px+Math.cos(s.a)*r;fpos[i*3+1]=py+s.h+.9*gather+.35*Math.sin(time*2.1+s.p);fpos[i*3+2]=pz+Math.sin(s.a)*r});
+  fly.geometry.attributes.position.needsUpdate=true}
+
+/* ── 오로라 — 북쪽 하늘의 일렁이는 커튼 (카메라를 따라간다) ── */
+const AU={uT:{value:0},uA:{value:0}};
+const auMat=new THREE.ShaderMaterial({uniforms:AU,transparent:true,depthWrite:false,blending:add,side:THREE.DoubleSide,fog:false,
+  vertexShader:'varying vec2 vUv;void main(){vUv=uv;vec3 p=position;p.z+=sin(p.x*.012+uv.y*1.3)*38.;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}',
+  fragmentShader:`uniform float uT,uA;varying vec2 vUv;
+  float n(float x){return sin(x)*.5+.5;}
+  void main(){float x=vUv.x;float band=n(x*17.+uT*.35+sin(x*5.-uT*.2)*2.)*.6+n(x*43.-uT*.8)*.4;
+    float ray=pow(n(x*140.+sin(x*9.+uT*.3)*6.),3.)*.55+.45;
+    float y=vUv.y;float body=smoothstep(0.,.18,y)*(1.-smoothstep(.35,1.,y));
+    vec3 c=mix(vec3(.15,1.,.55),vec3(.55,.35,1.),smoothstep(.35,.95,y));
+    float edge=smoothstep(0.,.12,x)*(1.-smoothstep(.88,1.,x));
+    gl_FragColor=vec4(c*band*ray*body*edge*uA*1.25,1.);}`});
+const aur=new THREE.Group();aur.visible=false;scene.add(aur);
+[[0,0,0],[-120,40,-.25],[150,-30,.3]].forEach(([x,z,ry],i)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(520,110,64,1),auMat);m.position.set(x,90+i*14,-330+z);m.rotation.y=ry;m.frustumCulled=false;m.renderOrder=-1;aur.add(m)});
+
+const _ue=updateExtras;updateExtras=function(dt){_ue(dt);try{
+  const d=dayv(),night=Math.max(0,Math.min(1,(.35-d)/.25)),yacht=cameraMode==='yacht';
+  if(night>0&&!yacht&&!document.hidden){if((nextStar-=dt)<=0){nextStar=7+Math.random()*8;if(!star.on)launch()}}else nextStar=Math.min(nextStar,4);
+  starTick(dt);flyTick(dt);
+  const winter=seasonOf()==='winter',want=winter&&!yacht?night:0;AU.uA.value+=(want-AU.uA.value)*Math.min(1,dt*.6);
+  aur.visible=AU.uA.value>.01;if(aur.visible){AU.uT.value=time%1000;aur.position.set(camera.position.x,0,camera.position.z)}
+  }catch(e){console.error(e)}};
+window.dpSky={launch,wish,star,F,AU,aur};
 })();
 </script>
 </body></html>
