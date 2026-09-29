@@ -75,7 +75,7 @@ const _dbs=new THREE.Vector2();
 
 /* ── 매 프레임 (렌더 직전) ── */
 const _rt=realismTick,_fc=new THREE.Color(),SNOW_FOG=new THREE.Color('#e6ecf1'),RAIN_FOG=new THREE.Color('#7d8a90');let lastMode='',lastSeason='',lastBadge='',wasPaused=false;
-function badge(){const m=monthIdx(),M=MONTHS[m],el=$('#ghDate');if(!el)return;const y=Y0+Math.floor(GT.t/MONTH_SEC/12),t=`📅 ${y}년 ${m+1}월 · ${M.w}`;if(t!==lastBadge){lastBadge=t;el.textContent=t;el.title=gameDateText()+` · ${M.t}°C · 15초마다 한 달`;el.dataset.season=M.s}const bar=$('#ghDateBar');if(bar)bar.style.width=((GT.t/MONTH_SEC)%1*100).toFixed(1)+'%'}
+function badge(){const m=monthIdx(),M=MONTHS[m],el=$('#ghDate');if(!el)return;const y=Y0+Math.floor(GT.t/MONTH_SEC/12),t=`📅 ${y}년 ${m+1}월 · ${M.w}`;if(t!==lastBadge){lastBadge=t;el.textContent=t;el.title=gameDateText()+` · ${M.t}°C · 15초마다 한 달`;el.dataset.season=M.s;if(document.body.dataset.season!==M.s){document.body.dataset.season=M.s;const bm=document.querySelector('.brandmark');if(bm)bm.dataset.e=SEASON_ICON[M.s]}}const bar=$('#ghDateBar');if(bar)bar.style.width=((GT.t/MONTH_SEC)%1*100).toFixed(1)+'%'}
 realismTick=function(dt){_rt(dt);try{
   const now=performance.now(),real=Math.min(.25,(now-GT.last)/1000);GT.last=now;if(!document.hidden&&!GT.hold)GT.t+=real;
   const m=monthIdx(),M=MONTHS[m];
@@ -113,6 +113,12 @@ realismTick=function(dt){_rt(dt);try{
 function holdSpring(){if(GT.hold)return;GT.saved=GT.t;GT.hold=true;GT.quiet=monthIdx()!==3;GT.t=417.375;W.snow=W.rain=W.cloud=W.sun=0;W.cover=0;W.wet=0;SNOWCOV.value=0}
 function release(){if(!GT.hold)return;GT.hold=false;GT.quiet=Math.floor(GT.saved/MONTH_SEC)%12!==monthIdx();GT.t=GT.saved}
 window.dpSeason={GT,W,MONTHS,MONTH_SEC,holdSpring,release};
+// 상점가 전광판 — 계절마다 인사말이 바뀐다 (build.py 가 kospiText 를 이 함수로 돌린다)
+const BOARD={spring:'🌸 봄맞이 꽃놀이 · DentPhoto 상점가에 어서 오세요!  📷 포토 스팟 10곳을 찍어 사진관을 열어요  🦷 이가 아프면 DentPhoto 치과로',
+  summer:'☀️ 여름 바캉스 · 시원한 바닷바람!  ⛵ 요트 타고 작은 섬 보물 상자를 찾아요  🎣 개울가 낚시도 좋아요',
+  autumn:'🍁 가을 단풍 축제 · 목표봉 등산로가 알록달록!  💎 숨은 다이아 10개를 찾아보세요  🦷 치과 도장 모으기',
+  winter:'❄️ 겨울 폭설 주의 · 따뜻하게 입고 다녀요!  🌠 겨울밤엔 오로라와 별똥별  ☕ 상점가 코코아 있어요'};
+window.dpBoardText=()=>BOARD[seasonOf()]||BOARD.spring;
 applySeason();drawWeatherBoard();
 const _uw=updateWeather;updateWeather=function(){const wi=weatherIntensity;weatherIntensity=0;try{return _uw.apply(this,arguments)}finally{weatherIntensity=wi}};
 })();

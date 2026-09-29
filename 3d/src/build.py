@@ -116,7 +116,7 @@ rep("부채:['bus','상환 정류장','#35566b']","부채:['bus','버스 정류�
 rep("['month','이번 달 변화 표시','건물 위 ▲▼ 증감 · 줄어든 곳의 비구름 · 구역별 %'],['hide','금액 가리기','모든 금액을 ••• 로 — 다른 사람에게 보여 줄 때'],","")
 rep("'도착 · 사진 · 뉴스 · 기록 소리'","'도착 · 사진 · 다이아 · 낚시 소리'")
 rep("buildBoard();fetchKospi();setInterval(()=>{if(!paused)fetchKospi()},18e5);","buildBoard();")
-rep("function kospiText(){","function kospiText(){return '🛍 DentPhoto 마을 상점가 · 어서 오세요!  💎 숨은 다이아 10개를 찾아보세요  ⛵ 요트가 선착장에서 기다려요';")
+rep("function kospiText(){","function kospiText(){if(window.dpBoardText)return dpBoardText();return '🛍 DentPhoto 마을 상점가 · 어서 오세요!  💎 숨은 다이아 10개를 찾아보세요  ⛵ 요트가 선착장에서 기다려요';")
 rep("섬 구석 · 언덕 꼭대기 · 숲속 · 모래사장에 9개가 숨어 있어요.","섬 구석 · 언덕 꼭대기 · 숲속 · 모래사장, 목표봉 정상 바로 아래에 10개가 숨어 있어요.")
 rep('💎 <b id="gemTop">0 / 9</b>','💎 <b id="gemTop">0 / 10</b>')
 rep("{n:9,name:'다이아몬드 왕관',sub:'반짝이는 왕관 — 섬 탐험 완료 기념'}","{n:10,name:'다이아몬드 왕관',sub:'반짝이는 왕관 — 다이아 10개, 섬 탐험 완료 기념'}")
