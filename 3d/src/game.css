@@ -99,3 +99,27 @@ body.yacht-ride #gameHud,body.yacht-ride #mobilepad,body.yacht-ride #bikeBtn,bod
 @media(max-width:760px){#yachtBar{bottom:14px;gap:9px;padding:8px 10px 8px 12px;font-size:12px}#yachtBar .yb-track{width:28vw}}
 /* 검토 후속 */
 #gameHud{max-height:calc(100dvh - 120px);overflow:auto}
+/* 치과 — 충치균 잡기 */
+#dentGame{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;background:#10302a66;padding:16px}
+#dentGame.on{display:flex}
+#dentGame .dg-card{width:min(430px,100%);background:#fffdf7;border-radius:22px;padding:16px 16px 14px;box-shadow:0 14px 40px #0b2a2455;color:#25473b;font-size:13px}
+#dentGame .dg-head{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:15px}
+#dentGame #dgTime{min-width:40px;text-align:center;border-radius:12px;background:#e4efec;color:#22675e;font-weight:800;font-size:17px;padding:3px 8px;font-variant-numeric:tabular-nums}
+#dentGame #dgTime.low{background:#ffe1dc;color:#c0392b}
+#dentGame .dg-sub{margin:5px 0 10px;color:#5d7a70;font-size:12px}
+#dentGame .dg-mouth{background:radial-gradient(ellipse at 50% 50%,#8a2b3b 0 45%,#c8566a 80%);border-radius:48% 48% 44% 44%/40% 40% 60% 60%;padding:14px 16px;display:flex;flex-direction:column;gap:14px;border:6px solid #f28c9b}
+#dentGame .dg-row{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+#dentGame .dg-tongue{height:20px;margin:0 22%;border-radius:50%;background:#e5798a}
+#dentGame .dg-tooth{position:relative;aspect-ratio:.82;border:0;border-radius:10px 10px 14px 14px;background:linear-gradient(#ffffff,#eef3f1);box-shadow:inset 0 -4px 0 #d9e3df;cursor:pointer;padding:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#dgBot .dg-tooth{border-radius:14px 14px 10px 10px}
+#dentGame .dg-tooth[data-stain="1"]{background:linear-gradient(#fbf6e3,#ece5c8)}
+#dentGame .dg-tooth[data-stain="2"],#dentGame .dg-tooth[data-stain="3"]{background:linear-gradient(#f3e7bf,#dccb95)}
+#dentGame .dg-tooth.germ::after{content:'🦠';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(18px,6vw,28px);animation:dgWiggle .35s ease-in-out infinite alternate}
+#dentGame .dg-tooth.shine{background:#fffbe0;box-shadow:0 0 14px #fff6b0}
+#dentGame .dg-tooth.shine::after{content:'✨';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px}
+@keyframes dgWiggle{from{transform:rotate(-12deg) scale(.92)}to{transform:rotate(12deg) scale(1.08)}}
+#dentGame .dg-prog{height:8px;border-radius:5px;background:#dfe8e6;overflow:hidden;margin:12px 0 8px}
+#dentGame .dg-prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2a9d8f,#7fdcc8);transition:width .15s}
+#dentGame .dg-foot{display:flex;align-items:center;justify-content:space-between;font-weight:700}
+#dentGame .dg-foot button{border:0;border-radius:11px;padding:8px 12px;background:#e4efec;color:#22675e;font:inherit;font-weight:700;cursor:pointer}
+body.dent-on #mobilepad,body.dent-on #interaction{display:none!important}
