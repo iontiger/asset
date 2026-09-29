@@ -127,7 +127,7 @@ function tick(dt){const vis=visChars();
 /* ── 열림 · 미니게임판 · 미니맵 ── */
 let chk=.5;
 function unlockShow(){celebrate();const a=viewHeading,x=player.x+Math.sin(a)*32,z=player.z+Math.cos(a)*32;gameFireworks(x,terrainHeight(x,z),z,9,16,24,1.5);toast('⛵ 요트가 열렸어요! 남쪽 해변 선착장으로 가 보세요');
-  setTimeout(()=>{if(Y.on||!window.dpGame)return;dpGame.showModal('<div class="eyebrow">YACHT OPEN</div><h2>⛵ 요트가 열렸어요!</h2><p>낚시 도감과 숨은 다이아를 모두 모았어요. 남쪽 해변 <b>DentPhoto 선착장</b>에서 F 를 누르면 요트를 타고 섬을 한 바퀴 돌아요. 불꽃놀이도 준비됐어요!</p><div class="gm-actions"><button data-act="close">나중에</button><button class="primary" data-act="yacht">선착장으로</button></div>');const b=document.querySelector('.game-modal [data-act=yacht]');if(b)b.onclick=()=>{dpGame.closeModal();goDock()}},2600)}
+  setTimeout(()=>{if(Y.on||!window.dpGame)return;dpGame.showModal('<div class="eyebrow">YACHT OPEN</div><h2>⛵ 요트가 열렸어요!</h2><p>낚시 도감과 숨은 다이아를 모두 모았어요. 남쪽 해변 <b>DentPhoto 선착장</b>에서 F 를 누르면 요트를 타고 섬을 한 바퀴 돌아요. 불꽃놀이도 준비됐어요!</p><div class="gm-actions"><button data-act="close">나중에</button><button class="primary" data-act="yacht">선착장으로</button></div>');const b=document.querySelector('.game-modal [data-act=yacht]');if(b)b.onclick=()=>{dpGame.closeModal();goDock()}},6000)}
 function checkUnlock(){if(!S.open&&unlocked()){S.open=true;save();unlockShow()}}
 function goDock(){if(Y.on)return;if(PLAY.mode)endPlay();beginWalk(true);travelTo(GATE,null)}
 $('#ghTip').insertAdjacentHTML('beforebegin','<div class="gh-row" id="ghYachtRow"><span><b>⛵ 요트 섬 일주</b><small id="ghYacht"></small></span><button class="gh-btn soft" id="ghYachtBtn">선착장으로</button></div>');

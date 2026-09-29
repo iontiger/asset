@@ -19,7 +19,10 @@ function explode(x,y,z,k=1){const b=bursts.reduce((a,c)=>a.t>c.t?a:c);b.t=0;b.li
   try{if(playLoud()){noiseHit(1200+Math.random()*900,.9,.35,.09);noiseHit(3500,.6,.6,.03)}}catch{}}
 function launch(x,y,z,delay=0,height,k=1){const r=rockets.find(r=>!r.on)||rockets[0],top=y+(height||12+Math.random()*8);Object.assign(r,{on:true,x,y,z,vy:Math.max(22,(top-y)*.62+6)+Math.random()*6,top,delay,k});r.m.scale.setScalar(1.1*k);r.m.position.set(x,y,z);r.m.visible=false}
 window.gameFireworks=function(x,y,z,n=5,spread=10,height,k=1){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,d=Math.random()*spread;launch(x+Math.cos(a)*d,y,z+Math.sin(a)*d,i*(.22+Math.random()*.35),height&&height*(.85+Math.random()*.3),k)}};
+// 낮에는 가산 혼합이 밝은 하늘에 묻혀 하얗게 바래므로 보통 혼합으로 색을 살린다
+let dayMode=null;
 window.dpTicks.push(function(dt){
+  const dm=(typeof FX!=='undefined'?FX.day:0)>.55;if(dm!==dayMode){dayMode=dm;bursts.forEach(b=>{b.p.material.blending=dm?THREE.NormalBlending:THREE.AdditiveBlending;b.p.material.needsUpdate=true})}
   for(const r of rockets){if(!r.on)continue;if(r.delay>0){r.delay-=dt;if(r.delay<=0){r.m.visible=true;try{if(playLoud())tone(300,0,.35,'sine',.02,900)}catch{}}continue}r.y+=r.vy*dt;r.vy*=Math.pow(.55,dt);r.m.position.set(r.x+Math.sin(r.y*3)*.08,r.y,r.z);if(r.y>=r.top||r.vy<4){r.on=false;r.m.visible=false;explode(r.x,r.y,r.z,r.k)}}
   for(const b of bursts){if(b.t>=b.life){if(b.p.visible)b.p.visible=false;continue}b.t+=dt;const drag=Math.pow(.32,dt);for(let i=0;i<N;i++){const k=i*3;b.vel[k]*=drag;b.vel[k+1]=b.vel[k+1]*drag-6.5*dt;b.vel[k+2]*=drag;b.pos[k]+=b.vel[k]*dt;b.pos[k+1]+=b.vel[k+1]*dt;b.pos[k+2]+=b.vel[k+2]*dt}
     b.p.geometry.attributes.position.needsUpdate=true;const u=b.t/b.life;b.p.material.opacity=u<.7?1:Math.max(0,1-(u-.7)/.3);b.p.material.size=b.size*(1-u*.35)*(u>.6?(.6+.4*Math.abs(Math.sin(b.t*40))):1)}
