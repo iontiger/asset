@@ -25,7 +25,12 @@ rep('aria-label="자산마을 — 마을 전체 보기"','aria-label="DentPhoto 
 rep('aria-label="자산마을 3D 화면. 방향키 또는 WASD로 걷습니다. 구역에 도착하면 해당 자산이 자동으로 열립니다."','aria-label="DentPhoto 마을 3D 화면. 방향키 또는 WASD로 걷습니다."')
 rep('<small>집과 나무, 그리고 우리의 자산</small>','<small>집과 나무, 그리고 반짝이는 다이아몬드</small>')
 rep("x.fillText('⌂ 자산마을',20*k,H+foot/2);x.font=`600 ${15*k}px ${F}`;x.textAlign='right';x.fillText(refDate()+' · '+(mode==='all'?'우리 집':ownerName(mode))+' 순자산 '+compact(net)+'원',W-20*k,H+foot/2);",
-    "x.fillText('⌂ DentPhoto 마을',20*k,H+foot/2);x.font=`600 ${15*k}px ${F}`;x.textAlign='right';x.fillText(window.gameDateText?gameDateText():refDate(),W-20*k,H+foot/2);")
+    "x.fillText('⌂ DentPhoto 마을',20*k,H+foot/2);x.font=`600 ${15*k}px ${F}`;x.textAlign='right';x.fillText(photoStamp(),W-20*k,H+foot/2);")
+# 사진 아래 띠: 순자산 대신 찍은 날짜 · 시각(시:분:초), 파일 이름도 같은 시각으로. 금액 계산(net)도 뺀다
+rep("const net=visible.reduce((s,a)=>s+(debtRow(a)?-a.amount:a.amount),0);x.fillStyle='#22675e';","x.fillStyle='#22675e';")
+rep("function takePhoto(){renderScene();","function photoStamp(sep=' ',tsep=':'){const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+sep+p(d.getHours())+tsep+p(d.getMinutes())+tsep+p(d.getSeconds())}\nfunction takePhoto(){renderScene();")
+rep("a.download='asset-village-'+refDate()+'.png';","a.download='dentphoto-village-'+photoStamp('_','')+'.png';")
+rep("toast('사진을 저장했어요'+(prefs.hide?' — 금액은 가렸어요':''))","toast('📸 사진을 저장했어요')")
 # 저장 키 분리 (자산 현황 탐험과 기록이 섞이지 않게)
 for k in ['prefs','gems','built','fish','fng']:
     rep(f"'asset-village-{k}'",f"'asset-village-3d-{k}'",s.count(f"'asset-village-{k}'") or 1)
