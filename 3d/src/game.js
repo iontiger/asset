@@ -27,7 +27,11 @@ hud.innerHTML=`<div class="gh-head"><b>🎮 미니게임</b><button class="gh-fo
 document.body.appendChild(hud);
 const touch=matchMedia('(hover:none)').matches;
 $('#ghTip').textContent=touch?'아래 버튼으로 걷고, 가운데 알림을 누르면 낚시 · 놀기를 해요.':'방향키/WASD 걷기 · Shift 달리기 · F 놀기 · Space 점프 · B 자전거';
-function fold(v){hud.classList.toggle('folded',v);$('#ghFold').textContent=v?'펼치기 ▾':'접기 ▴';$('#ghFold').setAttribute('aria-expanded',String(!v))}
+const sheet=()=>innerWidth<=760;
+function fold(v){hud.classList.toggle('folded',v);$('#ghFold').textContent=v?'펼치기 ▾':sheet()?'접기 ▾':'접기 ▴';$('#ghFold').setAttribute('aria-expanded',String(!v));document.body.classList.toggle('hud-sheet',!v&&sheet())}
+// 모바일: 아래 카드에서 버튼을 누르면 카드를 접어 화면을 비운다
+hud.addEventListener('click',e=>{if(sheet()&&e.target.closest('.gh-btn'))setTimeout(()=>fold(true),0)});
+addEventListener('resize',()=>fold(hud.classList.contains('folded')));
 $('#ghFold').onclick=()=>fold(!hud.classList.contains('folded'));if(innerWidth<=760||innerHeight<560)fold(true);
 $('#ghRushBtn').onclick=()=>RUSH.on?endRush(false):startRush();
 $('#ghDexBtn').onclick=()=>openDex();

@@ -146,6 +146,26 @@ body.dent-on #mobilepad,body.dent-on #interaction{display:none!important}
 .game-modal .pa-cell:not(.on) span{color:#5d7a70;background:none}
 #photoBtn.spot{box-shadow:0 0 0 3px #ffd76a,0 6px 18px #22675e33;animation:spotPulse 1.2s ease-in-out infinite alternate}
 @keyframes spotPulse{from{transform:scale(1)}to{transform:scale(1.08)}}
+/* 계절 로고 — 봄 벚꽃 · 여름 바다 · 가을 단풍 · 겨울 눈 */
+.brandmark{position:relative;transition:background .9s,color .9s}
+.brandmark[data-e]::after{content:attr(data-e);position:absolute;right:-7px;bottom:-7px;font-size:16px;line-height:1;filter:drop-shadow(0 1px 2px #0003)}
+body[data-season=spring] .brandmark{background:linear-gradient(140deg,#e98aa6,#f4b8c8);color:#fff}
+body[data-season=summer] .brandmark{background:linear-gradient(140deg,#1f8a8a,#48b9d4);color:#fff8d8}
+body[data-season=autumn] .brandmark{background:linear-gradient(140deg,#c8662f,#e0a33d);color:#fff4dc}
+body[data-season=winter] .brandmark{background:linear-gradient(140deg,#5a7fa8,#a8c4de);color:#fff}
+body[data-season=spring] .brand small{color:#c0607c}
+body[data-season=summer] .brand small{color:#1f7f86}
+body[data-season=autumn] .brand small{color:#b3602f}
+body[data-season=winter] .brand small{color:#4f7398}
+/* 모바일 — 미니게임판을 펼치면 화면 아래 카드로 (접으면 위 작은 줄) */
+@media(max-width:760px){
+  #gameHud:not(.folded){top:auto;bottom:0;left:0;right:0;width:auto;max-height:min(60dvh,520px);border-radius:22px 22px 0 0;padding:18px 16px calc(12px + env(safe-area-inset-bottom));z-index:14;box-shadow:0 -10px 34px #1b3b3a33;animation:ghUp .22s ease-out}
+  #gameHud:not(.folded)::before{content:'';position:absolute;top:7px;left:50%;width:38px;height:4px;margin-left:-19px;border-radius:3px;background:#22675e33}
+  #gameHud:not(.folded) .gh-row{padding:8px 0}
+  #gameHud:not(.folded) .gh-btn{padding:9px 13px;font-size:13px}
+  body.hud-sheet #mobilepad,body.hud-sheet #bottom,body.hud-sheet #minimap,body.hud-sheet .cameratools,body.hud-sheet #mobileBike{visibility:hidden}
+}
+@keyframes ghUp{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
 </style></head><body>
 <div id="world" aria-label="DentPhoto 마을 3D 화면. 방향키 또는 WASD로 걷습니다." tabindex="0"></div><div id="labels"></div>
 <header><div class="brand" id="brand" role="button" tabindex="0" title="마을 전체 보기" aria-label="DentPhoto 마을 — 마을 전체 보기"><div class="brandmark">⌂</div><div><h1>DentPhoto 마을</h1><small>DENTPHOTO VILLAGE</small></div></div><div class="headright"><span class="pill" id="sourcePill" hidden><i></i> 원본 데모 데이터</span><button class="pill gem-pill" id="gemPill" title="누르면 가장 가까운 다이아몬드 힌트를 보여 줘요">💎 <b id="gemTop">0 / 10</b></button><button class="tool icon" id="hideBtn" aria-label="금액 가리기" aria-pressed="false" title="금액 가리기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button><button class="tool icon" id="timeBtn" aria-label="시간 여행" aria-expanded="false" title="시간 여행 — 지난 날 · 미래의 마을"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg></button><button class="tool icon" id="photoBtn" aria-label="사진 찍기" title="사진 찍기 — 지금 화면을 이미지로 저장"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button><button class="tool icon" id="prefsBtn" aria-label="마을 설정" aria-expanded="false" title="마을 설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button><button class="tool" id="help" aria-label="이용 안내">? <span class="helptext">이용 안내</span></button><button class="tool export" id="export">내보내기</button><button class="tool primary" id="import">↥ 데이터 불러오기</button></div></header>
@@ -3106,7 +3126,7 @@ async function fetchKospi(force){try{const c=JSON.parse(localStorage.getItem('as
   try{const res=await fetch('https://query1.finance.yahoo.com/v8/finance/chart/%5EKS11?interval=1d&range=1mo',{cache:'no-store'});if(!res.ok)throw Error('HTTP '+res.status);const j=await res.json(),r=j.chart.result[0],closes=(r.indicators.quote[0].close||[]).filter(Number.isFinite),price=Number(r.meta.regularMarketPrice??closes.at(-1)),prev=closes.length>=2?closes.at(-2):Number(r.meta.chartPreviousClose);if(!Number.isFinite(price)||!Number.isFinite(prev)||!prev)throw Error('값 없음');kospi={ts:Date.now(),price,prev,first:closes[0]??null,closes:closes.slice(-23)};try{localStorage.setItem('asset-village-kospi',JSON.stringify(kospi))}catch{}}
   catch(e){if(!kospi||kospi.fail){let dir='';try{dir=(JSON.parse(localStorage.getItem('asset_kospi_cache')||'null')||{}).dir||''}catch{}kospi={ts:Date.now(),dir,fail:true}}}updateBulbs()}
 function kospiDir(){if(!kospi)return '';if(kospi.price!=null)return kospi.price>kospi.prev?'up':kospi.price<kospi.prev?'down':'';return kospi.dir||''}
-function kospiText(){return '🛍 DentPhoto 마을 상점가 · 어서 오세요!  💎 숨은 다이아 10개를 찾아보세요  ⛵ 요트가 선착장에서 기다려요';if(!kospi)return 'KOSPI · 시세를 불러오는 중';if(kospi.price==null)return 'KOSPI '+(kospi.dir==='up'?'▲ 오늘 상승':kospi.dir==='down'?'▼ 오늘 하락':'· 시세를 불러오지 못했어요');const ch=kospi.price-kospi.prev,p=ch/kospi.prev*100,m=kospi.first?(kospi.price-kospi.first)/kospi.first*100:null;return `KOSPI ${kospi.price.toLocaleString('ko-KR',{minimumFractionDigits:2,maximumFractionDigits:2})}  ${ch>0?'▲':ch<0?'▼':'─'} ${Math.abs(ch).toFixed(2)} (${p>0?'+':''}${p.toFixed(2)}%)`+(m!=null?`  ·  한 달 ${m>0?'+':''}${m.toFixed(1)}%`:'')}
+function kospiText(){if(window.dpBoardText)return dpBoardText();return '🛍 DentPhoto 마을 상점가 · 어서 오세요!  💎 숨은 다이아 10개를 찾아보세요  ⛵ 요트가 선착장에서 기다려요';if(!kospi)return 'KOSPI · 시세를 불러오는 중';if(kospi.price==null)return 'KOSPI '+(kospi.dir==='up'?'▲ 오늘 상승':kospi.dir==='down'?'▼ 오늘 하락':'· 시세를 불러오지 못했어요');const ch=kospi.price-kospi.prev,p=ch/kospi.prev*100,m=kospi.first?(kospi.price-kospi.first)/kospi.first*100:null;return `KOSPI ${kospi.price.toLocaleString('ko-KR',{minimumFractionDigits:2,maximumFractionDigits:2})}  ${ch>0?'▲':ch<0?'▼':'─'} ${Math.abs(ch).toFixed(2)} (${p>0?'+':''}${p.toFixed(2)}%)`+(m!=null?`  ·  한 달 ${m>0?'+':''}${m.toFixed(1)}%`:'')}
 // 거래소 앞 전광판 — 오른 날은 빨강 · 내린 날은 파랑 (국내 관행), 오른 날엔 지붕 전구가 켜진다
 function buildBoard(){const c=document.createElement('canvas');c.width=1024;c.height=160;boardCtx=c.getContext('2d');boardTex=new THREE.CanvasTexture(c);boardTex.colorSpace=THREE.SRGBColorSpace;const m=new THREE.Mesh(new THREE.PlaneGeometry(5,.78),new THREE.MeshBasicMaterial({map:boardTex}));m.position.set(0,3.28,2.8);exchangeBuilding.add(m);box(exchangeBuilding,0,3.28,2.74,5.16,.92,.08,'#2b3b35');
   for(let i=0;i<9;i++){const b=new THREE.Mesh(new THREE.SphereGeometry(.13,10,8),new THREE.MeshStandardMaterial({color:'#9a9d93',emissive:'#ff4a3d',emissiveIntensity:0,roughness:.5}));b.position.set(-4.8+i*1.2,5.28,3.36);exchangeBuilding.add(b);bulbs.push(b)}drawBoard()}
@@ -3853,7 +3873,11 @@ hud.innerHTML=`<div class="gh-head"><b>🎮 미니게임</b><button class="gh-fo
 document.body.appendChild(hud);
 const touch=matchMedia('(hover:none)').matches;
 $('#ghTip').textContent=touch?'아래 버튼으로 걷고, 가운데 알림을 누르면 낚시 · 놀기를 해요.':'방향키/WASD 걷기 · Shift 달리기 · F 놀기 · Space 점프 · B 자전거';
-function fold(v){hud.classList.toggle('folded',v);$('#ghFold').textContent=v?'펼치기 ▾':'접기 ▴';$('#ghFold').setAttribute('aria-expanded',String(!v))}
+const sheet=()=>innerWidth<=760;
+function fold(v){hud.classList.toggle('folded',v);$('#ghFold').textContent=v?'펼치기 ▾':sheet()?'접기 ▾':'접기 ▴';$('#ghFold').setAttribute('aria-expanded',String(!v));document.body.classList.toggle('hud-sheet',!v&&sheet())}
+// 모바일: 아래 카드에서 버튼을 누르면 카드를 접어 화면을 비운다
+hud.addEventListener('click',e=>{if(sheet()&&e.target.closest('.gh-btn'))setTimeout(()=>fold(true),0)});
+addEventListener('resize',()=>fold(hud.classList.contains('folded')));
 $('#ghFold').onclick=()=>fold(!hud.classList.contains('folded'));if(innerWidth<=760||innerHeight<560)fold(true);
 $('#ghRushBtn').onclick=()=>RUSH.on?endRush(false):startRush();
 $('#ghDexBtn').onclick=()=>openDex();
@@ -4132,7 +4156,7 @@ const _dbs=new THREE.Vector2();
 
 /* ── 매 프레임 (렌더 직전) ── */
 const _rt=realismTick,_fc=new THREE.Color(),SNOW_FOG=new THREE.Color('#e6ecf1'),RAIN_FOG=new THREE.Color('#7d8a90');let lastMode='',lastSeason='',lastBadge='',wasPaused=false;
-function badge(){const m=monthIdx(),M=MONTHS[m],el=$('#ghDate');if(!el)return;const y=Y0+Math.floor(GT.t/MONTH_SEC/12),t=`📅 ${y}년 ${m+1}월 · ${M.w}`;if(t!==lastBadge){lastBadge=t;el.textContent=t;el.title=gameDateText()+` · ${M.t}°C · 15초마다 한 달`;el.dataset.season=M.s}const bar=$('#ghDateBar');if(bar)bar.style.width=((GT.t/MONTH_SEC)%1*100).toFixed(1)+'%'}
+function badge(){const m=monthIdx(),M=MONTHS[m],el=$('#ghDate');if(!el)return;const y=Y0+Math.floor(GT.t/MONTH_SEC/12),t=`📅 ${y}년 ${m+1}월 · ${M.w}`;if(t!==lastBadge){lastBadge=t;el.textContent=t;el.title=gameDateText()+` · ${M.t}°C · 15초마다 한 달`;el.dataset.season=M.s;if(document.body.dataset.season!==M.s){document.body.dataset.season=M.s;const bm=document.querySelector('.brandmark');if(bm)bm.dataset.e=SEASON_ICON[M.s]}}const bar=$('#ghDateBar');if(bar)bar.style.width=((GT.t/MONTH_SEC)%1*100).toFixed(1)+'%'}
 realismTick=function(dt){_rt(dt);try{
   const now=performance.now(),real=Math.min(.25,(now-GT.last)/1000);GT.last=now;if(!document.hidden&&!GT.hold)GT.t+=real;
   const m=monthIdx(),M=MONTHS[m];
@@ -4170,6 +4194,12 @@ realismTick=function(dt){_rt(dt);try{
 function holdSpring(){if(GT.hold)return;GT.saved=GT.t;GT.hold=true;GT.quiet=monthIdx()!==3;GT.t=417.375;W.snow=W.rain=W.cloud=W.sun=0;W.cover=0;W.wet=0;SNOWCOV.value=0}
 function release(){if(!GT.hold)return;GT.hold=false;GT.quiet=Math.floor(GT.saved/MONTH_SEC)%12!==monthIdx();GT.t=GT.saved}
 window.dpSeason={GT,W,MONTHS,MONTH_SEC,holdSpring,release};
+// 상점가 전광판 — 계절마다 인사말이 바뀐다 (build.py 가 kospiText 를 이 함수로 돌린다)
+const BOARD={spring:'🌸 봄맞이 꽃놀이 · DentPhoto 상점가에 어서 오세요!  📷 포토 스팟 10곳을 찍어 사진관을 열어요  🦷 이가 아프면 DentPhoto 치과로',
+  summer:'☀️ 여름 바캉스 · 시원한 바닷바람!  ⛵ 요트 타고 작은 섬 보물 상자를 찾아요  🎣 개울가 낚시도 좋아요',
+  autumn:'🍁 가을 단풍 축제 · 목표봉 등산로가 알록달록!  💎 숨은 다이아 10개를 찾아보세요  🦷 치과 도장 모으기',
+  winter:'❄️ 겨울 폭설 주의 · 따뜻하게 입고 다녀요!  🌠 겨울밤엔 오로라와 별똥별  ☕ 상점가 코코아 있어요'};
+window.dpBoardText=()=>BOARD[seasonOf()]||BOARD.spring;
 applySeason();drawWeatherBoard();
 const _uw=updateWeather;updateWeather=function(){const wi=weatherIntensity;weatherIntensity=0;try{return _uw.apply(this,arguments)}finally{weatherIntensity=wi}};
 })();
