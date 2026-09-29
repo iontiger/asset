@@ -12,7 +12,7 @@ const bursts=[...Array(POOL)].map(()=>{const g=new THREE.BufferGeometry(),pos=ne
 const rockets=[...Array(POOL)].map(()=>{const m=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,color:'#fff2c0',transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}));m.scale.setScalar(1.1);m.visible=false;m.userData.world=true;scene.add(m);return {m,on:false,x:0,y:0,z:0,vy:0,top:0,delay:0,k:1}});
 const _c=new THREE.Color(),_c2=new THREE.Color();
 const HDR=1.35;
-function explode(x,y,z,k=1){const b=bursts.reduce((a,c)=>a.t>c.t?a:c);b.t=0;b.life=(1.6+Math.random()*.6)*(k>1?1.2:1);b.size=.95*k;const two=Math.random()<.45;_c.set(COLORS[Math.floor(Math.random()*COLORS.length)]);_c2.set(COLORS[Math.floor(Math.random()*COLORS.length)]);
+function explode(x,y,z,k=1){const b=bursts.find(b=>b.t>=b.life)||bursts.reduce((a,c)=>a.t/a.life>c.t/c.life?a:c);b.t=0;b.life=(1.6+Math.random()*.6)*(k>1?1.2:1);b.size=.95*k;const two=Math.random()<.45;_c.set(COLORS[Math.floor(Math.random()*COLORS.length)]);_c2.set(COLORS[Math.floor(Math.random()*COLORS.length)]);
   const sp=(7+Math.random()*5)*k,ring=Math.random()<.25;for(let i=0;i<N;i++){let dx,dy,dz;if(ring){const a=i/N*Math.PI*2;dx=Math.cos(a);dy=Math.sin(a)*.25;dz=Math.sin(a)}else{dy=Math.random()*2-1;const a=Math.random()*Math.PI*2,r=Math.sqrt(1-dy*dy);dx=Math.cos(a)*r;dz=Math.sin(a)*r}const v=sp*(ring?1:.75+Math.random()*.35);
     b.pos[i*3]=x;b.pos[i*3+1]=y;b.pos[i*3+2]=z;b.vel[i*3]=dx*v;b.vel[i*3+1]=dy*v+1.5*k;b.vel[i*3+2]=dz*v;const c=two&&i%2?_c2:_c;b.col[i*3]=c.r*HDR;b.col[i*3+1]=c.g*HDR;b.col[i*3+2]=c.b*HDR}
   b.p.geometry.attributes.position.needsUpdate=true;b.p.geometry.attributes.color.needsUpdate=true;b.p.visible=true;b.p.material.opacity=1;
