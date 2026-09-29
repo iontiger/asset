@@ -12,7 +12,7 @@ const top=mtnAt(Math.max(0,MTN.len-3)/MTN.len);
 const SPOTS=[
   {id:'summit',name:'목표봉 정상',p:{x:top.x,z:top.z},r:12},
   {id:'dock',name:'DentPhoto 선착장',p:window.dpYacht?dpYacht.GATE:W(0,250)},
-  {id:'fountain',name:'광장 분수',p:W(0,8)},
+  {id:'fountain',name:'광장 분수',p:W(8.5,-8.5)},
   {id:'lake',name:'호수 부두',p:W(LAKE.x,LAKE.z)},
   {id:'mill',name:'풍차 언덕',p:W(MILL.x,MILL.z)},
   {id:'cabin',name:'숲속 오두막',p:W(CABIN.x,CABIN.z)},
@@ -73,7 +73,7 @@ hud();
 let was=null,told={};
 const _ue=updateExtras;updateExtras=function(dt){_ue(dt);try{
   const s=spotNow();if(s!==was){was=s;if(s&&!told[s.id]){told[s.id]=1;toast(P.shots[s.id]?`📷 ${s.name} — 이미 앨범에 있어요 (다시 찍으면 바뀌어요)`:`📷 포토 스팟 ${s.name} — 사진 버튼을 눌러 찍어요`)}$('#photoBtn').classList.toggle('spot',!!s&&!P.shots[s.id])}
-  {const w=walkish();SPOTS.forEach(s=>{s.sp.visible=w&&Math.hypot(camera.position.x-s.x,camera.position.z-s.z)<55})}
+  {const w=walkish();SPOTS.forEach(s=>{{const d=Math.hypot(camera.position.x-s.x,camera.position.z-s.z);s.sp.visible=w&&d<55&&d>6}})}
   }catch(e){console.error(e)}};
 window.dpPhoto={SPOTS,P,album,spotNow,count,open:openShow,frames,GALLERY,save};
 })();
