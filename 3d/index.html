@@ -136,6 +136,16 @@ body.yacht-ride #gameHud,body.yacht-ride #mobilepad,body.yacht-ride #bikeBtn,bod
 #dentGame .dg-foot{display:flex;align-items:center;justify-content:space-between;font-weight:700}
 #dentGame .dg-foot button{border:0;border-radius:11px;padding:8px 12px;background:#e4efec;color:#22675e;font:inherit;font-weight:700;cursor:pointer}
 body.dent-on #mobilepad,body.dent-on #interaction{display:none!important}
+/* 포토 스팟 앨범 */
+.game-modal .pa-note{font-size:12px;color:#5d7a70;margin:0 0 10px}
+.game-modal .pa-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
+.game-modal .pa-cell{position:relative;aspect-ratio:1.9;border-radius:12px;overflow:hidden;background:#ece6d6;display:flex;align-items:center;justify-content:center}
+.game-modal .pa-cell img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.game-modal .pa-cell i{font-style:normal;font-size:22px;opacity:.35}
+.game-modal .pa-cell span{position:absolute;left:0;right:0;bottom:0;padding:3px 6px;font-size:11px;font-weight:700;color:#fff;background:linear-gradient(transparent,#0008);text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.game-modal .pa-cell:not(.on) span{color:#5d7a70;background:none}
+#photoBtn.spot{box-shadow:0 0 0 3px #ffd76a,0 6px 18px #22675e33;animation:spotPulse 1.2s ease-in-out infinite alternate}
+@keyframes spotPulse{from{transform:scale(1)}to{transform:scale(1.08)}}
 </style></head><body>
 <div id="world" aria-label="DentPhoto 마을 3D 화면. 방향키 또는 WASD로 걷습니다." tabindex="0"></div><div id="labels"></div>
 <header><div class="brand" id="brand" role="button" tabindex="0" title="마을 전체 보기" aria-label="DentPhoto 마을 — 마을 전체 보기"><div class="brandmark">⌂</div><div><h1>DentPhoto 마을</h1><small>DENTPHOTO VILLAGE</small></div></div><div class="headright"><span class="pill" id="sourcePill" hidden><i></i> 원본 데모 데이터</span><button class="pill gem-pill" id="gemPill" title="누르면 가장 가까운 다이아몬드 힌트를 보여 줘요">💎 <b id="gemTop">0 / 10</b></button><button class="tool icon" id="hideBtn" aria-label="금액 가리기" aria-pressed="false" title="금액 가리기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button><button class="tool icon" id="timeBtn" aria-label="시간 여행" aria-expanded="false" title="시간 여행 — 지난 날 · 미래의 마을"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg></button><button class="tool icon" id="photoBtn" aria-label="사진 찍기" title="사진 찍기 — 지금 화면을 이미지로 저장"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button><button class="tool icon" id="prefsBtn" aria-label="마을 설정" aria-expanded="false" title="마을 설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button><button class="tool" id="help" aria-label="이용 안내">? <span class="helptext">이용 안내</span></button><button class="tool export" id="export">내보내기</button><button class="tool primary" id="import">↥ 데이터 불러오기</button></div></header>
@@ -3069,7 +3079,7 @@ document.addEventListener('visibilitychange',syncBgm);
 function photoStamp(sep=' ',tsep=':'){const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+sep+p(d.getHours())+tsep+p(d.getMinutes())+tsep+p(d.getSeconds())}
 function takePhoto(){renderScene();const src=renderer.domElement,W=src.width,H=src.height,k=W/innerWidth,foot=Math.round(56*k),c=document.createElement('canvas');c.width=W;c.height=H+foot;const x=c.getContext('2d'),F='-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif';x.filter=getComputedStyle(src).filter||'none';x.drawImage(src,0,0);x.filter='none';
   $$('.world-label').forEach(el=>{if(el.style.display==='none')return;const r=el.getBoundingClientRect();if(!r.width||r.bottom<0||r.top>innerHeight)return;const cs=getComputedStyle(el);x.fillStyle=cs.backgroundColor;x.beginPath();x.roundRect?x.roundRect(r.left*k,r.top*k,r.width*k,r.height*k,9*k):x.rect(r.left*k,r.top*k,r.width*k,r.height*k);x.fill();x.beginPath();x.moveTo((r.left+r.width/2-5)*k,r.bottom*k);x.lineTo((r.left+r.width/2+5)*k,r.bottom*k);x.lineTo((r.left+r.width/2)*k,(r.bottom+5)*k);x.fill();x.fillStyle=cs.color;x.textBaseline='top';el.innerText.split('\n').filter(Boolean).forEach((t,i)=>{x.font=`${i?500:700} ${(i?10:12)*k}px ${F}`;x.fillText(t,(r.left+parseFloat(cs.paddingLeft||10))*k,(r.top+7+i*15)*k,(r.width-14)*k)})});
-  x.fillStyle='#22675e';x.fillRect(0,H,W,foot);x.fillStyle='#fff6d8';x.textBaseline='middle';x.font=`800 ${20*k}px ${F}`;x.fillText('⌂ DentPhoto 마을',20*k,H+foot/2);x.font=`600 ${15*k}px ${F}`;x.textAlign='right';x.fillText(photoStamp(),W-20*k,H+foot/2);
+  x.fillStyle='#22675e';x.fillRect(0,H,W,foot);x.fillStyle='#fff6d8';x.textBaseline='middle';x.font=`800 ${20*k}px ${F}`;x.fillText('⌂ DentPhoto 마을'+(window.dpPhotoLabel?dpPhotoLabel():''),20*k,H+foot/2,W*.62);x.font=`600 ${15*k}px ${F}`;x.textAlign='right';x.fillText(photoStamp(),W-20*k,H+foot/2);
   const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='dentphoto-village-'+photoStamp('_','')+'.png';document.body.appendChild(a);a.click();a.remove();$('#flash').classList.remove('go');void $('#flash').offsetWidth;$('#flash').classList.add('go');sfx('photo');toast('📸 사진을 저장했어요')}
 // 미니맵 — 누르면 그곳으로 (순간 이동을 켜면 바로)
 let miniAt=0;const MM={W:300,H:340},MMK=Math.min((MM.W/2-8)/WA,(MM.H/2-8)/WB);
@@ -3913,7 +3923,7 @@ window.dpGame={showModal,closeModal,hudText,endRush,reelStop,RUSH,R,fishCount:()
 
 /* ── 도움말 ── */
 const help=$('#helpDialog');if(help){help.querySelectorAll('p').forEach(p=>p.remove());help.querySelector('h2').textContent='마을에서 놀아요';help.querySelector('.eyebrow').textContent='WELCOME TO THE VILLAGE';
-  help.querySelector('h2').insertAdjacentHTML('afterend',`<p><b>걷기</b> — PC 는 방향키 · WASD (Shift 달리기, Space 점프, B 자전거, H 손 흔들기). 모바일은 왼쪽 아래 화살표 버튼. 드래그로 둘러보고 휠 · ＋/− 로 확대해요. 건물이나 구역 이름을 누르면 그곳까지 걸어가요.</p><p><b>⚡ 다이아 러시</b> — 미니게임판의 시작을 누르면 60초 동안 주변에 빛기둥이 선 다이아가 나타나요. 닿으면 모아요 (황금 다이아는 3개). 위쪽 화살표가 가장 가까운 다이아 방향이에요.</p><p><b>🎣 낚시</b> — 호수 부두 끝 · 개울가 · 다리 위에서 F (모바일은 아래 가운데 알림). 찌가 흔들릴 때 한 번 더 누르면 릴 감기가 시작돼요. 누르고 있으면 초록 칸이 오른쪽, 떼면 왼쪽으로 가요 — 물고기를 칸 안에 두면 게이지가 차고, 다 차면 낚아요. 잡은 물고기는 도감에 모여요.</p><p><b>💎 숨은 다이아몬드</b> — 섬 구석 · 언덕 꼭대기 · 숲속 · 모래사장, 목표봉 정상 바로 아래에 10개. 미니게임판의 💎 힌트를 누르면 힌트와 보상(모자 · 강아지 · 왕관)이 나와요.</p><p><b>⛰ 목표봉</b> — 북쪽 큰길의 등산로를 따라 정상까지 올라요. 정상석에는 “덴포토”, 그 옆엔 다이아몬드가 반짝여요.</p><p><b>⛵ 요트 섬 일주</b> — 낚시 도감 11종과 숨은 다이아 10개를 모두 모으면 남쪽 해변 DentPhoto 선착장의 요트가 열려요. F 로 타면 섬을 한 바퀴 돌며 불꽃놀이를 해요 (Esc 로 내리기).</p><p><b>🦷 DentPhoto 치과</b> — 광장 서북쪽 하얀 치과에 이가 아픈 주민이 찾아와요. 치과 문 앞에서 F (미니게임판의 치과로) → 25초 안에 입속 🦠 충치균 10마리를 눌러 잡으면 치료 도장을 받아요. 도장 5개면 간판이 반짝, 10개면 지붕 이빨이 금빛이 돼요.</p><p><b>📅 계절</b> — 15초마다 한 달이 지나 3분이면 1년이에요. 겨울엔 폭설이 쌓이고, 장마엔 비가 와요 (비 올 때만 우산).</p><p><b>그 밖의 놀이</b> — F 로 벤치에 앉기 · 잔디에 눕기 · 오리 먹이 주기. 주민에게 다가가면 게임 도움말이나 주식 격언을 들려줘요. 주인공은 미니게임판의 👤 바꾸기로 바꿔요. 기록은 이 기기의 브라우저에 저장돼요.</p>`);
+  help.querySelector('h2').insertAdjacentHTML('afterend',`<p><b>걷기</b> — PC 는 방향키 · WASD (Shift 달리기, Space 점프, B 자전거, H 손 흔들기). 모바일은 왼쪽 아래 화살표 버튼. 드래그로 둘러보고 휠 · ＋/− 로 확대해요. 건물이나 구역 이름을 누르면 그곳까지 걸어가요.</p><p><b>⚡ 다이아 러시</b> — 미니게임판의 시작을 누르면 60초 동안 주변에 빛기둥이 선 다이아가 나타나요. 닿으면 모아요 (황금 다이아는 3개). 위쪽 화살표가 가장 가까운 다이아 방향이에요.</p><p><b>🎣 낚시</b> — 호수 부두 끝 · 개울가 · 다리 위에서 F (모바일은 아래 가운데 알림). 찌가 흔들릴 때 한 번 더 누르면 릴 감기가 시작돼요. 누르고 있으면 초록 칸이 오른쪽, 떼면 왼쪽으로 가요 — 물고기를 칸 안에 두면 게이지가 차고, 다 차면 낚아요. 잡은 물고기는 도감에 모여요.</p><p><b>💎 숨은 다이아몬드</b> — 섬 구석 · 언덕 꼭대기 · 숲속 · 모래사장, 목표봉 정상 바로 아래에 10개. 미니게임판의 💎 힌트를 누르면 힌트와 보상(모자 · 강아지 · 왕관)이 나와요.</p><p><b>⛰ 목표봉</b> — 북쪽 큰길의 등산로를 따라 정상까지 올라요. 정상석에는 “덴포토”, 그 옆엔 다이아몬드가 반짝여요.</p><p><b>⛵ 요트 섬 일주</b> — 낚시 도감 11종과 숨은 다이아 10개를 모두 모으면 남쪽 해변 DentPhoto 선착장의 요트가 열려요. F 로 타면 섬을 한 바퀴 돌며 불꽃놀이를 해요. 타는 동안은 늘 화창한 봄 한낮이고 시간도 멈춰요 (Esc 로 내리기).</p><p><b>🦷 DentPhoto 치과</b> — 광장 서북쪽 하얀 치과에 이가 아픈 주민이 찾아와요. 치과 문 앞에서 F (미니게임판의 치과로) → 25초 안에 입속 🦠 충치균 10마리를 눌러 잡으면 치료 도장을 받아요. 도장 5개면 간판이 반짝, 10개면 지붕 이빨이 금빛이 돼요.</p><p><b>📷 포토 스팟</b> — 마을 명소 10곳에 📷 표지판이 있어요. 가까이에서 사진 버튼을 누르면 사진 아래 띠에 장소 이름이 찍히고 미니게임판의 앨범에 모여요. 10곳을 모두 찍으면 광장 동북쪽 DentPhoto 사진관이 열리고 내 사진이 액자에 걸려요.</p><p><b>📅 계절</b> — 15초마다 한 달이 지나 3분이면 1년이에요. 겨울엔 폭설이 쌓이고, 장마엔 비가 와요 (비 올 때만 우산).</p><p><b>그 밖의 놀이</b> — F 로 벤치에 앉기 · 잔디에 눕기 · 오리 먹이 주기. 주민에게 다가가면 게임 도움말이나 주식 격언을 들려줘요. 주인공은 미니게임판의 👤 바꾸기로 바꿔요. 기록은 이 기기의 브라우저에 저장돼요.</p>`);
   const hb=help.querySelector('button.primary');if(hb)hb.textContent='놀러 가기'}
 
 /* ── 매 프레임 ── */
@@ -3987,6 +3997,7 @@ const TIPS=[
   ['❄️ 계절','이 마을은 15초마다 한 달이 흘러요. 겨울엔 폭설, 여름 장마엔 비, 봄 · 가을엔 맑은 날이 많아요.'],
   ['💎 숨은 다이아','섬 구석 · 언덕 꼭대기 · 숲속 · 모래사장, 그리고 목표봉 정상 바로 아래까지 10개. 미니게임판의 💎 힌트를 누르면 힌트가 나와요.'],
   ['🦷 치과','"이가 아파요" 하는 주민이 보이면 광장 옆 DentPhoto 치과 문 앞에서 F! 충치균 10마리를 잡으면 도장을 받아요.'],
+  ['📷 포토 스팟','📷 표지판 옆에서 사진을 찍으면 앨범에 모여요. 10곳을 다 찍으면 사진관에 내 사진이 걸려요!'],
   ['🚲 자전거','B 키(모바일은 🚲)로 자전거를 타요. 러시 기록을 깨려면 필수!'],
 ];
 let deckP=[],deckT=[];
@@ -4121,10 +4132,10 @@ const _dbs=new THREE.Vector2();
 const _rt=realismTick,_fc=new THREE.Color(),SNOW_FOG=new THREE.Color('#e6ecf1'),RAIN_FOG=new THREE.Color('#7d8a90');let lastMode='',lastSeason='',lastBadge='',wasPaused=false;
 function badge(){const m=monthIdx(),M=MONTHS[m],el=$('#ghDate');if(!el)return;const y=Y0+Math.floor(GT.t/MONTH_SEC/12),t=`📅 ${y}년 ${m+1}월 · ${M.w}`;if(t!==lastBadge){lastBadge=t;el.textContent=t;el.title=gameDateText()+` · ${M.t}°C · 15초마다 한 달`;el.dataset.season=M.s}const bar=$('#ghDateBar');if(bar)bar.style.width=((GT.t/MONTH_SEC)%1*100).toFixed(1)+'%'}
 realismTick=function(dt){_rt(dt);try{
-  const now=performance.now(),real=Math.min(.25,(now-GT.last)/1000);GT.last=now;if(!document.hidden)GT.t+=real;
+  const now=performance.now(),real=Math.min(.25,(now-GT.last)/1000);GT.last=now;if(!document.hidden&&!GT.hold)GT.t+=real;
   const m=monthIdx(),M=MONTHS[m];
   if(m!==GT.m){const first=GT.m<0;GT.m=m;drawWeatherBoard();if(first)applySeason();else setTimeout(applySeason,60);
-    if(!first&&M.s!==lastSeason)toast({winter:'❄️ 겨울이 왔어요 — 폭설이 쏟아져요!',spring:'🌸 봄이에요 — 눈이 녹고 꽃이 펴요',summer:'☀️ 여름이에요 — 햇볕이 쨍쨍, 7월엔 장마!',autumn:'🍁 가을이에요 — 단풍이 들어요'}[M.s]);lastSeason=M.s}
+    if(GT.quiet){GT.quiet=false}else if(!first&&M.s!==lastSeason)toast({winter:'❄️ 겨울이 왔어요 — 폭설이 쏟아져요!',spring:'🌸 봄이에요 — 눈이 녹고 꽃이 펴요',summer:'☀️ 여름이에요 — 햇볕이 쨍쨍, 7월엔 장마!',autumn:'🍁 가을이에요 — 단풍이 들어요'}[M.s]);lastSeason=M.s}
   badge();
   const k=1-Math.exp(-real/2.2),gust=.82+.18*Math.sin(time*.5)*Math.sin(time*1.7);
   W.snow+=((M.snow||0)*gust-W.snow)*k;W.rain+=((M.rain||0)-W.rain)*k;W.cloud+=((M.cloud||0)-W.cloud)*k;W.sun+=((M.sun||0)-W.sun)*k;
@@ -4152,7 +4163,11 @@ realismTick=function(dt){_rt(dt);try{
   else renderer.toneMappingExposure=FX.level>=1?1.02:1.18;
   if(W.snow>.3||W.rain>.3)cloudGroup.visible=true;
 }catch(e){console.error(e)}};
-window.dpSeason={GT,W,MONTHS,MONTH_SEC};
+// 요트를 타는 동안: 화창한 4월 한낮으로 고정하고 시간을 멈춘다 (내리면 타기 전 시각으로 돌아간다)
+// 417.375 = 4월(3번 달) 안이면서 하루 주기(105초)의 정오 — (t/105+.35)%1 = .325
+function holdSpring(){if(GT.hold)return;GT.saved=GT.t;GT.hold=true;GT.quiet=monthIdx()!==3;GT.t=417.375;W.snow=W.rain=W.cloud=W.sun=0;W.cover=0;W.wet=0;SNOWCOV.value=0}
+function release(){if(!GT.hold)return;GT.hold=false;GT.quiet=Math.floor(GT.saved/MONTH_SEC)%12!==monthIdx();GT.t=GT.saved}
+window.dpSeason={GT,W,MONTHS,MONTH_SEC,holdSpring,release};
 applySeason();drawWeatherBoard();
 const _uw=updateWeather;updateWeather=function(){const wi=weatherIntensity;weatherIntensity=0;try{return _uw.apply(this,arguments)}finally{weatherIntensity=wi}};
 })();
@@ -4312,9 +4327,9 @@ $('#ybExit').onclick=()=>land(false);
 function startRide(force){if(Y.on)return;if(!force&&!unlocked()){const c=counts();toast(`⛵ 요트는 낚시 도감 ${c.f}/${c.F} · 숨은 다이아 ${c.g}/${c.G} 를 모두 채우면 열려요`);return}
   const G=window.dpGame||{};try{if(PLAY.mode)endPlay();if(riding)toggleBike(false);if(G.RUSH&&G.RUSH.on)G.endRush(false);if(G.reelStop)G.reelStop();if(G.closeModal)G.closeModal();toggleGemPanel(false)}catch(e){console.error(e)}
   route=[];target=null;drawRoute();keys={};moor();
-  Object.assign(Y,{on:true,phase:'sail',t:0,s:0,yaw0:yaw,fw:2.2,fin:false});window.dpYachtOn=true;cameraMode='yacht';cameraInitialized=false;try{resize();applySectionVisibility()}catch(e){}document.body.classList.add('yacht-ride');bar.classList.add('on');flash();
+  Object.assign(Y,{on:true,phase:'sail',t:0,s:0,yaw0:yaw,fw:2.2,fin:false});window.dpYachtOn=true;try{dpSeason.holdSpring()}catch{}cameraMode='yacht';cameraInitialized=false;try{resize();applySectionVisibility()}catch(e){}document.body.classList.add('yacht-ride');bar.classList.add('on');flash();
   $('#location').textContent='⛵ 요트로 섬 한 바퀴 · 드래그로 둘러보고 Esc 로 내려요';toast('⛵ 출항! 섬을 한 바퀴 돌아요');beep(196,0,.7,'sawtooth',.025);beep(247,.05,.7,'sawtooth',.02);tick(0)}
-function land(done){if(!Y.on)return;Y.on=false;window.dpYachtOn=false;document.body.classList.remove('yacht-ride');bar.classList.remove('on');flash();moor();
+function land(done){if(!Y.on)return;Y.on=false;window.dpYachtOn=false;try{dpSeason.release()}catch{}document.body.classList.remove('yacht-ride');bar.classList.remove('on');flash();moor();
   {const w=nearestWalkable(GATE.x-OUT.x*2.5,GATE.z-OUT.z*2.5)||GATE;player.x=w.x;player.z=w.z}player.angle=H0;viewHeading=H0;keys={};characterGroups.forEach(c=>{c.root.rotation.x=0;c.root.rotation.z=0});dog.x=GATE.x-OUT.x*2+SIDE.x*1.5;dog.z=GATE.z-OUT.z*2+SIDE.z*1.5;
   if(cameraMode==='yacht'){beginWalk();cameraInitialized=false}placeCharacters(0,false);
   if(done){S.rides=(S.rides||0)+1;save();setTimeout(()=>{celebrate();try{sfx('arrive')}catch{}},250);toast(`⛵ 섬 한 바퀴 완주! (${S.rides}번째 항해)`)}else toast('⛵ 선착장에 내렸어요');hud()}
@@ -4449,6 +4464,88 @@ const _ue=updateExtras;updateExtras=function(dt){_ue(dt);try{
   if(!G.on&&D.patient&&(ouchT-=dt)<=0){ouchT=7+Math.random()*4;const p=patient();if(p&&p.root.visible&&p.root.position.distanceTo(camera.position)<60)emote(p,'이가 아파요')}
   dentTick(dt)}catch(e){console.error(e)}};
 hud();
+})();
+</script>
+<script>
+/* photo.js */
+/* ═══════ 사진 도감 · 포토 스팟 — 마을 명소 10곳에서 사진을 찍으면 앨범에 모인다 ═══════
+   스팟마다 📷 표지판. 가까이서 사진 버튼을 누르면 사진 아래 띠에 장소 이름이 찍히고, 작은 사본이 앨범에 저장된다.
+   10곳을 모두 찍으면 광장 동북쪽 DentPhoto 사진관이 열리고 벽의 액자 10개에 내 사진이 걸린다. */
+'use strict';
+(function(){
+const KEY='asset-village-3d-photo';let P={shots:{},open:false};try{Object.assign(P,JSON.parse(localStorage.getItem(KEY)||'null')||{})}catch{}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(P))}catch{toast('📷 앨범 저장 공간이 부족해요')}};
+const W=(x,z)=>nearestWalkable(x,z)||{x,z};
+
+/* ── 스팟 10곳 ── */
+const top=mtnAt(Math.max(0,MTN.len-3)/MTN.len);
+const SPOTS=[
+  {id:'summit',name:'목표봉 정상',p:{x:top.x,z:top.z},r:12},
+  {id:'dock',name:'DentPhoto 선착장',p:window.dpYacht?dpYacht.GATE:W(0,250)},
+  {id:'fountain',name:'광장 분수',p:W(0,8)},
+  {id:'lake',name:'호수 부두',p:W(LAKE.x,LAKE.z)},
+  {id:'mill',name:'풍차 언덕',p:W(MILL.x,MILL.z)},
+  {id:'cabin',name:'숲속 오두막',p:W(CABIN.x,CABIN.z)},
+  {id:'north',name:'북쪽 전망대',p:W(-18,-316)},
+  {id:'dental',name:'DentPhoto 치과',p:window.dpDental?dpDental.DOOR:W(-40,-40)},
+  {id:'beach',name:'서쪽 모래사장',p:W(-175,10)},
+  {id:'bridge',name:'개울 다리',p:{x:BRIDGE.x,z:BRIDGE.z}},
+];
+SPOTS.forEach(s=>{s.r=s.r||10;s.x=s.p.x;s.z=s.p.z});
+const count=()=>SPOTS.filter(s=>P.shots[s.id]).length;
+function spotNow(){if(!walkish())return null;let best=null,bd=1e9;for(const s of SPOTS){const d=Math.hypot(player.x-s.x,player.z-s.z);if(d<s.r&&d<bd){bd=d;best=s}}return best}
+window.dpPhotoLabel=()=>{const s=spotNow();return s?'  ·  📍 '+s.name:''};
+
+/* ── 표지판 ── */
+function labelTex(t,done){const c=document.createElement('canvas');c.width=512;c.height=112;const x=c.getContext('2d');x.fillStyle=done?'#22675e':'#fffdf6';x.strokeStyle='#22675e';x.lineWidth=6;x.beginPath();x.roundRect?x.roundRect(6,6,500,100,44):x.rect(6,6,500,100);x.fill();x.stroke();x.fillStyle=done?'#fff6d8':'#22675e';x.font='800 46px -apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText((done?'✅ ':'📷 ')+t,256,58,470);const tx=new THREE.CanvasTexture(c);tx.colorSpace=THREE.SRGBColorSpace;return tx}
+const postM=new THREE.MeshStandardMaterial({color:'#7a5a3a',roughness:.8}),boardM=new THREE.MeshStandardMaterial({color:'#22675e',roughness:.5});
+SPOTS.forEach(s=>{const off=s.id==='bridge'?{x:s.x+BRIDGE.nx*0,z:s.z}:s;const y=terrainHeight(off.x,off.z);const g=new THREE.Group();g.position.set(off.x,y,off.z);g.userData.world=true;scene.add(g);
+  if(s.id!=='bridge'&&s.id!=='dock'){const post=new THREE.Mesh(new THREE.CylinderGeometry(.07,.08,1.5,8),postM);post.position.y=.75;post.castShadow=true;g.add(post);const cam=new THREE.Mesh(new THREE.BoxGeometry(.5,.34,.18),boardM);cam.position.y=1.6;g.add(cam);const lens=new THREE.Mesh(new THREE.CylinderGeometry(.11,.11,.08,14),new THREE.MeshStandardMaterial({color:'#1d1f22',roughness:.3}));lens.rotation.x=Math.PI/2;lens.position.set(0,1.6,.12);g.add(lens)}
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:labelTex(s.name,!!P.shots[s.id]),transparent:true,depthWrite:false,toneMapped:false}));sp.scale.set(3.4,.74,1);sp.position.y=s.id==='bridge'?3.4:2.6;sp.renderOrder=5;g.add(sp);s.g=g;s.sp=sp});
+function relabel(s){const old=s.sp.material.map;s.sp.material.map=labelTex(s.name,!!P.shots[s.id]);s.sp.material.needsUpdate=true;old.dispose()}
+
+/* ── 사진 찍기 ── */
+function thumb(){const src=renderer.domElement,w=192,h=120,c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d'),sw=src.width,sh=src.height,k=Math.max(w/sw,h/sh),cw=w/k,ch=h/k;x.filter=getComputedStyle(src).filter||'none';x.drawImage(src,(sw-cw)/2,(sh-ch)/2,cw,ch,0,0,w,h);return c.toDataURL('image/jpeg',.72)}
+const _tp=takePhoto;takePhoto=function(){const s=spotNow();_tp();if(!s)return;let img='';try{img=thumb()}catch{}
+  const first=!P.shots[s.id];P.shots[s.id]={img,at:Date.now()};save();relabel(s);hud();frames();
+  if(first){const n=count();setTimeout(()=>{toast(`📷 ${s.name} — 포토 스팟 ${n} / ${SPOTS.length}`,'gem');try{if(playLoud())[880,1175].forEach((f,i)=>tone(f,i*.1,.12,'triangle',.04))}catch{}},900);if(n>=SPOTS.length&&!P.open){P.open=true;save();setTimeout(openShow,2200)}}};
+$('#photoBtn').onclick=()=>takePhoto();
+
+/* ── DentPhoto 사진관 ── */
+const spot=findSpot(46,-38,9);ATTRACT.push(spot);
+const q=Math.round(Math.atan2(-spot.x,-spot.z)/(Math.PI/2))*(Math.PI/2),fx=Math.round(Math.sin(q)),fz=Math.round(Math.cos(q));
+const gy=terrainHeight(spot.x,spot.z),G=new THREE.Group();G.position.set(spot.x,gy,spot.z);G.rotation.y=q;G.userData.world=true;scene.add(G);
+const BW=10.4,BD=6;
+box(G,0,-.55,0,BW+.6,1.2,BD+.6,'#e3dccb');box(G,0,2.3,-BD/2+.3,BW,4.6,.6,'#f4efe4');box(G,0,4.75,-.2,BW+.8,.3,BD+1.2,'#c65a4e');box(G,0,4.95,-.2,BW-1,.22,BD-.2,'#d97b6c');
+for(const sx of [-1,1])for(const sz of [.5,-.3]){cyl(G,sx*(BW/2-.3),2.3,sz*BD/1.1,.2,.24,4.6,'#fbf8ef',12)}
+const nameSign=sign(G,'🖼 DentPhoto 사진관',0,5.4,BD/2-.2,6.2,'#ffffff','#c65a4e');
+const ribbon=box(G,0,1.1,BD/2-.2,BW-.8,.14,.06,'#e0483e');
+const lotSign=new THREE.Sprite(new THREE.SpriteMaterial({transparent:true,depthWrite:false}));lotSign.scale.set(4.2,.92,1);lotSign.position.set(0,2.2,BD/2);G.add(lotSign);
+const FR=[];for(let r=0;r<2;r++)for(let c=0;c<5;c++){const fg=new THREE.Group();fg.position.set(-3.9+c*1.95,3.25-r*1.55,-BD/2+.62);G.add(fg);box(fg,0,0,0,1.7,1.16,.08,'#b88a3e');const pic=new THREE.Mesh(new THREE.PlaneGeometry(1.5,.94),new THREE.MeshBasicMaterial({color:'#ece6d6'}));pic.position.z=.05;fg.add(pic);FR.push(pic)}
+{const ow=fx?BD:BW,od=fx?BW:BD,bx=spot.x-fx*1.2,bz=spot.z-fz*1.2;obstacles.push({x:bx,z:bz,w:(fx?ow-2.4:ow)+.6,d:(fx?od:od-2.4)+.6,world:true})}
+const texCache={};
+function frames(){const open=P.open;ribbon.visible=!open;lotSign.visible=!open;if(!open){const old=lotSign.material.map;lotSign.material.map=labelTex(`준비 중 · 포토 스팟 ${count()}/${SPOTS.length}`,false);lotSign.material.needsUpdate=true;if(old)old.dispose()}
+  SPOTS.forEach((s,i)=>{const pic=FR[i],sh=P.shots[s.id];if(open&&sh&&sh.img){if(texCache[s.id]!==sh.at){texCache[s.id]=sh.at;new THREE.TextureLoader().load(sh.img,t=>{t.colorSpace=THREE.SRGBColorSpace;if(pic.material.map)pic.material.map.dispose();pic.material.map=t;pic.material.color.set('#ffffff');pic.material.needsUpdate=true})}}else{pic.material.color.set(open?'#ece6d6':'#d9cfb8')}})}
+frames();
+const GALLERY=W(spot.x+fx*(BD/2+2.5),spot.z+fz*(BD/2+2.5));
+function openShow(){celebrate();try{gameFireworks(spot.x,gy+6,spot.z,9,12,20,1.3)}catch{}frames();toast('🖼 포토 스팟 10곳 완성! DentPhoto 사진관이 열렸어요','gem');
+  setTimeout(()=>{if(!window.dpGame)return;dpGame.showModal('<div class="eyebrow">GALLERY OPEN</div><h2>🖼 사진관이 열렸어요!</h2><p>마을 명소 10곳을 모두 찍었어요. 광장 동북쪽 <b>DentPhoto 사진관</b> 벽에 내 사진 10장이 걸렸어요.</p><div class="gm-actions"><button data-act="close">나중에</button><button class="primary" data-act="gallery">사진관으로</button></div>');const b=document.querySelector('.game-modal [data-act=gallery]');if(b)b.onclick=()=>{dpGame.closeModal();goGallery()}},4500)}
+function goGallery(){if(PLAY.mode)endPlay();beginWalk(true);travelTo(GALLERY,null)}
+
+/* ── 앨범 · 미니게임판 ── */
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function album(){const n=count();dpGame.showModal(`<div class="eyebrow">PHOTO ALBUM</div><h2>📷 포토 스팟 ${n} / ${SPOTS.length}</h2><p class="pa-note">📷 표지판 가까이에서 사진 버튼을 누르면 앨범에 모여요. ${P.open?'사진관이 열려 있어요!':'10곳을 모두 찍으면 사진관이 열려요.'}</p><div class="pa-grid">${SPOTS.map(s=>{const sh=P.shots[s.id];return `<div class="pa-cell${sh?' on':''}">${sh&&sh.img?`<img src="${sh.img}" alt="">`:'<i>📷</i>'}<span>${esc(s.name)}</span></div>`}).join('')}</div><div class="gm-actions"><button data-act="close">닫기</button>${P.open?'<button class="primary" data-act="gallery">사진관으로</button>':''}</div>`);const b=document.querySelector('.game-modal [data-act=gallery]');if(b)b.onclick=()=>{dpGame.closeModal();goGallery()}}
+$('#ghTip').insertAdjacentHTML('beforebegin','<div class="gh-row" id="ghPhotoRow"><span><b>📷 포토 스팟</b><small id="ghPhoto"></small></span><button class="gh-btn soft" id="ghPhotoBtn">앨범</button></div>');
+$('#ghPhotoBtn').onclick=album;
+function hud(){const el=$('#ghPhoto');if(el)el.textContent=`${count()} / ${SPOTS.length}곳 찍었어요`+(P.open?' · 사진관 열림':'')}
+hud();
+
+let was=null,told={};
+const _ue=updateExtras;updateExtras=function(dt){_ue(dt);try{
+  const s=spotNow();if(s!==was){was=s;if(s&&!told[s.id]){told[s.id]=1;toast(P.shots[s.id]?`📷 ${s.name} — 이미 앨범에 있어요 (다시 찍으면 바뀌어요)`:`📷 포토 스팟 ${s.name} — 사진 버튼을 눌러 찍어요`)}$('#photoBtn').classList.toggle('spot',!!s&&!P.shots[s.id])}
+  {const w=walkish();SPOTS.forEach(s=>{s.sp.visible=w&&Math.hypot(camera.position.x-s.x,camera.position.z-s.z)<55})}
+  }catch(e){console.error(e)}};
+window.dpPhoto={SPOTS,P,album,spotNow,count,open:openShow,frames,GALLERY,save};
 })();
 </script>
 </body></html>

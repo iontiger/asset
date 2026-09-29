@@ -25,7 +25,7 @@ rep('aria-label="자산마을 — 마을 전체 보기"','aria-label="DentPhoto 
 rep('aria-label="자산마을 3D 화면. 방향키 또는 WASD로 걷습니다. 구역에 도착하면 해당 자산이 자동으로 열립니다."','aria-label="DentPhoto 마을 3D 화면. 방향키 또는 WASD로 걷습니다."')
 rep('<small>집과 나무, 그리고 우리의 자산</small>','<small>집과 나무, 그리고 반짝이는 다이아몬드</small>')
 rep("x.fillText('⌂ 자산마을',20*k,H+foot/2);x.font=`600 ${15*k}px ${F}`;x.textAlign='right';x.fillText(refDate()+' · '+(mode==='all'?'우리 집':ownerName(mode))+' 순자산 '+compact(net)+'원',W-20*k,H+foot/2);",
-    "x.fillText('⌂ DentPhoto 마을',20*k,H+foot/2);x.font=`600 ${15*k}px ${F}`;x.textAlign='right';x.fillText(photoStamp(),W-20*k,H+foot/2);")
+    "x.fillText('⌂ DentPhoto 마을'+(window.dpPhotoLabel?dpPhotoLabel():''),20*k,H+foot/2,W*.62);x.font=`600 ${15*k}px ${F}`;x.textAlign='right';x.fillText(photoStamp(),W-20*k,H+foot/2);")
 # 사진 아래 띠: 순자산 대신 찍은 날짜 · 시각(시:분:초), 파일 이름도 같은 시각으로. 금액 계산(net)도 뺀다
 rep("const net=visible.reduce((s,a)=>s+(debtRow(a)?-a.amount:a.amount),0);x.fillStyle='#22675e';","x.fillStyle='#22675e';")
 rep("function takePhoto(){renderScene();","function photoStamp(sep=' ',tsep=':'){const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+sep+p(d.getHours())+tsep+p(d.getMinutes())+tsep+p(d.getSeconds())}\nfunction takePhoto(){renderScene();")
@@ -126,7 +126,7 @@ rep("`rotate(${-(cameraMode==='walking'||cameraMode==='entering'?viewHeading:yaw
 
 # 스타일 · 미니게임 스크립트
 # 덧붙이는 스크립트 — 순서대로 각자 <script>. 원본 스크립트의 최상위 const/let · 함수를 그대로 쓰고, 함수는 다시 대입해 덮어쓴다
-JS_FILES=['game.js','fx.js','talk.js','hero.js','summit.js','season.js','npc.js','yacht.js','dental.js']
+JS_FILES=['game.js','fx.js','talk.js','hero.js','summit.js','season.js','npc.js','yacht.js','dental.js','photo.js']
 def read(f):return open(os.path.join(HERE,f),encoding='utf-8').read()
 rep("</style></head>","</style><style>"+read('game.css')+"</style></head>")
 assert s.rstrip().endswith('</body></html>')

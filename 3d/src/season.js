@@ -77,10 +77,10 @@ const _dbs=new THREE.Vector2();
 const _rt=realismTick,_fc=new THREE.Color(),SNOW_FOG=new THREE.Color('#e6ecf1'),RAIN_FOG=new THREE.Color('#7d8a90');let lastMode='',lastSeason='',lastBadge='',wasPaused=false;
 function badge(){const m=monthIdx(),M=MONTHS[m],el=$('#ghDate');if(!el)return;const y=Y0+Math.floor(GT.t/MONTH_SEC/12),t=`📅 ${y}년 ${m+1}월 · ${M.w}`;if(t!==lastBadge){lastBadge=t;el.textContent=t;el.title=gameDateText()+` · ${M.t}°C · 15초마다 한 달`;el.dataset.season=M.s}const bar=$('#ghDateBar');if(bar)bar.style.width=((GT.t/MONTH_SEC)%1*100).toFixed(1)+'%'}
 realismTick=function(dt){_rt(dt);try{
-  const now=performance.now(),real=Math.min(.25,(now-GT.last)/1000);GT.last=now;if(!document.hidden)GT.t+=real;
+  const now=performance.now(),real=Math.min(.25,(now-GT.last)/1000);GT.last=now;if(!document.hidden&&!GT.hold)GT.t+=real;
   const m=monthIdx(),M=MONTHS[m];
   if(m!==GT.m){const first=GT.m<0;GT.m=m;drawWeatherBoard();if(first)applySeason();else setTimeout(applySeason,60);
-    if(!first&&M.s!==lastSeason)toast({winter:'❄️ 겨울이 왔어요 — 폭설이 쏟아져요!',spring:'🌸 봄이에요 — 눈이 녹고 꽃이 펴요',summer:'☀️ 여름이에요 — 햇볕이 쨍쨍, 7월엔 장마!',autumn:'🍁 가을이에요 — 단풍이 들어요'}[M.s]);lastSeason=M.s}
+    if(GT.quiet){GT.quiet=false}else if(!first&&M.s!==lastSeason)toast({winter:'❄️ 겨울이 왔어요 — 폭설이 쏟아져요!',spring:'🌸 봄이에요 — 눈이 녹고 꽃이 펴요',summer:'☀️ 여름이에요 — 햇볕이 쨍쨍, 7월엔 장마!',autumn:'🍁 가을이에요 — 단풍이 들어요'}[M.s]);lastSeason=M.s}
   badge();
   const k=1-Math.exp(-real/2.2),gust=.82+.18*Math.sin(time*.5)*Math.sin(time*1.7);
   W.snow+=((M.snow||0)*gust-W.snow)*k;W.rain+=((M.rain||0)-W.rain)*k;W.cloud+=((M.cloud||0)-W.cloud)*k;W.sun+=((M.sun||0)-W.sun)*k;
@@ -108,7 +108,11 @@ realismTick=function(dt){_rt(dt);try{
   else renderer.toneMappingExposure=FX.level>=1?1.02:1.18;
   if(W.snow>.3||W.rain>.3)cloudGroup.visible=true;
 }catch(e){console.error(e)}};
-window.dpSeason={GT,W,MONTHS,MONTH_SEC};
+// 요트를 타는 동안: 화창한 4월 한낮으로 고정하고 시간을 멈춘다 (내리면 타기 전 시각으로 돌아간다)
+// 417.375 = 4월(3번 달) 안이면서 하루 주기(105초)의 정오 — (t/105+.35)%1 = .325
+function holdSpring(){if(GT.hold)return;GT.saved=GT.t;GT.hold=true;GT.quiet=monthIdx()!==3;GT.t=417.375;W.snow=W.rain=W.cloud=W.sun=0;W.cover=0;W.wet=0;SNOWCOV.value=0}
+function release(){if(!GT.hold)return;GT.hold=false;GT.quiet=Math.floor(GT.saved/MONTH_SEC)%12!==monthIdx();GT.t=GT.saved}
+window.dpSeason={GT,W,MONTHS,MONTH_SEC,holdSpring,release};
 applySeason();drawWeatherBoard();
 const _uw=updateWeather;updateWeather=function(){const wi=weatherIntensity;weatherIntensity=0;try{return _uw.apply(this,arguments)}finally{weatherIntensity=wi}};
 })();
