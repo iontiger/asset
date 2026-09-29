@@ -19,8 +19,9 @@ permissions:
   pages: write
   id-token: write
 
+# 기능 브랜치에 올린 것(배포 안 함)이 기본 브랜치 배포를 취소하지 않도록 브랜치마다 따로 줄을 세운다
 concurrency:
-  group: pages
+  group: pages-${{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:
