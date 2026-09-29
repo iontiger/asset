@@ -12350,7 +12350,8 @@ function mRenderHero(series, m1) {
   if (m1.diff !== null) {
     d.className = 'm-hero-d ' + dirClass(m1.diff);
     $('mHeroDeltaV').textContent = m1.diff === 0 ? '변동 없음'
-      : (m1.diff > 0 ? '▲ ' : '▼ ') + mSigned(m1.diff) + (m1.pct === null ? '' : ' (' + pctTxt(m1.pct) + ')');
+      : (m1.diff > 0 ? '▲ ' : '▼ ') + mKorWon(Math.abs(m1.diff)) + (m1.pct === null ? '' : ' (' + pctTxt(m1.pct) + ')');
+    $('mHeroDeltaV').title = mSigned(m1.diff) + '원';
     $('mHeroDeltaP').textContent = m1.full ? '최근 1개월' : '첫 기록 대비';
   }
   mDrawHeroChart(m1.pts);
