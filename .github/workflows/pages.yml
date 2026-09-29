@@ -38,7 +38,7 @@ jobs:
       - name: 사이트 파일 모으기
         run: |
           mkdir _site
-          cp index.html icon-192.png icon-512.png apple-touch-icon.png _site/
+          cp index.html sw.js manifest.webmanifest icon-192.png icon-512.png apple-touch-icon.png _site/
           # 버전 표시 · 새 버전 알림용 — 커밋 번호와 커밋 시각(한국 시간).
           # 브리핑만 바꿔 다시 올려도 같은 커밋이면 값이 같아서 "새 버전" 알림이 뜨지 않는다
           BUILD="${GITHUB_SHA::7} $(TZ=Asia/Seoul git log -1 --format=%cd --date=format-local:'%Y-%m-%d %H:%M')"
