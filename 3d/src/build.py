@@ -126,7 +126,7 @@ rep("`rotate(${-(cameraMode==='walking'||cameraMode==='entering'?viewHeading:yaw
 
 # 스타일 · 미니게임 스크립트
 # 덧붙이는 스크립트 — 순서대로 각자 <script>. 원본 스크립트의 최상위 const/let · 함수를 그대로 쓰고, 함수는 다시 대입해 덮어쓴다
-JS_FILES=['game.js','fx.js','talk.js','hero.js','summit.js','season.js','npc.js','yacht.js']
+JS_FILES=['game.js','fx.js','talk.js','hero.js','summit.js','season.js','npc.js','yacht.js','dental.js']
 def read(f):return open(os.path.join(HERE,f),encoding='utf-8').read()
 rep("</style></head>","</style><style>"+read('game.css')+"</style></head>")
 assert s.rstrip().endswith('</body></html>')
