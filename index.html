@@ -2175,6 +2175,25 @@
   .m-note-cap { font-size:.74rem; font-weight:700; color:var(--muted); margin:8px 2px 0; }
   .m-note-none { font-size:.86rem; color:var(--muted); text-align:center; padding:8px 0 4px; }
 
+  /* 휴대폰: 화면 맨 위에서 아래로 당기면 새로고침 (브라우저 기본 당김 새로고침과 겹치지 않게 막는다) */
+  .ptr { display:none; }
+  @media (max-width: 760px) {
+    html, body { overscroll-behavior-y:contain; }
+    .ptr {
+      display:grid; place-items:center; position:fixed; left:50%; z-index:9;
+      top:calc(var(--m-bar-h) + env(safe-area-inset-top, 0px) - 44px);
+      width:40px; height:40px; margin-left:-20px; border-radius:50%;
+      background:var(--surface); color:var(--accent); border:1px solid var(--border);
+      box-shadow:0 4px 14px rgba(0,0,0,.14); opacity:0; pointer-events:none;
+      transform:translateY(var(--ptr-y, 0px)); transition:transform .25s, opacity .2s;
+    }
+    .ptr.pulling { transition:none; }
+    .ptr svg { width:20px; height:20px; transform:rotate(var(--ptr-r, 0deg)); }
+    .ptr.ready svg { color:var(--accent); }
+    .ptr.busy svg { animation:ptrSpin .8s linear infinite; }
+    @keyframes ptrSpin { to { transform:rotate(360deg); } }
+  }
+
   @media (max-width: 760px) {
     :root { --side-w: 0px; --m-bar-h: 58px; --m-tab-h: 64px; }
     /* 휴대폰은 조금 차가운 회색 바탕에 흰 카드 (어둡게 테마는 그대로) */
@@ -2547,6 +2566,7 @@
 </style>
 </head>
 <body data-view="home">
+<div class="ptr" id="ptr" aria-hidden="true"></div>
 
 <!-- ═════════════ 휴대폰 상단바 — 폭 760px 이하에서만 (사이드바 대신) ═════════════ -->
 <header class="m-bar" id="mBar">
@@ -8532,6 +8552,80 @@ window.addEventListener('focus', checkExternalChange);
 document.addEventListener('visibilitychange', function () {
   if (!document.hidden) { checkExternalChange(); checkCloudChange(); fetchKospiTrend(); }
 });
+
+// ── 휴대폰: 화면 맨 위에서 아래로 당겼다 놓으면 기록을 다시 불러온다 ──
+(function () {
+  var ptr = $('ptr'), PULL = 70, MAX = 110;
+  var startY = null, startX = 0, dist = 0, busy = false;
+  ptr.innerHTML = ico('refresh');
+  function mobile() { return window.matchMedia('(max-width: 760px)').matches; }
+  // 당김을 시작해도 되는 곳인지 — 창·시트가 열려 있거나, 안쪽 목록이 스크롤돼 있거나, 3D 화면이면 안 된다
+  function canStart(t) {
+    if (busy || !mobile() || window.scrollY > 0) return false;
+    if (document.body.classList.contains('explore-on')) return false;
+    if (document.querySelector('.sheet-back.open, dialog[open]')) return false;
+    if (t.closest && t.closest('canvas, iframe, input[type="range"], textarea, select')) return false;
+    for (var n = t; n && n !== document.body && n.nodeType === 1; n = n.parentNode) {
+      if (n.scrollTop > 0) return false;
+    }
+    return true;
+  }
+  function show(d) {
+    var y = Math.min(d, MAX);
+    ptr.style.setProperty('--ptr-y', y + 'px');
+    ptr.style.setProperty('--ptr-r', (y / PULL * 270) + 'deg');
+    ptr.style.opacity = Math.min(1, y / PULL);
+    ptr.classList.toggle('ready', d >= PULL);
+  }
+  function hide() {
+    ptr.classList.remove('pulling', 'ready', 'busy');
+    ptr.style.setProperty('--ptr-y', '0px');
+    ptr.style.opacity = 0;
+  }
+  async function refresh() {
+    if (collectEntries().length || store.state === 'saving' || (rb && rb.dirty)) {
+      showToast('저장하지 않은 입력이 있어 새로고침하지 않았어요');
+      return;
+    }
+    if (isCloud()) {
+      cloud.lastCheck = Date.now();
+      await openCloud(store.mode, '새로 불러왔습니다');
+    } else if (store.mode === 'folder' && store.dir) {
+      await reloadFolder('새로 불러왔습니다');
+    } else {
+      location.reload();
+      return;
+    }
+    fetchKospiTrend();
+  }
+  document.addEventListener('touchstart', function (e) {
+    startY = null;
+    if (e.touches.length !== 1 || !canStart(e.target)) return;
+    startY = e.touches[0].clientY; startX = e.touches[0].clientX; dist = 0;
+  }, { passive: true });
+  document.addEventListener('touchmove', function (e) {
+    if (startY === null) return;
+    var dy = e.touches[0].clientY - startY, dx = e.touches[0].clientX - startX;
+    if (dist === 0 && (dy <= 0 || Math.abs(dx) > dy)) { startY = null; return; }   // 위로 · 옆으로 밀기는 무시
+    if (window.scrollY > 0) { startY = null; hide(); return; }
+    dist = dy * 0.5;   // 손가락보다 천천히 따라 내려온다
+    ptr.classList.add('pulling');
+    show(dist);
+  }, { passive: true });
+  function end() {
+    if (startY === null) return;
+    startY = null;
+    ptr.classList.remove('pulling');
+    if (dist < PULL) { hide(); return; }
+    busy = true;
+    ptr.classList.add('busy');
+    ptr.classList.remove('ready');
+    show(PULL);
+    Promise.resolve().then(refresh).catch(function () {}).then(function () { busy = false; hide(); });
+  }
+  document.addEventListener('touchend', end);
+  document.addEventListener('touchcancel', function () { startY = null; hide(); });
+})();
 
 // 저장 안 한 입력이 있으면 창을 닫기 전에 묻는다
 window.addEventListener('beforeunload', function (e) {
