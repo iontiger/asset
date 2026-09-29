@@ -1,0 +1,99 @@
+
+/* ── 미니게임판 (자산마을 3D · 게임 에디션) — 자산 금액 · 기록 화면은 숨긴다 ── */
+#sourcePill,#hideBtn,#timeBtn,#export,#import,#overview,.mtn-label.me,#growthBtn,#timebar,#weatherBadge,#detail,#editDialog{display:none!important}
+#gameHud{position:fixed;left:28px;top:102px;width:250px;z-index:3;padding:16px 16px 12px;font-size:13px;color:var(--ink,#23302b)}
+#gameHud .gh-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+#gameHud .gh-head b{font-size:15px}
+#gameHud .gh-fold{border:0;background:#0000;color:var(--muted,#6b7a72);font-size:12px;cursor:pointer;padding:4px}
+#gameHud .gh-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-top:1px solid #22675e14}
+#gameHud .gh-row span{display:flex;flex-direction:column;gap:2px}
+#gameHud .gh-row small{color:var(--muted,#6b7a72);font-size:11px}
+#gameHud .gh-btn{border:0;border-radius:11px;padding:8px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;background:#22675e;color:#fff;white-space:nowrap;touch-action:manipulation}
+#gameHud .gh-btn.soft{background:#e4efec;color:#22675e}
+#gameHud .gh-tip{color:var(--muted,#6b7a72);font-size:11px;line-height:1.5;margin:8px 0 0}
+#gameHud.folded .gh-body{display:none}
+#gameHud.folded .gh-head{margin:0}
+@media(max-width:1050px){#gameHud{left:18px;width:230px}}
+@media(max-width:760px){#gameHud{top:62px;left:12px;width:min(260px,calc(100vw - 24px));padding:11px 13px 9px;font-size:12px}#gameHud .gh-row{padding:7px 0}}
+
+/* 다이아 러시 — 위 가운데 시계 · 점수, 가장 가까운 다이아 방향 화살표 */
+#rushBar{position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:9;display:none;align-items:center;gap:14px;background:#123b4bee;color:#fff;border-radius:18px;padding:10px 18px;box-shadow:0 8px 26px #0003;font-weight:700;pointer-events:none}
+#rushBar.on{display:flex}
+#rushBar .rb-time{font-size:22px;font-variant-numeric:tabular-nums;min-width:52px;text-align:center}
+#rushBar .rb-time.low{color:#ffb4a2}
+#rushBar .rb-score{font-size:18px}
+#rushBar .rb-arrow{display:inline-block;width:30px;height:30px;line-height:30px;text-align:center;border-radius:50%;background:#7fe3ff33;font-size:18px;transition:transform .08s linear}
+#rushBar .rb-dist{font-size:11px;font-weight:500;opacity:.8}
+#rushBar>*{white-space:nowrap}
+@media(max-width:760px){#rushBar{top:118px;padding:8px 14px;gap:10px}#rushBar .rb-time{font-size:19px}}
+
+/* 결과 · 도감 창 */
+.game-modal{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;background:#0f2a2466;padding:16px}
+.game-modal.on{display:flex}
+.game-modal .gm-card{background:var(--paper-solid,#fbfaf5);border-radius:22px;padding:22px 20px 18px;width:min(380px,100%);max-height:calc(100dvh - 40px);overflow:auto;box-shadow:0 18px 50px #0004;text-align:center}
+.game-modal h2{margin:4px 0 6px;font-size:20px}
+.game-modal .gm-big{font-size:44px;font-weight:800;color:#1f6f86;margin:6px 0}
+.game-modal p{margin:6px 0;color:#4d5c55;font-size:13px;line-height:1.55}
+.game-modal .gm-actions{display:flex;gap:8px;margin-top:14px}
+.game-modal .gm-actions button{flex:1;border:0;border-radius:12px;padding:12px;font:inherit;font-weight:700;cursor:pointer;background:#e4efec;color:#22675e;touch-action:manipulation}
+.game-modal .gm-actions button.primary{background:#22675e;color:#fff}
+.dex-tabs{display:flex;gap:6px;justify-content:center;margin:8px 0 10px}
+.dex-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;text-align:left}
+.dex-grid div{border-radius:13px;padding:10px 11px;background:#eef4f1;font-size:12px;line-height:1.45}
+.dex-grid div b{display:block;font-size:14px}
+.dex-grid div.unknown{background:#f0efe9;color:#9aa19c}
+.dex-grid i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:0}
+
+/* 낚시 릴 감기 — 초록 칸 안에 물고기를 잡아 두면 게이지가 찬다 */
+#reelGame{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:12;width:min(420px,calc(100vw - 28px));display:none;background:#0f3a33ee;color:#fff;border-radius:20px;padding:14px 16px 14px;box-shadow:0 12px 34px #0005;user-select:none;-webkit-user-select:none;touch-action:none}
+#reelGame.on{display:block}
+#reelGame .rg-title{display:flex;justify-content:space-between;font-weight:700;font-size:14px;margin-bottom:10px}
+#reelGame .rg-track{position:relative;height:34px;border-radius:17px;background:#ffffff1f;overflow:hidden}
+#reelGame .rg-zone{position:absolute;top:3px;bottom:3px;border-radius:14px;background:#7ee08a88;border:2px solid #b9f5c0}
+#reelGame .rg-zone.hit{background:#7ee08acc}
+#reelGame .rg-fish{position:absolute;top:50%;width:30px;margin-left:-15px;transform:translateY(-50%);text-align:center;font-size:22px;line-height:1;filter:drop-shadow(0 1px 2px #0006)}
+#reelGame .rg-prog{height:8px;border-radius:4px;background:#ffffff26;margin-top:10px;overflow:hidden}
+#reelGame .rg-prog i{display:block;height:100%;width:30%;background:linear-gradient(90deg,#f2c14e,#7ee08a);border-radius:4px}
+#reelGame .rg-hold{display:block;width:100%;margin-top:12px;border:0;border-radius:14px;padding:14px;font:inherit;font-size:15px;font-weight:800;background:#f2c14e;color:#3b2a00;cursor:pointer;touch-action:none}
+#reelGame .rg-hold.down{background:#ffd978;transform:scale(.98)}
+#reelGame .rg-help{font-size:11px;opacity:.75;margin-top:8px;text-align:center}
+@media(max-width:760px){#reelGame{bottom:10px}}
+body.reeling #bottom,body.reeling #mobilepad{display:none!important}
+
+/* 주민 이야기 — 격언 · 도움말 (뉴스 창을 그대로 쓴다) */
+#newsDialog .news-card p{display:block;-webkit-line-clamp:unset;overflow:visible}
+#newsDialog .news-card .tk-by{display:block;text-align:right;color:#71817c;font-size:12px;margin-top:6px}
+
+/* 시작 화면 — 주인공 고르기 */
+#heroPick{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 30%,#fff7e6ee,#dfeee9f2);padding:16px}
+#heroPick.on{display:flex}
+#heroPick .hp-card{width:min(460px,100%);text-align:center}
+#heroPick .hp-logo{font-size:13px;letter-spacing:.2em;color:#71817c;font-weight:700}
+#heroPick h2{margin:6px 0 4px;font-size:28px;color:#213e3c}
+#heroPick p{margin:0 0 18px;color:#4d5c55;font-size:14px}
+#heroPick .hp-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#heroPick .hp-row button{border:2px solid #22675e22;background:#fffdf7;border-radius:20px;padding:18px 10px 16px;font:inherit;cursor:pointer;box-shadow:0 8px 24px #22675e14;transition:.15s;touch-action:manipulation}
+#heroPick .hp-row button:hover,#heroPick .hp-row button:focus-visible{border-color:#22675e;transform:translateY(-2px)}
+#heroPick .hp-face{font-size:64px;line-height:1.1}
+#heroPick .hp-row b{display:block;font-size:17px;margin-top:6px;color:#213e3c}
+#heroPick .hp-row small{display:block;color:#71817c;margin-top:3px;font-size:12px}
+
+/* 마을 달력 — 미니게임판 머리에 지금 달 · 날씨 (접어도 보인다) */
+#gameHud .gh-date{font-size:12px;font-weight:700;color:#22675e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:-2px 0 5px}
+#gameHud.folded .gh-date{margin:6px 0 0}
+#gameHud .gh-date[data-season="winter"]{color:#41658a}
+#gameHud .gh-date[data-season="summer"]{color:#b86a00}
+#gameHud .gh-date[data-season="autumn"]{color:#a4502a}
+#gameHud .gh-date[data-season="spring"]{color:#c0507a}
+#gameHud .gh-datebar{height:3px;border-radius:2px;background:#22675e14;margin:-2px 0 6px;overflow:hidden}
+#gameHud .gh-datebar i{display:block;height:100%;width:0;background:#22675e66}
+#gameHud.folded .gh-datebar{margin:4px 0 0}
+/* 요트 */
+#yachtBar{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:12;display:none;align-items:center;gap:12px;background:#fffdf6f0;border-radius:16px;padding:10px 12px 10px 16px;box-shadow:0 8px 26px #1b3b4a33;font-size:13px;color:#25473b;white-space:nowrap}
+#yachtBar.on{display:flex}
+#yachtBar .yb-track{width:min(34vw,220px);height:8px;border-radius:5px;background:#dfe8e6;overflow:hidden}
+#yachtBar .yb-track i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2c6e8f,#5cc7d9)}
+#yachtBar #ybPct{min-width:34px;text-align:right;font-variant-numeric:tabular-nums}
+#yachtBar button{border:0;border-radius:11px;padding:8px 13px;background:#2c6e8f;color:#fff;font-weight:700;font-size:13px;cursor:pointer}
+body.yacht-ride #gameHud,body.yacht-ride #mobilepad,body.yacht-ride #bikeBtn,body.yacht-ride #mobileBike,body.yacht-ride #interaction,body.yacht-ride #rushBar,body.yacht-ride #bottom,body.yacht-ride #reelGame{display:none!important}
+@media(max-width:760px){#yachtBar{bottom:14px;gap:9px;padding:8px 10px 8px 12px;font-size:12px}#yachtBar .yb-track{width:28vw}}
