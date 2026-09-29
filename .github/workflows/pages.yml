@@ -29,7 +29,7 @@ jobs:
     if: github.event_name == 'schedule' || github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
     outputs:
-      deploy: ${{ steps.briefing.outputs.deploy == 'true' || steps.stoch.outputs.changed == 'true' }}
+      deploy: ${{ steps.briefing.outputs.deploy == 'true' || steps.stoch.outputs.changed == 'true' || steps.rbcache.outputs.cache-hit != 'true' }}
     steps:
       - uses: actions/checkout@v4
       - id: pages
@@ -64,7 +64,25 @@ jobs:
         id: stoch
         run: python3 .github/scripts/stoch_screen.py _site --site "${{ steps.pages.outputs.base_url }}"
 
-      - if: steps.briefing.outputs.deploy == 'true' || steps.stoch.outputs.changed == 'true'
+      # PC 연금 리밸런싱 종목 차트(캔들 · 스토캐스틱)용 ETF · ETN 일봉 → _site/rbbars/{code}.json.
+      # 1,500여 종목이라 하루 두 번(08시 KST 전/후)만 새로 받고, 그 사이에는 Actions 캐시를 그대로 쓴다
+      - name: ETF 일봉 캐시 키
+        id: rbkey
+        run: echo "key=rbbars-$(TZ=Asia/Seoul date +%Y%m%d)-$([ "$(TZ=Asia/Seoul date +%H)" -ge 8 ] && echo am || echo early)" >> "$GITHUB_OUTPUT"
+      - name: ETF 일봉 캐시
+        id: rbcache
+        uses: actions/cache@v4
+        with:
+          path: rbbars
+          key: ${{ steps.rbkey.outputs.key }}
+          restore-keys: rbbars-
+      - name: ETF 일봉 받기
+        if: steps.rbcache.outputs.cache-hit != 'true'
+        run: python3 .github/scripts/etf_bars.py rbbars
+      - name: ETF 일봉 사이트에 넣기
+        run: mkdir -p rbbars && cp -r rbbars _site/rbbars && ls _site/rbbars | wc -l
+
+      - if: steps.briefing.outputs.deploy == 'true' || steps.stoch.outputs.changed == 'true' || steps.rbcache.outputs.cache-hit != 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site

@@ -304,6 +304,12 @@
   .rb-etf { display:flex; align-items:center; gap:10px; min-width:0; }
   .rb-etf > div { min-width:0; }
   .rb-etf b { display:block; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:280px; }
+  .rb-nm { display:flex; align-items:center; gap:6px; min-width:0; }
+  .rb-sig { flex:none; padding:2px 8px; border-radius:99px; font-size:.7rem; font-weight:800; line-height:1.5; white-space:nowrap; }
+  .rb-sig[hidden] { display:none; }
+  .rb-sig.buy  { background:color-mix(in srgb, var(--kospi-up) 13%, transparent); color:var(--kospi-up); }
+  .rb-sig.sell { background:color-mix(in srgb, var(--kospi-down) 13%, transparent); color:var(--kospi-down); }
+  @media (max-width:760px) { .rb-sig { display:none !important; } }
   .rb-etf small { display:block; font-size:.72rem; color:var(--muted); margin-top:1px; }
   .rb-dot { width:10px; height:10px; border-radius:3px; flex:none; }
   .rb-dot.cash { background:var(--grid); }
@@ -7314,7 +7320,7 @@ function renderRbPlan() {
       : '<span class="rb-tag">' + rbEsc(r.reason || '유지') + '</span>';
     var out = s.band > 0 ? Math.abs(r.deviation) >= s.band : Math.abs(r.deviation) >= 1;
     return '<tr data-code="' + rbEsc(r.code) + '" data-name="' + rbEsc(rbItemName(r)) + '">' +
-      '<td><div class="rb-etf"><i class="rb-dot" style="background:' + rbColor(i) + '"></i><div><b>' + rbEsc(rbItemName(r)) + '</b><small>' + rbEsc(r.code) + '</small></div></div></td>' +
+      '<td><div class="rb-etf"><i class="rb-dot" style="background:' + rbColor(i) + '"></i><div><div class="rb-nm"><b>' + rbEsc(rbItemName(r)) + '</b>' + rbSigSlot(r.code) + '</div><small>' + rbEsc(r.code) + '</small></div></div></td>' +
       '<td class="num rb-c-price">' + (r.priceMissing ? '<span class="rb-stale">없음</span>' : rbNum(r.price)) + '</td>' +
       '<td class="num rb-c-qty">' + rbNum(r.qty) + '주</td>' +
       '<td class="num rb-c-val">' + rbNum(r.value) + '</td>' +
@@ -7331,6 +7337,7 @@ function renderRbPlan() {
     '<td class="rb-c-price"></td><td class="rb-c-qty"></td><td class="num rb-c-val">' + rbNum(p.cash) + '</td>' +
     '<td><div class="rb-wtxt">' + rbPct(plan.cashWeightNow) + '<span>목표 ' + rbPct(Math.max(0, plan.cashWeight)) + '</span></div></td>' +
     '<td class="rb-c-dev"></td><td></td></tr></tfoot>';
+  rbSigPaint();
 
   // 계획 패널
   $('rbPlanTag').className = 'rb-tag' + (plan.tradeCount ? ' buy' : '');
@@ -7421,7 +7428,7 @@ function renderRbInvest() {
     '<th class="num">매수 수량</th><th class="num">매수 금액</th><th class="num rb-c-qty">실제 비중</th></tr></thead><tbody>' +
     plan.rows.map(function (r, i) {
       return '<tr data-code="' + rbEsc(r.code) + '" data-name="' + rbEsc(rbItemName(r)) + '">' +
-        '<td><div class="rb-etf"><i class="rb-dot" style="background:' + rbColor(i) + '"></i><div><b>' + rbEsc(rbItemName(r)) + '</b><small>' + rbEsc(r.code) + '</small></div></div></td>' +
+        '<td><div class="rb-etf"><i class="rb-dot" style="background:' + rbColor(i) + '"></i><div><div class="rb-nm"><b>' + rbEsc(rbItemName(r)) + '</b>' + rbSigSlot(r.code) + '</div><small>' + rbEsc(r.code) + '</small></div></div></td>' +
         '<td class="num">' + rbPct(r.weight) + '</td>' +
         '<td class="num rb-c-price">' + (r.priceMissing ? '<span class="rb-stale">없음</span>' : rbNum(r.price)) + '</td>' +
         '<td class="num rb-c-val">' + rbNum(r.targetValue) + '</td>' +
@@ -7433,6 +7440,7 @@ function renderRbInvest() {
     '<td class="num">' + rbNum(totalQty) + '주</td><td class="num">' + rbNum(plan.invested) + '</td><td class="rb-c-qty"></td></tr></tfoot>';
   $('rbInvWarn').innerHTML = plan.warnings.map(function (w) { return '<div class="rb-warn">' + rbEsc(w) + '</div>'; }).join('');
   $('rbInvApply').disabled = !(amount > 0 && plan.invested > 0);
+  rbSigPaint();
 }
 
 function rbApplyInvest() {
@@ -7749,9 +7757,19 @@ function rbOpenChart(code, name) {
   rb.chart.code = code;
   rb.chart.name = name || code;
   if (!RB_PERIODS.some(function (p) { return p[0] === rb.chart.period; })) rb.chart.period = '1m';
+  rb.chart.candle = null;
   $('rbChartTitle').textContent = rb.chart.name + ' (' + code + ')';
   $('rbChartBody').innerHTML = '<div class="rb-empty">차트 불러오는 중…</div>';
   openSheet('rbChartSheet');
+  if (!isMobile() && location.protocol !== 'file:') {
+    rbLoadBars(code).then(function (bars) {
+      if (rb.chart.code === code && rb.chart.mode === 'etf') { rb.chart.candle = bars; rbRenderCandle(); }
+    }, function () { if (rb.chart.code === code) rbOpenLine(code); });
+    return;
+  }
+  rbOpenLine(code);
+}
+function rbOpenLine(code) {
   rbLoadHistory(code).then(function (all) {
     if (rb.chart.code === code) rbRenderChart();
   }, function (e) {
@@ -7777,6 +7795,84 @@ function rbRenderChart() {
       '<div><label>내 보유</label><b>' + (it && it.qty ? rbNum(it.qty) + '주 · ' + rbKRW(it.qty * last) : '-') + '</b></div></div>' +
     '<a class="rb-ext" href="https://m.stock.naver.com/domestic/stock/' + encodeURIComponent(rb.chart.code) + '/total" target="_blank" rel="noopener noreferrer">네이버 금융에서 자세히 보기 ↗</a>';
 }
+
+/* ── PC: 종목 차트를 투자 정보처럼 일봉 캔들 + 슬로우 스토캐스틱으로 ──
+   rbbars/{code}.json — Pages 배포 때 GitHub Actions 가 ETF · ETN 일봉(전 영업일까지 100거래일)을 받아 둔다
+   (.github/scripts/etf_bars.py). 가장 최근 %K · %D 교차를 진한 화살표로, 전 영업일 종가에 교차했으면 이름 옆에
+   "매수신호" · "매도신호" pill. 일봉 파일을 못 받으면 예전처럼 종가 선 차트. 휴대폰 화면은 그대로 둔다. */
+var RB_BARS = {};
+function rbLoadBars(code) {
+  if (!RB_BARS[code]) {
+    var k = new Date(Date.now() + 9 * 3600e3).toISOString(), v = k.slice(0, 10) + (k.slice(11, 13) >= '08' ? 'b' : 'a');
+    RB_BARS[code] = fetch('rbbars/' + encodeURIComponent(code) + '.json?v=' + v).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function (j) {
+      if (!j || !Array.isArray(j.b) || j.b.length < 25) throw new Error('일봉 부족');
+      return j.b;
+    });
+  }
+  return RB_BARS[code];
+}
+// 전 영업일(마지막 봉)에 교차했으면 'buy' | 'sell', 가장 최근 교차 봉 번호
+function rbBarsSig(bars) {
+  var st = invStoch(bars), last = bars.length - 1, keys = Object.keys(st.cross).map(Number);
+  var recent = keys.length ? Math.max.apply(null, keys) : -1;
+  return { st: st, last: last, now: st.cross[last] || null, recent: recent, recentSide: recent >= 0 ? st.cross[recent] : null };
+}
+function rbSigSlot(code) { return '<span class="rb-sig" data-sig="' + rbEsc(code) + '" hidden></span>'; }
+function rbSigPaint() {
+  if (isMobile() || location.protocol === 'file:') return;
+  var spans = document.querySelectorAll('#view-rebal .rb-sig[data-sig]'), codes = {};
+  [].forEach.call(spans, function (s) { codes[s.dataset.sig] = 1; });
+  Object.keys(codes).forEach(function (code) {
+    rbLoadBars(code).then(function (bars) {
+      var now = rbBarsSig(bars).now;
+      [].forEach.call(document.querySelectorAll('#view-rebal .rb-sig[data-sig="' + code + '"]'), function (s) {
+        s.hidden = !now;
+        s.className = 'rb-sig' + (now ? ' ' + now : '');
+        s.textContent = now === 'buy' ? '매수신호' : now === 'sell' ? '매도신호' : '';
+        s.title = now ? '전 영업일 종가 기준 슬로우 스토캐스틱(' + INV_STO.join(',') + ') ' + (now === 'buy' ? '골든크로스' : '데드크로스') : '';
+      });
+    }, function () {});
+  });
+}
+function rbRenderCandle() {
+  var bars = rb.chart.candle, code = rb.chart.code;
+  if (!bars) return;
+  var sg = rbBarsSig(bars), last = bars[sg.last], prev = bars[sg.last - 1], close = last[4];
+  var chg = prev ? close - prev[4] : 0, rate = prev ? chg / prev[4] * 100 : 0;
+  var it = rbPf().items.find(function (i) { return i.code === code; });
+  var naver = 'https://m.stock.naver.com/domestic/stock/' + encodeURIComponent(code) + '/total';
+  var rs = sg.recentSide, rd = sg.recent >= 0 ? rbYmd(bars[sg.recent][0]) : '';
+  $('rbChartBody').innerHTML =
+    '<div class="inv-ch-head"><div><div class="inv-ch-px">' + rbNum(close) + '원' + (prev ? '<small class="' + (chg > 0 ? 'up' : chg < 0 ? 'down' : '') + '">' +
+      (chg > 0 ? '▲ ' : chg < 0 ? '▼ ' : '') + rbNum(Math.abs(chg)) + ' (' + (rate > 0 ? '+' : '') + rate.toFixed(2) + '%)</small>' : '') + '</div>' +
+      '<div class="card-sub">' + rbYmd(last[0]) + ' 종가 기준</div></div>' +
+      (sg.now ? '<span class="inv-tag ' + sg.now + '">' + (sg.now === 'buy' ? '▲ 매수신호 · 골든크로스' : '▼ 매도신호 · 데드크로스') + '</span>' : '') + '</div>' +
+    '<div class="inv-ch-leg"><span><b class="a-buy">▲</b>골든크로스(매수)</span><span><b class="a-sell">▼</b>데드크로스(매도)</span>' +
+      '<span>진한 화살표가 가장 최근 신호, 옅은 것은 지난 교차</span><span><i></i>%K</span><span><i class="d"></i>%D</span></div>' +
+    '<div class="inv-ch-box" id="rbChBox"><div class="inv-tip" id="rbTip" hidden></div></div>' +
+    '<div class="inv-ch-stats"><div><label>종가</label><b>' + rbNum(close) + '원</b></div>' +
+      '<div><label>%K / %D</label><b>' + sg.st.K[sg.last].toFixed(1) + ' / ' + sg.st.D[sg.last].toFixed(1) + '</b></div>' +
+      '<div><label>최근 신호</label><b' + (rs ? ' style="color:var(--kospi-' + (rs === 'buy' ? 'up' : 'down') + ')"' : '') + '>' +
+        (rs ? (rs === 'buy' ? '▲ 매수 ' : '▼ 매도 ') + rd : '없음') + '</b></div>' +
+      '<div><label>내 보유</label><b>' + (it && it.qty ? rbNum(it.qty) + '주 · ' + rbKRW(it.qty * close) : '-') + '</b></div></div>' +
+    '<div class="inv-ch-foot"><span>슬로우 스토캐스틱(' + INV_STO.join(', ') + ') · 일봉 · 투자 판단의 참고용이에요</span>' +
+      '<a href="' + naver + '" target="_blank" rel="noopener noreferrer">네이버 증권에서 자세히 보기 ↗</a></div>';
+  rbDrawCandle();
+}
+function rbDrawCandle() {
+  var box = $('rbChBox');
+  if (!box || !rb.chart.candle) return;
+  var sg = rbBarsSig(rb.chart.candle);
+  csDraw({ box: box, tip: $('rbTip'), all: rb.chart.candle, name: rb.chart.name, emph: sg.recent, side: sg.recentSide });
+}
+window.addEventListener('resize', function () {
+  if (!rb.chart.candle || !$('rbChartSheet').classList.contains('open')) return;
+  clearTimeout(rb.chart.resizeT);
+  rb.chart.resizeT = setTimeout(rbDrawCandle, 120);
+});
 
 /* ── 총자산 추이: 거래 기록으로 날짜별 보유상태를 되짚고 × 일별 종가 ── */
 function rbKstYmd(iso) {
@@ -7864,6 +7960,7 @@ function rbDrawSpark() {
 }
 function rbOpenTotalChart() {
   rb.chart.mode = 'total';
+  rb.chart.candle = null;
   rb.chart.code = '__total__';
   if (!RB_TOTAL_PERIODS.some(function (p) { return p[0] === rb.chart.period; })) rb.chart.period = '1m';
   $('rbChartTitle').textContent = '총자산 추이 · ' + rbPf().name;
@@ -13203,7 +13300,12 @@ function invChartRender() {
 function invDraw() {
   var box = $('invChBox'), cur = invCur();
   if (!box || !cur) return;
-  var all = cur.it.bars, st = invStoch(all), side = cur.side;
+  csDraw({ box: box, tip: $('invTip'), all: cur.it.bars, name: cur.it.name, side: cur.side, emph: cur.it.bars.length - 1 });
+}
+// 일봉 캔들 + 슬로우 스토캐스틱 차트 — 투자 정보와 PC 연금 리밸런싱이 같이 쓴다.
+// o = { box, tip, all: [[ymd,o,h,l,c,v]…], name, emph: 진하게 보일 교차 봉 번호(-1 이면 없음), side: 'buy'|'sell'|null }
+function csDraw(o) {
+  var box = o.box, all = o.all, st = invStoch(all), side = o.side, emph = o.emph;
   var s0 = Math.max(17, all.length - 90), b = all.slice(s0), n = b.length, last = all.length - 1;
   var W = Math.max(320, Math.round(box.clientWidth || 800));
   var L = 6, R = 62, T = 34, PH = 290, G = 26, SH = 104, B = 24, H = T + PH + G + SH + B;
@@ -13232,8 +13334,8 @@ function invDraw() {
   });
   out.push('<text x="' + L + '" y="' + (sTop - 8) + '" font-size="11" font-weight="700" fill="var(--muted)">Slow Stoch ' + INV_STO.join(' · ') + '</text>');
   // 이번 신호 자리 — 두 판을 가로지르는 옅은 띠
-  var xs = X(last - s0).toFixed(1), sc = side === 'buy' ? UP : DN;
-  out.push('<rect x="' + (X(last - s0) - Math.max(step, 10) / 2).toFixed(1) + '" y="' + (T - 8) + '" width="' + Math.max(step, 10).toFixed(1) + '" height="' + (PH + G + SH + 8) +
+  var sc = side === 'buy' ? UP : side === 'sell' ? DN : 'var(--accent)';
+  if (emph >= s0) out.push('<rect x="' + (X(emph - s0) - Math.max(step, 10) / 2).toFixed(1) + '" y="' + (T - 8) + '" width="' + Math.max(step, 10).toFixed(1) + '" height="' + (PH + G + SH + 8) +
     '" fill="' + sc + '" opacity=".08" rx="4"/>');
   // 날짜
   var every = Math.max(1, Math.ceil(n / Math.max(3, Math.floor((W - L - R) / 90))));
@@ -13265,7 +13367,7 @@ function invDraw() {
   Object.keys(st.cross).forEach(function (key) {
     var i = +key, k = i - s0;
     if (k < 0) return;
-    var dirBuy = st.cross[i] === 'buy', now = i === last, col = dirBuy ? UP : DN, s = now ? 9 : 5.5, op = now ? 1 : 0.38, x = X(k), r = all[i];
+    var dirBuy = st.cross[i] === 'buy', now = i === emph, col = dirBuy ? UP : DN, s = now ? 9 : 5.5, op = now ? 1 : 0.38, x = X(k), r = all[i];
     out.push(dirBuy ? arrow(x, Y(r[3]) + 5, 1, s, col, op) : arrow(x, Y(r[2]) - 5, -1, s, col, op));
     out.push('<circle cx="' + x.toFixed(1) + '" cy="' + YS(st.K[i]).toFixed(1) + '" r="' + (now ? 5 : 3.2) + '" fill="' + col + '" opacity="' + op + '" stroke="var(--surface)" stroke-width="1.5"/>');
     if (now) {
@@ -13284,8 +13386,8 @@ function invDraw() {
   var old = box.querySelector('svg');
   if (old) old.remove();
   box.insertAdjacentHTML('afterbegin', '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' +
-    rbEsc(cur.it.name) + ' 일봉과 스토캐스틱 차트">' + out.join('') + '</svg>');
-  var svg = box.querySelector('svg'), tip = $('invTip'), hov = svg.querySelector('#invHover'), hl = svg.querySelector('#invHoverL');
+    rbEsc(o.name) + ' 일봉과 스토캐스틱 차트">' + out.join('') + '</svg>');
+  var svg = box.querySelector('svg'), tip = o.tip, hov = svg.querySelector('#invHover'), hl = svg.querySelector('#invHoverL');
   tip.hidden = true;
   var hit = svg.querySelector('#invHit');
   hit.addEventListener('mousemove', function (e) {
@@ -13299,7 +13401,7 @@ function invDraw() {
       '<div><span>저가</span>' + invNum(r[3]) + '</div><div><span>종가</span>' + invNum(r[4]) + '</div>' +
       (r[5] ? '<div><span>거래량</span>' + invNum(r[5]) + '</div>' : '') +
       '<div><span>%K / %D</span>' + st.K[i].toFixed(1) + ' / ' + st.D[i].toFixed(1) + '</div>' +
-      (c ? '<div class="sig" style="color:' + (c === 'buy' ? UP : DN) + '">' + (c === 'buy' ? '▲ 골든크로스' : '▼ 데드크로스') + (i === last ? ' · 이번 신호' : '') + '</div>' : '');
+      (c ? '<div class="sig" style="color:' + (c === 'buy' ? UP : DN) + '">' + (c === 'buy' ? '▲ 골든크로스' : '▼ 데드크로스') + (i === emph ? ' · ' + (emph === last ? '이번 신호' : '최근 신호') : '') + '</div>' : '');
     tip.hidden = false;
     var sx = x * rc.width / W, tw = tip.offsetWidth;
     tip.style.left = (sx + 14 + tw > rc.width ? sx - 14 - tw : sx + 14) + 'px';
