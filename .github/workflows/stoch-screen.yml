@@ -24,8 +24,7 @@ jobs:
         run: |
           python3 .github/scripts/stoch_screen.py out
           cat out/result.md >> "$GITHUB_STEP_SUMMARY"
-          echo "=== RESULT JSON ==="
-          cat out/result.json
+          # 결과 JSON(일봉 포함)은 길어서 로그에 찍지 않는다 — 루틴이 로그 끝의 목록을 읽는다. 전체는 아티팩트에
       - uses: actions/upload-artifact@v4
         with:
           name: stoch-screen
