@@ -22,6 +22,7 @@ rep('<title>자산마을 · 우리 자산을 산책하다</title>','<title>자�
 rep('<title>자산마을 3D · 미니게임</title>','<title>DentPhoto 마을</title>')
 rep('<h1>자산마을</h1><small>ASSET VILLAGE</small>','<h1>DentPhoto 마을</h1><small>DENTPHOTO VILLAGE</small>')
 rep('aria-label="자산마을 — 마을 전체 보기"','aria-label="DentPhoto 마을 — 마을 전체 보기"')
+rep("$('#location').textContent='눈높이 산책 · 방향키로 걷고 드래그로 둘러보세요'","$('#location').textContent=matchMedia('(pointer:coarse)').matches?'눈높이 산책 · 땅을 누르면 걷고 드래그로 둘러보세요':'눈높이 산책 · 방향키로 걷고 드래그로 둘러보세요'")
 rep('aria-label="자산마을 3D 화면. 방향키 또는 WASD로 걷습니다. 구역에 도착하면 해당 자산이 자동으로 열립니다."','aria-label="DentPhoto 마을 3D 화면. 방향키 또는 WASD로 걷습니다."')
 rep('<small>집과 나무, 그리고 우리의 자산</small>','<small>집과 나무, 그리고 반짝이는 다이아몬드</small>')
 rep("x.fillText('⌂ 자산마을',20*k,H+foot/2);x.font=`600 ${15*k}px ${F}`;x.textAlign='right';x.fillText(refDate()+' · '+(mode==='all'?'우리 집':ownerName(mode))+' 순자산 '+compact(net)+'원',W-20*k,H+foot/2);",

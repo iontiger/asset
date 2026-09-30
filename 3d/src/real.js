@@ -12,7 +12,7 @@ if(typeof FXA==='undefined'||!FXA)return;
 const KEY='asset-village-3d-real',BASE='assets/real/';
 const coarse=matchMedia('(pointer:coarse)').matches||innerWidth<760;
 const CFG={tm:'aces',exp:1,sat:.97,macro:1};
-const R={on:!coarse,loaded:false,loading:false,active:false,tex:null,hdr:null};
+const R={on:false,loaded:false,loading:false,active:false,tex:null,hdr:null};
 try{const v=localStorage.getItem(KEY);if(v!==null)R.on=v==='1'}catch{}
 const maxAniso=Math.min(8,renderer.capabilities.getMaxAnisotropy?renderer.capabilities.getMaxAnisotropy():4);
 

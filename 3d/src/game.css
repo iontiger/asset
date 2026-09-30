@@ -226,3 +226,6 @@ body.boss-on #interaction{display:none!important}
 #bossHurt.on{animation:bossHurt .5s ease-out}
 @keyframes bossHurt{0%{opacity:1}100%{opacity:0}}
 @media(max-width:760px){#bossBar{top:58px}#bossAtk{right:84px;bottom:128px;width:70px;height:70px}}
+
+/* 모바일 방향키·점프·손 흔들기 버튼은 쓰지 않는다 — 땅을 누르면 걸어가요 */
+#mobilepad{display:none!important}
