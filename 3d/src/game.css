@@ -220,6 +220,7 @@ body[data-season=winter] .brand small{color:#4f7398}
 #bossAtk{position:fixed;right:292px;bottom:20px;z-index:21;width:78px;height:78px;border-radius:50%;border:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 40% 35%,#fff3a0,#ffc43d);color:#6a4300;font-size:32px;box-shadow:0 8px 22px #0004,0 0 0 4px #fff;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 #bossAtk small{font-size:10px;font-weight:800;margin-top:-4px}
 #bossAtk.on{display:flex}
+body.boss-on #interaction{display:none!important}
 #bossAtk:active{transform:scale(.93)}
 #bossHurt{position:fixed;inset:0;z-index:19;pointer-events:none;opacity:0;box-shadow:inset 0 0 120px 30px #ff2b2bb0}
 #bossHurt.on{animation:bossHurt .5s ease-out}
