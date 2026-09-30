@@ -42,6 +42,8 @@ jobs:
           cp index.html sw.js manifest.webmanifest app-icon-192.png app-icon-512.png app-icon-180.png _site/
           # 자산마을 3D 미니게임판 (자산 금액 없이 마을만) → https://iontiger.github.io/asset/3d/
           mkdir -p _site/3d && cp 3d/index.html _site/3d/
+          # 실사 화질용 사진 무늬 · 하늘빛 (3d/assets/real, 출처는 CREDITS.md)
+          cp -r 3d/assets _site/3d/
           # 버전 표시 · 새 버전 알림용 — 커밋 번호와 커밋 시각(한국 시간).
           # 브리핑만 바꿔 다시 올려도 같은 커밋이면 값이 같아서 "새 버전" 알림이 뜨지 않는다
           BUILD="${GITHUB_SHA::7} $(TZ=Asia/Seoul git log -1 --format=%cd --date=format-local:'%Y-%m-%d %H:%M')"
