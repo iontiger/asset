@@ -1,4 +1,4 @@
-/* ═══════ 주민 — 섬 전체로 고루, 새 주민 료멘스쿠나 · 포롱이 · 스피또꿈나무 · 티바이러스 · 윈터드림 · 원조익평 · 산타우찬이, 만나면 게임 도움말 또는 주식 격언 ═══════
+/* ═══════ 주민 — 섬 전체로 고루, 새 주민 료멘스쿠나 · 포롱이 · 스피또꿈나무 · 티바이러스 · 윈터드림 · 원조익평 · 산타우찬이 · 클라라, 만나면 게임 도움말 또는 주식 격언 ═══════
    원래 주민 10명 중 셋이 금고 마을(예금)에 서 있고 한 명은 예금 길을 오갔다. 여기서는 모든 구역 길의 안쪽 · 바깥쪽 절반과
    북쪽 길(목표봉 가는 길)에 한 명씩, 12명이 모두 나눠 걷게 한다.
    ANIMALS · NPC_LANES · npcGroups 는 const 라 내용만 바꾼다(다시 대입하면 안 된다). */
@@ -52,11 +52,20 @@ const extra2=[
   {name:'산타우찬이',kind:'산책',animal:'deer',role:'산타 선물 배달부',look:{shirt:'#d8322f',bag:'#8a5b39'},deco:decoSanta,greet:['호호호!','선물이요~','메리 크리스마스!','착한 어린이?']}];
 extra2.forEach((s,k)=>{Object.assign(s,{baseX:0,baseZ:6,shirt:s.look.shirt||'#ffffff',phase:(12+k)*1.71,speed:.19+(k%3)*.03});try{const n=makeNpc(s);n.greet=s.greet;n.root.visible=!prefs.light;if(n.shadow&&n.shadow.material)n.shadow.material.opacity=FX.level>=1?.32:.15}catch(e){console.error(e)}});
 
+/* ── 클라라 (2026-09-30) — 호두까기 인형의 발레리나, 분홍 토끼 · 발레 치마(튀튀) · 반짝이는 티아라 ── */
+ANIMALS.pinkrabbit={e:'🐰',n:'분홍 토끼',fur:'#f7d9e2',lt:'#fff6f8',ear:'long',tail:'pom',in:'#f39ab3',nose:'#e8739a',foot:'#f7d9e2',hop:1};
+function decoClara(h){girl(h,{ribbon:'#f06c9a',skirt:'#fbe6ee',hem:'#f39ab3'});const J=h.J,H=h.head;
+  for(const [r,y,c] of [[.56,-.1,'#fff4f8'],[.5,-.05,'#f9d3e0']]){const t=mesh(new THREE.CylinderGeometry(r,r*.92,.05,24),c,J.hips);t.position.y=y}
+  const g=new THREE.Group();g.position.set(0,.8,.12);g.rotation.x=-.35;H.add(g);const ring=mesh(new THREE.TorusGeometry(.2,.022,6,20,Math.PI),'#f2c94c',g);ring.rotation.z=0;
+  for(const [x,y,s] of [[0,.24,.055],[-.12,.19,.035],[.12,.19,.035]]){const d=sphere(g,x,y,0,s,'#bfe8ff',1);d.scale.y=1.4}}
+const clara={name:'클라라',kind:'꽃',animal:'pinkrabbit',role:'호두까기 인형 발레리나',look:{shirt:'#f9c9d8',bow:'#f06c9a'},deco:decoClara,greet:['사뿐사뿐~','발레 볼래?','호두까기 인형!','빙그르르~']};
+Object.assign(clara,{baseX:0,baseZ:6,shirt:clara.look.shirt,phase:17*1.71,speed:.2});try{const n=makeNpc(clara);n.greet=clara.greet;n.root.visible=!prefs.light;if(n.shadow&&n.shadow.material)n.shadow.material.opacity=FX.level>=1?.32:.15}catch(e){console.error(e)}
+
 /* ── 섬 전체로 고루 — 길마다 안쪽 절반 · 바깥쪽 절반 ── */
 Object.assign(NPC_LANES,{'포롱이':['부동산',.08,.42],'조만간은퇴님':['부동산',.6,.97],'오키오키님':['예금',.08,.42],'아울러님':['예금',.6,.97],
   '료멘스쿠나':['증권',.08,.42],'롱베이케이션님':['증권',.6,.97],'해의호흡님':['장기',.08,.42],'우울라프님':['장기',.6,.97],
   '편안하게님':['부채',.08,.42],'까미유데물랭님':['부채',.6,.97],'굿플렉티스님':['north',.12,.42],'겸손히님':['north',.55,.85],
-  '스피또꿈나무':['부동산',.44,.58],'티바이러스':['예금',.44,.58],'윈터드림':['증권',.44,.58],'원조익평':['장기',.44,.58],'산타우찬이':['부채',.44,.58]});
+  '스피또꿈나무':['부동산',.44,.58],'티바이러스':['예금',.44,.58],'윈터드림':['증권',.44,.58],'원조익평':['장기',.44,.58],'산타우찬이':['부채',.44,.58],'클라라':['north',.43,.54]});
 function spread(){refreshNpcLanes();npcGroups.forEach(n=>{if(n.run){const m=n.run.pts[Math.floor(n.run.pts.length*((n.phase||0)%1))]||n.run.pts[n.run.pts.length>>1];n.baseX=m.x;n.baseZ=m.z}else{const w=nearestWalkable(n.baseX,n.baseZ);if(w){n.baseX=w.x;n.baseZ=w.z}}})}
 spread();
 
