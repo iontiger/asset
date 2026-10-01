@@ -22,6 +22,8 @@ rep('<title>자산마을 · 우리 자산을 산책하다</title>','<title>자�
 rep('<title>자산마을 3D · 미니게임</title>','<title>DentPhoto 마을</title>')
 rep('<h1>자산마을</h1><small>ASSET VILLAGE</small>','<h1>DentPhoto 마을</h1><small>DENTPHOTO VILLAGE</small>')
 rep('aria-label="자산마을 — 마을 전체 보기"','aria-label="DentPhoto 마을 — 마을 전체 보기"')
+# 카메라 올리기 버전(?cam=up, camup.js)이 산책 카메라 자리를 고칠 수 있게 고리를 단다
+rep("desiredAim.set(player.x+dx*10,h+2+lookPitch,player.z+dz*10);fov=63;","desiredAim.set(player.x+dx*10,h+2+lookPitch,player.z+dz*10);if(window.dpCamUp)dpCamUp(desiredPos,desiredAim,h,dt);fov=63;")
 # 산책 카메라 — 주인공 뒤로 더 멀리, 장애물이 있어도 거리를 줄이지 않고 위로 올라가 넘겨 본다
 rep('let walkDist=6.5,','let walkDist=9.5,')
 rep("let back=walkDist;for(let d=1;d<=walkDist;d+=.5)if(!walkable(player.x-dx*d,player.z-dz*d)&&!mtnOpen(player.x-dx*d,player.z-dz*d)){back=Math.max(.3,d-.7);break}desiredPos.set(player.x-dx*back,h+1.6+walkDist*.18,player.z-dz*back);",
@@ -132,7 +134,7 @@ rep("`rotate(${-(cameraMode==='walking'||cameraMode==='entering'?viewHeading:yaw
 
 # 스타일 · 미니게임 스크립트
 # 덧붙이는 스크립트 — 순서대로 각자 <script>. 원본 스크립트의 최상위 const/let · 함수를 그대로 쓰고, 함수는 다시 대입해 덮어쓴다
-JS_FILES=['game.js','fx.js','talk.js','hero.js','summit.js','season.js','npc.js','yacht.js','dental.js','photo.js','sky.js','rgbe.js','real.js','story.js','occlude.js']
+JS_FILES=['game.js','fx.js','talk.js','hero.js','summit.js','season.js','npc.js','yacht.js','dental.js','photo.js','sky.js','rgbe.js','real.js','story.js','occlude.js','camup.js']
 def read(f):return open(os.path.join(HERE,f),encoding='utf-8').read()
 # 자전거 — 2인용(탠덤) 대신 1인용 자전거 (bike.part.js), 주인공은 하나뿐인 안장에 앉는다
 i=s.index('const bike=(()=>{');j=s.index('})();',i)+len('})();')
