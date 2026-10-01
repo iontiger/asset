@@ -22,6 +22,11 @@ rep('<title>자산마을 · 우리 자산을 산책하다</title>','<title>자�
 rep('<title>자산마을 3D · 미니게임</title>','<title>DentPhoto 마을</title>')
 rep('<h1>자산마을</h1><small>ASSET VILLAGE</small>','<h1>DentPhoto 마을</h1><small>DENTPHOTO VILLAGE</small>')
 rep('aria-label="자산마을 — 마을 전체 보기"','aria-label="DentPhoto 마을 — 마을 전체 보기"')
+# 산책 카메라 — 주인공 뒤로 더 멀리, 장애물이 있어도 거리를 줄이지 않고 위로 올라가 넘겨 본다
+rep('let walkDist=6.5,','let walkDist=9.5,')
+rep("let back=walkDist;for(let d=1;d<=walkDist;d+=.5)if(!walkable(player.x-dx*d,player.z-dz*d)&&!mtnOpen(player.x-dx*d,player.z-dz*d)){back=Math.max(.3,d-.7);break}desiredPos.set(player.x-dx*back,h+1.6+walkDist*.18,player.z-dz*back);",
+    "let back=walkDist,lift=0;for(let d=1;d<=walkDist;d+=.5)if(!walkable(player.x-dx*d,player.z-dz*d)&&!mtnOpen(player.x-dx*d,player.z-dz*d)){lift=Math.min(6,(walkDist-d+.5)*.45);break}camLift+=(lift-camLift)*Math.min(1,dt*3);desiredPos.set(player.x-dx*back,h+1.6+walkDist*.18+camLift,player.z-dz*back);")
+rep('let walkDist=9.5,','let camLift=0,walkDist=9.5,')
 rep("$('#location').textContent='눈높이 산책 · 방향키로 걷고 드래그로 둘러보세요'","$('#location').textContent=matchMedia('(pointer:coarse)').matches?'눈높이 산책 · 땅을 누르면 걷고 드래그로 둘러보세요':'눈높이 산책 · 방향키로 걷고 드래그로 둘러보세요'")
 rep('aria-label="자산마을 3D 화면. 방향키 또는 WASD로 걷습니다. 구역에 도착하면 해당 자산이 자동으로 열립니다."','aria-label="DentPhoto 마을 3D 화면. 방향키 또는 WASD로 걷습니다."')
 rep('<small>집과 나무, 그리고 우리의 자산</small>','<small>집과 나무, 그리고 반짝이는 다이아몬드</small>')
