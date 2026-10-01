@@ -1,5 +1,6 @@
 # index.html · 아이콘 · logos/ 이미지를 GitHub Pages에 올리고 logos.json 목록을 만든다.
 # 매시 정각 무렵에는 네이버페이 증권 AI 시황 브리핑의 최신 글을 briefing.json 으로 받아 둔다 (휴대폰 투자 탭의 카드 뉴스).
+# 연금 정기투자 기록용 ETF 10:30 가격은 rb1030/ 으로 (.github/scripts/etf_1030.py).
 # 스토캐스틱 매수/매도 신호 종목은 stoch.json 으로 (휴대폰 투자 탭 신호 카드 · PC 투자 정보 화면과 차트용 일봉, .github/scripts/stoch_screen.py).
 # → https://iontiger.github.io/asset/
 # 처음 한 번: 저장소 Settings → Pages → Source 를 "GitHub Actions" 로 바꿔야 한다.
@@ -30,7 +31,7 @@ jobs:
     if: github.event_name == 'schedule' || github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
     outputs:
-      deploy: ${{ steps.briefing.outputs.deploy == 'true' || steps.stoch.outputs.changed == 'true' || steps.rbcache.outputs.cache-hit != 'true' }}
+      deploy: ${{ steps.briefing.outputs.deploy == 'true' || steps.stoch.outputs.changed == 'true' || steps.rbcache.outputs.cache-hit != 'true' || steps.rb1030.outputs.changed == 'true' }}
     steps:
       - uses: actions/checkout@v4
       - id: pages
@@ -87,7 +88,13 @@ jobs:
       - name: ETF 일봉 사이트에 넣기
         run: mkdir -p rbbars && cp -r rbbars _site/rbbars && ls _site/rbbars | wc -l
 
-      - if: steps.briefing.outputs.deploy == 'true' || steps.stoch.outputs.changed == 'true' || steps.rbcache.outputs.cache-hit != 'true'
+      # 연금 정기투자용 ETF · ETN 10:30 가격 → _site/rb1030/{ymd}.json (+ index.json, 최근 30거래일).
+      # 평일 10:31 이후 첫 실행에서 오늘 것을 받고, 지난 날짜는 지금 사이트의 파일을 그대로 이어 쓴다
+      - name: ETF 10:30 가격 받기
+        id: rb1030
+        run: python3 .github/scripts/etf_1030.py _site/rb1030 "${{ steps.pages.outputs.base_url }}"
+
+      - if: steps.briefing.outputs.deploy == 'true' || steps.stoch.outputs.changed == 'true' || steps.rbcache.outputs.cache-hit != 'true' || steps.rb1030.outputs.changed == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
