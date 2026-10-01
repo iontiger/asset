@@ -134,6 +134,10 @@ rep("`rotate(${-(cameraMode==='walking'||cameraMode==='entering'?viewHeading:yaw
 # 덧붙이는 스크립트 — 순서대로 각자 <script>. 원본 스크립트의 최상위 const/let · 함수를 그대로 쓰고, 함수는 다시 대입해 덮어쓴다
 JS_FILES=['game.js','fx.js','talk.js','hero.js','summit.js','season.js','npc.js','yacht.js','dental.js','photo.js','sky.js','rgbe.js','real.js','story.js']
 def read(f):return open(os.path.join(HERE,f),encoding='utf-8').read()
+# 자전거 — 2인용(탠덤) 대신 1인용 자전거 (bike.part.js), 주인공은 하나뿐인 안장에 앉는다
+i=s.index('const bike=(()=>{');j=s.index('})();',i)+len('})();')
+s=s[:i]+read('bike.part.js').strip()+s[j:]
+rep("fw=k===0?.55:-.45;c.root.position.set(player.x+sa*fw,terrainHeight(player.x,player.z)+(k===0?.53:.49),player.z+ca*fw)","fw=-.22;c.root.position.set(player.x+sa*fw,terrainHeight(player.x,player.z)+.53,player.z+ca*fw)")
 rep("</style></head>","</style><style>"+read('game.css')+"</style></head>")
 assert s.rstrip().endswith('</body></html>')
 s=s.rstrip()[:-len('</body></html>')]+''.join('<script>\n/* '+f+' */\n'+read(f)+'</script>\n' for f in JS_FILES)+"</body></html>\n"
