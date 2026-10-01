@@ -1,0 +1,23 @@
+# 정기투자용 10:30 가격 스크립트(.github/scripts/etf_1030.py)를 고친 PR 에서 오늘 10:30 가격을 몇 종목만 찍어 본다.
+# 이 컨테이너 밖(GitHub 러너)에서 돌리는 이유: 네이버 분봉을 받을 수 있어서.
+name: ETF 10:30 price check
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/scripts/etf_1030.py
+      - .github/workflows/etf-1030-check.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 오늘 10:30 가격 찍어 보기
+        run: python3 .github/scripts/etf_1030.py /tmp/rb1030 --probe 069500 195920 360200 379810
+      - name: 분봉 원문 몇 줄
+        run: curl -s "https://fchart.stock.naver.com/sise.nhn?symbol=195920&timeframe=minute&count=5&requestType=0" | iconv -f euc-kr -t utf-8 | tail -8
