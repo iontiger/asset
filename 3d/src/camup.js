@@ -1,8 +1,8 @@
-/* DentPhoto 마을 — 카메라 올리기 버전 (주소 끝에 ?cam=up)
+/* DentPhoto 마을 — 카메라 올리기 (기본)
    나무를 반투명하게 하는 대신, 카메라와 주인공 사이를 나뭇잎이 가리면 카메라가 주인공 둘레를 따라 위로 올라가
-   내려다본다. 가리는 것이 없어지면 천천히 원래 높이로 내려온다. 기본 주소(?cam=up 없음)는 반투명 방식 그대로. */
+   내려다본다. 가리는 것이 없어지면 천천히 원래 높이로 내려온다. 주소 끝에 ?cam=see 를 붙이면 예전 반투명 방식(occlude.js). */
 (()=>{
-if(!/[?&]cam=up\b/.test(location.search))return;
+if(/[?&]cam=see\b/.test(location.search))return;
 window.dpOccOff=1;   // 반투명 방식은 끈다
 // 나뭇잎 덩어리를 모양 그대로 모은다 — 둥근 나무의 잎은 공, 소나무 잎은 원뿔. 6칸 격자에 넣어 둔다
 const CELL=6,grid=new Map();let count=0;
@@ -54,5 +54,4 @@ window.dpCamUp=function(pos,aim,h,dt){try{   // H: 보이는 주인공의 머리
   const w=Math.min(1,Math.max((e-e0)/(MAXE-e0),Math.abs(curA)/1.4*.6,(e0-e)/(e0-MINE+1e-3)*.5));aim.lerp(T.set(H.x,H.y-.4,H.z),w*.85)   // 많이 움직일수록 주인공 쪽을 본다
 }catch(e){console.error(e)}};
 window.dpCamUpInfo=()=>({count,curE,curA});window.dpCamUpSnap=()=>{curE=null};window.dpCamUpBlocked=(a,b)=>blocked(a,b);window.dpCamUpGrid=grid;window.dpCamUpAt=(x,y,z)=>(grid.get(Math.floor(x/CELL)+","+Math.floor(z/CELL))||[]).filter(sh=>Math.hypot(sh.x-x,sh.z-z)<4).map(sh=>({k:sh.k,x:+sh.x.toFixed(2),y:+sh.y.toFixed(2),z:+sh.z.toFixed(2),r:sh.r&&+sh.r.toFixed(2),h:sh.h&&+sh.h.toFixed(2),rb:sh.rb&&+sh.rb.toFixed(2),in:inside(sh,x,y,z)}));window.dpCamUpNear=(x,z)=>[...(grid.get(Math.floor(x/CELL)+","+Math.floor(z/CELL))||[])];   // 시험용: 바로 목표 높이로
-setTimeout(()=>{try{toast('📷 카메라 올리기 버전 — 나무가 가리면 카메라가 위로 올라가요')}catch{}},2500);
 })();

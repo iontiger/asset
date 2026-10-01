@@ -242,7 +242,38 @@ body.boss-on #interaction{display:none!important}
 
 /* 모바일 방향키·점프·손 흔들기 버튼은 쓰지 않는다 — 땅을 누르면 걸어가요 */
 #mobilepad{display:none!important}
-</style></head><body>
+</style></head><body><div id="splash" class="loading" role="dialog" aria-label="The Secret of DentPhoto Village" tabindex="-1"><div class="sp-bg"></div><img class="sp-img" src="assets/splash.jpg" alt="The Secret of DentPhoto Village · 2026 아울러" decoding="async"><div class="sp-ui"><div class="sp-load"><i></i><span>마을을 준비하고 있어요…</span></div><button type="button" id="splashStart">시작하기</button></div></div>
+<style>
+/* 스플래시 — 큰 파일을 받는 동안 가장 먼저 그려진다. 다 읽으면 시작하기 → 주인공 고르기 */
+#splash{position:fixed;inset:0;z-index:10000;overflow:hidden;background:#8cbfe0 url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAAbADADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwCjb+Hpi3mRXQcIw3Mozj1/pWxLCY4CuGdmOWk7k44yPyFWbLULSG3WK2jYJt4XZjd+tTfa9Nuodk6YBPIZOD/SlD2cdV8XcTg5bvTsc+Z9pOJ4vUA5yMjoQOhH1qZLiPzlCXSBQfmDdSPb/Gp7qytZbtzFKqRcbNjBQPXqP096Ire1hukM9wTEOqq4JPtwO/px9axcqqlfmZooxtblRqWKxXCCRScfTpV9LaHdzuf1xwKo2WoxbSHtxGhY42dAD6itNbyzXJZ8KB1wMGrniW/UqNDl22OJspJ4pnMb7lVQEKE4/DP1xVqKETQq8UbIHOWBUEnnvWPJPL/ZMPzkZcgkdcVqnJitQWYhlORuPNc/s3e1xJp6WH2rO9zNasoJ/gUdCfX8KrXUd4NcHkRMYkC+YBghvXAzzU0+LfYIQE3ZyVHJ/GpdNjQsZCo3+veqcUlc1hpKwyY+QGlkYttIG0Lz1oS5t5ZTueSJQvVWVc/hzTddkdLLcrEEjGaxtPJe0YNyN3esltqRKSg7H//Z) center/cover;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;transition:opacity .55s ease,visibility .55s;outline:none}
+#splash .sp-bg{position:absolute;inset:-60px;background:url(assets/splash.jpg) center/cover;filter:blur(26px) saturate(1.1) brightness(.92)}
+#splash .sp-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+@media (min-aspect-ratio:4/3){#splash .sp-img{object-fit:cover;object-position:50% 40%}}
+@media (max-aspect-ratio:1/1){#splash .sp-img{top:50%;bottom:auto;height:min(100%,112vw);transform:translateY(-58%);object-fit:cover}}   /* 세로 화면: 가운데(제목 · 두 주인공)를 크게 */
+#splash .sp-ui{position:absolute;left:0;right:0;bottom:max(22px,calc(env(safe-area-inset-bottom) + 3.5vh));display:flex;justify-content:center;pointer-events:none}
+#splash .sp-load{display:flex;align-items:center;gap:10px;padding:11px 20px;border-radius:999px;background:rgba(255,250,238,.9);color:#5b3a20;font-size:15px;font-weight:700;box-shadow:0 6px 18px rgba(60,35,10,.25)}
+#splash .sp-load i{width:18px;height:18px;border-radius:50%;border:3px solid #f1d7a6;border-top-color:#e98a2a;animation:spSpin .8s linear infinite}
+#splash button{display:none;pointer-events:auto;cursor:pointer;font:inherit;font-size:clamp(22px,3.2vw,30px);font-weight:900;letter-spacing:.06em;color:#fff;padding:.5em 1.9em .55em;border-radius:999px;border:4px solid #6a3d1d;background:linear-gradient(#ffd56a,#f6a23a 55%,#e8862a);text-shadow:0 2px 0 #8a4b17,0 0 6px rgba(120,60,10,.4);box-shadow:0 6px 0 #6a3d1d,0 14px 28px rgba(50,25,5,.35);animation:spPulse 1.6s ease-in-out infinite}
+#splash button:hover{filter:brightness(1.06)}#splash button:active{transform:translateY(4px);box-shadow:0 2px 0 #6a3d1d,0 8px 18px rgba(50,25,5,.3)}
+#splash button:focus-visible{outline:4px solid #fff;outline-offset:4px}
+#splash.ready .sp-load{display:none}#splash.ready button{display:block}
+#splash.out{opacity:0;visibility:hidden;pointer-events:none}
+@keyframes spSpin{to{transform:rotate(360deg)}}@keyframes spPulse{50%{transform:scale(1.05)}}
+@media (prefers-reduced-motion:reduce){#splash button{animation:none}}
+</style>
+<script>
+/* 스플래시: 모든 스크립트를 읽고(load) 첫 화면이 두 번 그려지면 시작하기를 보인다. 누르면 4월 맑은 아침으로 맞추고 주인공 고르기로 */
+(()=>{const sp=document.getElementById('splash');let ready=false;
+function show(){if(ready||!sp.isConnected)return;ready=true;sp.classList.remove('loading');sp.classList.add('ready');const b=document.getElementById('splashStart');b&&b.focus()}
+function start(){if(!ready)return;try{window.dpSeason&&dpSeason.startBright()}catch(e){console.error(e)}sp.classList.add('out');const hp=document.getElementById('heroPick');if(hp){hp.inert=false;setTimeout(()=>{const b=hp.querySelector('[data-hero="'+(window.dpHero||'me')+'"]');b&&b.focus()},30)}setTimeout(()=>sp.remove(),700)}
+document.getElementById('splashStart').addEventListener('click',start);
+// 스플래시가 떠 있는 동안 게임 키는 막는다 (밑에 깔린 주인공 고르기가 Enter 로 눌리지 않게) — 시작하기 버튼의 Enter · Space 만 둔다
+addEventListener('keydown',e=>{if(!sp.isConnected||sp.classList.contains('out'))return;if(e.key==='Tab'||(e.target&&e.target.id==='splashStart'&&(e.key==='Enter'||e.key===' ')))return;e.preventDefault();e.stopImmediatePropagation()},true);
+addEventListener('load',()=>{const hp=document.getElementById('heroPick');if(hp&&!sp.classList.contains('out'))hp.inert=true;requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(show,120)))});
+setTimeout(()=>{if(document.readyState==='complete')show()},20000);   // 그림 하나가 끝내 안 와도 20초 뒤에는 시작할 수 있게
+window.dpSplash={show,start};
+})();
+</script>
 <div id="world" aria-label="DentPhoto 마을 3D 화면. 방향키 또는 WASD로 걷습니다." tabindex="0"></div><div id="labels"></div>
 <header><div class="brand" id="brand" role="button" tabindex="0" title="마을 전체 보기" aria-label="DentPhoto 마을 — 마을 전체 보기"><div class="brandmark">⌂</div><div><h1>DentPhoto 마을</h1><small>DENTPHOTO VILLAGE</small></div></div><div class="headright"><span class="pill" id="sourcePill" hidden><i></i> 원본 데모 데이터</span><button class="pill gem-pill" id="gemPill" title="누르면 가장 가까운 다이아몬드 힌트를 보여 줘요">💎 <b id="gemTop">0 / 10</b></button><button class="tool icon" id="hideBtn" aria-label="금액 가리기" aria-pressed="false" title="금액 가리기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button><button class="tool icon" id="timeBtn" aria-label="시간 여행" aria-expanded="false" title="시간 여행 — 지난 날 · 미래의 마을"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg></button><button class="tool icon" id="photoBtn" aria-label="사진 찍기" title="사진 찍기 — 지금 화면을 이미지로 저장"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button><button class="tool icon" id="prefsBtn" aria-label="마을 설정" aria-expanded="false" title="마을 설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button><button class="tool" id="help" aria-label="이용 안내">? <span class="helptext">이용 안내</span></button><button class="tool export" id="export">내보내기</button><button class="tool primary" id="import">↥ 데이터 불러오기</button></div></header>
 <aside id="overview" class="panel" aria-label="자산 요약"><div class="sectionlabel">우리 마을의 순자산</div><div class="sum" id="net"></div><div class="subsum"><span>총자산</span><b id="gross"></b></div><div class="subsum"><span>부채</span><b id="debt"></b></div><div class="switcher" role="group" aria-label="소유자 선택"><button data-mode="all" class="active" aria-pressed="true">함께 보기</button><button data-mode="me" aria-pressed="false">me</button><button data-mode="wife" aria-pressed="false">wife</button></div><p id="modeNote">두 사람이 함께 걷는 우리 자산</p><div id="cats"></div><div id="allocation" class="allocation"></div><div class="footnote" id="asof"></div><div class="visit"><span>발견한 자산</span><b id="visited">0 / 9</b></div><div class="visit gems" title="섬 구석구석에 숨은 다이아몬드 — 가까이 가면 주워요"><span>찾은 다이아몬드</span><b id="gems">0 / 9</b></div><button class="visit growth" id="growthBtn" title="순자산이 커질수록 마을이 꾸며져요"><span>마을 성장</span><b id="growth">0 / 5단계</b></button><button id="expand" style="display:none">자산 구역 펼치기 ▾</button></aside>
@@ -4163,7 +4194,7 @@ window.dpTicks.push(function(){
 /* season.js */
 /* ═══════ 마을 달력 — 15초마다 한 달, 3분이면 1년 ═══════
    달마다 계절 날씨: 12 · 1 · 2월 폭설(들판 · 나무 · 지붕 · 목표봉이 눈에 덮인다), 7월 장마, 6 · 8월 쨍쨍, 봄 · 가을 맑음.
-   - 시작 달 = 실제 이번 달. 시간은 실제 흐른 시간으로 센다 (느린 휴대폰도 15초에 한 달). 탭을 숨기면 멈춘다.
+   - 시작은 늘 4월(🌸 맑음) 밝은 아침 — 스플래시에서 시작하기를 누를 때 다시 맞춘다(dpSeason.startBright). 시간은 실제 흐른 시간으로 센다 (느린 휴대폰도 15초에 한 달). 탭을 숨기면 멈춘다.
    - 공포 · 탐욕 지수 날씨는 쓰지 않는다 (build.py 가 불러오기를 뺐다).
    - 눈 · 비 알갱이는 GPU 에서 카메라를 따라다니는 상자 안에서만 돈다 (CPU 반복 없음).
    - 색 · 눈 덮임 · 안개는 realismTick(렌더 직전) 을 감싸서 매 프레임 부드럽게 따라간다. */
@@ -4178,7 +4209,8 @@ const MONTHS=[
  {s:'autumn',cloud:.25,w:'🍁 단풍',t:16},{s:'autumn',rain:.5,w:'🌦 가을비',t:8},{s:'winter',snow:1,w:'❄️ 폭설',t:-3}];
 const SEASON_ICON={spring:'🌸',summer:'☀️',autumn:'🍁',winter:'❄️'};
 const now0=new Date(),Y0=now0.getFullYear();
-const GT={t:now0.getMonth()*MONTH_SEC+.01,m:-1,last:performance.now()};
+const START_M=3,START_P=.2;   // 4월 · 하루의 .2 지점 = 해가 높이 뜬 맑은 아침
+const GT={t:START_M*MONTH_SEC+.01,m:-1,last:performance.now(),off:0};
 const monthIdx=()=>Math.floor(GT.t/MONTH_SEC)%12;
 const W={snow:0,rain:0,cloud:0,sun:0,cover:0,wet:0};
 const SNOWCOV={value:0};
@@ -4188,7 +4220,7 @@ seasonTag=function(){return ' · '+(monthIdx()+1)+'월 '+SEASON_NAME[seasonOf()]
 window.gameDateText=function(){const m=monthIdx(),y=Y0+Math.floor(GT.t/MONTH_SEC/12);return `${y}년 ${m+1}월 · ${SEASON_NAME[MONTHS[m].s]} ${MONTHS[m].w}`};
 window.gameMonth=()=>({m:monthIdx(),year:Y0+Math.floor(GT.t/MONTH_SEC/12),frac:(GT.t/MONTH_SEC)%1,...MONTHS[monthIdx()]});
 // 낮 · 밤: 7달(105초)에 한 바퀴 — 12와 서로소라 해마다 같은 달이 늘 밤이 되지는 않는다. 낮을 65%로 늘린다
-const DAY=MONTH_SEC*7;realClock=function(){const p=(GT.t/DAY+.35)%1,w=p<.65?p/.65*.6+.2:(p-.65)/.35*.4+.8;return (w%1)*dayNightCycle};
+const DAY=MONTH_SEC*7;GT.off=((START_P-GT.t/DAY-.35)%1+1)%1;realClock=function(){const p=(GT.t/DAY+.35+GT.off)%1,w=p<.65?p/.65*.6+.2:(p-.65)/.35*.4+.8;return (w%1)*dayNightCycle};
 // 광장 날씨판 — 공포 · 탐욕 지수 대신 마을 달력
 setWeather=function(){};
 drawWeatherBoard=function(){if(!weatherBoardCtx)return;const x=weatherBoardCtx,Wd=512,H=256,m=monthIdx(),M=MONTHS[m],F='-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif';x.fillStyle='#fbf6e8';x.fillRect(0,0,Wd,H);x.fillStyle={spring:'#e98aa6',summer:'#e9a93a',autumn:'#c8743a',winter:'#6f9cc9'}[M.s];x.fillRect(0,0,Wd,18);x.textAlign='center';x.textBaseline='middle';x.fillStyle='#56756a';x.font=`700 30px ${F}`;x.fillText('DentPhoto 마을 날씨',Wd/2,60);x.fillStyle='#213e3c';x.font=`900 92px ${F}`;x.fillText((m+1)+'월',130,166);x.font=`800 40px ${F}`;x.fillText(M.w.replace(/^\S+\s/,''),350,150,300);x.font=`700 32px ${F}`;x.fillStyle='#71817c';x.fillText(M.t+'°C',350,204);weatherBoardTex.needsUpdate=true};
@@ -4273,9 +4305,11 @@ realismTick=function(dt){_rt(dt);try{
 }catch(e){console.error(e)}};
 // 요트를 타는 동안: 화창한 4월 한낮으로 고정하고 시간을 멈춘다 (내리면 타기 전 시각으로 돌아간다)
 // 417.375 = 4월(3번 달) 안이면서 하루 주기(105초)의 정오 — (t/105+.35)%1 = .325
-function holdSpring(){if(GT.hold)return;GT.saved=GT.t;GT.hold=true;GT.quiet=monthIdx()!==3;GT.t=417.375;W.snow=W.rain=W.cloud=W.sun=0;W.cover=0;W.wet=0;SNOWCOV.value=0}
-function release(){if(!GT.hold)return;GT.hold=false;GT.quiet=Math.floor(GT.saved/MONTH_SEC)%12!==monthIdx();GT.t=GT.saved}
-window.dpSeason={GT,W,MONTHS,MONTH_SEC,holdSpring,release};
+function holdSpring(){if(GT.hold)return;GT.saved=GT.t;GT.savedOff=GT.off;GT.off=0;GT.hold=true;GT.quiet=monthIdx()!==3;GT.t=417.375;W.snow=W.rain=W.cloud=W.sun=0;W.cover=0;W.wet=0;SNOWCOV.value=0}
+function release(){if(!GT.hold)return;GT.hold=false;GT.quiet=Math.floor(GT.saved/MONTH_SEC)%12!==monthIdx();GT.t=GT.saved;GT.off=GT.savedOff||0}
+// 시작하기를 누르는 순간 4월 맑은 아침으로 — 스플래시를 오래 보고 있어도 밤으로 시작하지 않게
+function startBright(){if(GT.hold)return;GT.quiet=monthIdx()!==START_M;GT.t=START_M*MONTH_SEC+.01;GT.off=((START_P-GT.t/DAY-.35)%1+1)%1;W.snow=W.rain=W.cloud=W.sun=0;W.cover=0;W.wet=0;SNOWCOV.value=0}
+window.dpSeason={GT,W,MONTHS,MONTH_SEC,holdSpring,release,startBright};
 // 상점가 전광판 — 계절마다 인사말이 바뀐다 (build.py 가 kospiText 를 이 함수로 돌린다)
 const BOARD={spring:'🌸 봄맞이 꽃놀이 · DentPhoto 상점가에 어서 오세요!  📷 포토 스팟 10곳을 찍어 사진관을 열어요  🦷 이가 아프면 DentPhoto 치과로',
   summer:'☀️ 여름 바캉스 · 시원한 바닷바람!  ⛵ 요트 타고 작은 섬 보물 상자를 찾아요  🎣 개울가 낚시도 좋아요',
@@ -5768,11 +5802,11 @@ window.dpOcc={U,scan};
 </script>
 <script>
 /* camup.js */
-/* DentPhoto 마을 — 카메라 올리기 버전 (주소 끝에 ?cam=up)
+/* DentPhoto 마을 — 카메라 올리기 (기본)
    나무를 반투명하게 하는 대신, 카메라와 주인공 사이를 나뭇잎이 가리면 카메라가 주인공 둘레를 따라 위로 올라가
-   내려다본다. 가리는 것이 없어지면 천천히 원래 높이로 내려온다. 기본 주소(?cam=up 없음)는 반투명 방식 그대로. */
+   내려다본다. 가리는 것이 없어지면 천천히 원래 높이로 내려온다. 주소 끝에 ?cam=see 를 붙이면 예전 반투명 방식(occlude.js). */
 (()=>{
-if(!/[?&]cam=up\b/.test(location.search))return;
+if(/[?&]cam=see\b/.test(location.search))return;
 window.dpOccOff=1;   // 반투명 방식은 끈다
 // 나뭇잎 덩어리를 모양 그대로 모은다 — 둥근 나무의 잎은 공, 소나무 잎은 원뿔. 6칸 격자에 넣어 둔다
 const CELL=6,grid=new Map();let count=0;
@@ -5824,7 +5858,6 @@ window.dpCamUp=function(pos,aim,h,dt){try{   // H: 보이는 주인공의 머리
   const w=Math.min(1,Math.max((e-e0)/(MAXE-e0),Math.abs(curA)/1.4*.6,(e0-e)/(e0-MINE+1e-3)*.5));aim.lerp(T.set(H.x,H.y-.4,H.z),w*.85)   // 많이 움직일수록 주인공 쪽을 본다
 }catch(e){console.error(e)}};
 window.dpCamUpInfo=()=>({count,curE,curA});window.dpCamUpSnap=()=>{curE=null};window.dpCamUpBlocked=(a,b)=>blocked(a,b);window.dpCamUpGrid=grid;window.dpCamUpAt=(x,y,z)=>(grid.get(Math.floor(x/CELL)+","+Math.floor(z/CELL))||[]).filter(sh=>Math.hypot(sh.x-x,sh.z-z)<4).map(sh=>({k:sh.k,x:+sh.x.toFixed(2),y:+sh.y.toFixed(2),z:+sh.z.toFixed(2),r:sh.r&&+sh.r.toFixed(2),h:sh.h&&+sh.h.toFixed(2),rb:sh.rb&&+sh.rb.toFixed(2),in:inside(sh,x,y,z)}));window.dpCamUpNear=(x,z)=>[...(grid.get(Math.floor(x/CELL)+","+Math.floor(z/CELL))||[])];   // 시험용: 바로 목표 높이로
-setTimeout(()=>{try{toast('📷 카메라 올리기 버전 — 나무가 가리면 카메라가 위로 올라가요')}catch{}},2500);
 })();
 </script>
 </body></html>
