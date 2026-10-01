@@ -1,6 +1,6 @@
 /* ═══════ 마을 달력 — 15초마다 한 달, 3분이면 1년 ═══════
    달마다 계절 날씨: 12 · 1 · 2월 폭설(들판 · 나무 · 지붕 · 목표봉이 눈에 덮인다), 7월 장마, 6 · 8월 쨍쨍, 봄 · 가을 맑음.
-   - 시작 달 = 실제 이번 달. 시간은 실제 흐른 시간으로 센다 (느린 휴대폰도 15초에 한 달). 탭을 숨기면 멈춘다.
+   - 시작은 늘 4월(🌸 맑음) 밝은 아침 — 스플래시에서 시작하기를 누를 때 다시 맞춘다(dpSeason.startBright). 시간은 실제 흐른 시간으로 센다 (느린 휴대폰도 15초에 한 달). 탭을 숨기면 멈춘다.
    - 공포 · 탐욕 지수 날씨는 쓰지 않는다 (build.py 가 불러오기를 뺐다).
    - 눈 · 비 알갱이는 GPU 에서 카메라를 따라다니는 상자 안에서만 돈다 (CPU 반복 없음).
    - 색 · 눈 덮임 · 안개는 realismTick(렌더 직전) 을 감싸서 매 프레임 부드럽게 따라간다. */
@@ -15,7 +15,8 @@ const MONTHS=[
  {s:'autumn',cloud:.25,w:'🍁 단풍',t:16},{s:'autumn',rain:.5,w:'🌦 가을비',t:8},{s:'winter',snow:1,w:'❄️ 폭설',t:-3}];
 const SEASON_ICON={spring:'🌸',summer:'☀️',autumn:'🍁',winter:'❄️'};
 const now0=new Date(),Y0=now0.getFullYear();
-const GT={t:now0.getMonth()*MONTH_SEC+.01,m:-1,last:performance.now()};
+const START_M=3,START_P=.2;   // 4월 · 하루의 .2 지점 = 해가 높이 뜬 맑은 아침
+const GT={t:START_M*MONTH_SEC+.01,m:-1,last:performance.now(),off:0};
 const monthIdx=()=>Math.floor(GT.t/MONTH_SEC)%12;
 const W={snow:0,rain:0,cloud:0,sun:0,cover:0,wet:0};
 const SNOWCOV={value:0};
@@ -25,7 +26,7 @@ seasonTag=function(){return ' · '+(monthIdx()+1)+'월 '+SEASON_NAME[seasonOf()]
 window.gameDateText=function(){const m=monthIdx(),y=Y0+Math.floor(GT.t/MONTH_SEC/12);return `${y}년 ${m+1}월 · ${SEASON_NAME[MONTHS[m].s]} ${MONTHS[m].w}`};
 window.gameMonth=()=>({m:monthIdx(),year:Y0+Math.floor(GT.t/MONTH_SEC/12),frac:(GT.t/MONTH_SEC)%1,...MONTHS[monthIdx()]});
 // 낮 · 밤: 7달(105초)에 한 바퀴 — 12와 서로소라 해마다 같은 달이 늘 밤이 되지는 않는다. 낮을 65%로 늘린다
-const DAY=MONTH_SEC*7;realClock=function(){const p=(GT.t/DAY+.35)%1,w=p<.65?p/.65*.6+.2:(p-.65)/.35*.4+.8;return (w%1)*dayNightCycle};
+const DAY=MONTH_SEC*7;GT.off=((START_P-GT.t/DAY-.35)%1+1)%1;realClock=function(){const p=(GT.t/DAY+.35+GT.off)%1,w=p<.65?p/.65*.6+.2:(p-.65)/.35*.4+.8;return (w%1)*dayNightCycle};
 // 광장 날씨판 — 공포 · 탐욕 지수 대신 마을 달력
 setWeather=function(){};
 drawWeatherBoard=function(){if(!weatherBoardCtx)return;const x=weatherBoardCtx,Wd=512,H=256,m=monthIdx(),M=MONTHS[m],F='-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif';x.fillStyle='#fbf6e8';x.fillRect(0,0,Wd,H);x.fillStyle={spring:'#e98aa6',summer:'#e9a93a',autumn:'#c8743a',winter:'#6f9cc9'}[M.s];x.fillRect(0,0,Wd,18);x.textAlign='center';x.textBaseline='middle';x.fillStyle='#56756a';x.font=`700 30px ${F}`;x.fillText('DentPhoto 마을 날씨',Wd/2,60);x.fillStyle='#213e3c';x.font=`900 92px ${F}`;x.fillText((m+1)+'월',130,166);x.font=`800 40px ${F}`;x.fillText(M.w.replace(/^\S+\s/,''),350,150,300);x.font=`700 32px ${F}`;x.fillStyle='#71817c';x.fillText(M.t+'°C',350,204);weatherBoardTex.needsUpdate=true};
@@ -110,9 +111,11 @@ realismTick=function(dt){_rt(dt);try{
 }catch(e){console.error(e)}};
 // 요트를 타는 동안: 화창한 4월 한낮으로 고정하고 시간을 멈춘다 (내리면 타기 전 시각으로 돌아간다)
 // 417.375 = 4월(3번 달) 안이면서 하루 주기(105초)의 정오 — (t/105+.35)%1 = .325
-function holdSpring(){if(GT.hold)return;GT.saved=GT.t;GT.hold=true;GT.quiet=monthIdx()!==3;GT.t=417.375;W.snow=W.rain=W.cloud=W.sun=0;W.cover=0;W.wet=0;SNOWCOV.value=0}
-function release(){if(!GT.hold)return;GT.hold=false;GT.quiet=Math.floor(GT.saved/MONTH_SEC)%12!==monthIdx();GT.t=GT.saved}
-window.dpSeason={GT,W,MONTHS,MONTH_SEC,holdSpring,release};
+function holdSpring(){if(GT.hold)return;GT.saved=GT.t;GT.savedOff=GT.off;GT.off=0;GT.hold=true;GT.quiet=monthIdx()!==3;GT.t=417.375;W.snow=W.rain=W.cloud=W.sun=0;W.cover=0;W.wet=0;SNOWCOV.value=0}
+function release(){if(!GT.hold)return;GT.hold=false;GT.quiet=Math.floor(GT.saved/MONTH_SEC)%12!==monthIdx();GT.t=GT.saved;GT.off=GT.savedOff||0}
+// 시작하기를 누르는 순간 4월 맑은 아침으로 — 스플래시를 오래 보고 있어도 밤으로 시작하지 않게
+function startBright(){if(GT.hold)return;GT.quiet=monthIdx()!==START_M;GT.t=START_M*MONTH_SEC+.01;GT.off=((START_P-GT.t/DAY-.35)%1+1)%1;W.snow=W.rain=W.cloud=W.sun=0;W.cover=0;W.wet=0;SNOWCOV.value=0}
+window.dpSeason={GT,W,MONTHS,MONTH_SEC,holdSpring,release,startBright};
 // 상점가 전광판 — 계절마다 인사말이 바뀐다 (build.py 가 kospiText 를 이 함수로 돌린다)
 const BOARD={spring:'🌸 봄맞이 꽃놀이 · DentPhoto 상점가에 어서 오세요!  📷 포토 스팟 10곳을 찍어 사진관을 열어요  🦷 이가 아프면 DentPhoto 치과로',
   summer:'☀️ 여름 바캉스 · 시원한 바닷바람!  ⛵ 요트 타고 작은 섬 보물 상자를 찾아요  🎣 개울가 낚시도 좋아요',

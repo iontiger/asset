@@ -22,7 +22,7 @@ rep('<title>자산마을 · 우리 자산을 산책하다</title>','<title>자�
 rep('<title>자산마을 3D · 미니게임</title>','<title>DentPhoto 마을</title>')
 rep('<h1>자산마을</h1><small>ASSET VILLAGE</small>','<h1>DentPhoto 마을</h1><small>DENTPHOTO VILLAGE</small>')
 rep('aria-label="자산마을 — 마을 전체 보기"','aria-label="DentPhoto 마을 — 마을 전체 보기"')
-# 카메라 올리기 버전(?cam=up, camup.js)이 산책 카메라 자리를 고칠 수 있게 고리를 단다
+# 카메라 올리기(camup.js)가 산책 카메라 자리를 고칠 수 있게 고리를 단다
 rep("desiredAim.set(player.x+dx*10,h+2+lookPitch,player.z+dz*10);fov=63;","desiredAim.set(player.x+dx*10,h+2+lookPitch,player.z+dz*10);if(window.dpCamUp)dpCamUp(desiredPos,desiredAim,h,dt);fov=63;")
 # 산책 카메라 — 주인공 뒤로 더 멀리, 장애물이 있어도 거리를 줄이지 않고 위로 올라가 넘겨 본다
 rep('let walkDist=6.5,','let walkDist=9.5,')
@@ -141,6 +141,8 @@ i=s.index('const bike=(()=>{');j=s.index('})();',i)+len('})();')
 s=s[:i]+read('bike.part.js').strip()+s[j:]
 rep("fw=k===0?.55:-.45;c.root.position.set(player.x+sa*fw,terrainHeight(player.x,player.z)+(k===0?.53:.49),player.z+ca*fw)","fw=-.22;c.root.position.set(player.x+sa*fw,terrainHeight(player.x,player.z)+.53,player.z+ca*fw)")
 rep("</style></head>","</style><style>"+read('game.css')+"</style></head>")
+# 스플래시 — <body> 바로 뒤에 두어 1MB 넘는 파일을 받는 동안 가장 먼저 보인다 (그림은 3d/assets/splash.jpg)
+rep('<body>','<body>'+read('splash.html').strip())
 assert s.rstrip().endswith('</body></html>')
 s=s.rstrip()[:-len('</body></html>')]+''.join('<script>\n/* '+f+' */\n'+read(f)+'</script>\n' for f in JS_FILES)+"</body></html>\n"
 open(os.path.join(ROOT,'3d','index.html'),'w',encoding='utf-8').write(s)

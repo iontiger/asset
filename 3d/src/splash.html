@@ -1,0 +1,32 @@
+<div id="splash" class="loading" role="dialog" aria-label="The Secret of DentPhoto Village" tabindex="-1"><div class="sp-bg"></div><img class="sp-img" src="assets/splash.jpg" alt="The Secret of DentPhoto Village · 2026 아울러" decoding="async"><div class="sp-ui"><div class="sp-load"><i></i><span>마을을 준비하고 있어요…</span></div><button type="button" id="splashStart">시작하기</button></div></div>
+<style>
+/* 스플래시 — 큰 파일을 받는 동안 가장 먼저 그려진다. 다 읽으면 시작하기 → 주인공 고르기 */
+#splash{position:fixed;inset:0;z-index:10000;overflow:hidden;background:#8cbfe0 url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAAbADADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwCjb+Hpi3mRXQcIw3Mozj1/pWxLCY4CuGdmOWk7k44yPyFWbLULSG3WK2jYJt4XZjd+tTfa9Nuodk6YBPIZOD/SlD2cdV8XcTg5bvTsc+Z9pOJ4vUA5yMjoQOhH1qZLiPzlCXSBQfmDdSPb/Gp7qytZbtzFKqRcbNjBQPXqP096Ire1hukM9wTEOqq4JPtwO/px9axcqqlfmZooxtblRqWKxXCCRScfTpV9LaHdzuf1xwKo2WoxbSHtxGhY42dAD6itNbyzXJZ8KB1wMGrniW/UqNDl22OJspJ4pnMb7lVQEKE4/DP1xVqKETQq8UbIHOWBUEnnvWPJPL/ZMPzkZcgkdcVqnJitQWYhlORuPNc/s3e1xJp6WH2rO9zNasoJ/gUdCfX8KrXUd4NcHkRMYkC+YBghvXAzzU0+LfYIQE3ZyVHJ/GpdNjQsZCo3+veqcUlc1hpKwyY+QGlkYttIG0Lz1oS5t5ZTueSJQvVWVc/hzTddkdLLcrEEjGaxtPJe0YNyN3esltqRKSg7H//Z) center/cover;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;transition:opacity .55s ease,visibility .55s;outline:none}
+#splash .sp-bg{position:absolute;inset:-60px;background:url(assets/splash.jpg) center/cover;filter:blur(26px) saturate(1.1) brightness(.92)}
+#splash .sp-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+@media (min-aspect-ratio:4/3){#splash .sp-img{object-fit:cover;object-position:50% 40%}}
+@media (max-aspect-ratio:1/1){#splash .sp-img{top:50%;bottom:auto;height:min(100%,112vw);transform:translateY(-58%);object-fit:cover}}   /* 세로 화면: 가운데(제목 · 두 주인공)를 크게 */
+#splash .sp-ui{position:absolute;left:0;right:0;bottom:max(22px,calc(env(safe-area-inset-bottom) + 3.5vh));display:flex;justify-content:center;pointer-events:none}
+#splash .sp-load{display:flex;align-items:center;gap:10px;padding:11px 20px;border-radius:999px;background:rgba(255,250,238,.9);color:#5b3a20;font-size:15px;font-weight:700;box-shadow:0 6px 18px rgba(60,35,10,.25)}
+#splash .sp-load i{width:18px;height:18px;border-radius:50%;border:3px solid #f1d7a6;border-top-color:#e98a2a;animation:spSpin .8s linear infinite}
+#splash button{display:none;pointer-events:auto;cursor:pointer;font:inherit;font-size:clamp(22px,3.2vw,30px);font-weight:900;letter-spacing:.06em;color:#fff;padding:.5em 1.9em .55em;border-radius:999px;border:4px solid #6a3d1d;background:linear-gradient(#ffd56a,#f6a23a 55%,#e8862a);text-shadow:0 2px 0 #8a4b17,0 0 6px rgba(120,60,10,.4);box-shadow:0 6px 0 #6a3d1d,0 14px 28px rgba(50,25,5,.35);animation:spPulse 1.6s ease-in-out infinite}
+#splash button:hover{filter:brightness(1.06)}#splash button:active{transform:translateY(4px);box-shadow:0 2px 0 #6a3d1d,0 8px 18px rgba(50,25,5,.3)}
+#splash button:focus-visible{outline:4px solid #fff;outline-offset:4px}
+#splash.ready .sp-load{display:none}#splash.ready button{display:block}
+#splash.out{opacity:0;visibility:hidden;pointer-events:none}
+@keyframes spSpin{to{transform:rotate(360deg)}}@keyframes spPulse{50%{transform:scale(1.05)}}
+@media (prefers-reduced-motion:reduce){#splash button{animation:none}}
+</style>
+<script>
+/* 스플래시: 모든 스크립트를 읽고(load) 첫 화면이 두 번 그려지면 시작하기를 보인다. 누르면 4월 맑은 아침으로 맞추고 주인공 고르기로 */
+(()=>{const sp=document.getElementById('splash');let ready=false;
+function show(){if(ready||!sp.isConnected)return;ready=true;sp.classList.remove('loading');sp.classList.add('ready');const b=document.getElementById('splashStart');b&&b.focus()}
+function start(){if(!ready)return;try{window.dpSeason&&dpSeason.startBright()}catch(e){console.error(e)}sp.classList.add('out');const hp=document.getElementById('heroPick');if(hp){hp.inert=false;setTimeout(()=>{const b=hp.querySelector('[data-hero="'+(window.dpHero||'me')+'"]');b&&b.focus()},30)}setTimeout(()=>sp.remove(),700)}
+document.getElementById('splashStart').addEventListener('click',start);
+// 스플래시가 떠 있는 동안 게임 키는 막는다 (밑에 깔린 주인공 고르기가 Enter 로 눌리지 않게) — 시작하기 버튼의 Enter · Space 만 둔다
+addEventListener('keydown',e=>{if(!sp.isConnected||sp.classList.contains('out'))return;if(e.key==='Tab'||(e.target&&e.target.id==='splashStart'&&(e.key==='Enter'||e.key===' ')))return;e.preventDefault();e.stopImmediatePropagation()},true);
+addEventListener('load',()=>{const hp=document.getElementById('heroPick');if(hp&&!sp.classList.contains('out'))hp.inert=true;requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(show,120)))});
+setTimeout(()=>{if(document.readyState==='complete')show()},20000);   // 그림 하나가 끝내 안 와도 20초 뒤에는 시작할 수 있게
+window.dpSplash={show,start};
+})();
+</script>
