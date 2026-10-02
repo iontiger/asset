@@ -45,6 +45,8 @@ jobs:
           mkdir -p _site/3d && cp 3d/index.html _site/3d/
           # 실사 화질용 사진 무늬 · 하늘빛 (3d/assets/real, 출처는 CREDITS.md)
           cp -r 3d/assets _site/3d/
+          # 우체국에서 여는 우편배달 게임 '바람을 따라' (Three.js, 따로 된 페이지) → /asset/3d/ride/
+          mkdir -p _site/3d/ride && cp 3d/ride/*.html 3d/ride/*.js 3d/ride/*.css _site/3d/ride/ && cp -r 3d/ride/vendor _site/3d/ride/
           # 버전 표시 · 새 버전 알림용 — 커밋 번호와 커밋 시각(한국 시간).
           # 브리핑만 바꿔 다시 올려도 같은 커밋이면 값이 같아서 "새 버전" 알림이 뜨지 않는다
           BUILD="${GITHUB_SHA::7} $(TZ=Asia/Seoul git log -1 --format=%cd --date=format-local:'%Y-%m-%d %H:%M')"
