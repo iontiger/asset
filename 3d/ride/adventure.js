@@ -21,7 +21,7 @@
  // How much the ordinary hills/jumps fade out on the mountain (1 = only the mountain shape).
  const mountainMask=s=>Math.min(sstep(mountain.start-1500,mountain.start,s),sstep(mountain.end+1500,mountain.end,s));
  // 개울: lateral position (world units, + = right) of the stream along the road; it crosses the road at each ford.
- const creek={start:64000,end:80000,fords:[68000,72500,77000],half:3.6,side:17};
+ const creek={start:64000,end:70000,fords:[65600,67400,69200],half:3.6,side:17};
  function creekX(s){if(s<creek.start-1200||s>creek.end+1200)return null;let side=1;const W=creek.side;
   for(const f of creek.fords){if(s<f-260)return edge(s,side*W);if(s<=f+260)return edge(s,side*W+(-side*W*2)*sstep(f-260,f+260,s));side=-side}
   return edge(s,side*W);
@@ -31,6 +31,7 @@
   {from:18000,name:'황금빛 협곡',ground:'#bd9c73',road:'#bd8e61',sky:'#d9d6be',fog:'#dec7a5'},
   {from:41000,name:'목표봉 고갯길',ground:'#86a660',road:'#c4a578',sky:'#a8d4f0',fog:'#d4e6ee',fogNear:120,fogFar:660},
   {from:62000,name:'맑은 개울길',ground:'#88a862',road:'#b99a72',sky:'#b5dbe8',fog:'#cfe2dc'},
+  {from:70800,name:'바람 언덕길',ground:'#90ab64',road:'#c6a878',sky:'#b9dce8',fog:'#d0e0c8'},
   {from:81000,name:'푸른 해안길',ground:'#bdc3a0',road:'#ddc69d',sky:'#a9d8e6',fog:'#c8e1df'},
   {from:96000,name:'노을빛 마을',ground:'#9da779',road:'#bfa584',sky:'#e4cab2',fog:'#dfd0b3'}];
  // 협곡 헤어핀(기본 길) 안쪽은 '협곡 특급' 하늘 — 맑은 파란 하늘과 사암 절벽
