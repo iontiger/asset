@@ -5889,7 +5889,7 @@ window.dpNanFix={get pass(){return pass}};
 /* post.js */
 /* ═══════ 우편배달 — '바람을 따라' (DentPhoto Village Rides) ═══════
    마을 북동쪽 'DentPhoto 우체국' 문 앞에 가면 전용 게임 화면이 열린다. 게임은 따로 된 페이지 3d/ride/
-   (Three.js 오토바이 주행 · 7.2km · 편지 12통 · 갈림길은 협곡 헤어핀이 기본)를 전체 화면 iframe 으로 띄운다.
+   (Three.js 오토바이 주행 · 21.6km · 편지 12통 · 갈림길은 협곡 헤어핀이 기본 · 목표봉 · 개울)를 전체 화면 iframe 으로 띄운다.
    - 게임 중에는 마을 renderScene 을 건너뛰고(그리기 쉼), 키 입력은 iframe 이 받는다.
    - 게임 쪽에서 postMessage {dpRide:'close'|'finish'} 로 알려 온다. 기록은 같은 출처 localStorage 'dentphoto-record-v1'.
    - 시험용 window.dpPost (open · close · frame · DOOR) */
@@ -5999,7 +5999,7 @@ const _fp=findPlay;findPlay=function(){if(!PG.on&&nearDoor()){PLAY_TXT.post='�
 const _da=doAction;doAction=function(){if(!inputBusy()&&!PLAY.mode&&walkish()&&nearDoor()){open();return}return _da()};
 $('#ghTip').insertAdjacentHTML('beforebegin','<div class="gh-row" id="ghPostRow"><span><b>🏍 바람을 따라 · 우편 배달</b><small id="ghPost"></small></span><button class="gh-btn" id="ghPostBtn">우체국으로</button></div>');
 $('#ghPostBtn').onclick=()=>{if(nearDoor(7))return open();if(PLAY.mode)endPlay();armed=true;beginWalk(true);travelTo(DOOR,null)};
-function rowHud(){const e=$('#ghPost');if(!e)return;const r=rec();e.textContent=r.score?`최고 ${Number(r.score).toLocaleString()}점${r.time?' · 최단 '+mmss(r.time):''}`:'7.2km 편지 배달 · 협곡 헤어핀';$('#ghPostBtn').textContent=nearDoor(7)?'출발':'우체국으로'}
+function rowHud(){const e=$('#ghPost');if(!e)return;const r=rec();e.textContent=r.score?`최고 ${Number(r.score).toLocaleString()}점${r.time?' · 최단 '+mmss(r.time):''}`:'21.6km 편지 배달 · 협곡 · 목표봉 · 개울';$('#ghPostBtn').textContent=nearDoor(7)?'출발':'우체국으로'}
 let rowT=0;
 const _ue=updateExtras;updateExtras=function(dt){_ue(dt);try{if((rowT-=dt)<=0){rowT=1;rowHud()}
   if(!PG.on){const d=Math.hypot(player.x-DOOR.x,player.z-DOOR.z);if(d>8)armed=true;if(armed&&d<3.2&&cameraMode==='walking'&&!inputBusy()&&!PLAY.mode&&!document.querySelector('.game-modal.on,#heroPick.on,#splash')){armed=false;open()}}}catch(e){console.error(e)}};

@@ -3,26 +3,27 @@
   const adventure=root.ADVENTURE||(typeof require==='function'?require('./adventure.js'):null);
   const path=root.ROAD_PATH||(typeof require==='function'?require('./road-path.js'):null);
   const LANDMARKS=[
-    {z:850,x:-1.85,model:'fountain',name:'중앙 나무 분수',scale:1.25},
-    {z:3200,x:1.9,model:'rosehouse',name:'주택가',scale:1.1},
-    {z:5700,x:-2.1,model:'market',name:'상점가 · VILLAGE MARKET',scale:1.15},
-    {z:8500,x:1.75,model:'vault',name:'보물 창고길',scale:1.45},
-    {z:10800,x:-1.6,model:'tower',name:'억 돌파 석탑',scale:1.45},
-    {z:13800,x:2.1,model:'pier',name:'오래오래 낚시터',scale:1.3},
-    {z:16800,x:-1.8,model:'lighthouse',name:'바위섬 등대',scale:1.6}
+    {z:1700,x:-1.85,model:'fountain',name:'중앙 나무 분수',scale:1.25},
+    {z:6400,x:1.9,model:'rosehouse',name:'주택가',scale:1.1},
+    {z:11400,x:-2.1,model:'market',name:'상점가 · VILLAGE MARKET',scale:1.15},
+    {z:43000,x:1.75,model:'vault',name:'보물 창고길',scale:1.45},
+    {z:63000,x:-1.6,model:'tower',name:'억 돌파 석탑',scale:1.45},
+    {z:84500,x:2.1,model:'pier',name:'오래오래 낚시터',scale:1.3},
+    {z:100000,x:-1.8,model:'lighthouse',name:'바위섬 등대',scale:1.6}
   ];
-  LANDMARKS.forEach(l=>l.z*=2);
-  const JUMPS=[4600,13600,23800,31600];
-  const COBBLES=[[8400,10100],[18600,20400],[34400,35600]];
+  const JUMPS=[4600,13600,45500,83000,95500];
+  const COBBLES=[[8400,10100],[29000,30500],[61200,62700],[102000,103600]];
+  // Ordinary rolling hills and jump crests, faded out where the road climbs over 목표봉.
   function roadHeight(s){let h=Math.sin(s/1400)*2.8+Math.sin(s/530)*.7;
     for(const crest of JUMPS){const d=s-crest;if(d>=-500&&d<=0)h+=9*Math.pow((d+500)/500,1.5);else if(d>0&&d<620)h+=9*Math.pow(1-d/620,2);}
+    const m=adventure.mountainMask(s);if(m>0){const p=path.at(s);h=h*(1-m)+adventure.mountainField(p.x,p.z)}
     return h;
   }
   const surfaceAt=s=>COBBLES.some(([a,b])=>s>=a&&s<=b)?'stone':'dirt';
   class Ride {
-    constructor(){this.length=36000;this.mode='ready';this.reset();this.mode='ready';this.items=[];
-      for(let i=0;i<72;i++)this.items.push({z:600+i*475,x:Math.sin(i*2.1)*.67,type:'letter',id:i});
-      for(let i=0;i<53;i++)this.items.push({z:1050+i*645,x:Math.sin(i*3.7+.8)*.78,type:'rock',id:100+i,radius:2.1+(i%3)*.45});
+    constructor(){this.length=path.LENGTH;this.mode='ready';this.reset();this.mode='ready';this.items=[];
+      for(let i=0;i<216;i++)this.items.push({z:600+i*475,x:Math.sin(i*2.1)*.67,type:'letter',id:i});
+      for(let i=0;i<160;i++){const z=1050+i*645;if(adventure.creek.fords.some(f=>Math.abs(z-f)<450))continue;this.items.push({z,x:Math.sin(i*3.7+.8)*.78,type:'rock',id:1000+i,radius:2.1+(i%3)*.45})}
     }
     reset(){this.pos=0;this.speed=0;this.player=0;this.steer=0;this.energy=100;this.letters=0;this.elapsed=0;this.hit=0;this.boost=false;this.airY=0;this.airV=0;this.crashing=false;this.jumping=false;this.flightY=0;this.flightAge=0;this.jumped=new Set();this.surface='dirt';this.crashAge=0;this.grassCooldown=0;this.shake=0;this.falling=new Map();this.visited=new Set();this.collected=new Set();this.events=[];this.score=0;this.combo=0;this.comboTime=0;this.nearMisses=0;this.driftCharge=0;this.drifting=false;this.drifted=new Set();this.rockPassed=new Set();this.branchChoice='cliff';this.landingPress=-99;this.wasLandingKey=false;this.bonusTime=0;}
     reward(base,type){this.combo=Math.min(5,this.combo+1);this.comboTime=8;const points=base*this.combo;this.score+=points;this.events.push({type,points,combo:this.combo});}
@@ -54,7 +55,8 @@
       else this.driftCharge=0;
       this.boost=keys.has(' ')&&up&&this.energy>0;
       const canyonCruise=this.branchChoice==='cliff'&&this.pos>=adventure.fork.start&&this.pos<adventure.fork.end;
-      const limit=canyonCruise?500:(this.boost||this.bonusTime>0?520:400);
+      const grade=adventure.mountainMask(this.pos)>0?(roadHeight(this.pos+60)-roadHeight(this.pos-60))/6:0;
+      const limit=(canyonCruise?500:(this.boost||this.bonusTime>0?520:400))*(1-Math.max(-.12,Math.min(.3,grade*.9)));
       // Gentle launch, then stronger pull as the engine gains speed (0–200 km/h ≈ 5.3 s).
       const acceleration=45+75*Math.min(1,this.speed/400)+(this.boost?70:0);
       const force=down?-240:this.drifting?-12:canyonCruise?(this.speed<limit?Math.max(acceleration,260):-18):up?(this.speed>limit?-100:acceleration):-38;
@@ -71,6 +73,7 @@
         this.events.push({type:'grass',side});
       }
       const before=this.pos;this.pos=Math.min(this.length,this.pos+this.speed*1.35*dt*adventure.travelScale(this.pos,this.branchChoice));
+      for(const f of adventure.creek.fords)if(before<f&&this.pos>=f&&!this.jumping&&!this.crashing){this.speed*=.86;this.shake=Math.max(this.shake,.45);this.events.push({type:'ford'})}
       const surface=surfaceAt(this.pos);if(surface!==this.surface){this.surface=surface;if(surface==='stone')this.events.push({type:'stone'})}
       if(this.jumping){this.flightAge+=dt;this.airV-=16*dt;this.flightY+=this.airV*dt;this.airY=Math.max(0,this.flightY-roadHeight(this.pos));
         if(this.airY<=0&&this.airV<0){this.jumping=false;this.airV=0;this.shake=.65;if(this.elapsed-this.landingPress<=.3){this.shake=.15;this.energy=Math.min(100,this.energy+20);this.speed=Math.min(520,this.speed+100);this.bonusTime=1.5;this.reward(500,'perfectLand')}else this.events.push({type:'jumpLand'})}
