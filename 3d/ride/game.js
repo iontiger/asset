@@ -8,7 +8,7 @@ renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicTone
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
 const scene=new T.Scene();scene.background=new T.Color('#b8dbe0');scene.fog=new T.Fog('#cbdcc9',65,230);
 const camera=new T.PerspectiveCamera(57,innerWidth/innerHeight,.1,700);
-scene.add(new T.HemisphereLight('#fff5dc','#849d70',2.3));
+const hemi=new T.HemisphereLight('#fff5dc','#849d70',2.3);scene.add(hemi);
 const sun=new T.DirectionalLight('#fff0cf',3.2);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-35,right:35,top:40,bottom:-35,near:1,far:300});sun.shadow.bias=-.0003;sun.shadow.normalBias=.035;scene.add(sun,sun.target);
 let seed=41;function rand(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}
 const mats=new Map();function mat(c){if(!mats.has(c))mats.set(c,new T.MeshStandardMaterial({color:c,roughness:.86}));return mats.get(c)}
@@ -177,9 +177,9 @@ const landingRing=new T.Mesh(new T.RingGeometry(1.3,1.6,48),new T.MeshBasicMater
 function notify(text){$('toast').textContent=text;toastTime=2.6;$('toast').style.opacity=1}
 function soundTone(freq){sound.chime(freq)}
 function show(title,description,button){$('overlay').classList.remove('hidden');document.querySelector('.welcome h2').innerHTML=title;document.querySelector('.welcome p').innerHTML=description;$('start').innerHTML=button+' <span>↗</span>'}
-function start(){const fresh=ride.mode!=='paused';ride.start();sound.musicLoad();if(fresh){sound.musicReset();gotAt.clear();sparkLife.fill(0);mud.clear();mudT=0;dustPool.forEach(d=>d.life=0);dustBudget=0;lastDustPos=0;warnedTurns.clear();turnBlend=0;jumpCameraBlend=0;lastTrack=-100;trackDummy.scale.setScalar(0);trackDummy.updateMatrix();for(let i=0;i<900;i++)tracks.setMatrixAt(i,trackDummy.matrix);tracks.instanceMatrix.needsUpdate=true;}keys.clear();$('overlay').classList.add('hidden');$('pause').textContent='Ⅱ';notify(touchMode?'자동으로 출발! 화면 왼쪽 · 오른쪽을 눌러 방향을 바꿔요.':'↑ 또는 W로 출발! 3D 마을에서 편지 80통을 모아보세요.');syncCamera(true)}
+function start(){const fresh=ride.mode!=='paused';ride.start();sound.musicLoad();if(fresh){sound.musicReset();ghostReset();nightReset();gotAt.clear();sparkLife.fill(0);mud.clear();mudT=0;dustPool.forEach(d=>d.life=0);dustBudget=0;lastDustPos=0;warnedTurns.clear();turnBlend=0;jumpCameraBlend=0;lastTrack=-100;trackDummy.scale.setScalar(0);trackDummy.updateMatrix();for(let i=0;i<900;i++)tracks.setMatrixAt(i,trackDummy.matrix);tracks.instanceMatrix.needsUpdate=true;}keys.clear();$('overlay').classList.add('hidden');$('pause').textContent='Ⅱ';notify(touchMode?'자동으로 출발! 화면 왼쪽 · 오른쪽을 눌러 방향을 바꿔요.':'↑ 또는 W로 출발! 3D 마을에서 편지 80통을 모아보세요.');syncCamera(true)}
 function pause(){if(ride.mode==='playing'){ride.pause();keys.clear();show('잠시, 쉬어가요.','마을의 바람은 기다려 줄 거예요.','이어서 달리기');$('pause').textContent='▶';sound.silence()}else if(ride.mode==='paused')start()}
-function finish(){keys.clear();sound.silence();if(embedded)try{parent.postMessage({dpRide:'finish',letters:ride.letters,score:ride.score,time:ride.elapsed,branch:ride.branchChoice},'*')}catch(e){}const isRecord=ride.score>bestScore;bestScore=Math.max(bestScore,ride.score);bestTime=bestTime===null?ride.elapsed:Math.min(bestTime,ride.elapsed);try{localStorage.setItem('dentphoto-record-v1',JSON.stringify({score:bestScore,time:bestTime}))}catch(e){}
+function finish(){ghostSave();keys.clear();sound.silence();if(embedded)try{parent.postMessage({dpRide:'finish',letters:ride.letters,score:ride.score,time:ride.elapsed,branch:ride.branchChoice},'*')}catch(e){}const isRecord=ride.score>bestScore;bestScore=Math.max(bestScore,ride.score);bestTime=bestTime===null?ride.elapsed:Math.min(bestTime,ride.elapsed);try{localStorage.setItem('dentphoto-record-v1',JSON.stringify({score:bestScore,time:bestTime}))}catch(e){}
 show(isRecord?'새로운 최고 기록!':'마을에 도착했어요.',`${ride.score.toLocaleString()}점 · 최고 ${bestScore.toLocaleString()}점<br>편지 ${ride.letters}통 · 아슬아슬 회피 ${ride.nearMisses}회<br>${Math.floor(ride.elapsed/60)}분 ${Math.floor(ride.elapsed%60)}초 · 최단 ${Math.floor(bestTime/60)}분 ${Math.floor(bestTime%60)}초<br>${ride.branchChoice==='cliff'?'협곡 헤어핀':'마을 우회로'}로 달렸어요.`,'다시 여행하기')}
 $('start').addEventListener('click',start);$('pause').addEventListener('click',pause);
 // Opened from the DentPhoto village post office (iframe): ⌂ returns to the village.
@@ -288,7 +288,7 @@ for(const {item,root,baseY} of itemMeshes){root.position.copy(drivePoint(item.z,
  root.rotation.z=age!==undefined&&age<.9?Math.sin(age*7)*.16:0;
  root.visible=root.visible&&age!==undefined;root.userData.warning.position.y=.04-drop;root.userData.warning.visible=age!==undefined&&age<1.3;
  }}
-{const sa=ADVENTURE.snowAmt(ride.pos),fall=sa>.01;snowfall.visible=fall;petals.visible=!fall;frost.style.opacity=(sa*.9).toFixed(3);if(fall){snowMat.opacity=.95*sa;const c=camera.position,f=new T.Vector3();camera.getWorldDirection(f);
+{const sa=ADVENTURE.snowAmt(ride.pos),fall=sa>.01;snowfall.visible=fall;petals.visible=!fall&&ADVENTURE.nightAmt(ride.pos)<.5;frost.style.opacity=(sa*.9).toFixed(3);if(fall){snowMat.opacity=.95*sa;const c=camera.position,f=new T.Vector3();camera.getWorldDirection(f);
   for(let i=0;i<FLAKES;i++){const h=((i*.618-time*(2.6+(i%5)*.35))%14+14)%14,x=Math.sin(i*12.9898)*.5,z=Math.cos(i*78.233)*.5;
    snowPos[i*3]=c.x+f.x*14+x*44+Math.sin(time*.8+i)*.6-h*.55;snowPos[i*3+1]=c.y-6+h*1.15;snowPos[i*3+2]=c.z+f.z*14+z*44+Math.cos(time*.6+i*.7)*.6}snowGeo.attributes.position.needsUpdate=true}}
 for(let i=0;i<180;i++){petalPositions[i*3]=bike.position.x+Math.sin(i*54.1+time*.15)*25;petalPositions[i*3+1]=bike.position.y+((i*.73-time*.23)%12+12)%12;petalPositions[i*3+2]=bike.position.z+Math.cos(i*3.1+time*.03)*35}petalGeo.attributes.position.needsUpdate=true;
@@ -302,6 +302,66 @@ windGeo.attributes.position.needsUpdate=true;
 const biome=ADVENTURE.biome(ride.pos,ride.branchChoice);scene.background.lerp(new T.Color(biome.sky),1-Math.exp(-dt*1.5));scene.fog.color.lerp(new T.Color(biome.fog),1-Math.exp(-dt*1.5));scene.fog.near+=((biome.fogNear||65)-scene.fog.near)*(1-Math.exp(-dt*1.5));scene.fog.far+=((biome.fogFar||230)-scene.fog.far)*(1-Math.exp(-dt*1.5));
 landingRing.visible=ride.jumping;
 if(ride.jumping){let t=0,s=ride.pos,y=ride.flightY,v=ride.airV;while(t<4){t+=.04;s+=ride.speed*1.35*.04*ADVENTURE.travelScale(s,ride.branchChoice);v-=16*.04;y+=v*.04;if(y<=height(s))break}landingRing.position.copy(drivePoint(s,ride.player*9));landingRing.position.y+=.05;landingRing.material.color.set(ride.airV<0&&ride.airY<4?'#a9e6a0':'#f1d886');}
-if(frame++%4===0)hud();renderer.render(scene,camera);requestAnimationFrame(tick)}requestAnimationFrame(tick);
+updateGhost();updateNight(dt);if(frame++%4===0)hud();renderer.render(scene,camera);requestAnimationFrame(tick)}
+// ── 고스트 라이더: 내가 완주한 주행을 0.2초마다 기록해 두었다가, 다음 판에서 첫 언덕을 넘은 뒤부터 반투명 바이크로 같이 달린다.
+//    처음(기록 없음)에는 나오지 않는다. 더 빨리 완주하면 그 주행으로 바뀐다. 기록은 이 브라우저 localStorage.
+const GHOST_KEY='dentphoto-ghost-v1',GHOST_DT=.2;
+let ghostRun=null;try{const g=JSON.parse(localStorage.getItem(GHOST_KEY)||'null');if(g&&Array.isArray(g.s)&&g.s.length>10)ghostRun=g}catch(e){}
+let ghostRec=[],ghostNext=0,ghostOn=false;
+const ghostMat=new T.MeshStandardMaterial({color:'#a9dcff',emissive:'#3f9cff',emissiveIntensity:.55,roughness:.4,transparent:true,opacity:.34,depthWrite:false});
+const ghost=bike.clone(true);
+{const drop=[];ghost.traverse(o=>{if(o.isLight)drop.push(o);else if(o.isMesh){o.material=ghostMat;o.castShadow=o.receiveShadow=false}});drop.forEach(o=>o.parent.remove(o))}
+ghost.visible=false;scene.add(ghost);
+function ghostReset(){ghostRec=[];ghostNext=0;ghostOn=false;ghost.visible=false;$('ghost-gap').hidden=true}
+function ghostSave(){if(ride.pos<ride.length-50||ghostRec.length<10)return;if(ghostRun&&ride.elapsed>=ghostRun.t)return;
+ ghostRun={t:+ride.elapsed.toFixed(2),branch:ride.branchChoice,dt:GHOST_DT,s:ghostRec};try{localStorage.setItem(GHOST_KEY,JSON.stringify(ghostRun))}catch(e){}}
+function ghostAt(t){const S=ghostRun.s,f=t/(ghostRun.dt||GHOST_DT),i=Math.floor(f);if(i>=S.length-1){const z=S[S.length-1];return [z[0],z[1]/100,z[2]/10,true]}const a=S[Math.max(0,i)],b=S[Math.max(0,i)+1],k=f-i;return [a[0]+(b[0]-a[0])*k,(a[1]+(b[1]-a[1])*k)/100,(a[2]+(b[2]-a[2])*k)/10,false]}
+function updateGhost(){
+ if(ride.mode==='playing'&&ride.elapsed>=ghostNext){ghostRec.push([Math.round(ride.pos),Math.round(ride.player*100),Math.round(ride.airY*10)]);ghostNext+=GHOST_DT}
+ const J=window.ROAD_JUMPS||[4600],unlocked=ride.jumped.has(J[0])||ride.pos>J[0]+800;
+ if(!ghostRun||!unlocked||ride.mode==='ready'){ghost.visible=false;$('ghost-gap').hidden=true;return}
+ if(!ghostOn){ghostOn=true;notify('👻 고스트 라이더 등장! 내 최고 기록과 경주해요.')}
+ const [gp,gx,gy,done]=ghostAt(ride.elapsed),br=ghostRun.branch||'cliff',p=drivePoint(gp,gx*9,br),a=drivePoint(gp-2,0,br),b=drivePoint(gp+2,0,br);
+ ghost.position.copy(p);ghost.position.y+=gy;ghost.rotation.set(0,Math.atan2(-(b.x-a.x),-(b.z-a.z)),0);ghost.visible=!done&&Math.abs(gp-ride.pos)<4000;
+ const d=(gp-ride.pos)/5,el=$('ghost-gap');el.hidden=false;
+ el.textContent=done?'👻 고스트는 벌써 도착 · 힘내요!':d>4?`👻 고스트가 ${Math.round(d)} m 앞`:d<-4?`👻 고스트보다 ${Math.round(-d)} m 앞서는 중`:'👻 고스트와 나란히!';el.classList.toggle('ahead',!done&&d<-4)}
+
+// ── 별빛 밤길: 폭설 평원이 끝난 뒤부터 도착까지 밤. 하늘 · 안개는 ADVENTURE.biome 이 바꾸고, 여기서는 빛을 맞춘다.
+const NIGHT=ADVENTURE.night,nightCol={hs:new T.Color('#fff5dc'),hg:new T.Color('#849d70'),ns:new T.Color('#6f86c4'),ng:new T.Color('#1c2236'),sun:new T.Color('#fff0cf'),moon:new T.Color('#9fb6ff')};
+// 헤드라이트: 바이크 앞 전조등 자리에서 길 앞쪽을 비추는 스포트라이트 + 전조등 빛망울
+const headlight=new T.SpotLight('#fff0c8',0,90,.48,.55,1.1);headlight.position.set(0,1.35,-1.05);headlight.target.position.set(0,-.4,-26);bike.add(headlight,headlight.target);
+const headGlow=new T.Sprite(new T.SpriteMaterial({map:flakeTex,color:'#fff4cf',transparent:true,opacity:0,depthWrite:false,blending:T.AdditiveBlending}));headGlow.position.set(0,1.35,-1.12);headGlow.scale.setScalar(1.5);bike.add(headGlow);
+// 가로등: 길 양옆으로 번갈아, 기둥 · 팔 · 등(빛나는 재질) · 땅의 빛웅덩이 · 등 빛망울. 가까운 3개에는 진짜 점광원
+const lampS=[];for(let s=NIGHT.start+220;s<ride.length-120;s+=290)lampS.push(s);
+const LN=lampS.length,lampMat=new T.MeshStandardMaterial({color:'#4b4f55',roughness:.6}),bulbMat=new T.MeshStandardMaterial({color:'#fff3d6',emissive:'#ffcf73',emissiveIntensity:0});
+const poles=new T.InstancedMesh(new T.CylinderGeometry(.09,.13,5.4,8),lampMat,LN),arms=new T.InstancedMesh(new T.BoxGeometry(.08,.08,1.7),lampMat,LN),bulbs=new T.InstancedMesh(new T.SphereGeometry(.26,12,8),bulbMat,LN);
+const pools=new T.InstancedMesh(new T.CircleGeometry(4.2,24),new T.MeshBasicMaterial({map:flakeTex,color:'#ffcf7a',transparent:true,opacity:0,depthWrite:false,blending:T.AdditiveBlending}),LN);
+const lampPos=[],haloData=new Float32Array(LN*3);
+{const m=new T.Matrix4(),q=new T.Quaternion(),e=new T.Euler(),one=new T.Vector3(1,1,1);
+ lampS.forEach((s,i)=>{const side=i%2?1:-1,base=point(s,side*11.5),yaw=heading(s);
+  m.compose(base.clone().setY(base.y+2.7),q.setFromEuler(e.set(0,yaw,0)),one);poles.setMatrixAt(i,m);
+  const head=point(s,side*10.7);head.y=base.y+5.35;m.compose(head,q.setFromEuler(e.set(0,yaw+Math.PI/2,0)),one);arms.setMatrixAt(i,m);
+  const bulb=point(s,side*9.9);bulb.y=base.y+5.15;m.compose(bulb,q.identity(),one);bulbs.setMatrixAt(i,m);lampPos.push(bulb);haloData.set([bulb.x,bulb.y,bulb.z],i*3);
+  const pool=point(s,side*7.4);pool.y=height(s)+.07;m.compose(pool,q.setFromEuler(e.set(-Math.PI/2,0,0)),one);pools.setMatrixAt(i,m)})}
+for(const o of [poles,arms])o.castShadow=true;scene.add(poles,arms,bulbs,pools);
+const haloGeo=new T.BufferGeometry();haloGeo.setAttribute('position',new T.BufferAttribute(haloData,3));
+const halos=new T.Points(haloGeo,new T.PointsMaterial({map:flakeTex,color:'#ffd58a',size:3.2,transparent:true,opacity:0,depthWrite:false,blending:T.AdditiveBlending}));scene.add(halos);
+const lampLights=[0,1,2].map(()=>{const l=new T.PointLight('#ffcf80',0,30,1.4);scene.add(l);return l});
+// 반딧불: 바이크 둘레에서 떠다니며 반짝이는 연두빛 점들 (두 무리가 엇갈려 깜빡인다)
+const FF=70,ffSeed=Array.from({length:FF},(_,i)=>[Math.sin(i*12.9898)*.5+.5,Math.sin(i*78.233)*.5+.5,Math.sin(i*37.719)*.5+.5]);
+const ffGroups=[0,1].map(g=>{const geo=new T.BufferGeometry();geo.setAttribute('position',new T.BufferAttribute(new Float32Array(FF/2*3),3));const pts=new T.Points(geo,new T.PointsMaterial({map:flakeTex,color:g?'#e4ff8a':'#b6ff6e',size:.55,transparent:true,opacity:0,depthWrite:false,blending:T.AdditiveBlending}));pts.frustumCulled=false;scene.add(pts);return pts});
+let nightNoted=false;function nightReset(){nightNoted=false}
+function updateNight(dt){const n=ADVENTURE.nightAmt(ride.pos);
+ hemi.intensity=2.3+(.55-2.3)*n;hemi.color.copy(nightCol.hs).lerp(nightCol.ns,n);hemi.groundColor.copy(nightCol.hg).lerp(nightCol.ng,n);
+ sun.intensity=3.2+(.45-3.2)*n;sun.color.copy(nightCol.sun).lerp(nightCol.moon,n);
+ headlight.intensity=n*95;headGlow.material.opacity=n*.95;bulbMat.emissiveIntensity=n*3.2;pools.material.opacity=n*.55;halos.material.opacity=n*.85;
+ const vis=n>.01;for(const o of [pools,halos])o.visible=vis;
+ if(vis){const near=lampPos.map((p,i)=>[i,lampS[i]-ride.pos]).filter(([,d])=>d>-60).sort((a,b)=>a[1]-b[1]).slice(0,3);
+  lampLights.forEach((l,k)=>{const it=near[k];if(it){l.position.copy(lampPos[it[0]]);l.intensity=n*42}else l.intensity=0})}else lampLights.forEach(l=>l.intensity=0);
+ ffGroups.forEach((pts,g)=>{pts.visible=vis;if(!vis)return;pts.material.opacity=n*(.45+.55*Math.max(0,Math.sin(time*(2.1+g*.7)+g*2)));const a=pts.geometry.attributes.position.array;
+  for(let i=0;i<FF/2;i++){const [u,v,w]=ffSeed[i*2+g];a[i*3]=bike.position.x+(u-.5)*46+Math.sin(time*.6+i)*1.6;a[i*3+1]=bike.position.y+.8+v*4.5+Math.sin(time*1.3+i*1.7)*.5;a[i*3+2]=bike.position.z+(w-.5)*46+Math.cos(time*.5+i*.9)*1.6}
+  pts.geometry.attributes.position.needsUpdate=true});
+ if(!nightNoted&&n>.3&&ride.mode==='playing'){nightNoted=true;notify('🌙 해가 졌어요 · 헤드라이트를 켜고 가로등 길을 달려요')}}
+requestAnimationFrame(tick);
 window.rideDebug={ride,start,keys,camera,renderer,canyon,scene,T,drivePoint,mud,snowfall,sound,snap:()=>syncCamera(true)};window.getGameState=()=>({mode:ride.mode,pos:ride.pos,speed:ride.speed,letters:ride.letters,energy:ride.energy,landmarksVisited:ride.visited.size,airHeight:ride.airY,crashing:ride.crashing,jumping:ride.jumping,surface:ride.surface,score:ride.score,combo:ride.combo,drifting:ride.drifting,branch:ride.branchChoice,renderer:'Three.js WebGL',drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles});
 })();

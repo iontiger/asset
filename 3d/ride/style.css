@@ -96,3 +96,9 @@
 .touch-mode .howto-touch{display:block;margin:10px 0 2px;font-size:13px;line-height:1.9;color:var(--ink)}
 .touch-mode .howto-touch b{color:#46634c}
 .touch-mode .drive-hint{bottom:90px}
+
+/* 고스트 라이더와의 거리: 화면 위 가운데 작은 알약 */
+.ghost-gap{position:fixed;z-index:6;top:86px;left:50%;transform:translateX(-50%);padding:6px 14px;border-radius:20px;background:#1d3550cc;color:#e3f3ff;font-size:12px;font-weight:600;letter-spacing:.3px;pointer-events:none;box-shadow:0 0 14px #5fb4ff55;white-space:nowrap}
+.ghost-gap.ahead{background:#2f5a3dcc;color:#f1ffe6;box-shadow:0 0 14px #8fe07a55}
+.ghost-gap[hidden]{display:none}
+@media(max-width:800px){.ghost-gap{top:78px;font-size:11px}}
