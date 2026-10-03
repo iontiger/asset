@@ -13,5 +13,9 @@ class RideSound {
  ding(){if(!this.ctx||this.muted)return;const a=this.ctx,t=a.currentTime;
   const bell=(f,at,len,vol)=>{for(const [k,v] of [[1,1],[2.76,.35],[5.4,.12]]){const o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.value=f*k;g.gain.setValueAtTime(0,t+at);g.gain.linearRampToValueAtTime(vol*v,t+at+.008);g.gain.exponentialRampToValueAtTime(.0008,t+at+len*(k>1?.45:1));o.connect(g);g.connect(this.master);o.start(t+at);o.stop(t+at+len+.05)}};
   bell(1318.5,0,.35,.12);bell(1975.5,.09,.9,.13);for(let i=0;i<4;i++)bell(2637+i*330,.16+i*.045,.18,.025)}
+ // 1000점 돌파: 도-미-솔-도 올라가는 팡파르 + 마지막 화음 종소리
+ fanfare(){if(!this.ctx||this.muted)return;const a=this.ctx,t=a.currentTime;
+  const note=(f,at,len,vol,type='triangle')=>{const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t+at);g.gain.linearRampToValueAtTime(vol,t+at+.012);g.gain.exponentialRampToValueAtTime(.0008,t+at+len);o.connect(g);g.connect(this.master);o.start(t+at);o.stop(t+at+len+.05)};
+  [523.25,659.25,783.99].forEach((f,i)=>note(f,i*.1,.22,.12));for(const f of [1046.5,1318.5,1568])note(f,.3,1.1,.07);for(const f of [2093,2637])note(f,.3,.8,.03,'sine')}
  impact(power=1){if(!this.ctx||this.muted)return;const a=this.ctx,n=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();n.buffer=this.noise;f.type='lowpass';f.frequency.value=350+power*500;g.gain.setValueAtTime(.18*power,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.5);n.connect(f);f.connect(g);g.connect(this.master);n.start();n.stop(a.currentTime+.51)}
 }
