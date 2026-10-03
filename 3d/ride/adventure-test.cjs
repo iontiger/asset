@@ -10,4 +10,10 @@ let safeLength=0,cliffLength=0;for(let s=20000;s<40000;s++){safeLength+=1/A.trav
 r=new Ride();r.start();r.pos=26000;r.branchChoice='safe';const obstacle={type:'rock',z:26001,x:0,id:999,radius:2.5};r.items=[obstacle];r.speed=300;r.falling.set(999,1);tick(r,[]);assert(!r.crashing);r.pos=26000;r.branchChoice='cliff';tick(r,[]);assert(r.crashing);
 r=new Ride();r.start();r.items=[];r.pos=31000;r.branchChoice='cliff';r.speed=420;tick(r,['w'],30);assert.equal(Math.round(r.speed/2),250,'Canyon auto-cruises at 250 km/h');const beforeBrake=r.speed;tick(r,['arrowdown'],2);assert(r.speed<beforeBrake,'Down arrow brakes in canyon');
 r.pos=0;r.reward(200,'nearMiss');r.reward(300,'drift');assert(r.combo===2);tick(r,[],600);assert.equal(r.combo,0);r.start();assert.equal(r.score,0);assert.equal(r.rockPassed.size,0);assert.equal(r.branchChoice,'cliff');assert(!r.drifting);
-console.log('PASS: manual drift, rewards, glancing hits, near misses, perfect landing, anti-hold timing, branch lock, shorter cliff route, safe-route collision suppression, combos, restart');
+// 폭설 평원: 느려지고 미끄럽고, 협곡에는 낙석이 없다
+assert(!new Ride().items.some(o=>o.type==='rock'&&o.z>A.fork.start&&o.z<A.fork.end),'No rocks in the canyon fork');
+assert(A.snowAmt(92000)===1&&A.snowAmt(84500)===0&&A.snowAmt(100000)===0,'Snow only between the pier and the lighthouse');
+r=new Ride();r.start();r.items=[];r.pos=88000;r.speed=400;tick(r,['w'],240);assert(r.events.length>=0&&r.speed<240,'Deep snow caps the speed');assert(r.inSnow);
+const snowSpeed=r.speed;tick(r,['w','d'],40);const p1=r.player;tick(r,['w'],12);assert(r.player>p1,'Bike keeps sliding after steering is released');
+r=new Ride();r.start();r.items=[];r.pos=70500;r.speed=400;tick(r,['w'],60);assert(r.speed>390,'Normal road keeps full speed');
+console.log('PASS: manual drift, rewards, glancing hits, near misses, perfect landing, anti-hold timing, branch lock, shorter cliff route, safe-route collision suppression, combos, restart, snow plain, rock-free canyon');

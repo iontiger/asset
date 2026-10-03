@@ -25,19 +25,24 @@ function drivePoint(s,lateral=0,choice=ride.branchChoice){return point(s,lateral
 function driveHeading(s){const a=drivePoint(s-2),b=drivePoint(s+2);return Math.atan2(-(b.x-a.x),-(b.z-a.z))}
 // Continuous indexed 3D strips; both the road and the meadow follow the hills.
 // Ground height beside the road: rolling meadow, flat canyon floor, 목표봉's slopes and the creek bed.
-const F=ADVENTURE.fork,MT=ADVENTURE.mountain,CK=ADVENTURE.creek,sstep=ADVENTURE.sstep;
+const F=ADVENTURE.fork,MT=ADVENTURE.mountain,CK=ADVENTURE.creek,SN=ADVENTURE.snow,sstep=ADVENTURE.sstep,snowC=new T.Color('#f1f4f7');
 function groundAt(s,offset){const p=point(s,offset),mm=ADVENTURE.mountainMask(s),inFork=s>F.start-1000&&s<F.end+400,cx=ADVENTURE.creekX(s),mf=ADVENTURE.mountainField(p.x,p.z);
  if(mf>0||mm>0){const c=ROAD_PATH.at(s);p.y+=mf-ADVENTURE.mountainField(c.x,c.z)}
  let wave=Math.abs(offset)>12&&!inFork?Math.sin(s/650+offset*.04)*Math.min(9,(Math.abs(offset)-12)*.14)*(1-mm):0;
  if(cx!==null){const d=Math.abs(offset-cx);wave*=sstep(6,16,d);if(d<7)p.y-=1.5*(1-(d/7)**2)}
  p.y+=wave;return p}
 function strip(halfWidth,color,yOffset=0,terrain=false){const verts=[],colors=[],indices=[],c=new T.Color(),steps=Math.ceil((ride.length+2200)/9),cols=terrain?24:2;
-for(let i=0;i<=steps;i++){const s=-600+i*(ride.length+2200)/steps;for(let j=0;j<=cols;j++){const offset=(j/cols*2-1)*(terrain&&s>ADVENTURE.fork.start-200&&s<ADVENTURE.fork.end+200?55:halfWidth),p=terrain?groundAt(s,offset):point(s,offset+ADVENTURE.branchOffset(s,'safe'));p.y+=yOffset;if(terrain&&s>F.start-1400&&s<F.end+800&&Math.abs(offset)>9&&folded(p,s,Math.abs(offset)-1))p.y-=7;if(terrain&&Math.abs(offset)>14&&ADVENTURE.mountainField(p.x,p.z)>.5)p.y-=4;verts.push(p.x,p.y,p.z);c.set(terrain?ADVENTURE.biome(s).ground:halfWidth<9.5?ADVENTURE.biome(s).road:color);c.multiplyScalar(.94+.06*Math.sin(i*1.83+j*2.1));colors.push(c.r,c.g,c.b);if(i<steps&&j<cols){const a=i*(cols+1)+j;indices.push(a,a+cols+1,a+1,a+1,a+cols+1,a+cols+2)}}}
+for(let i=0;i<=steps;i++){const s=-600+i*(ride.length+2200)/steps;for(let j=0;j<=cols;j++){const offset=(j/cols*2-1)*(terrain&&s>ADVENTURE.fork.start-200&&s<ADVENTURE.fork.end+200?55:halfWidth),p=terrain?groundAt(s,offset):point(s,offset+ADVENTURE.branchOffset(s,'safe'));p.y+=yOffset;if(terrain&&s>F.start-1400&&s<F.end+800&&Math.abs(offset)>9&&folded(p,s,Math.abs(offset)-1))p.y-=7;if(terrain&&Math.abs(offset)>14&&ADVENTURE.mountainField(p.x,p.z)>.5)p.y-=4;verts.push(p.x,p.y,p.z);c.set(terrain?ADVENTURE.biome(s).ground:halfWidth<9.5?ADVENTURE.biome(s).road:color);{const sc=ADVENTURE.snowCover(s);if(sc>0)c.lerp(snowC,sc)}c.multiplyScalar(.94+.06*Math.sin(i*1.83+j*2.1));colors.push(c.r,c.g,c.b);if(i<steps&&j<cols){const a=i*(cols+1)+j;indices.push(a,a+cols+1,a+1,a+1,a+cols+1,a+cols+2)}}}
 const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(verts,3));g.setAttribute('color',new T.Float32BufferAttribute(colors,3));g.setIndex(indices);g.computeVertexNormals();const m=new T.Mesh(g,new T.MeshStandardMaterial({vertexColors:true,roughness:1,side:T.DoubleSide}));m.receiveShadow=true;scene.add(m);return m;}
 // Inside the hairpins the wide meadow folds over the other leg (at a different height) — sink the folded part under the ground that belongs there.
 const foldRoads=[];for(let s=-600;s<=ride.length+600;s+=40)for(const ch of ['safe','cliff']){if(ch==='cliff'&&!(s>ADVENTURE.fork.start&&s<ADVENTURE.fork.end))continue;const p=drivePoint(s,0,ch);foldRoads.push(p.x,p.z,s)}
 function folded(p,s,r){const r2=r*r;for(let i=0;i<foldRoads.length;i+=3){if(Math.abs(foldRoads[i+2]-s)<600)continue;const dx=foldRoads[i]-p.x,dz=foldRoads[i+1]-p.z;if(dx*dx+dz*dz<r2)return true}return false}
 strip(30,'#91ad69',-.12,true);strip(9.65,'#b7b58b',-.025);strip(9,'#caa778');
+// 폭설 평원: 길 위에 쌓인 눈 (바퀴가 반쯤 잠기는 깊이) + 길가 눈둑. 눈 깊이는 ADVENTURE.snowAmt 를 따른다.
+const snowDepth=s=>SN.depth*ADVENTURE.snowAmt(s);
+{const verts=[],colors=[],idx=[],c=new T.Color(),offs=[-13,-11.6,-10.6,-9.8,-9.2,-6,-3,0,3,6,9.2,9.8,10.6,11.6,13],lift=[0,.55,1.05,.75,1,1,1,1,1,1,1,.75,1.05,.55,0],n=Math.ceil((SN.end-SN.start+1200)/6);
+ for(let i=0;i<=n;i++){const s=SN.start-600+i*6,d=snowDepth(s),sc=ADVENTURE.snowCover(s);offs.forEach((o,j)=>{const p=point(s,o);p.y+=(Math.abs(o)>9.3?Math.max(d,.5*sc):d)*lift[j]*(Math.abs(o)>9.3?1.5:1)+.015*sc-.03*(1-sc);verts.push(p.x,p.y,p.z);c.set(Math.abs(o)<2.2?'#e4e9ee':'#f6f8fa').multiplyScalar(.95+.05*Math.sin(i*1.3+j*2.7));colors.push(c.r,c.g,c.b);if(i<n&&j<offs.length-1){const a=i*offs.length+j;idx.push(a,a+offs.length,a+1,a+1,a+offs.length,a+offs.length+1)}})}
+ const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(verts,3));g.setAttribute('color',new T.Float32BufferAttribute(colors,3));g.setIndex(idx);g.computeVertexNormals();const m=new T.Mesh(g,new T.MeshStandardMaterial({vertexColors:true,roughness:.92,side:T.DoubleSide}));m.receiveShadow=true;scene.add(m)}
 // Two distinct drivable branches: the village detour is physically longer.
 {const vertices=[],indices=[],uvs=[];for(let i=0;i<=360;i++){const s=ADVENTURE.fork.start+(ADVENTURE.fork.end-ADVENTURE.fork.start)*i/360;for(const side of [-1,1]){const p=drivePoint(s,side*9.3,'cliff');vertices.push(p.x,p.y+.012,p.z);uvs.push((side+1)/2,s/300)}if(i<360){let a=i*2;indices.push(a,a+2,a+1,a+1,a+2,a+3)}}const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(vertices,3));g.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));g.setIndex(indices);g.computeVertexNormals();const road=new T.Mesh(g,new T.MeshStandardMaterial({map:CANYON.roadTexture(T),side:T.DoubleSide,roughness:1,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1}));road.receiveShadow=true;scene.add(road);}
 
@@ -50,7 +55,7 @@ const detailGeo=new T.IcosahedronGeometry(1,0),detail=new T.InstancedMesh(detail
 for(let i=0;i<1200;i++){const s=rand()*ride.length,p=drivePoint(s,(rand()*2-1)*8.7,'safe');dummy.position.copy(p);dummy.position.y+=.015;dummy.scale.set(.04+rand()*.09,.018,.07+rand()*.13);dummy.rotation.set(0,rand()*6.28,0);dummy.updateMatrix();detail.setMatrixAt(i,dummy.matrix)}detail.receiveShadow=true;scene.add(detail);
 // Instanced trees: many real 3D crowns with only a handful of draw calls.
 const treeData=[];for(let s=150;s<ride.length+1800;s+=85)for(const side of [-1,1]){
- if(s>F.start-1500&&s<F.end+1000)continue;const lat=side*(12+rand()*17);if(landmarks.some(l=>Math.abs(l.z-s)<200&&Math.sign(l.x)===side))continue;
+ if(s>F.start-1500&&s<F.end+1000||ADVENTURE.snowCover(s)>0)continue;const lat=side*(12+rand()*17);if(landmarks.some(l=>Math.abs(l.z-s)<200&&Math.sign(l.x)===side))continue;
  const p=groundAt(s,lat);{const cx=ADVENTURE.creekX(s);if(cx!==null&&Math.abs(lat-cx)<7)continue}if(ADVENTURE.mountainField(p.x,p.z)>.5)continue;
  treeData.push({p,scale:.8+rand()*.85,pink:rand()>.35});}
 function instanceTrees(kind,color,geo,offset,scale){const list=treeData.filter(d=>kind==='all'||d.pink===(kind==='pink'));const m=new T.InstancedMesh(geo,mat(color),list.length);list.forEach((d,i)=>{dummy.position.copy(d.p).add(new T.Vector3(...offset).multiplyScalar(d.scale));dummy.scale.set(...scale).multiplyScalar(d.scale);dummy.rotation.set(0,i*1.4,0);dummy.updateMatrix();m.setMatrixAt(i,dummy.matrix)});m.castShadow=true;m.receiveShadow=true;scene.add(m)}
@@ -60,25 +65,34 @@ for(const [kind,colors] of [['pink',['#e4a9bb','#efbfcd','#d69ead']],['green',['
 const worldObjects=[],labels=[];
 const templates={};for(const name of VillageModels.names)templates[name]=VillageModels.create(name);
 function placeModel(name,s,lat,scale=1){const root=templates[name].clone(true);root.position.copy(groundAt(s,lat));root.rotation.y=heading(s)+(lat<0?Math.PI*.4:-Math.PI*.4);root.scale.setScalar(scale);scene.add(root);worldObjects.push({root,s});return root}
-for(let s=450,i=0;s<ride.length;s+=330,i++){const side=i%2?1:-1;if(landmarks.some(l=>Math.abs(l.z-s)<260)||s>F.start-1500&&s<F.end+1000||ADVENTURE.mountainMask(s)>0||s>CK.start-1500&&s<CK.end+1500)continue;placeModel(['cottage','rosehouse','shop'][i%3],s,side*(16+rand()*5),.8+rand()*.25)}
+for(let s=450,i=0;s<ride.length;s+=330,i++){const side=i%2?1:-1;if(landmarks.some(l=>Math.abs(l.z-s)<260)||s>F.start-1500&&s<F.end+1000||ADVENTURE.mountainMask(s)>0||s>CK.start-1500&&s<CK.end+1500||ADVENTURE.snowCover(s-300)>0||ADVENTURE.snowCover(s+300)>0)continue;placeModel(['cottage','rosehouse','shop'][i%3],s,side*(16+rand()*5),.8+rand()*.25)}
 landmarks.forEach((l,i)=>{const root=placeModel(l.model,l.z,l.x*9+ADVENTURE.branchOffset(l.z,l.x>0?'cliff':'safe'),l.scale);const e=document.createElement('div');e.className='place-label';e.textContent=l.name;$('world-labels').appendChild(e);const box=new T.Box3().setFromObject(root);labels.push({e,s:l.z,index:i,position:new T.Vector3(root.position.x,box.max.y+1.2,root.position.z)})});
-for(const s of [8800,46500,90000]){let root=placeModel('balloon',s,35,1.7);root.position.y+=20;root.userData.balloon=true;root.userData.baseY=root.position.y}
+for(const s of [8800,46500,79500]){let root=placeModel('balloon',s,35,1.7);root.position.y+=20;root.userData.balloon=true;root.userData.baseY=root.position.y}
 // Region-specific scenery, kept clear of every road segment.
 const routeSamples=Array.from({length:Math.floor(ride.length/100)+1},(_,i)=>point(i*100));
 function clearOfRoad(p,r=18){return routeSamples.every(q=>Math.hypot(p.x-q.x,p.z-q.z)>r)}
+// 폭설 평원: 눈 덮인 전나무 · 눈더미 · 눈사람 (나무 몇 종류를 인스턴스로)
+{const pines=[],drifts=[];for(let s=SN.start-500;s<SN.end+700;s+=60)for(const side of [-1,1]){const lat=side*(16+rand()*20),p=groundAt(s,lat);if(rand()<.55&&clearOfRoad(p,15))pines.push({p,k:.6+rand()*.55,r:rand()*6});if(rand()<.5)drifts.push({p:groundAt(s+30,side*(11.5+rand()*12)),k:.6+rand()*1.3,r:rand()*6})}
+ const put=(list,geo,color,f)=>{const m=new T.InstancedMesh(geo,mat(color),list.length);list.forEach((d,i)=>{f(d);dummy.updateMatrix();m.setMatrixAt(i,dummy.matrix)});m.castShadow=true;m.receiveShadow=true;scene.add(m)};
+ put(pines,new T.CylinderGeometry(.18,.26,1.6,6),'#6d5a45',d=>{dummy.position.copy(d.p);dummy.position.y+=.8*d.k;dummy.scale.setScalar(d.k);dummy.rotation.set(0,d.r,0)});
+ [[2.3,2.6,1.9,'#2f5a46'],[1.8,2.2,3.3,'#356550'],[1.25,1.9,4.6,'#3b6d57']].forEach(([r,h,y,c])=>{put(pines,new T.ConeGeometry(r,h,8),c,d=>{dummy.position.copy(d.p);dummy.position.y+=y*d.k;dummy.scale.setScalar(d.k);dummy.rotation.set(0,d.r,0)});
+   put(pines,new T.ConeGeometry(r*.82,h*.45,8),'#f4f7fa',d=>{dummy.position.copy(d.p);dummy.position.y+=(y+h*.3)*d.k;dummy.scale.setScalar(d.k);dummy.rotation.set(0,d.r,0)})});
+ put(drifts,new T.SphereGeometry(1,12,8),'#f3f6f9',d=>{dummy.position.copy(d.p);dummy.scale.set(2.4*d.k,.7*d.k,1.5*d.k);dummy.rotation.set(0,d.r,0)});
+ for(const [s,lat] of [[87600,13],[91800,-14],[96200,12.5]]){const g=new T.Group();g.position.copy(groundAt(s,lat));g.rotation.y=heading(s)+(lat>0?-1.2:1.2);scene.add(g);ball(g,0,.9,0,.95,'#f6f8fb');ball(g,0,2.2,0,.68,'#f6f8fb');ball(g,0,3.2,0,.48,'#f6f8fb');
+   ball(g,0,3.2,.47,.09,'#e8823a',.6,.6,2.2);for(const x of [-.17,.17])ball(g,x,3.35,.42,.06,'#2b2b2b');cyl(g,0,3.7,0,.34,.34,.12,'#2b2b2b');cyl(g,0,3.95,0,.24,.24,.45,'#2b2b2b');cyl(g,0,2.75,0,.5,.55,.16,'#d9473b');for(const x of [-1,1])beam(g,[x*.6,2.3,0],[x*1.5,2.9,0],.05,'#6d5a45');worldObjects.push({root:g,s})}}
 // Canyon branch (default route): CANYON EXPRESS sandstone walls, ledges, pines and signs — see canyon.js.
 const canyon=CANYON.build({T,scene,drivePoint,ride,fork:ADVENTURE.fork,landmarks,turns:ROAD_PATH.turns});
 // 목표봉 (up and over) and the creek with its three fords — see mountain-creek.js.
 const mc=MOUNTAIN_CREEK.build({T,scene,point,height,heading,groundAt,ride});
-for(let s=82000;s<96000;s+=180){const p=point(s,40);if(!clearOfRoad(p,27))continue;const water=new T.Mesh(new T.PlaneGeometry(40,10),new T.MeshStandardMaterial({color:'#6aafb9',roughness:.3,metalness:.15,side:T.DoubleSide}));water.rotation.set(-Math.PI/2,0,heading(s));water.position.copy(p);water.position.y-=2;scene.add(water);for(let j=0;j<3;j++){const foam=box(scene,p.x+j*5,p.y-1.97,p.z,3,.025,.08,'#dce9d8');foam.rotation.y=heading(s)}}
+for(let s=82000;s<96000;s+=180){const p=point(s,40);if(!clearOfRoad(p,27))continue;const ice=ADVENTURE.snowCover(s)>.5,water=new T.Mesh(new T.PlaneGeometry(40,10),new T.MeshStandardMaterial({color:ice?'#cfe2ea':'#6aafb9',roughness:ice?.15:.3,metalness:.15,side:T.DoubleSide}));water.rotation.set(-Math.PI/2,0,heading(s));water.position.copy(p);water.position.y-=2;scene.add(water);for(let j=0;j<(ice?0:3);j++){const foam=box(scene,p.x+j*5,p.y-1.97,p.z,3,.025,.08,'#dce9d8');foam.rotation.y=heading(s)}}
 for(let s=ADVENTURE.fork.start+300;s<ADVENTURE.fork.end-300;s+=480){placeModel('cottage',s,ADVENTURE.branchOffset(s,'safe')-15,.75)}
 // Chevron road warnings before both hairpins.
 for(const turn of ROAD_PATH.turns)for(let s=turn.start-360;s<turn.start;s+=65){const root=new T.Group();root.position.copy(drivePoint(s,0,'cliff'));root.rotation.y=heading(s);for(const sign of [-1,1]){const dash=box(root,sign*.6,.025,0,.14,.03,1.6,'#e2c77f');dash.rotation.y=sign*.7}scene.add(root)}
 // Individual grass blades sway and bend away from nearby tires.
-const grassList=[];for(let s=100;s<ride.length;s+=35)for(const side of [-1,1]){if(s>F.start-500&&s<F.end+500)continue;{const cx=ADVENTURE.creekX(s);if(cx!==null&&Math.abs(side*10.5-cx)<5)continue}grassList.push({s,side,p:drivePoint(s,side*(9.8+rand()*1.5),'safe')})}
+const grassList=[];for(let s=100;s<ride.length;s+=35)for(const side of [-1,1]){if(s>F.start-500&&s<F.end+500||ADVENTURE.snowCover(s)>0)continue;{const cx=ADVENTURE.creekX(s);if(cx!==null&&Math.abs(side*10.5-cx)<5)continue}grassList.push({s,side,p:drivePoint(s,side*(9.8+rand()*1.5),'safe')})}
 const grass=new T.InstancedMesh(new T.PlaneGeometry(.22,.65),new T.MeshStandardMaterial({color:'#75915b',side:T.DoubleSide}),grassList.length);grass.frustumCulled=false;scene.add(grass);
-let lastTrack=-100,trackCursor=0;const trackDummy=new T.Object3D(),tracks=new T.InstancedMesh(new T.PlaneGeometry(.22,.65),new T.MeshBasicMaterial({color:'#6c5540',transparent:true,opacity:.22,depthWrite:false,side:T.DoubleSide}),900);tracks.frustumCulled=false;scene.add(tracks);trackDummy.scale.setScalar(0);trackDummy.updateMatrix();for(let i=0;i<900;i++)tracks.setMatrixAt(i,trackDummy.matrix);
-function updateGroundFX(dt){if(ride.mode==='playing'&&ride.airY<.1&&Math.abs(ride.pos-lastTrack)>7){lastTrack=ride.pos;trackDummy.position.copy(drivePoint(ride.pos-18,ride.player*9));trackDummy.position.y+=.025;trackDummy.rotation.set(-Math.PI/2,0,driveHeading(ride.pos));trackDummy.scale.setScalar(1);trackDummy.updateMatrix();tracks.setMatrixAt(trackCursor++%900,trackDummy.matrix);tracks.instanceMatrix.needsUpdate=true;}
+let lastTrack=-100,trackCursor=0;const trackDummy=new T.Object3D(),tracks=new T.InstancedMesh(new T.PlaneGeometry(.22,.65),new T.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.24,depthWrite:false,side:T.DoubleSide}),900);const trackDirt=new T.Color('#6c5540'),trackSnow=new T.Color('#7d8da0');tracks.frustumCulled=false;scene.add(tracks);trackDummy.scale.setScalar(0);trackDummy.updateMatrix();for(let i=0;i<900;i++)tracks.setMatrixAt(i,trackDummy.matrix);
+function updateGroundFX(dt){if(ride.mode==='playing'&&ride.airY<.1&&Math.abs(ride.pos-lastTrack)>7){lastTrack=ride.pos;trackDummy.position.copy(drivePoint(ride.pos-18,ride.player*9));const sd=snowDepth(ride.pos-18);trackDummy.position.y+=.025+sd;trackDummy.rotation.set(-Math.PI/2,0,driveHeading(ride.pos));trackDummy.scale.set(sd>.05?1.9:1,1,1);trackDummy.updateMatrix();tracks.setColorAt(trackCursor%900,sd>.05?trackSnow:trackDirt);tracks.setMatrixAt(trackCursor++%900,trackDummy.matrix);tracks.instanceMatrix.needsUpdate=true;if(tracks.instanceColor)tracks.instanceColor.needsUpdate=true;}
  grassList.forEach((g,i)=>{const near=Math.max(0,1-bike.position.distanceTo(g.p)/3);dummy.position.copy(g.p);dummy.position.y+=.28;dummy.scale.setScalar(1);dummy.rotation.set(0,heading(g.s),Math.sin(time*2+i)*.12+g.side*near*.8);dummy.updateMatrix();grass.setMatrixAt(i,dummy.matrix)});grass.instanceMatrix.needsUpdate=true;}
 // A proper destination at the end of the route.
 const postOffice=placeModel('rosehouse',ride.length+130,15,1.3);postOffice.rotation.y=-.6;
@@ -125,13 +139,18 @@ for(const item of ride.items){let root=new T.Group();root.position.copy(drivePoi
  }itemMeshes.push({item,root,baseY:root.position.y});}
 // Recycled instanced dust puffs: dirt trails, grass smoke and rock-impact bursts.
 const dustPool=Array.from({length:240},()=>({life:0,max:1,p:new T.Vector3(),v:new T.Vector3(),size:1}));let dustCursor=0,dustBudget=0,lastDustPos=0;
-const dust=new T.InstancedMesh(new T.IcosahedronGeometry(1,1),new T.MeshStandardMaterial({color:'#bea079',roughness:1,transparent:true,opacity:.26,depthWrite:false}),dustPool.length);dust.frustumCulled=false;scene.add(dust);
+const dustTint=new T.Color('#bea079'),dust=new T.InstancedMesh(new T.IcosahedronGeometry(1,1),new T.MeshStandardMaterial({color:'#ffffff',roughness:1,transparent:true,opacity:.26,depthWrite:false}),dustPool.length);dust.frustumCulled=false;scene.add(dust);
 function burst(p,count,force=1,grass=false){for(let i=0;i<count;i++){const d=dustPool[dustCursor++%dustPool.length];d.life=d.max=.6+rand()*1.2;d.p.copy(p).add(new T.Vector3((rand()-.5)*1.5,.2,(rand()-.5)*1.5));d.v.set((rand()-.5)*force*7,1+rand()*force*3,(rand()-.5)*force*7);d.size=(.12+rand()*.25)*(.6+force*.4);d.grass=grass;}}
-function updateDust(dt){const active=ride.mode==='playing',traveled=Math.min(2,Math.abs(ride.pos-lastDustPos)/20);lastDustPos=ride.pos;if(active&&!ride.crashing&&ride.speed>18&&ride.airY<.4){dustBudget+=traveled*(1.2+ride.speed*.002)*(ride.surface==='stone'?.22:1);const count=Math.floor(dustBudget);dustBudget-=count;const rear=drivePoint(ride.pos-19,ride.player*9);burst(rear,count,.3+ride.speed/600,Math.abs(ride.player)>.9)}
- dustPool.forEach((d,i)=>{if(active&&d.life>0){d.life-=dt;d.p.addScaledVector(d.v,dt);d.v.multiplyScalar(Math.exp(-dt*1.4));d.v.y+=dt*.45}const t=Math.max(0,d.life/d.max),size=t>0?d.size*(1-t)*4+ d.size*.4:0;dummy.position.copy(d.p);dummy.scale.setScalar(size*Math.min(1,t*4));dummy.rotation.set(0,i,0);dummy.updateMatrix();dust.setMatrixAt(i,dummy.matrix);dust.setColorAt(i,new T.Color(d.grass==='mud'?(i%2?'#7b6446':'#8f7a58'):d.grass?'#929579':i%3?'#c6aa80':'#aa8b66'))});dust.instanceMatrix.needsUpdate=true;if(dust.instanceColor)dust.instanceColor.needsUpdate=true;
+function updateDust(dt){const active=ride.mode==='playing',traveled=Math.min(2,Math.abs(ride.pos-lastDustPos)/20);lastDustPos=ride.pos;if(active&&!ride.crashing&&ride.speed>18&&ride.airY<.4){dustBudget+=traveled*(1.2+ride.speed*.002)*(ride.surface==='stone'?.22:1);const count=Math.floor(dustBudget);dustBudget-=count;const rear=drivePoint(ride.pos-19,ride.player*9);if(ride.snow>.3){rear.y+=snowDepth(ride.pos);burst(rear,count*2,.45+ride.speed/500,'snow')}else burst(rear,count,.3+ride.speed/600,Math.abs(ride.player)>.9)}
+ dustPool.forEach((d,i)=>{if(active&&d.life>0){d.life-=dt;d.p.addScaledVector(d.v,dt);d.v.multiplyScalar(Math.exp(-dt*1.4));d.v.y+=dt*.45}const t=Math.max(0,d.life/d.max),size=t>0?d.size*(1-t)*4+ d.size*.4:0;dummy.position.copy(d.p);dummy.scale.setScalar(size*Math.min(1,t*4));dummy.rotation.set(0,i,0);dummy.updateMatrix();dust.setMatrixAt(i,dummy.matrix);dust.setColorAt(i,d.grass==='snow'?new T.Color(i%2?'#f5f8fb':'#dfe7ef'):new T.Color(d.grass==='mud'?(i%2?'#7b6446':'#8f7a58'):d.grass?'#929579':i%3?'#c6aa80':'#aa8b66').multiply(dustTint))});dust.instanceMatrix.needsUpdate=true;if(dust.instanceColor)dust.instanceColor.needsUpdate=true;
 }
 // Drifting petals close to the rider, with a fixed reusable buffer.
 const petalPositions=new Float32Array(180*3),petalGeo=new T.BufferGeometry();petalGeo.setAttribute('position',new T.BufferAttribute(petalPositions,3));const petals=new T.Points(petalGeo,new T.PointsMaterial({color:'#f5c5cb',size:.13,transparent:true,opacity:.8}));scene.add(petals);
+// 폭설: 카메라 둘레에서 떨어지는 눈송이 + 화면 가장자리 성에
+const FLAKES=1600,snowPos=new Float32Array(FLAKES*3),snowGeo=new T.BufferGeometry();snowGeo.setAttribute('position',new T.BufferAttribute(snowPos,3));
+const flakeTex=(()=>{const c=document.createElement('canvas');c.width=c.height=32;const x=c.getContext('2d'),g=x.createRadialGradient(16,16,0,16,16,16);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.45,'rgba(255,255,255,.85)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,32,32);return new T.CanvasTexture(c)})();
+const snowMat=new T.PointsMaterial({color:'#ffffff',map:flakeTex,size:.26,transparent:true,opacity:0,depthWrite:false,fog:false});const snowfall=new T.Points(snowGeo,snowMat);snowfall.frustumCulled=false;snowfall.visible=false;scene.add(snowfall);
+const frost=$('frost');
 // Camera-space peripheral wind streaks; the road and rider stay unobscured.
 const windData=new Float32Array(64*6),windGeo=new T.BufferGeometry();windGeo.setAttribute('position',new T.BufferAttribute(windData,3));
 const windMat=new T.LineBasicMaterial({color:'#fff4db',transparent:true,opacity:0,depthTest:false,depthWrite:false});
@@ -141,7 +160,7 @@ const sound=new RideSound();
 // Muddy creek water on the camera lens (2D overlay between the 3D view and the HUD).
 const mud=new MudScreen($('mud'));let mudT=0;let time=0,toastTime=0;
 let bestScore=0,bestTime=null;try{const saved=JSON.parse(localStorage.getItem('dentphoto-record-v1')||'{}');bestScore=Number(saved.score)||0;bestTime=Number(saved.time)||null}catch(e){}
-$('safe-route').onclick=()=>{if(ride.chooseBranch('safe'))notify('마을길 선택 · 낙석 없는 우회로')};$('cliff-route').onclick=()=>{if(ride.chooseBranch('cliff'))notify('협곡 헤어핀 선택 · 250km/h, 낙석을 조심하세요.')};
+$('safe-route').onclick=()=>{if(ride.chooseBranch('safe'))notify('마을길 선택 · 한적한 우회로')};$('cliff-route').onclick=()=>{if(ride.chooseBranch('cliff'))notify('협곡 헤어핀 선택 · 250km/h 질주!')};
 const landingRing=new T.Mesh(new T.RingGeometry(1.3,1.6,48),new T.MeshBasicMaterial({color:'#f1d886',transparent:true,opacity:.65,side:T.DoubleSide,depthWrite:false}));landingRing.rotation.x=-Math.PI/2;landingRing.visible=false;scene.add(landingRing);
 
 function notify(text){$('toast').textContent=text;toastTime=2.6;$('toast').style.opacity=1}
@@ -160,7 +179,7 @@ document.querySelectorAll('[data-key]').forEach(b=>{b.addEventListener('pointerd
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();ride.pause();keys.clear();show('3D 화면이 잠시 멈췄어요.','다시 불러오면 여행을 새로 시작할 수 있어요.','새로 불러오기');$('start').onclick=()=>location.reload()});
 const look=new T.Vector3(),cameraGoal=new T.Vector3(),projected=new T.Vector3();
-function syncCamera(snap=false,dt=.016){const p=drivePoint(ride.pos,ride.player*9);bike.position.copy(p);bike.position.y+=ride.airY;bike.rotation.y=driveHeading(ride.pos);bike.rotation.x=Math.atan((height(ride.pos+10)-height(ride.pos-10))/.999);lean.rotation.z=-ride.steer*.16;const stoneShake=ride.surface==='stone'&&ride.mode==='playing'&&ride.airY<.1?Math.min(1,ride.speed/220):0;lean.position.y=Math.sin(time*16)*ride.speed*.00005+Math.sin(time*86)*stoneShake*.055;
+function syncCamera(snap=false,dt=.016){const p=drivePoint(ride.pos,ride.player*9);bike.position.copy(p);bike.position.y+=ride.airY;bike.rotation.y=driveHeading(ride.pos)-ride.slip*.55;bike.rotation.x=Math.atan((height(ride.pos+10)-height(ride.pos-10))/.999);lean.rotation.z=-ride.steer*.16+(ride.snow>0&&ride.mode==='playing'?Math.sin(time*5.3)*.05*ride.snow*Math.min(1,ride.speed/150):0);const stoneShake=ride.surface==='stone'&&ride.mode==='playing'&&ride.airY<.1?Math.min(1,ride.speed/220):0;lean.position.y=Math.sin(time*16)*ride.speed*.00005+Math.sin(time*86)*stoneShake*.055;
  if(ride.crashing){lean.rotation.x=-ride.crashAge*3.7;lean.rotation.z=Math.sin(ride.crashAge*3)*.9;riderRig.position.set(Math.sin(ride.crashAge*4)*.6,Math.sin(Math.min(1,ride.crashAge/1.5)*Math.PI)*2.2,.6);riderRig.rotation.z=ride.crashAge*2.2;}
  else{lean.rotation.x=ride.jumping?Math.max(-.35,Math.min(.3,-ride.airV*.025)):-ride.airY*.08;riderRig.position.set(0,0,0);riderRig.rotation.set(0,0,0);}
 
@@ -201,7 +220,7 @@ if(r.crashing)hint.textContent='도로 복귀 중…';
 else if(r.jumping)hint.textContent=r.airV<0&&r.airY<4?'지금 E! · PERFECT 착지':'착지 직전 E · 타이밍 보너스';
 else if(r.drifting)hint.textContent='DRIFT '+Math.min(100,Math.round(r.driftCharge/1.1*100))+'% · 부스트 충전';
 else if(upcoming&&upcoming.start-r.pos<650)hint.textContent=(upcoming.side>0?'↱':'↰')+' 170° '+Math.max(0,Math.round((upcoming.start-r.pos)/5))+'m · 자동 드리프트';
-else if(r.pos>ADVENTURE.fork.start&&r.pos<ADVENTURE.fork.end)hint.textContent=r.branchChoice==='cliff'?'협곡 헤어핀 · 250km/h · ↓ 제동':'마을 우회로 · 안전 구간';else if(r.pos>MT.start-800&&r.pos<MT.end)hint.textContent=r.pos<MT.peak?'⛰ 목표봉 오르막 · 정상까지 '+Math.round((MT.peak-r.pos)/5)+' m':'⬇ 목표봉 내리막 · 속도 주의';else if(r.pos>CK.start-500&&r.pos<CK.end){const f=CK.fords.find(f=>f>r.pos);hint.textContent=f&&f-r.pos<900?'〰 '+Math.round((f-r.pos)/5)+' m 앞 개울 건너기 · 흙탕물!':'개울가 · 흙탕물이 튀어요'}else hint.textContent='';
+else if(r.pos>ADVENTURE.fork.start&&r.pos<ADVENTURE.fork.end)hint.textContent=r.branchChoice==='cliff'?'협곡 헤어핀 · 250km/h · ↓ 제동':'마을 우회로 · 안전 구간';else if(r.pos>MT.start-800&&r.pos<MT.end)hint.textContent=r.pos<MT.peak?'⛰ 목표봉 오르막 · 정상까지 '+Math.round((MT.peak-r.pos)/5)+' m':'⬇ 목표봉 내리막 · 속도 주의';else if(r.snow>.05)hint.textContent='❄ 폭설 · 바퀴가 눈에 잠겼어요 — 미끄러우니 핸들을 일찍 살짝';else if(r.pos>CK.start-500&&r.pos<CK.end){const f=CK.fords.find(f=>f>r.pos);hint.textContent=f&&f-r.pos<900?'〰 '+Math.round((f-r.pos)/5)+' m 앞 개울 건너기 · 흙탕물!':'개울가 · 흙탕물이 튀어요'}else hint.textContent='';
 hint.hidden=r.mode!=='playing'||!hint.textContent;
 }
 let last=performance.now(),frame=0;syncCamera(true);hud();
@@ -220,6 +239,8 @@ if(event.type==='rockland'){burst(drivePoint(event.z,event.x*9),60,2);if(Math.ab
 if(event.type==='jump'){soundTone(440);notify('언덕 점프! 오른쪽에서 비행을 따라갑니다.')}
 if(event.type==='jumpLand'){sound.impact(.7);burst(drivePoint(ride.pos,ride.player*9),60,1.7);soundTone(95);notify('쿵! 착지 완료 — 다시 전속력!')}
 if(event.type==='stone')notify('돌 포장길 — 덜덜덜! 핸들을 잡으세요.');
+if(event.type==='snowIn'){sound.impact(.4);burst(drivePoint(ride.pos,ride.player*9),50,1.4,'snow');notify('❄ 갑자기 폭설! 바퀴가 눈에 반쯤 잠겨요 — 느리고 미끄러워요.')}
+if(event.type==='snowOut')notify('눈길을 빠져나왔어요 — 다시 속도를 내요!');
 if(event.type==='land'){sound.impact(.8);burst(drivePoint(ride.pos,0),55,1.8);soundTone(90);notify('쿵! 도로 복귀 — 다시 가속하세요.');}
 if(event.type==='landmark')notify('⌖ '+event.name+'에 도착했어요.');if(event.type==='finish')finish()}
 if(toastTime>0){toastTime-=dt;if(toastTime<=0)$('toast').style.opacity=0}syncCamera(false,dt);
@@ -233,6 +254,9 @@ for(const {item,root,baseY} of itemMeshes){root.position.copy(drivePoint(item.z,
  root.rotation.z=age!==undefined&&age<.9?Math.sin(age*7)*.16:0;
  root.visible=root.visible&&age!==undefined;root.userData.warning.position.y=.04-drop;root.userData.warning.visible=age!==undefined&&age<1.3;
  }}
+{const sa=ADVENTURE.snowAmt(ride.pos),fall=sa>.01;snowfall.visible=fall;petals.visible=!fall;frost.style.opacity=(sa*.9).toFixed(3);if(fall){snowMat.opacity=.95*sa;const c=camera.position,f=new T.Vector3();camera.getWorldDirection(f);
+  for(let i=0;i<FLAKES;i++){const h=((i*.618-time*(2.6+(i%5)*.35))%14+14)%14,x=Math.sin(i*12.9898)*.5,z=Math.cos(i*78.233)*.5;
+   snowPos[i*3]=c.x+f.x*14+x*44+Math.sin(time*.8+i)*.6-h*.55;snowPos[i*3+1]=c.y-6+h*1.15;snowPos[i*3+2]=c.z+f.z*14+z*44+Math.cos(time*.6+i*.7)*.6}snowGeo.attributes.position.needsUpdate=true}}
 for(let i=0;i<180;i++){petalPositions[i*3]=bike.position.x+Math.sin(i*54.1+time*.15)*25;petalPositions[i*3+1]=bike.position.y+((i*.73-time*.23)%12+12)%12;petalPositions[i*3+2]=bike.position.z+Math.cos(i*3.1+time*.03)*35}petalGeo.attributes.position.needsUpdate=true;
 camera.updateMatrixWorld();for(const l of labels){const dz=l.s-ride.pos;projected.copy(l.position).project(camera);const visible=dz>60&&dz<1500&&Math.abs(projected.x)<.85&&projected.y>-.65&&projected.y<.6&&projected.z<1;l.e.style.display=visible?'block':'none';if(visible){l.e.style.left=(projected.x*.5+.5)*innerWidth+'px';l.e.style.top=(-projected.y*.5+.5)*innerHeight+'px';l.e.textContent=(ride.visited.has(l.index)?'✓ ':'')+landmarks[l.index].name}}
 sound.update(ride,time);
@@ -245,5 +269,5 @@ const biome=ADVENTURE.biome(ride.pos,ride.branchChoice);scene.background.lerp(ne
 landingRing.visible=ride.jumping;
 if(ride.jumping){let t=0,s=ride.pos,y=ride.flightY,v=ride.airV;while(t<4){t+=.04;s+=ride.speed*1.35*.04*ADVENTURE.travelScale(s,ride.branchChoice);v-=16*.04;y+=v*.04;if(y<=height(s))break}landingRing.position.copy(drivePoint(s,ride.player*9));landingRing.position.y+=.05;landingRing.material.color.set(ride.airV<0&&ride.airY<4?'#a9e6a0':'#f1d886');}
 if(frame++%4===0)hud();renderer.render(scene,camera);requestAnimationFrame(tick)}requestAnimationFrame(tick);
-window.rideDebug={ride,start,keys,camera,renderer,canyon,scene,T,drivePoint,mud,snap:()=>syncCamera(true)};window.getGameState=()=>({mode:ride.mode,pos:ride.pos,speed:ride.speed,letters:ride.letters,energy:ride.energy,landmarksVisited:ride.visited.size,airHeight:ride.airY,crashing:ride.crashing,jumping:ride.jumping,surface:ride.surface,score:ride.score,combo:ride.combo,drifting:ride.drifting,branch:ride.branchChoice,renderer:'Three.js WebGL',drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles});
+window.rideDebug={ride,start,keys,camera,renderer,canyon,scene,T,drivePoint,mud,snowfall,snap:()=>syncCamera(true)};window.getGameState=()=>({mode:ride.mode,pos:ride.pos,speed:ride.speed,letters:ride.letters,energy:ride.energy,landmarksVisited:ride.visited.size,airHeight:ride.airY,crashing:ride.crashing,jumping:ride.jumping,surface:ride.surface,score:ride.score,combo:ride.combo,drifting:ride.drifting,branch:ride.branchChoice,renderer:'Three.js WebGL',drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles});
 })();
