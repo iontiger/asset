@@ -102,3 +102,16 @@
 .ghost-gap.ahead{background:#2f5a3dcc;color:#f1ffe6;box-shadow:0 0 14px #8fe07a55}
 .ghost-gap[hidden]{display:none}
 @media(max-width:800px){.ghost-gap{top:78px;font-size:11px}}
+/* 완주 카드 */
+.finish-card{margin:0 auto 6px}.finish-card[hidden]{display:none}
+.finish-card img{display:block;width:240px;max-width:100%;margin:0 auto;aspect-ratio:4/5;border-radius:14px;box-shadow:0 18px 44px #34423738,0 2px 6px #3442371f;transform:rotate(-1.6deg);background:#fffbed}
+.finish-card figcaption{display:flex;gap:8px;justify-content:center;margin-top:16px}
+.card-save,.card-shuffle{white-space:nowrap;border-radius:20px;padding:9px 16px;font:600 12px 'Noto Sans KR',sans-serif;cursor:pointer}
+.card-save{background:#c9473b;color:#fffbe9;border:0;box-shadow:0 6px 16px #c9473b44}.card-save:hover{background:#b23d32}
+.card-shuffle{background:transparent;color:#46634c;border:1px solid #46634c66}.card-shuffle:hover{background:#46634c12}
+.overlay.finished .howto{display:none}
+.overlay.finished .welcome{width:min(860px,94vw);display:grid;grid-template-columns:300px 1fr;column-gap:40px;align-items:center;text-align:left}
+.overlay.finished .finish-card{grid-column:1;grid-row:1/span 5;margin:0}.overlay.finished .finish-card img{width:100%}
+.overlay.finished .welcome>:not(.finish-card){grid-column:2}
+.overlay.finished .primary,.overlay.finished .welcome .ghost{margin-left:0}
+@media(max-width:800px){.overlay.finished .welcome{grid-template-columns:1fr;text-align:center;width:min(420px,92vw)}.overlay.finished .finish-card{grid-row:auto;margin:0 auto 14px}.overlay.finished .finish-card img{width:min(210px,56vw)}.overlay.finished .welcome>:not(.finish-card){grid-column:1}.overlay.finished .welcome h2{margin:12px 0 6px}.overlay.finished .primary,.overlay.finished .welcome .ghost{margin-left:auto}}
