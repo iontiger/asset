@@ -1,6 +1,6 @@
 /* ═══════ 우편배달 — '바람을 따라' (DentPhoto Village Rides) ═══════
    마을 북동쪽 'DentPhoto 우체국' 문 앞에 가면 전용 게임 화면이 열린다. 게임은 따로 된 페이지 3d/ride/
-   (Three.js 오토바이 주행 · 21.6km · 편지 12통 · 갈림길은 협곡 헤어핀이 기본 · 목표봉 · 개울)를 전체 화면 iframe 으로 띄운다.
+   (Three.js 오토바이 주행 · 21.6km · 편지 80통 · 갈림길은 협곡 헤어핀이 기본 · 목표봉 · 개울)를 전체 화면 iframe 으로 띄운다.
    - 게임 중에는 마을 renderScene 을 건너뛰고(그리기 쉼), 키 입력은 iframe 이 받는다.
    - 게임 쪽에서 postMessage {dpRide:'close'|'finish'} 로 알려 온다. 기록은 같은 출처 localStorage 'dentphoto-record-v1'.
    - 시험용 window.dpPost (open · close · frame · DOOR) */
@@ -99,7 +99,7 @@ function close(){if(!PG.on)return;PG.on=false;try{PG.frame.src='about:blank'}cat
   try{$('#world').focus()}catch{}rowHud();if(PG.cleared){PG.cleared=false;try{celebrate()}catch{}toast('✉ 배달 완료! 마을에 편지가 도착했어요','gem')}}
 addEventListener('message',e=>{const d=e.data;if(!PG.on||!PG.frame||e.source!==PG.frame.contentWindow||!d||typeof d!=='object')return;
   if(d.dpRide==='close')close();
-  else if(d.dpRide==='finish'&&(d.letters|0)>=12)PG.cleared=true});
+  else if(d.dpRide==='finish'&&(d.letters|0)>=80)PG.cleared=true});
 const _ib=inputBusy;inputBusy=function(){return _ib()||PG.on};
 // 게임 화면이 덮고 있는 동안 마을은 그리지 않는다
 const _rs=renderScene;renderScene=function(){if(PG.on)return;return _rs.apply(this,arguments)};

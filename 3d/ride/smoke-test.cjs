@@ -13,7 +13,7 @@ keys.add('w');r.player=1.05;r.speed=180;step();assert(r.events.some(e=>e.type===
 assert.equal(LANDMARKS.length,7);assert(LANDMARKS.every(l=>Math.abs(l.x)>1));
 // Ride the whole course with deterministic lane targeting, proving collectibles remain reachable.
 r.start();r.items=r.items.filter(o=>o.type==='letter');for(let i=0;i<30000&&r.mode==='playing';i++){const next=r.items.filter(o=>o.type==='letter'&&o.z>=r.pos).sort((a,b)=>a.z-b.z)[0];r.player=next?.x||0;step()}
-assert.equal(r.mode,'finished');assert(r.letters>=12);assert.equal(r.visited.size,7);
+assert.equal(r.mode,'finished');assert(r.letters>=80);assert.equal(r.visited.size,7);
 console.log('PASS: acceleration, steering, boost, pause/resume, collection, collision, landmarks, full-course completion, restart, off-road drag');
 
 const vm=require('node:vm'),fs=require('node:fs'),THREE=require('./vendor/three.min.js');
