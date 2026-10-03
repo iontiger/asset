@@ -157,6 +157,16 @@ const FLAKES=1600,snowPos=new Float32Array(FLAKES*3),snowGeo=new T.BufferGeometr
 const flakeTex=(()=>{const c=document.createElement('canvas');c.width=c.height=32;const x=c.getContext('2d'),g=x.createRadialGradient(16,16,0,16,16,16);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.45,'rgba(255,255,255,.85)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,32,32);return new T.CanvasTexture(c)})();
 const snowMat=new T.PointsMaterial({color:'#ffffff',map:flakeTex,size:.26,transparent:true,opacity:0,depthWrite:false,fog:false});const snowfall=new T.Points(snowGeo,snowMat);snowfall.frustumCulled=false;snowfall.visible=false;scene.add(snowfall);
 const frost=$('frost');
+// 뉴욕 시내의 24시간 · 사계절 (CITY_ENV): 폭우 빗줄기 · 번개 · 별 · 달. 시내 길 진행도에서 나온 값으로만 움직인다.
+const DROPS=1300,rainPos=new Float32Array(DROPS*6),rainGeo=new T.BufferGeometry();rainGeo.setAttribute('position',new T.BufferAttribute(rainPos,3));
+const rainMat=new T.LineBasicMaterial({color:'#c3d0dd',transparent:true,opacity:0,depthWrite:false});const rainfall=new T.LineSegments(rainGeo,rainMat);rainfall.frustumCulled=false;rainfall.visible=false;scene.add(rainfall);
+const STARN=650,starPos=new Float32Array(STARN*3);for(let i=0;i<STARN;i++){const a=Math.sin(i*91.7)*1e4%1*Math.PI*2,y=.1+Math.abs(Math.sin(i*12.9898)*43758.5453%1)*.9,r=Math.sqrt(1-y*y);starPos.set([Math.cos(a)*r,y,Math.sin(a)*r],i*3)}
+const starGeo=new T.BufferGeometry();starGeo.setAttribute('position',new T.BufferAttribute(starPos,3));const stars=new T.Points(starGeo,new T.PointsMaterial({color:'#ffffff',size:1.7,sizeAttenuation:false,transparent:true,opacity:0,depthWrite:false,fog:false}));stars.scale.setScalar(560);stars.frustumCulled=false;stars.visible=false;scene.add(stars);
+const moon=new T.Mesh(new T.SphereGeometry(11,24,16),new T.MeshBasicMaterial({color:'#f4f0da',transparent:true,opacity:0,fog:false,depthWrite:false}));moon.visible=false;scene.add(moon);
+const bolt=$('lightning');let skySnap=false,cenv=null,boltT=0,boltWait=2.5;const cityNoted=new Set();
+function cityEnvNow(){if(ride.branchChoice!=='safe'||ride.pos<F.start-50||ride.pos>F.end+50)return null;return CITY_ENV.env(Math.max(0,Math.min(1,CITY.uOf(ride.pos)/CITY.Lc)))}
+const CITY_NOTES=[['spring',e=>e.p>.035,'🌸 봄 · 벚꽃 날리는 한낮의 뉴욕'],['summer',e=>e.season==='summer','☀️ 여름 · 해가 기울어요'],['rain',e=>e.rain>.35,'⛈ 여름 폭우! 번개가 쳐요'],['night',e=>e.dark>.6&&e.rain<.2,'🌙 한밤의 뉴욕 · 창마다 불이 켜졌어요'],
+ ['autumn',e=>e.season==='autumn','🍂 가을 · 낙엽 지는 새벽 거리'],['dawn',e=>e.p>.6&&e.dusk>.5,'🌅 해가 떠요'],['winter',e=>e.season==='winter'&&e.snow<.2,'❄️ 겨울 아침'],['snow',e=>e.snow>.35,'🌨 폭설! 앞이 잘 안 보여요'],['noon',e=>e.p>.97,'☀️ 다시 한낮 12:00 · 원래 길로 나가요']];
 // 편지 수집 '띠링~': 편지가 빙글 돌며 떠올라 사라지고, 금빛 반짝이가 터지고, 화면에서 봉투가 편지함으로 날아간다
 const gotAt=new Map(),SPARK=160,sparkPos=new Float32Array(SPARK*3),sparkVel=new Float32Array(SPARK*3),sparkLife=new Float32Array(SPARK),sparkGeo=new T.BufferGeometry();sparkGeo.setAttribute('position',new T.BufferAttribute(sparkPos,3));
 const sparkSize=new Float32Array(SPARK);sparkGeo.setAttribute('size',new T.BufferAttribute(sparkSize,1));let sparkCursor=0;
@@ -189,7 +199,7 @@ function penaltyFX(e){const el=$('penalty');el.innerHTML=`<b>${e.points}</b><spa
  const f=$('penalty-flash');f.className='penalty-flash '+e.kind;void f.offsetWidth;f.classList.add('show');sound.impact(.45);soundTone(196);
  if(e.kind==='speed'){const pu=CITY.uOf(ride.pos);let best=0,bd=1e9;CITY.cameras.forEach((c,i)=>{const d=Math.abs(c.u-pu);if(d<bd){bd=d;best=i}});cityScene.flash(best)}}
 function show(title,description,button){$('overlay').classList.remove('hidden','finished');$('finish-card').hidden=true;document.querySelector('.welcome h2').innerHTML=title;document.querySelector('.welcome p').innerHTML=description;$('start').innerHTML=button+' <span>↗</span>'}
-function start(){const fresh=ride.mode!=='paused';ride.start();sound.musicLoad();if(fresh){sound.musicReset();ghostReset();nightReset();gotAt.clear();sparkLife.fill(0);mud.clear();mudT=0;dustPool.forEach(d=>d.life=0);dustBudget=0;lastDustPos=0;warnedTurns.clear();turnBlend=0;jumpCameraBlend=0;lastTrack=-100;trackDummy.scale.setScalar(0);trackDummy.updateMatrix();for(let i=0;i<900;i++)tracks.setMatrixAt(i,trackDummy.matrix);tracks.instanceMatrix.needsUpdate=true;}keys.clear();$('overlay').classList.add('hidden');$('pause').textContent='Ⅱ';notify(touchMode?'자동으로 출발! 화면 왼쪽 · 오른쪽을 눌러 방향을 바꿔요.':'↑ 또는 W로 출발! 3D 마을에서 편지 80통을 모아보세요.');syncCamera(true)}
+function start(){const fresh=ride.mode!=='paused';ride.start();sound.musicLoad();if(fresh){sound.musicReset();ghostReset();nightReset();cityNoted.clear();boltT=0;gotAt.clear();sparkLife.fill(0);mud.clear();mudT=0;dustPool.forEach(d=>d.life=0);dustBudget=0;lastDustPos=0;warnedTurns.clear();turnBlend=0;jumpCameraBlend=0;lastTrack=-100;trackDummy.scale.setScalar(0);trackDummy.updateMatrix();for(let i=0;i<900;i++)tracks.setMatrixAt(i,trackDummy.matrix);tracks.instanceMatrix.needsUpdate=true;}keys.clear();$('overlay').classList.add('hidden');$('pause').textContent='Ⅱ';notify(touchMode?'자동으로 출발! 화면 왼쪽 · 오른쪽을 눌러 방향을 바꿔요.':'↑ 또는 W로 출발! 3D 마을에서 편지 80통을 모아보세요.');syncCamera(true)}
 function pause(){if(ride.mode==='playing'){ride.pause();keys.clear();show('잠시, 쉬어가요.','마을의 바람은 기다려 줄 거예요.','이어서 달리기');$('pause').textContent='▶';sound.silence()}else if(ride.mode==='paused')start()}
 function finish(){ghostSave();keys.clear();sound.silence();if(embedded)try{parent.postMessage({dpRide:'finish',letters:ride.letters,score:ride.score,time:ride.elapsed,branch:ride.branchChoice},'*')}catch(e){}const isRecord=ride.score>bestScore;bestScore=Math.max(bestScore,ride.score);bestTime=bestTime===null?ride.elapsed:Math.min(bestTime,ride.elapsed);try{localStorage.setItem('dentphoto-record-v1',JSON.stringify({score:bestScore,time:bestTime}))}catch(e){}
 show(isRecord?'새로운 최고 기록!':'마을에 도착했어요.',`${ride.score.toLocaleString()}점 · 최고 ${bestScore.toLocaleString()}점<br>편지 ${ride.letters}통 · 아슬아슬 회피 ${ride.nearMisses}회<br>${Math.floor(ride.elapsed/60)}분 ${Math.floor(ride.elapsed%60)}초 · 최단 ${Math.floor(bestTime/60)}분 ${Math.floor(bestTime%60)}초<br>${ride.branchChoice==='cliff'?'협곡 헤어핀':'뉴욕 시내'}로 달렸어요.`,'다시 여행하기');finishCard(isRecord)}
@@ -256,7 +266,8 @@ function syncCamera(snap=false,dt=.016){const p=drivePoint(ride.pos,ride.player*
  const landingAhead=drivePoint(ride.pos+Math.max(80,ride.speed*.32),ride.player*9*.4);const sideTarget=p.clone().lerp(landingAhead,.22);sideTarget.y=height(ride.pos)+ride.airY*.65+1.4;target.lerp(sideTarget,jumpCameraBlend);
  const k=snap?1:1-Math.exp(-dt*7);camera.position.lerp(cameraGoal,k);look.lerp(target,k);camera.lookAt(look);if(stoneShake){camera.position.y+=Math.sin(time*92)*stoneShake*.035;camera.rotateZ(Math.sin(time*74)*stoneShake*.004);}if(ride.mode==='playing'&&ride.shake>0){camera.position.x+=Math.sin(time*83)*ride.shake*.17;camera.position.y+=Math.sin(time*97)*ride.shake*.12;camera.rotateZ(Math.sin(time*61)*ride.shake*.014);}
  const fov=57+velocity*17+(ride.boost&&ride.mode==='playing'?5:0);camera.fov+=(fov-camera.fov)*k;camera.updateProjectionMatrix();
- sun.position.copy(p).add(new T.Vector3(-22,45,25).multiplyScalar(2.4));sun.target.position.copy(p);sun.target.updateMatrixWorld();
+ if(cenv){let el=cenv.elev,a=cenv.az;if(el<0){el=-el;a+=Math.PI}el=Math.max(el,.2);const d=new T.Vector3(Math.cos(a)*Math.cos(el),Math.sin(el),Math.sin(a)*Math.cos(el));sun.position.copy(p).addScaledVector(d,129);
+  if(cenv.elev<0){moon.position.copy(camera.position).addScaledVector(d,420)}}else sun.position.copy(p).add(new T.Vector3(-22,45,25).multiplyScalar(2.4));sun.target.position.copy(p);sun.target.updateMatrixWorld();
 }
 const mapPoints=Array.from({length:Math.floor(ride.length/100)+1},(_,i)=>ROAD_PATH.at(i*100));const mapBounds={minX:Math.min(...mapPoints.map(p=>p.x)),maxX:Math.max(...mapPoints.map(p=>p.x)),minZ:Math.min(...mapPoints.map(p=>p.z)),maxZ:Math.max(...mapPoints.map(p=>p.z))};
 // 왼쪽 위 코스 카드의 진행 막대: 출발 → 우체국 가로선 위에 명소 점과 지금 위치
@@ -273,7 +284,7 @@ function cityHint(r){const pu=CITY.uOf(r.pos),nl=CITY.nextLight(r),m=d=>Math.max
  const mk=CITY.marks.find(k=>k.ub>pu);if(mk&&mk.ua-pu<80)return (mk.side<0?'↰ 좌회전':'↱ 우회전')+' '+m(Math.max(0,mk.ua-pu))+' · '+mk.to;
  if(pu<0)return '🗽 뉴욕 시내까지 '+m(-pu)+' · 입구 신호에서 멈춰요';
  return '🗽 '+(CITY.segs[CITY.segOf(pu)].name)+' · 제한속도 '+CITY.LIMIT+' km/h';}
-function hud(){const r=ride;document.body.classList.toggle('is-drifting',r.drifting);document.body.classList.toggle('is-boosting',r.mode==='playing'&&keys.has(' '));$('speed').textContent=String(Math.round(r.speed/2)).padStart(2,'0');$('needle').style.left=Math.min(100,r.speed/5.2)+'%';$('letters').textContent=r.letters;$('letters').classList.toggle('goal',r.letters>=80);$('distance').textContent=(r.pos/5000).toFixed(2)+' / '+(r.length/5000).toFixed(2)+' km';$('area').textContent=ADVENTURE.biome(r.pos,r.branchChoice).name;const next=landmarks.find(l=>l.z>r.pos);$('next-landmark').textContent=next?.name||'바닷바람 우체국';$('landmark-progress').textContent=`${r.visited.size} / 7곳 방문 · ${Math.round(((next?.z||r.length)-r.pos)/5)} m 앞`;drawProgress(r);
+function hud(){const r=ride;{const ck=$('city-clock');if(cenv&&r.mode!=='finished'){ck.hidden=false;ck.textContent=`${cenv.dark>.5?'🌙':cenv.dusk>.4?'🌅':cenv.icon} ${CITY_ENV.clock(cenv.hour)} · ${cenv.seasonName}${cenv.rain>.3?' · 폭우':cenv.snow>.3?' · 폭설':''}`}else ck.hidden=true}document.body.classList.toggle('is-drifting',r.drifting);document.body.classList.toggle('is-boosting',r.mode==='playing'&&keys.has(' '));$('speed').textContent=String(Math.round(r.speed/2)).padStart(2,'0');$('needle').style.left=Math.min(100,r.speed/5.2)+'%';$('letters').textContent=r.letters;$('letters').classList.toggle('goal',r.letters>=80);$('distance').textContent=(r.pos/5000).toFixed(2)+' / '+(r.length/5000).toFixed(2)+' km';$('area').textContent=ADVENTURE.biome(r.pos,r.branchChoice).name;const next=landmarks.find(l=>l.z>r.pos);$('next-landmark').textContent=next?.name||'바닷바람 우체국';$('landmark-progress').textContent=`${r.visited.size} / 7곳 방문 · ${Math.round(((next?.z||r.length)-r.pos)/5)} m 앞`;drawProgress(r);
 updateScore(r);$('combo').textContent=r.combo?'COMBO ×'+r.combo+' · '+r.comboTime.toFixed(1)+'s':'CLEAN RIDE';$('best-score').textContent='BEST '+bestScore.toLocaleString();
 const forkActive=r.mode==='playing'&&r.pos>=ADVENTURE.fork.chooseFrom&&r.pos<ADVENTURE.fork.start;$('fork-choice').hidden=!forkActive;
 $('safe-route').classList.toggle('selected',r.branchChoice==='safe');$('cliff-route').classList.toggle('selected',r.branchChoice==='cliff');
@@ -315,7 +326,7 @@ if(event.type==='cityOut')notify('시내를 빠져나왔어요 — 다시 바닷
 if(event.type==='landmark')notify('⌖ '+event.name+'에 도착했어요.');if(event.type==='finish')finish()}
 if(toastTime>0){toastTime-=dt;if(toastTime<=0)$('toast').style.opacity=0}syncCamera(false,dt);
 wheels.forEach(w=>w.rotation.x-=ride.mode==='playing'?ride.speed*1.35/20*dt/.5:0);bike.visible=true;updateDust(dt);updateGroundFX(dt);updateSparkles(dt);mc.update(time,dt);
-{const safe=ride.branchChoice==='safe';cityScene.group.visible=safe&&ride.pos>F.start-6000&&ride.pos<F.end+5000;canyonGroup.visible=!(safe&&ride.pos>F.start-3000&&ride.pos<F.end+3000);if(cityScene.group.visible)cityScene.update(time,dt,ride)}
+{const safe=ride.branchChoice==='safe';cityScene.group.visible=safe&&ride.pos>F.start-6000&&ride.pos<F.end+5000;canyonGroup.visible=!(safe&&ride.pos>F.start-3000&&ride.pos<F.end+3000);cenv=cityEnvNow();if(cityScene.group.visible)cityScene.update(time,dt,ride,cenv,bike.position)}
 // Riding beside the creek throws muddy water onto the lens — more when the bike runs close to the water.
 {const cx=ride.mode==='playing'&&ride.pos>CK.start-300&&ride.pos<CK.end+300?ADVENTURE.creekX(ride.pos):null;if(cx!==null&&ride.speed>60&&!ride.jumping&&!ride.crashing){const px=ride.player*9,near=Math.max(0,Math.min(1,1-(Math.abs(px-cx)-3)/10));mudT-=dt*(.35+near*1.5)*Math.min(1,ride.speed/300);if(mudT<=0){mudT=.7+Math.random()*.6;const side=Math.sign(cx-px)||1;mud.splash(.05+near*.12,side*.8);burst(drivePoint(ride.pos-6,px+side*2),8,.9,'mud')}}}
 if(ride.mode==='playing'||ride.mode==='finished')mud.update(dt);mud.draw();
@@ -327,9 +338,19 @@ for(const {item,root,baseY} of itemMeshes){root.position.copy(drivePoint(item.z,
  root.rotation.z=age!==undefined&&age<.9?Math.sin(age*7)*.16:0;
  root.visible=root.visible&&age!==undefined;root.userData.warning.position.y=.04-drop;root.userData.warning.visible=age!==undefined&&age<1.3;
  }}
-{const sa=ADVENTURE.snowAmt(ride.pos),fall=sa>.01;snowfall.visible=fall;petals.visible=!fall&&ADVENTURE.nightAmt(ride.pos)<.5;frost.style.opacity=(sa*.9).toFixed(3);if(fall){snowMat.opacity=.95*sa;const c=camera.position,f=new T.Vector3();camera.getWorldDirection(f);
+{const sa=Math.max(ADVENTURE.snowAmt(ride.pos),cenv?cenv.snow:0),fall=sa>.01;snowfall.visible=fall;
+ if(cenv){const leaf=cenv.leaves>cenv.petals;petals.visible=!fall&&cenv.rain<.1&&Math.max(cenv.petals,cenv.leaves)>.02;petals.material.color.set(leaf?'#d8742c':'#f5c5cb');petals.material.size=leaf?.24:.13;petals.material.opacity=.85*Math.max(cenv.petals,cenv.leaves)}
+ else{petals.visible=!fall&&ADVENTURE.nightAmt(ride.pos)<.5;petals.material.size=.13;petals.material.opacity=.8;petals.material.color.set('#f5c5cb')}frost.style.opacity=(sa*.9).toFixed(3);if(fall){snowMat.opacity=.95*sa;const c=camera.position,f=new T.Vector3();camera.getWorldDirection(f);
   for(let i=0;i<FLAKES;i++){const h=((i*.618-time*(2.6+(i%5)*.35))%14+14)%14,x=Math.sin(i*12.9898)*.5,z=Math.cos(i*78.233)*.5;
    snowPos[i*3]=c.x+f.x*14+x*44+Math.sin(time*.8+i)*.6-h*.55;snowPos[i*3+1]=c.y-6+h*1.15;snowPos[i*3+2]=c.z+f.z*14+z*44+Math.cos(time*.6+i*.7)*.6}snowGeo.attributes.position.needsUpdate=true}}
+{const rn=cenv?cenv.rain:0;rainfall.visible=rn>.01;sound.rain&&sound.rain(ride.mode==='playing'?rn:0);
+ if(rainfall.visible){rainMat.opacity=.5*rn;const c=camera.position,f=new T.Vector3();camera.getWorldDirection(f);
+  for(let i=0;i<DROPS;i++){const h=((i*.618-time*(24+(i%5)*3))%20+20)%20,x=c.x+f.x*12+Math.sin(i*12.9898)*26,z=c.z+f.z*12+Math.cos(i*78.233)*26,y=c.y-7+h,k=i*6;
+   rainPos[k]=x;rainPos[k+1]=y;rainPos[k+2]=z;rainPos[k+3]=x-.12;rainPos[k+4]=y-1.25;rainPos[k+5]=z+.05}rainGeo.attributes.position.needsUpdate=true}
+ if(rn>.6&&ride.mode==='playing'){boltWait-=dt;if(boltWait<=0){boltT=1;boltWait=2.6+Math.random()*4.5;setTimeout(()=>sound.thunder&&sound.thunder(),300+Math.random()*900)}}
+ boltT=Math.max(0,boltT-dt*3.2);bolt.style.opacity=(boltT*(.55+.45*Math.sin(time*70))*.75).toFixed(3);
+ const sv=cenv?cenv.stars:0;stars.visible=moon.visible=sv>.01;if(sv>.01){stars.position.copy(camera.position);stars.material.opacity=sv*.9;moon.material.opacity=sv}
+ if(cenv&&ride.mode==='playing')for(const [k,ok,msg] of CITY_NOTES)if(!cityNoted.has(k)&&ok(cenv)){cityNoted.add(k);notify(msg);break}}
 for(let i=0;i<180;i++){petalPositions[i*3]=bike.position.x+Math.sin(i*54.1+time*.15)*25;petalPositions[i*3+1]=bike.position.y+((i*.73-time*.23)%12+12)%12;petalPositions[i*3+2]=bike.position.z+Math.cos(i*3.1+time*.03)*35}petalGeo.attributes.position.needsUpdate=true;
 camera.updateMatrixWorld();for(const l of labels){const dz=l.s-ride.pos;projected.copy(l.position).project(camera);const visible=dz>60&&dz<1500&&Math.abs(projected.x)<.85&&projected.y>-.65&&projected.y<.6&&projected.z<1;l.e.style.display=visible?'block':'none';if(visible){l.e.style.left=(projected.x*.5+.5)*innerWidth+'px';l.e.style.top=(-projected.y*.5+.5)*innerHeight+'px';l.e.textContent=(ride.visited.has(l.index)?'✓ ':'')+landmarks[l.index].name}}
 sound.update(ride,time);sound.musicSync(ride);
@@ -338,7 +359,7 @@ windMat.opacity=rush*.32;wind.visible=rush>.01;windTravel+=ride.mode==='playing'
 for(let i=0;i<64;i++){const side=i%2?1:-1,z=-3-((i*1.73-windTravel)%27+27)%27,x=side*(2.8+(i%7)*.6),y=Math.sin(i*7.13)*7;
  const at=i*6;windData[at]=x;windData[at+1]=y;windData[at+2]=z;windData[at+3]=x;windData[at+4]=y;windData[at+5]=z+(.5+rush*2.8);}
 windGeo.attributes.position.needsUpdate=true;
-const biome=ADVENTURE.biome(ride.pos,ride.branchChoice);scene.background.lerp(new T.Color(biome.sky),1-Math.exp(-dt*1.5));scene.fog.color.lerp(new T.Color(biome.fog),1-Math.exp(-dt*1.5));scene.fog.near+=((biome.fogNear||65)-scene.fog.near)*(1-Math.exp(-dt*1.5));scene.fog.far+=((biome.fogFar||230)-scene.fog.far)*(1-Math.exp(-dt*1.5));
+const biome=cenv?{sky:cenv.sky,fog:cenv.fog,fogNear:cenv.fogNear,fogFar:cenv.fogFar}:ADVENTURE.biome(ride.pos,ride.branchChoice),skyK=skySnap?1:1-Math.exp(-dt*(cenv?3:1.5));skySnap=false;scene.background.lerp(new T.Color(biome.sky),skyK);scene.fog.color.lerp(new T.Color(biome.fog),skyK);scene.fog.near+=((biome.fogNear||65)-scene.fog.near)*skyK;scene.fog.far+=((biome.fogFar||230)-scene.fog.far)*skyK;
 landingRing.visible=ride.jumping;
 if(ride.jumping){let t=0,s=ride.pos,y=ride.flightY,v=ride.airV;while(t<4){t+=.04;s+=ride.speed*1.35*.04*ADVENTURE.travelScale(s,ride.branchChoice);v-=16*.04;y+=v*.04;if(y<=height(s))break}landingRing.position.copy(drivePoint(s,ride.player*9));landingRing.position.y+=.05;landingRing.material.color.set(ride.airV<0&&ride.airY<4?'#a9e6a0':'#f1d886');}
 updateGhost();updateNight(dt);if(frame++%4===0)hud();renderer.render(scene,camera);requestAnimationFrame(tick)}
@@ -390,17 +411,18 @@ const lampLights=[0,1,2].map(()=>{const l=new T.PointLight('#ffcf80',0,30,1.4);s
 const FF=70,ffSeed=Array.from({length:FF},(_,i)=>[Math.sin(i*12.9898)*.5+.5,Math.sin(i*78.233)*.5+.5,Math.sin(i*37.719)*.5+.5]);
 const ffGroups=[0,1].map(g=>{const geo=new T.BufferGeometry();geo.setAttribute('position',new T.BufferAttribute(new Float32Array(FF/2*3),3));const pts=new T.Points(geo,new T.PointsMaterial({map:flakeTex,color:g?'#e4ff8a':'#b6ff6e',size:.55,transparent:true,opacity:0,depthWrite:false,blending:T.AdditiveBlending}));pts.frustumCulled=false;scene.add(pts);return pts});
 let nightNoted=false;function nightReset(){nightNoted=false}
-function updateNight(dt){const n=ADVENTURE.nightAmt(ride.pos);
+function updateNight(dt){const n=Math.max(ADVENTURE.nightAmt(ride.pos),cenv?cenv.dark:0);
  hemi.intensity=2.3+(.55-2.3)*n;hemi.color.copy(nightCol.hs).lerp(nightCol.ns,n);hemi.groundColor.copy(nightCol.hg).lerp(nightCol.ng,n);
  sun.intensity=3.2+(.45-3.2)*n;sun.color.copy(nightCol.sun).lerp(nightCol.moon,n);
+ if(cenv){hemi.intensity=cenv.hemiI+boltT*5;sun.intensity=cenv.sunI;sun.color.set(cenv.sunColor)}
  headlight.intensity=n*95;headGlow.material.opacity=n*.95;bulbMat.emissiveIntensity=n*3.2;pools.material.opacity=n*.55;halos.material.opacity=n*.85;
- const vis=n>.01;for(const o of [pools,halos])o.visible=vis;
+ const vis=n>.01&&!cenv;for(const o of [pools,halos])o.visible=vis;
  if(vis){const near=lampPos.map((p,i)=>[i,lampS[i]-ride.pos]).filter(([,d])=>d>-60).sort((a,b)=>a[1]-b[1]).slice(0,3);
-  lampLights.forEach((l,k)=>{const it=near[k];if(it){l.position.copy(lampPos[it[0]]);l.intensity=n*42}else l.intensity=0})}else lampLights.forEach(l=>l.intensity=0);
+  lampLights.forEach((l,k)=>{const it=near[k];if(it){l.position.copy(lampPos[it[0]]);l.intensity=n*42}else l.intensity=0})}else if(cenv&&cenv.dark>.01){const bp=bike.position,near=cityScene.lampPos.map(q=>[q,q.distanceToSquared(bp)]).sort((a,b)=>a[1]-b[1]).slice(0,3);lampLights.forEach((l,k)=>{l.position.copy(near[k][0]);l.intensity=cenv.dark*40})}else lampLights.forEach(l=>l.intensity=0);
  ffGroups.forEach((pts,g)=>{pts.visible=vis;if(!vis)return;pts.material.opacity=n*(.45+.55*Math.max(0,Math.sin(time*(2.1+g*.7)+g*2)));const a=pts.geometry.attributes.position.array;
   for(let i=0;i<FF/2;i++){const [u,v,w]=ffSeed[i*2+g];a[i*3]=bike.position.x+(u-.5)*46+Math.sin(time*.6+i)*1.6;a[i*3+1]=bike.position.y+.8+v*4.5+Math.sin(time*1.3+i*1.7)*.5;a[i*3+2]=bike.position.z+(w-.5)*46+Math.cos(time*.5+i*.9)*1.6}
   pts.geometry.attributes.position.needsUpdate=true});
- if(!nightNoted&&n>.3&&ride.mode==='playing'){nightNoted=true;notify('🌙 해가 졌어요 · 헤드라이트를 켜고 가로등 길을 달려요')}}
+ if(!cenv&&!nightNoted&&n>.3&&ride.mode==='playing'){nightNoted=true;notify('🌙 해가 졌어요 · 헤드라이트를 켜고 가로등 길을 달려요')}}
 requestAnimationFrame(tick);
-window.rideDebug={ride,start,keys,camera,renderer,canyon,scene,T,drivePoint,mud,snowfall,sound,snap:()=>syncCamera(true)};window.getGameState=()=>({mode:ride.mode,pos:ride.pos,speed:ride.speed,letters:ride.letters,energy:ride.energy,landmarksVisited:ride.visited.size,airHeight:ride.airY,crashing:ride.crashing,jumping:ride.jumping,surface:ride.surface,score:ride.score,combo:ride.combo,drifting:ride.drifting,branch:ride.branchChoice,renderer:'Three.js WebGL',drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles});
+window.rideDebug={ride,start,keys,camera,renderer,canyon,scene,T,drivePoint,mud,snowfall,sound,snap:()=>{syncCamera(true);skySnap=true}};window.getGameState=()=>({mode:ride.mode,pos:ride.pos,speed:ride.speed,letters:ride.letters,energy:ride.energy,landmarksVisited:ride.visited.size,airHeight:ride.airY,crashing:ride.crashing,jumping:ride.jumping,surface:ride.surface,score:ride.score,combo:ride.combo,drifting:ride.drifting,branch:ride.branchChoice,renderer:'Three.js WebGL',drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles});
 })();

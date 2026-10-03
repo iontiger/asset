@@ -53,7 +53,7 @@ function build({T,scene,C}){
  // ── 보도(턱 있는 콘크리트) · 노면 표시(겹 노란 중앙선 · 횡단보도 · 정지선)
  const boxes=[];   // [R0,R1,F0,F1,y0,y1,color]
  const rect=(s,t0,t1,l0,l1,y0,y1,col)=>{const a=P(s,t0,l0),b=P(s,t1,l1);boxes.push([Math.min(a[0],b[0]),Math.max(a[0],b[0]),Math.min(a[1],b[1]),Math.max(a[1],b[1]),y0,y1,col])};
- const walkCol='#b7b3aa',paint=[];
+ const walkCol='#b7b3aa',paint=[],walkMat=new T.MeshStandardMaterial({vertexColors:true,roughness:.9}),paintMat=new T.MeshStandardMaterial({vertexColors:true,roughness:.7,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
  for(const s of S){for(const [a,b] of intervals(s)){for(const sd of [-1,1])rect(s,a,b,sd*HALF,sd*WALK,YC,YC+.24,walkCol);
    paint.push([s,a,b,-.3,-.08,'#e9c03a'],[s,a,b,.08,.3,'#e9c03a'])}
   const [lo,hi]=flat(s);
@@ -64,10 +64,10 @@ function build({T,scene,C}){
    for(const p of v){const w=C.world(p[0],p[2]);pos.push(w.x,p[1],w.z);col.push(c.r,c.g,c.b)}for(const f of [[4,5,6,4,6,7],[0,2,1,0,3,2],[0,1,5,0,5,4],[1,2,6,1,6,5],[2,3,7,2,7,6],[3,0,4,3,4,7]])idx.push(...f.map(i=>n+i))};
   for(const b of boxes)push(...b);
   const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(pos,3));geo.setAttribute('color',new T.Float32BufferAttribute(col,3));geo.setIndex(idx);const ng=geo.toNonIndexed();ng.computeVertexNormals();
-  const m=new T.Mesh(ng,new T.MeshStandardMaterial({vertexColors:true,roughness:.9}));m.receiveShadow=true;g.add(m);
+  const m=new T.Mesh(ng,walkMat);m.receiveShadow=true;g.add(m);
   const pp=[],pc=[];for(const [s,a,b,l0,l1,cc] of paint){c.set(cc);const q=[P(s,a,l0),P(s,b,l0),P(s,b,l1),P(s,a,l1)].map(p=>C.world(p[0],p[1]));const tri=[0,1,2,0,2,3];const y=YC+.045;for(const i of tri){pp.push(q[i].x,y,q[i].z);pc.push(c.r,c.g,c.b)}}
   const pg=new T.BufferGeometry();pg.setAttribute('position',new T.Float32BufferAttribute(pp,3));pg.setAttribute('color',new T.Float32BufferAttribute(pc,3));pg.computeVertexNormals();
-  const pm=new T.Mesh(pg,new T.MeshStandardMaterial({vertexColors:true,roughness:.7,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));pm.receiveShadow=true;g.add(pm)}
+  const pm=new T.Mesh(pg,paintMat);pm.receiveShadow=true;g.add(pm)}
 
  // ── 빌딩 숲
  const blds=[];
@@ -81,25 +81,26 @@ function build({T,scene,C}){
    if(free(r0,r1,f0,f1)){const tall=rnd()<(s.main?.13:.08);addB(r0,r1,f0,f1,tall?150+rnd()*115:(s.main?26:22)+Math.pow(rnd(),1.6)*(s.main?120:95),{s,side,t0:t,t1:t+w});t+=w+.9}else t+=3}}
  for(let R=BB.r0;R<BB.r1;R+=15)for(let F=BB.f0;F<BB.f1;F+=15){const w=10+rnd()*8,d=10+rnd()*8,r0=R+rnd()*3,f0=F+rnd()*3;if(free(r0,r0+w,f0,f0+d))addB(r0,r0+w,f0,f0+d,18+Math.pow(rnd(),1.3)*105,null)}
  // 창문: 층(3.9) · 칸 격자를 월드 좌표로 그린다. 유리 빌딩은 커튼월.
- const winMat=glass=>{const m=SM('#ffffff',{roughness:.82,metalness:glass?.25:.02});m.onBeforeCompile=sh=>{
+ const NIGHT={value:0};   // 밤이 되면 창문마다 불이 켜진다 (CITY_ENV.dark)
+ const winMat=glass=>{const m=SM('#ffffff',{roughness:.82,metalness:glass?.25:.02});m.onBeforeCompile=sh=>{sh.uniforms.uNight=NIGHT;
    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;varying vec3 vWN;').replace('#include <begin_vertex>',`#include <begin_vertex>
 vec4 wpp=vec4(transformed,1.0);vec3 wn=objectNormal;
 #ifdef USE_INSTANCING
 wpp=instanceMatrix*wpp;wn=mat3(instanceMatrix)*wn;
 #endif
 wpp=modelMatrix*wpp;vWP=wpp.xyz;vWN=normalize(mat3(modelMatrix)*wn);`);
-   sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;varying vec3 vWN;float h21(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}').replace('#include <color_fragment>',`#include <color_fragment>
-float winMask=0.;vec3 nn=normalize(vWN);
+   sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;varying vec3 vWN;uniform float uNight;float h21(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}').replace('#include <color_fragment>',`#include <color_fragment>
+float winMask=0.,litW=0.;vec3 nn=normalize(vWN);
 if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2)})/3.9;
  vec2 cell=vec2(a/${glass?'2.3':'3.0'},fy);vec2 f=fract(cell),id=floor(cell);
  ${glass?'winMask=step(.05,f.x)*step(f.x,.95)*step(.08,f.y)*step(f.y,.96);':'winMask=step(.2,f.x)*step(f.x,.8)*step(.26,f.y)*step(f.y,.84);'}
- winMask*=step(1.25,fy);float lit=h21(id+floor(vWP.xz*.013));
+ winMask*=step(1.25,fy);float lit=h21(id+floor(vWP.xz*.013));litW=lit;
  vec3 gl=${glass?'mix(diffuseColor.rgb*.62,vec3(.62,.74,.84),.35+.35*f.y+lit*.12)':'mix(vec3(.15,.2,.26),vec3(.45,.56,.66),.25+.5*f.y)+lit*.08'};
  diffuseColor.rgb=mix(diffuseColor.rgb,gl,winMask*.94);
  float sf=(1.-step(1.15,fy))*step(.22,fract(fy))*step(.08,fract(a/5.5))*step(fract(a/5.5),.9);
  diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.17,.21,.24),sf*.85);
  float band=step(.92,fract(fy))*(1.-winMask);diffuseColor.rgb*=1.-band*.18;
-}else diffuseColor.rgb*=.72;`).replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.22,winMask);')};return m};
+}else diffuseColor.rgb*=.72;`).replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.22,winMask);').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=winMask*step(.4,litW)*uNight*mix(vec3(1.,.74,.4),vec3(.7,.84,1.),step(.82,litW))*(1.1+litW);')};return m};
  const tiers=[];   // 높은 빌딩의 윗단 · 첨탑
  for(const b of blds){if(b.h>110){const cx=(b.r0+b.r1)/2,cz=(b.f0+b.f1)/2,w=b.r1-b.r0,d=b.f1-b.f0;tiers.push({r0:cx-w*.36,r1:cx+w*.36,f0:cz-d*.36,f1:cz+d*.36,y:b.h,h:b.h*.17,glass:b.glass,col:b.col});
   if(rnd()<.6)tiers.push({r0:cx-w*.2,r1:cx+w*.2,f0:cz-d*.2,f1:cz+d*.2,y:b.h*1.17,h:b.h*.07,glass:b.glass,col:b.col,spire:rnd()<.7})}}
@@ -142,15 +143,15 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
  // ── 가로등 · 가로수 · 소화전 · 사람
  const lamps=[],trees=[],hyd=[],pedPaths=[];
  for(const s of S.filter(s=>s.main))for(const [a,b] of intervals(s))for(const side of [-1,1]){
-  for(let t=a+6;t<b-4;t+=27){const p=P(s,t,side*(HALF+.65));lamps.push({R:p[0],F:p[1],s,side})}
+  for(let t=a+6;t<b-4;t+=27){const p=P(s,t,side*(HALF+.65)),q=P(s,t,side*(HALF-1.55));lamps.push({R:p[0],F:p[1],s,side,bulb:WV(q[0],q[1],YC+8.5)})}
   for(let t=a+19;t<b-4;t+=27){const p=P(s,t,side*(WALK-1.5));trees.push({R:p[0],F:p[1],r:rnd()*6,k:.8+rnd()*.4})}
   for(let t=a+12;t<b-4;t+=71){const p=P(s,t,side*(HALF+.55));hyd.push({R:p[0],F:p[1]})}
   if(b-a>14)pedPaths.push({s,a:a+1,b:b-1,side})}
  inst(new T.CylinderGeometry(.13,.17,8.6,8).translate(0,4.3,0),SM('#34413c',{roughness:.6,metalness:.4}),lamps,l=>at(l.R,l.F,YC+.24));
  inst(new T.BoxGeometry(.16,.16,2.4).translate(0,8.5,-1.1),SM('#34413c',{metalness:.4}),lamps,l=>at(l.R,l.F,YC+.24,1,1,1,l.s.axis==='F'?rotOf(-l.side,0):rotOf(0,-l.side)));
- inst(new T.BoxGeometry(.5,.22,1.1).translate(0,8.38,-2.2),new T.MeshStandardMaterial({color:'#fff6dc',emissive:'#fff1c8',emissiveIntensity:.6}),lamps,l=>at(l.R,l.F,YC+.24,1,1,1,l.s.axis==='F'?rotOf(-l.side,0):rotOf(0,-l.side)),false);
+ const bulbMat=new T.MeshStandardMaterial({color:'#fff6dc',emissive:'#fff1c8',emissiveIntensity:.6});inst(new T.BoxGeometry(.5,.22,1.1).translate(0,8.38,-2.2),bulbMat,lamps,l=>at(l.R,l.F,YC+.24,1,1,1,l.s.axis==='F'?rotOf(-l.side,0):rotOf(0,-l.side)),false);
  inst(new T.CylinderGeometry(.14,.2,2.6,6).translate(0,1.3,0),SM('#6b4f36'),trees,t=>at(t.R,t.F,YC+.24,t.k,t.k,t.k,t.r));
- inst(new T.IcosahedronGeometry(1.6,1).translate(0,3.6,0),SM('#5f8a4a',{flatShading:true}),trees,t=>at(t.R,t.F,YC+.24,t.k,t.k*1.1,t.k,t.r));
+ const crownMat=SM('#5f8a4a',{flatShading:true});inst(new T.IcosahedronGeometry(1.6,1).translate(0,3.6,0),crownMat,trees,t=>at(t.R,t.F,YC+.24,t.k,t.k*1.1,t.k,t.r));
  inst(new T.CylinderGeometry(.22,.26,.8,8).translate(0,.4,0),SM('#c0302a',{roughness:.5}),hyd,h=>at(h.R,h.F,YC+.24));
  const PEDN=Math.min(90,pedPaths.length*3),peds=[],SHIRT=['#e76f51','#2a9d8f','#264653','#f4a261','#8d99ae','#d62828','#6a4c93','#1d3557','#ffb703','#f1faee'];
  for(let i=0;i<PEDN;i++){const p=pedPaths[i%pedPaths.length];peds.push({p,t:p.a+rnd()*(p.b-p.a),v:(rnd()<.5?-1:1)*(1+rnd()*.7),lat:p.side*(HALF+1.4+rnd()*2.4),ph:rnd()*6,c:SHIRT[Math.floor(rnd()*SHIRT.length)]})}
@@ -211,29 +212,44 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
  const crossers=[];let crossT=0;
  function drawCars(cars,dt){let n=0;const put=(R,F,ry,col,taxi)=>{if(n>=MAXC)return;dmy.position.copy(WV(R,F,YC+.02));dmy.rotation.set(0,ry,0);dmy.scale.set(1,1,1);dmy.updateMatrix();
    for(const m of carMeshes){if(m.userData.name==='taxi'&&!taxi){m.setMatrixAt(n,hidden);continue}m.setMatrixAt(n,dmy.matrix)}
+   GL.forEach((o,j)=>{v3.set(o[0],o[1],o[2]).applyMatrix4(dmy.matrix);cgPos.set([v3.x,v3.y,v3.z],(n*4+j)*3)});
    cc.set(taxi?CARC[0]:col);carMeshes[0].setColorAt(n,cc);carMeshes[2].setColorAt(n,cc);n++};
   for(const c of cars){if(c.gone)continue;const s=C.segs[c.k],p=SP(c.k,c.d,c.lane*LANE);put(p[0],p[1],rotOf(s.dir[0]*c.lane,s.dir[1]*c.lane),CARC[1+(c.c%7)],c.taxi)}
   for(const x of crossers){const s=C.segs[x.k],p=SP(x.k,x.d+x.dir*-LANE,x.p);put(p[0],p[1],rotOf(s.right[0]*x.dir,s.right[1]*x.dir),CARC[1+x.col],x.taxi)}
-  for(const m of carMeshes){m.count=n;m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true}}
+  for(const m of carMeshes){m.count=n;m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true}cgGeo.setDrawRange(0,n*4);cgGeo.attributes.position.needsUpdate=true}
  // 맨홀 김
  const vents=[[2,30],[3,60],[6,140],[6,260],[4,40]].map(([k,d])=>SP(k,d,-1.4)),VN=16,ventPos=new Float32Array(vents.length*VN*3),ventGeo=new T.BufferGeometry();ventGeo.setAttribute('position',new T.BufferAttribute(ventPos,3));
  const steam=new T.Points(ventGeo,new T.PointsMaterial({map:glowTex,color:'#f2f2f2',size:3.2,transparent:true,opacity:.42,depthWrite:false}));steam.frustumCulled=false;g.add(steam);
  for(const v of vents){const m=new T.Mesh(new T.CylinderGeometry(.7,.7,.05,16),SM('#2e3134',{metalness:.5}));m.position.copy(WV(v[0],v[1],YC+.05));g.add(m)}
+ // ── 밤 · 날씨: 가로등 불빛 번짐 · 차 전조등/후미등 번짐 · 비 오면 보행자 우산
+ const lampGlow=new T.Points(new T.BufferGeometry().setFromPoints(lamps.map(l=>l.bulb)),new T.PointsMaterial({map:glowTex,color:'#ffd9a0',size:4.2,transparent:true,opacity:0,depthWrite:false,blending:T.AdditiveBlending}));lampGlow.visible=false;g.add(lampGlow);
+ const cgPos=new Float32Array(MAXC*4*3),cgCol=new Float32Array(MAXC*4*3);for(let i=0;i<MAXC*4;i++){cc.set(i%4<2?'#fff4d6':'#ff2a1a');cgCol.set([cc.r,cc.g,cc.b],i*3)}
+ const cgGeo=new T.BufferGeometry();cgGeo.setAttribute('position',new T.BufferAttribute(cgPos,3));cgGeo.setAttribute('color',new T.BufferAttribute(cgCol,3));
+ const carGlow=new T.Points(cgGeo,new T.PointsMaterial({map:glowTex,vertexColors:true,size:1.5,transparent:true,opacity:0,depthWrite:false,blending:T.AdditiveBlending}));carGlow.frustumCulled=false;carGlow.visible=false;g.add(carGlow);
+ const umb=new T.InstancedMesh(new T.ConeGeometry(.95,.42,10).translate(0,2.62,0),SM('#ffffff',{side:T.DoubleSide,roughness:.5}),PEDN);peds.forEach((q,i)=>umb.setColorAt(i,cc.set(SHIRT[(i*7+3)%SHIRT.length])));umb.visible=false;g.add(umb);
+ const v3=new T.Vector3(),GL=[[-.68,.92,-2.5],[.68,.92,-2.5],[-.72,.95,2.5],[.72,.95,2.5]];
+ const DEF=root.CITY_ENV;let env=null;
  let flashT=0;
- function update(time,dt,ride){const st=ride.city;if(!st)return;
+ function weather(E,ride,bikePos){const d=E.dark,wet=E.wet,cov=E.snowCover;NIGHT.value=d;
+  asMat.color.setScalar(1-.42*wet);asMat.roughness=.93-.62*wet;walkMat.roughness=.9-.5*wet;
+  for(const m of [asMat,walkMat,paintMat]){m.emissive.set('#dfe6ee');m.emissiveIntensity=cov*(.62-.45*d)}
+  crownMat.color.set(E.leaf);bulbMat.emissiveIntensity=.6+3.6*d;steam.material.opacity=.42+.25*cov;
+  lampGlow.visible=d>.02;lampGlow.material.opacity=d*.85;carGlow.visible=d>.02||E.weather>.3;carGlow.material.opacity=Math.max(d,E.weather*.7)*.95;umb.visible=E.rain>.15}
+ function update(time,dt,ride,cenv,bikePos){const st=ride.city;if(!st)return;
+  env=cenv||(DEF?DEF.env(Math.max(0,Math.min(1,C.uOf(ride.pos)/C.Lc))):null);if(env)weather(env,ride,bikePos);
   sigs.forEach(sg=>{const s=st.lights[sg.l.i].state;for(const k of ['red','yellow','green'])sg.mats[k].color.set(s===k?LAMPC[k]:'#2a2a2a');
-   const lamp=sg.heads[0].children[['red','yellow','green'].indexOf(s)*2+2];if(lamp){lamp.getWorldPosition(sg.glow.position);sg.glow.material.color.set(LAMPC[s]);sg.glow.material.opacity=.45+.15*Math.sin(time*6)}});
+   const lamp=sg.heads[0].children[['red','yellow','green'].indexOf(s)*2+2];if(lamp){lamp.getWorldPosition(sg.glow.position);sg.glow.material.color.set(LAMPC[s]);sg.glow.material.opacity=Math.min(1,(.45+.15*Math.sin(time*6))*(1+(env?env.dark:0)*.9));sg.glow.scale.setScalar(1.9*(1+(env?env.dark:0)*.7))}});
   // 가로 길 차량: 내 신호가 빨간불인 교차로에서만
   crossT-=dt;for(const sg of sigs){const L=sg.l;if(L.cross===undefined||st.lights[L.i].state!=='red')continue;if(crossT<=0){crossT=1.5;const cs=C.crossStreets.find(c=>c.k===L.k&&c.d===L.cross),dir=crossers.length%2?1:-1;
     crossers.push({k:L.k,d:L.cross,dir,p:dir>0?cs.from:cs.to,end:dir>0?cs.to:cs.from,col:(crossers.length*3)%7,taxi:crossers.length%3===0})}}
   for(const x of crossers)x.p+=x.dir*11*dt;for(let i=crossers.length-1;i>=0;i--){const x=crossers[i];if((x.p-x.end)*x.dir>0)crossers.splice(i,1)}
   drawCars(st.cars,dt);
   peds.forEach((q,i)=>{q.t+=q.v*dt;if(q.t<q.p.a||q.t>q.p.b){q.v=-q.v;q.t=Math.max(q.p.a,Math.min(q.p.b,q.t))}const p=P(q.p.s,q.t,q.lat),bob=Math.abs(Math.sin(time*7+q.ph))*.08;
-   dmy.position.copy(WV(p[0],p[1],YC+.24+bob));dmy.rotation.set(0,0,0);dmy.scale.set(1,1,1);dmy.updateMatrix();pedBody.setMatrixAt(i,dmy.matrix);pedHead.setMatrixAt(i,dmy.matrix);pedLegs.setMatrixAt(i,dmy.matrix)});pedBody.instanceMatrix.needsUpdate=pedHead.instanceMatrix.needsUpdate=pedLegs.instanceMatrix.needsUpdate=true;
+   dmy.position.copy(WV(p[0],p[1],YC+.24+bob));dmy.rotation.set(0,0,0);dmy.scale.set(1,1,1);dmy.updateMatrix();pedBody.setMatrixAt(i,dmy.matrix);pedHead.setMatrixAt(i,dmy.matrix);pedLegs.setMatrixAt(i,dmy.matrix);umb.setMatrixAt(i,dmy.matrix)});pedBody.instanceMatrix.needsUpdate=pedHead.instanceMatrix.needsUpdate=pedLegs.instanceMatrix.needsUpdate=umb.instanceMatrix.needsUpdate=true;
   vents.forEach((v,j)=>{const w=C.world(v[0],v[1]);for(let i=0;i<VN;i++){const f=((time*.35+i/VN)%1),k=(j*VN+i)*3;ventPos[k]=w.x+Math.sin(i*2.3+time)*f*1.6;ventPos[k+1]=YC+.2+f*7;ventPos[k+2]=w.z+Math.cos(i*1.7+time*.8)*f*1.6}});ventGeo.attributes.position.needsUpdate=true;
   cams.forEach(cm=>{cm.t=Math.max(0,cm.t-dt);cm.flash.material.opacity=cm.t>0?Math.min(1,cm.t*3):0;cm.led.material.color.set(Math.sin(time*5)>0?'#ff3030':'#551010')});
  }
  function flash(i){if(cams[i])cams[i].t=.45}
- return {group:g,update,flash,buildings:blds.length}}
+ return {group:g,update,flash,buildings:blds.length,lampPos:lamps.map(l=>l.bulb)}}
 root.CITY_SCENE={build};
 })(typeof window!=='undefined'?window:globalThis);
