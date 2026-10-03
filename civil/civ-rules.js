@@ -1,102 +1,110 @@
-/* 덴포토 문명 — 게임 규칙 (화면 없이 돌아가는 순수 로직, node 에서도 시험한다)
-   - 육각 지도(odd-r 오프셋) · 지형 · 자원 · 보물상자 · 자연경관 '목표봉'
-   - 문명 · 도시(성장 · 생산 · 영토 · 방어) · 유닛(이동 · 전투 · 개척 · 개간) · 기술 · 불가사의
-   - 컴퓨터 문명 AI · 외교(전쟁/평화) · 승리(정복 · 목표자산 20억 · 점수)
+/* 덴포토 치과 문명 — 게임 규칙 (화면 없이 돌아가는 순수 로직, node 에서도 시험한다)
+   덴포토 치과가 동네 상권에서 경쟁 치과 2~4곳(덤핑치과 · 불법위임치과 · 365치과 · 광고폭탄치과)과 겨룬다.
+   - 육각 지도(odd-r 오프셋) · 동네 지형 · 상권 자원 · 보물상자 · 자연경관 '목표봉'
+   - 치과 · 지점(환자 · 진료력 · 영역 · 평판) · 직원 유닛(이동 · 환자 유치 경쟁 · 개원 · 인테리어) · 치의학 연구 · 랜드마크
+   - 경쟁 치과 AI(치과마다 특성) · 관계(경쟁/상생) · 승리(인수 합병 · 목표자산 20억 · 평판 점수)
+   코드 안의 이름(city · unit · gold …)은 그대로 두고 화면에 보이는 이름만 치과 말로 바꿨다.
    상태는 JSON 하나(state)로 저장/불러오기 된다. 무작위는 state.rs 를 쓰는 시드 난수라 같은 시드면 같은 지도가 나온다. */
 (function(root){
 'use strict';
 
-/* ═══ 1. 자료 ═══ */
+/* ═══ 1. 자료 — f 환자 · p 진료력 · g 매출(금) · s 연구 ═══ */
 const TERRAIN={
   ocean:{name:'바다',f:1,p:0,g:0,move:99,water:true},
-  coast:{name:'얕은 바다',f:1,p:0,g:1,move:99,water:true},
-  grass:{name:'초원',f:2,p:0,g:0,move:1},
-  plains:{name:'평원',f:1,p:1,g:0,move:1},
-  desert:{name:'협곡 사암지',f:0,p:1,g:0,move:1},
-  forest:{name:'숲',f:1,p:2,g:0,move:2,def:.25},
-  hills:{name:'언덕',f:1,p:2,g:0,move:2,def:.25},
+  coast:{name:'강변',f:1,p:0,g:1,move:99,water:true},
+  grass:{name:'아파트 주택가',f:2,p:0,g:0,move:1},
+  plains:{name:'상가 거리',f:1,p:1,g:0,move:1},
+  desert:{name:'협곡 공단',f:0,p:1,g:0,move:1},
+  forest:{name:'공원 숲',f:1,p:2,g:0,move:2,def:.25},
+  hills:{name:'언덕 동네',f:1,p:2,g:0,move:2,def:.25},
   mountain:{name:'산',f:0,p:0,g:0,move:99,block:true}};
 const RESOURCES={
-  wheat:{name:'밀',icon:'🌾',f:1,on:['grass','plains']},
-  deer:{name:'사슴',icon:'🦌',f:1,on:['forest']},
-  fish:{name:'물고기',icon:'🐟',f:2,on:['coast']},
-  horses:{name:'말',icon:'🐎',p:1,g:1,on:['plains','grass']},
-  stone:{name:'돌',icon:'🪨',p:1,on:['hills','desert','plains']},
-  gold:{name:'금광',icon:'🪙',g:3,on:['hills','desert']},
-  gems:{name:'보석',icon:'💎',g:3,on:['forest','hills']}};
+  wheat:{name:'대단지 아파트',icon:'🏢',f:1,on:['grass','plains']},
+  deer:{name:'초등학교',icon:'🏫',f:1,on:['forest']},
+  fish:{name:'강변 산책로',icon:'🚶',f:2,on:['coast']},
+  horses:{name:'지하철역',icon:'🚇',p:1,g:1,on:['plains','grass']},
+  stone:{name:'치과 재료상',icon:'🧪',p:1,on:['hills','desert','plains']},
+  gold:{name:'금니 매입소',icon:'🪙',g:3,on:['hills','desert']},
+  gems:{name:'지르코니아 공방',icon:'💎',g:3,on:['forest','hills']}};
 const IMPROVE={
-  farm:{name:'농장',icon:'🌱',f:1,turns:4,on:['grass','plains','desert'],tech:'agriculture'},
-  mine:{name:'광산',icon:'⛏',p:1,turns:4,on:['hills','desert'],tech:'mining',bonus:['stone','gold','gems']},
-  lumber:{name:'제재소',icon:'🪵',p:1,turns:4,on:['forest'],tech:'bronze'},
-  road:{name:'도로',icon:'🛤',turns:2,tech:'wheel'}};
+  farm:{name:'홍보 게시판',icon:'📋',f:1,turns:4,on:['grass','plains','desert'],tech:'agriculture'},
+  mine:{name:'치과 기공소',icon:'🦷',p:1,turns:4,on:['hills','desert'],tech:'mining',bonus:['stone','gold','gems']},
+  lumber:{name:'제휴 약국',icon:'💊',p:1,turns:4,on:['forest'],tech:'bronze'},
+  road:{name:'셔틀버스 노선',icon:'🚌',turns:2,tech:'wheel'}};
 const UNITS={
-  settler:{name:'개척자',icon:'🏕',cost:40,str:0,moves:2,civilian:true,found:true,desc:'새 도시를 세웁니다 (도시 인구 1 소모)'},
-  worker:{name:'일꾼',icon:'⚒',cost:28,str:0,moves:2,civilian:true,work:true,desc:'농장 · 광산 · 제재소 · 도로를 짓습니다'},
-  scout:{name:'우편배달부',icon:'🏍',cost:20,str:4,moves:4,sight:3,desc:'오토바이로 빠르게 지도를 밝힙니다'},
-  warrior:{name:'전사',icon:'🗡',cost:20,str:8,moves:2},
-  archer:{name:'궁수',icon:'🏹',cost:30,str:5,rs:8,range:2,moves:2,tech:'archery'},
-  spear:{name:'창병',icon:'🔱',cost:35,str:11,moves:2,tech:'bronze',antiMounted:true,desc:'기마 유닛에 +50%'},
-  horse:{name:'기마병',icon:'🐎',cost:42,str:12,moves:4,tech:'horseback',mounted:true},
-  sword:{name:'검사',icon:'⚔',cost:50,str:16,moves:2,tech:'iron'},
-  catapult:{name:'투석기',icon:'☄',cost:55,str:6,rs:15,range:2,moves:2,tech:'math',siege:true,desc:'도시 공격 +100%'},
-  knight:{name:'기사',icon:'🛡',cost:70,str:21,moves:4,tech:'chivalry',mounted:true},
-  musket:{name:'머스킷병',icon:'🎖',cost:85,str:27,moves:2,tech:'gunpowder'},
-  cannon:{name:'대포',icon:'💣',cost:95,str:10,rs:26,range:2,moves:2,tech:'chemistry',siege:true,desc:'도시 공격 +100%'}};
+  settler:{name:'개원팀',icon:'🏗',cost:40,str:0,moves:2,civilian:true,found:true,desc:'새 지점을 엽니다 (지점 규모 1 소모)'},
+  worker:{name:'인테리어팀',icon:'🧰',cost:28,str:0,moves:2,civilian:true,work:true,desc:'홍보 게시판 · 기공소 · 제휴 약국 · 셔틀버스 노선을 만듭니다'},
+  scout:{name:'홍보 오토바이',icon:'🏍',cost:20,str:4,moves:4,sight:3,desc:'전단지를 싣고 빠르게 동네를 밝힙니다'},
+  warrior:{name:'치위생사',icon:'🪥',cost:20,str:8,moves:2},
+  archer:{name:'블로그 마케터',icon:'📣',cost:30,str:5,rs:8,range:2,moves:2,tech:'archery',desc:'2칸 떨어진 곳에서 홍보전을 펼칩니다'},
+  spear:{name:'보험청구팀',icon:'🧾',cost:35,str:11,moves:2,tech:'bronze',antiMounted:true,desc:'광고 차량 · 앰뷸런스에 +50%'},
+  horse:{name:'광고 차량',icon:'🚐',cost:42,str:12,moves:4,tech:'horseback',mounted:true},
+  sword:{name:'보존과 전문의',icon:'🩺',cost:50,str:16,moves:2,tech:'iron'},
+  catapult:{name:'현수막 부대',icon:'🪧',cost:55,str:6,rs:15,range:2,moves:2,tech:'math',siege:true,desc:'경쟁 지점 공략 +100%'},
+  knight:{name:'응급 앰뷸런스',icon:'🚑',cost:70,str:21,moves:4,tech:'chivalry',mounted:true},
+  musket:{name:'임플란트 전문의',icon:'🦷',cost:85,str:27,moves:2,tech:'gunpowder'},
+  cannon:{name:'TV 광고',icon:'📺',cost:95,str:10,rs:26,range:2,moves:2,tech:'chemistry',siege:true,desc:'경쟁 지점 공략 +100%'}};
 const BUILDINGS={
-  granary:{name:'곡물창고',icon:'🌾',cost:40,tech:'pottery',f:2},
-  walls:{name:'성벽',icon:'🧱',cost:50,tech:'masonry',def:8,hp:100,desc:'도시 방어 +8 · 체력 +100'},
-  workshop:{name:'공방',icon:'🔨',cost:55,tech:'bronze',p:2},
-  post:{name:'우체국',icon:'✉',cost:55,tech:'wheel',g:2,s:1},
-  library:{name:'도서관',icon:'📚',cost:60,tech:'writing',s:3},
-  lighthouse:{name:'등대',icon:'🗼',cost:50,tech:'sailing',coastal:true,f:2,g:1},
-  market:{name:'시장',icon:'🏪',cost:70,tech:'currency',g:3,gp:.25},
-  dental:{name:'치과',icon:'🦷',cost:70,tech:'medicine',f:2,growth:.25,desc:'식량 +2 · 성장 25% 빠르게'},
-  photo:{name:'사진관',icon:'📷',cost:65,tech:'optics',g:2,s:2,border:1,desc:'영토 한 칸 더 넓게'},
-  university:{name:'대학',icon:'🎓',cost:120,tech:'education',s:4,sp:.33},
-  bank:{name:'은행',icon:'🏦',cost:120,tech:'banking',g:4,gp:.25}};
+  granary:{name:'대기실 확장',icon:'🛋',cost:40,tech:'pottery',f:2},
+  walls:{name:'의료분쟁 법무팀',icon:'⚖',cost:50,tech:'masonry',def:8,hp:100,desc:'지점 방어 +8 · 평판 +100'},
+  workshop:{name:'디지털 기공실',icon:'🖨',cost:55,tech:'bronze',p:2},
+  post:{name:'예약 문자 센터',icon:'✉',cost:55,tech:'wheel',g:2,s:1},
+  library:{name:'세미나실',icon:'📚',cost:60,tech:'writing',s:3},
+  lighthouse:{name:'강변 간판',icon:'🪧',cost:50,tech:'sailing',coastal:true,f:2,g:1},
+  market:{name:'보험 청구 시스템',icon:'💳',cost:70,tech:'currency',g:3,gp:.25},
+  dental:{name:'소아치과',icon:'🧸',cost:70,tech:'medicine',f:2,growth:.25,desc:'환자 +2 · 지점 성장 25% 빠르게'},
+  photo:{name:'구강 스캐너 · 사진실',icon:'📷',cost:65,tech:'optics',g:2,s:2,border:1,desc:'진료 영역 한 칸 더 넓게'},
+  university:{name:'임상 연구소',icon:'🎓',cost:120,tech:'education',s:4,sp:.33},
+  bank:{name:'경영지원실',icon:'🏦',cost:120,tech:'banking',g:4,gp:.25}};
 const WONDERS={
-  fountain:{name:'바람 분수',icon:'⛲',cost:110,tech:'masonry',f:4,model:'fountain'},
-  dentlight:{name:'덴포토 등대',icon:'🗼',cost:130,tech:'sailing',coastal:true,f:3,g:3,model:'lighthouse'},
-  tower:{name:'목표봉 전망탑',icon:'🗻',cost:150,tech:'math',s:6,model:'tower'},
+  fountain:{name:'키즈 분수 정원',icon:'⛲',cost:110,tech:'masonry',f:4,model:'fountain'},
+  dentlight:{name:'덴포토 강변 등대',icon:'🗼',cost:130,tech:'sailing',coastal:true,f:3,g:3,model:'lighthouse'},
+  tower:{name:'목표봉 전망 치과',icon:'🗻',cost:150,tech:'math',s:6,model:'tower'},
   vault:{name:'억 돌파 석탑',icon:'💰',cost:220,tech:'banking',g:10,model:'vault'},
-  balloon:{name:'풍선 축제',icon:'🎈',cost:200,tech:'chemistry',g:5,s:5,model:'balloon'}};
+  balloon:{name:'구강보건의 날 풍선 축제',icon:'🎈',cost:200,tech:'chemistry',g:5,s:5,model:'balloon'}};
 const TECHS={
-  agriculture:{name:'농업',cost:0,req:[]},
-  pottery:{name:'도자기',cost:24,req:['agriculture']},
-  husbandry:{name:'목축',cost:24,req:['agriculture']},
-  mining:{name:'채광',cost:24,req:['agriculture']},
-  archery:{name:'활쏘기',cost:30,req:['agriculture']},
-  wheel:{name:'바퀴',cost:45,req:['husbandry']},
-  bronze:{name:'청동기',cost:45,req:['mining']},
-  masonry:{name:'석조',cost:45,req:['mining']},
-  writing:{name:'문자',cost:50,req:['pottery']},
-  sailing:{name:'항해',cost:60,req:['pottery']},
-  horseback:{name:'승마',cost:65,req:['wheel']},
-  currency:{name:'화폐',cost:85,req:['bronze','writing']},
-  math:{name:'수학',cost:85,req:['wheel','writing']},
-  iron:{name:'철기',cost:95,req:['bronze']},
-  medicine:{name:'의학',cost:115,req:['writing','pottery']},
-  optics:{name:'광학',cost:115,req:['sailing','math']},
-  education:{name:'교육',cost:165,req:['medicine','math']},
-  chivalry:{name:'기사도',cost:165,req:['horseback','iron','currency']},
-  banking:{name:'금융',cost:185,req:['currency','education']},
-  gunpowder:{name:'화약',cost:225,req:['iron','education']},
-  chemistry:{name:'화학',cost:260,req:['gunpowder','optics']},
-  asset:{name:'자산 경영',cost:330,req:['banking','chemistry'],desc:'금고가 2,000(=20억)에 닿으면 목표자산 승리'}};
-// 기술마다 여는 것 (도움말 · 기술 화면에 쓴다)
+  agriculture:{name:'개원 준비',cost:0,req:[]},
+  pottery:{name:'예약 관리',cost:24,req:['agriculture']},
+  husbandry:{name:'환자 상담',cost:24,req:['agriculture']},
+  mining:{name:'치과 재료학',cost:24,req:['agriculture']},
+  archery:{name:'블로그 마케팅',cost:30,req:['agriculture']},
+  wheel:{name:'셔틀 · 왕진',cost:45,req:['husbandry']},
+  bronze:{name:'보철학',cost:45,req:['mining']},
+  masonry:{name:'감염 관리',cost:45,req:['mining']},
+  writing:{name:'전자 차트',cost:50,req:['pottery']},
+  sailing:{name:'지역 연계',cost:60,req:['pottery']},
+  horseback:{name:'광고 차량',cost:65,req:['wheel']},
+  currency:{name:'보험 청구',cost:85,req:['bronze','writing']},
+  math:{name:'디지털 진단',cost:85,req:['wheel','writing']},
+  iron:{name:'근관 치료',cost:95,req:['bronze']},
+  medicine:{name:'소아치과학',cost:115,req:['writing','pottery']},
+  optics:{name:'구강 스캐너',cost:115,req:['sailing','math']},
+  education:{name:'임상 연구',cost:165,req:['medicine','math']},
+  chivalry:{name:'응급 진료',cost:165,req:['horseback','iron','currency']},
+  banking:{name:'병원 경영',cost:185,req:['currency','education']},
+  gunpowder:{name:'임플란트',cost:225,req:['iron','education']},
+  chemistry:{name:'방송 마케팅',cost:260,req:['gunpowder','optics']},
+  asset:{name:'자산 경영',cost:330,req:['banking','chemistry'],desc:'매출 금고가 2,000(=20억)에 닿으면 목표자산 승리'}};
+// 연구마다 여는 것 (도움말 · 연구 화면에 쓴다)
 for(const k in TECHS)TECHS[k].unlocks=[];
 for(const [k,u] of Object.entries(UNITS))if(u.tech)TECHS[u.tech].unlocks.push(u.icon+' '+u.name);
 for(const [k,b] of Object.entries(BUILDINGS))TECHS[b.tech].unlocks.push(b.icon+' '+b.name);
-for(const [k,w] of Object.entries(WONDERS))TECHS[w.tech].unlocks.push(w.icon+' '+w.name+'(불가사의)');
+for(const [k,w] of Object.entries(WONDERS))TECHS[w.tech].unlocks.push(w.icon+' '+w.name+'(랜드마크)');
 for(const [k,m] of Object.entries(IMPROVE))if(m.tech!=='agriculture')TECHS[m.tech].unlocks.push(m.icon+' '+m.name);
 TECHS.asset.unlocks.push('🏆 목표자산 20억 승리');
+/* 치과들. trait: 환자 f · 진료력 p · 매출 g · 연구 s 배율, heal 지점 평판 회복, raid 단속에 걸릴 확률 */
 const CIVS=[
-  {key:'dent',name:'DentPhoto 마을',leader:'덴포토 촌장',color:'#e2563a',cities:['덴포토','바람골','우체국거리','사진관골목','치과마을','분수광장','등대언덕','편지골','억돌파','꽃바람','새봄','장미마을']},
-  {key:'canyon',name:'협곡 부족',leader:'사암 족장',color:'#e0a13a',cities:['붉은협곡','헤어핀','사암성','낙석골','협곡특급','메아리골','황금절벽','바위문']},
-  {key:'coast',name:'해안 연맹',leader:'등대지기',color:'#2f8fd0',cities:['푸른항구','물결','갈매기','모래톱','소라','해안길','파도마루','진주곶']},
-  {key:'peak',name:'목표봉 왕국',leader:'봉우리 왕',color:'#8a5cd0',cities:['정상','구름성','눈꽃','바위산','고갯길','솔숲','별바라기','안개봉']},
-  {key:'creek',name:'개울 공국',leader:'개울 공작',color:'#2fa36a',cities:['맑은개울','여울','갈대밭','징검다리','물레방아','버들골','흙탕마을','돌다리']}];
-const PROJECTS={wealth:{name:'자산 운용',icon:'💹',cost:Infinity,desc:'생산력을 금으로 바꿉니다 (생산 1 → 금 0.8)'}};
+  {key:'dent',name:'덴포토 치과',leader:'덴포토 원장',color:'#e2563a',motto:'정직 진료 · 평판이 빨리 회복돼요',trait:{g:1.1,heal:10},
+    cities:['덴포토 본원','바람골점','우체국거리점','사진관골목점','분수광장점','등대언덕점','편지골점','억돌파점','꽃바람점','새봄점','장미마을점','목표봉점']},
+  {key:'dumping',name:'덤핑치과',leader:'반값 원장',color:'#e0a13a',motto:'반값 스케일링 · 환자는 몰리지만 매출이 낮아요',trait:{f:1.35,g:.7},
+    cities:['덤핑 본점','반값점','떨이점','1+1점','초특가점','파격가점','박리다매점','공짜점']},
+  {key:'illegal',name:'불법위임치과',leader:'무면허 실장',color:'#7d6f8a',motto:'싸게 빨리 · 진료력이 높지만 보건소 단속에 걸려요',trait:{p:1.3,raid:.04},
+    cities:['위임 본점','뒷문점','눈가림점','대리진료점','몰래점','편법점','꼼수점','야매점']},
+  {key:'open365',name:'365치과',leader:'연중무휴 원장',color:'#2f8fd0',motto:'연중무휴 · 진료력과 연구가 꾸준히 높아요',trait:{p:1.15,s:1.15,heal:6},
+    cities:['365 본점','새벽점','심야점','주말점','공휴일점','24시점','명절점','야간점']},
+  {key:'adbomb',name:'광고폭탄치과',leader:'광고왕 원장',color:'#2fa36a',motto:'전단지 폭탄 · 매출은 높지만 연구를 안 해요',trait:{g:1.3,s:.75},
+    cities:['광고 본점','현수막점','전광판점','버스광고점','전단지점','블로그점','배너점','팝업점']}];
+const PROJECTS={wealth:{name:'비급여 상담 집중',icon:'💹',cost:Infinity,desc:'진료력을 매출로 바꿉니다 (진료력 1 → 매출 0.8)'}};
 const GOAL_GOLD=2000,MAX_TURN=250;
 
 /* ═══ 2. 육각 격자 (odd-r: 홀수 줄이 반 칸 오른쪽) ═══ */
@@ -157,10 +165,10 @@ function newGame(opt={}){
     difficulty:opt.difficulty||'normal',player:0,over:null};
   S.seed=S.rs;
   S.tiles=genMap(S,S.W,S.H);
-  const n=Math.min(opt.civs||size.n,CIVS.length),pk=Math.max(0,CIVS.findIndex(c=>c.key===(opt.civ||'dent')));
+  const n=Math.min(opt.civs||size.n,CIVS.length),pk=0;
   const order=[pk,...CIVS.map((c,i)=>i).filter(i=>i!==pk)].slice(0,n);
   const spots=startSpots(S,S.tiles,S.W,S.H,n);
-  order.forEach((ci,k)=>{const C=CIVS[ci];S.civs.push({id:k,key:C.key,name:C.name,leader:C.leader,color:C.color,ai:k!==0||!!opt.allAI,gold:0,science:0,techs:['agriculture'],research:null,progress:0,
+  order.forEach((ci,k)=>{const C=CIVS[ci];S.civs.push({id:k,key:C.key,name:C.name,leader:C.leader,color:C.color,ai:k!==0||!!opt.allAI,trait:C.trait||{},motto:C.motto,gold:0,science:0,techs:['agriculture'],research:null,progress:0,
     names:[...C.cities],named:0,alive:true,met:[],explored:new Uint8Array(S.W*S.H),visible:new Uint8Array(S.W*S.H),capital:null,start:spots[k],warTurn:{}});
     const nb=neighbors(spots[k],S.W,S.H).filter(t=>passable(S,t)&&!S.units.some(u=>u.at===t));
     addUnit(S,k,'settler',spots[k]);addUnit(S,k,'warrior',spots[k]);addUnit(S,k,'scout',nb[0]??spots[k]);
@@ -215,17 +223,17 @@ function stepUnit(S,u,to){const cost=moveCost(S,u.at,to);const from=u.at;u.at=to
   if(T.ruin){T.ruin=false;ruinReward(S,u)}
   meetAround(S,u.civ,to);updateVision(S,u.civ)}
 function ruinReward(S,u){const C=S.civs[u.civ],r=ri(S,4);let text;
-  if(r===0){const g=35+ri(S,40);C.gold+=g;text=`보물상자에서 금 ${g}을 찾았어요`}
-  else if(r===1){C.progress+=40;text='보물상자 속 옛 지도책 — 연구 +40'}
-  else if(r===2){for(const k of within(u.at,6,S.W,S.H))C.explored[k]=1;text='보물상자 속 지도 — 주변 땅이 밝혀졌어요'}
-  else{const free=neighbors(u.at,S.W,S.H).concat([u.at]).find(k=>passable(S,k)&&!militaryAt(S,k));if(free!=null){addUnit(S,u.civ,'warrior',free);text='보물상자에서 전사가 합류했어요'}else{C.gold+=40;text='보물상자에서 금 40을 찾았어요'}}
+  if(r===0){const g=35+ri(S,40);C.gold+=g;text=`보물상자 속 지원금 — 매출 +${g}`}
+  else if(r===1){C.progress+=40;text='보물상자 속 학회 논문집 — 연구 +40'}
+  else if(r===2){for(const k of within(u.at,6,S.W,S.H))C.explored[k]=1;text='보물상자 속 상권 분석 지도 — 주변 동네가 밝혀졌어요'}
+  else{const free=neighbors(u.at,S.W,S.H).concat([u.at]).find(k=>passable(S,k)&&!militaryAt(S,k));if(free!=null){addUnit(S,u.civ,'warrior',free);text='보물상자 속 이력서 — 치위생사가 합류했어요'}else{C.gold+=40;text='보물상자 속 지원금 — 매출 +40 찾았어요'}}
   note(S,u.civ,'💎 '+text,u.at)}
 function moveTo(S,u,goal){if(u.moves<=0)return false;const p=findPath(S,u,goal);if(!p)return false;u.goto=goal;return followPath(S,u,p)}
 function followPath(S,u,p){let moved=false;for(let k=1;k<p.length;k++){if(u.moves<=0)break;const nx=p[k];
     const enemyCiv=S.units.find(o=>o.at===nx&&o.civ!==u.civ);
     if(enemyCiv){if(!UNITS[enemyCiv.type].civilian||militaryAt(S,nx)||!isWar(S,u.civ,enemyCiv.civ)||UNITS[u.type].civilian)break;
       // 민간 유닛 사로잡기
-      for(const o of unitsAt(S,nx).filter(o=>o.civ!==u.civ)){if(o.type==='settler'){o.type='worker'}o.civ=u.civ;o.moves=0;o.goto=null;note(S,u.civ,'일꾼을 사로잡았어요',nx);note(S,enemyCiv.civ,'일꾼/개척자를 빼앗겼어요',nx)}}
+      for(const o of unitsAt(S,nx).filter(o=>o.civ!==u.civ)){if(o.type==='settler'){o.type='worker'}o.civ=u.civ;o.moves=0;o.goto=null;note(S,u.civ,'경쟁 치과 직원을 스카우트했어요',nx);note(S,enemyCiv.civ,'직원을 경쟁 치과에 빼앗겼어요',nx)}}
     if(!canEnter(S,u,nx))break;stepUnit(S,u,nx);moved=true;if(!S.units.includes(u))return moved}
   if(u.at===u.goto)u.goto=null;return moved}
 
@@ -253,23 +261,23 @@ function attack(S,u,target){if(!canAttack(S,u,target))return false;const D=UNITS
   if(city){const a=unitStr(S,u,ranged?'ranged':'atk','city'),d=cityStr(S,city),hit=dmg(S,a,d);
     city.hp=Math.max(ranged?1:0,city.hp-hit);let back=0;if(!ranged){back=dmg(S,d,a);u.hp-=back}
     emit(S,{type:'attack',from:u.at,to:target,unit:u.id,civ:u.civ,deal:hit,take:back,city:city.id});u.moves=0;u.xp+=4;
-    if(u.hp<=0){killUnit(S,u,'공격하다 쓰러졌어요')}
+    if(u.hp<=0){killUnit(S,u,'공략하다 물러났어요')}
     else if(!ranged&&city.hp<=0)captureCity(S,city,u);
     meetAround(S,u.civ,target);return true}
   const def=militaryAt(S,target)||civilianAt(S,target);if(!def)return false;
-  if(UNITS[def.type].civilian){u.moves=0;if(ranged){killUnit(S,def,'공격을 받아 흩어졌어요');}else{followPath(S,Object.assign(u,{moves:1}),[u.at,target]);u.moves=0}return true}
+  if(UNITS[def.type].civilian){u.moves=0;if(ranged){killUnit(S,def,'홍보전에 밀려 흩어졌어요');}else{followPath(S,Object.assign(u,{moves:1}),[u.at,target]);u.moves=0}return true}
   const a=unitStr(S,u,ranged?'ranged':'atk',def),d=unitStr(S,def,'def',u),hit=dmg(S,a,d),back=ranged?0:dmg(S,d,a);
   def.hp-=hit;u.hp-=back;def.fort=0;u.xp+=5;def.xp+=4;
   emit(S,{type:'attack',from:u.at,to:target,unit:u.id,civ:u.civ,deal:hit,take:back,target:def.id});u.moves=0;
-  if(def.hp<=0){killUnit(S,def,'전투에서 쓰러졌어요');if(u.hp>0&&!ranged){const civ2=civilianAt(S,target);if(civ2&&civ2.civ!==u.civ){civ2.civ=u.civ;if(civ2.type==='settler')civ2.type='worker'}if(canEnter(S,u,target)){u.moves=1;stepUnit(S,u,target);u.moves=0}}}
-  if(u.hp<=0)killUnit(S,u,'공격하다 쓰러졌어요');
+  if(def.hp<=0){killUnit(S,def,'경쟁에서 밀려 물러났어요');if(u.hp>0&&!ranged){const civ2=civilianAt(S,target);if(civ2&&civ2.civ!==u.civ){civ2.civ=u.civ;if(civ2.type==='settler')civ2.type='worker'}if(canEnter(S,u,target)){u.moves=1;stepUnit(S,u,target);u.moves=0}}}
+  if(u.hp<=0)killUnit(S,u,'공략하다 물러났어요');
   return true}
 function killUnit(S,u,why){const i=S.units.indexOf(u);if(i<0)return;S.units.splice(i,1);emit(S,{type:'die',unit:u.id,at:u.at,civ:u.civ});note(S,u.civ,`${UNITS[u.type].name}이(가) ${why}`,u.at)}
 function cityShoot(S,c){if(c.shot||c.hp<c.maxHp*.15)return null;const R=2;let best=null,bs=1e9;
   for(const o of S.units){if(o.civ===c.civ||!isWar(S,c.civ,o.civ))continue;if(hexDist(c.tile,o.at,S.W)>R)continue;const sc=o.hp+(UNITS[o.type].civilian?50:0);if(sc<bs){bs=sc;best=o}}
   if(!best)return null;const a=cityStr(S,c)*.9,d=unitStr(S,best,'def'),hit=dmg(S,a,d);best.hp-=hit;c.shot=true;
   emit(S,{type:'attack',from:c.tile,to:best.at,city:c.id,civ:c.civ,deal:hit,take:0,target:best.id,fromCity:true});
-  if(best.hp<=0)killUnit(S,best,'도시의 화살에 쓰러졌어요');return best}
+  if(best.hp<=0)killUnit(S,best,'지점의 홍보전에 밀려 물러났어요');return best}
 
 /* ═══ 9. 도시 ═══ */
 function cityName(S,civ){const C=S.civs[civ];const n=C.names[C.named%C.names.length]+(C.named>=C.names.length?' '+(1+Math.floor(C.named/C.names.length)):'');C.named++;return n}
@@ -279,7 +287,7 @@ function foundCity(S,u){if(!canFound(S,u))return null;const C=S.civs[u.civ],firs
   const c={id:S.cid++,civ:u.civ,name:cityName(S,u.civ),tile:u.at,pop:1,food:0,prod:0,build:null,buildings:[],hp:200,maxHp:200,capital:first,origCap:first,founder:u.civ,shot:false,radius:1,worked:[],born:S.turn};
   S.cities.push(c);S.tiles[u.at].city=c.id;S.tiles[u.at].imp=null;S.tiles[u.at].ruin=false;if(first)C.capital=c.id;
   const i=S.units.indexOf(u);S.units.splice(i,1);claim(S,c);assignWork(S,c);c.build=aiPickBuild(S,c,true);
-  emit(S,{type:'found',city:c.id,civ:c.civ,at:c.tile});note(S,c.civ,`🏠 새 도시 ${c.name}을(를) 세웠어요`,c.tile);meetAround(S,c.civ,c.tile);updateVision(S,c.civ);return c}
+  emit(S,{type:'found',city:c.id,civ:c.civ,at:c.tile});note(S,c.civ,`🏥 새 지점 ${c.name}을(를) 열었어요`,c.tile);meetAround(S,c.civ,c.tile);updateVision(S,c.civ);return c}
 function claim(S,c){const R=Math.min(3,(c.pop>=3?2:1)+(c.buildings.includes('photo')?1:0));c.radius=R;
   for(const k of within(c.tile,R,S.W,S.H)){const T=S.tiles[k];if(T.owner==null)T.owner=c.id}S.tiles[c.tile].owner=c.id}
 function cityTiles(S,c){return within(c.tile,3,S.W,S.H).filter(k=>S.tiles[k].owner===c.id&&k!==c.tile&&!TERRAIN[S.tiles[k].t].block)}
@@ -293,8 +301,8 @@ function cityYield(S,c){const y={f:2,p:1,g:1,s:1+c.pop*.5};{const ct=tileYield(S
   if(nearPeak(S,c)){y.s+=3;y.g+=2}
   if(c.capital){y.g+=2;y.p+=1}
   const C=S.civs[c.civ];if(C.techs.includes('asset'))gp+=.25;
-  const bonus=C.ai?{easy:.85,normal:1,hard:1.3}[S.difficulty]:{easy:1.15,normal:1,hard:1}[S.difficulty];
-  y.p=y.p*bonus;y.g=y.g*(1+gp);y.s=y.s*(1+sp)*bonus;
+  const bonus=C.ai?{easy:.85,normal:1,hard:1.3}[S.difficulty]:{easy:1.15,normal:1,hard:1}[S.difficulty],tr=C.trait||{};
+  y.f*=tr.f||1;y.p=y.p*bonus*(tr.p||1);y.g=y.g*(1+gp)*(tr.g||1);y.s=y.s*(1+sp)*bonus*(tr.s||1);
   y.eat=c.pop*2;y.surplus=y.f-y.eat;return y}
 const foodBox=c=>12+Math.round(8*(c.pop-1)+Math.pow(c.pop-1,1.6));
 function itemCost(item){return (item.kind==='unit'?UNITS:item.kind==='building'?BUILDINGS:item.kind==='project'?PROJECTS:WONDERS)[item.id].cost}
@@ -312,22 +320,22 @@ function finishBuild(S,c){const it=c.build;if(!it||c.prod<itemCost(it))return fa
     const u=addUnit(S,c.civ,it.id,at);u.moves=0;note(S,c.civ,`${c.name}: ${D.icon} ${D.name} 완성`,c.tile,{city:c.id,unit:u.id});emit(S,{type:'built',city:c.id,civ:c.civ,unit:u.id})}
   else if(it.kind==='building'){c.buildings.push(it.id);if(it.id==='walls'){c.maxHp+=BUILDINGS.walls.hp;c.hp+=BUILDINGS.walls.hp}if(it.id==='photo')claim(S,c);note(S,c.civ,`${c.name}: ${BUILDINGS[it.id].icon} ${BUILDINGS[it.id].name} 완성`,c.tile,{city:c.id});emit(S,{type:'built',city:c.id,civ:c.civ})}
   else{if(S.wonders[it.id]){c.prod=0;c.build=null;return false}S.wonders[it.id]={civ:c.civ,city:c.id,turn:S.turn};c.buildings.push(it.id);
-    note(S,S.player,`🌟 ${C.name}의 ${c.name}에서 불가사의 ${WONDERS[it.id].name}을(를) 완성했어요`,c.tile,{city:c.id,wonder:true});emit(S,{type:'built',city:c.id,civ:c.civ,wonder:it.id})}
+    note(S,S.player,`🌟 ${C.name} ${c.name}에서 랜드마크 ${WONDERS[it.id].name}을(를) 완성했어요`,c.tile,{city:c.id,wonder:true});emit(S,{type:'built',city:c.id,civ:c.civ,wonder:it.id})}
   c.prod-=itemCost(it);c.prod=Math.max(0,Math.min(c.prod,20));c.build=null;return true}
 function processCity(S,c){const C=S.civs[c.civ],y=cityYield(S,c);
-  c.shot=false;c.hp=Math.min(c.maxHp,c.hp+(c.hp<c.maxHp?18:0));
+  c.shot=false;c.hp=Math.min(c.maxHp,c.hp+(c.hp<c.maxHp?18+((C.trait||{}).heal||0):0));
   // 성장
   let surplus=y.surplus;if(surplus>0&&c.buildings.includes('dental'))surplus*=1.25;
   if(c.build&&c.build.kind==='unit'&&c.build.id==='settler'&&surplus>0)surplus*=.5;
   c.food+=surplus;
-  if(c.food>=foodBox(c)){c.food-=foodBox(c);c.food=c.buildings.includes('granary')?Math.min(c.food+foodBox(c)*.2,foodBox(c)*.5):c.food;c.pop++;const r0=c.radius;claim(S,c);assignWork(S,c);if(!C.ai)note(S,c.civ,`${c.name}의 인구가 ${c.pop}(으)로 늘었어요`,c.tile,{city:c.id,quiet:true});if(c.radius>r0)updateVision(S,c.civ)}
-  else if(c.food<0){if(c.pop>1){c.pop--;c.food=foodBox(c)*.5;assignWork(S,c);note(S,c.civ,`${c.name}이(가) 굶주려 인구가 줄었어요`,c.tile,{city:c.id})}else c.food=0}
+  if(c.food>=foodBox(c)){c.food-=foodBox(c);c.food=c.buildings.includes('granary')?Math.min(c.food+foodBox(c)*.2,foodBox(c)*.5):c.food;c.pop++;const r0=c.radius;claim(S,c);assignWork(S,c);if(!C.ai)note(S,c.civ,`${c.name}의 규모가 체어 ${c.pop}개로 늘었어요`,c.tile,{city:c.id,quiet:true});if(c.radius>r0)updateVision(S,c.civ)}
+  else if(c.food<0){if(c.pop>1){c.pop--;c.food=foodBox(c)*.5;assignWork(S,c);note(S,c.civ,`${c.name}에 환자가 줄어 규모가 작아졌어요`,c.tile,{city:c.id})}else c.food=0}
   // 생산
-  if(c.build&&!canBuild(S,c,c.build)){if(c.build.kind==='wonder'&&S.wonders[c.build.id])note(S,c.civ,`${c.name}: 다른 문명이 먼저 ${WONDERS[c.build.id].name}을(를) 지었어요`,c.tile,{city:c.id});
+  if(c.build&&!canBuild(S,c,c.build)){if(c.build.kind==='wonder'&&S.wonders[c.build.id])note(S,c.civ,`${c.name}: 다른 치과가 먼저 ${WONDERS[c.build.id].name}을(를) 지었어요`,c.tile,{city:c.id});
     if(!(c.build.kind==='unit'&&c.build.id==='settler'&&c.pop<2))c.build=null}
   if(!c.build&&C.ai)c.build=aiPickBuild(S,c);
   if(c.build&&c.build.kind==='project'){C.gold+=Math.round(y.p*.8)}else{c.prod+=y.p;if(!c.build)c.prod=Math.min(c.prod,80);finishBuild(S,c)}
-  if(!c.build){c.build=C.ai?aiPickBuild(S,c):null;if(!C.ai)note(S,c.civ,`${c.name}: 무엇을 만들지 정해 주세요`,c.tile,{city:c.id,needs:true})}
+  if(!c.build){c.build=C.ai?aiPickBuild(S,c):null;if(!C.ai)note(S,c.civ,`${c.name}: 무엇을 준비할지 정해 주세요`,c.tile,{city:c.id,needs:true})}
   return y}
 
 /* ═══ 10. 기술 · 시야 · 만남 ═══ */
@@ -342,37 +350,37 @@ function meetAround(S,civ,at){for(const k of within(at,3,S.W,S.H)){const T=S.til
     if(T.owner!=null){const oc=S.cities.find(c=>c.id===T.owner);if(oc&&oc.civ!==civ)others.add(oc.civ)}
     for(const o of others)meet(S,civ,o)}}
 function meet(S,a,b){const A=S.civs[a],B=S.civs[b];if(A.met.includes(b))return;A.met.push(b);B.met.push(a);
-  note(S,a,`🤝 ${B.name}(${B.leader})을(를) 만났어요`,null);note(S,b,`🤝 ${A.name}(${A.leader})을(를) 만났어요`,null)}
+  note(S,a,`🤝 ${B.name}(${B.leader})과(와) 상권이 겹쳤어요`,null);note(S,b,`🤝 ${A.name}(${A.leader})과(와) 상권이 겹쳤어요`,null)}
 function power(S,civ){let p=0;for(const u of S.units)if(u.civ===civ&&!UNITS[u.type].civilian)p+=(UNITS[u.type].str+(UNITS[u.type].rs||0)*.6)*u.hp/100;for(const c of S.cities)if(c.civ===civ)p+=cityStr(S,c)*.6;return p}
-function declareWar(S,a,b){if(isWar(S,a,b)||a===b)return;setWar(S,a,b,true);meet(S,a,b);for(const o of S.civs)if(o.alive&&(o.met.includes(a)||o.id===a||o.id===b))note(S,o.id,`⚔ ${S.civs[a].name}이(가) ${S.civs[b].name}에 전쟁을 선포했어요`,null,{war:true})}
+function declareWar(S,a,b){if(isWar(S,a,b)||a===b)return;setWar(S,a,b,true);meet(S,a,b);for(const o of S.civs)if(o.alive&&(o.met.includes(a)||o.id===a||o.id===b))note(S,o.id,`⚔ ${S.civs[a].name}이(가) ${S.civs[b].name}에 환자 유치 전쟁을 선포했어요`,null,{war:true})}
 function makePeace(S,a,b){if(!isWar(S,a,b))return;setWar(S,a,b,false);
   // 평화가 되면 남의 영토 안에 있던 유닛은 가장 가까운 자기 도시로 돌아간다
   for(const u of S.units){const T=S.tiles[u.at];if(T.owner==null)continue;const oc=S.cities.find(c=>c.id===T.owner);if(!oc||oc.civ===u.civ||(oc.civ!==a&&oc.civ!==b)||(u.civ!==a&&u.civ!==b))continue;
     const home=S.cities.filter(c=>c.civ===u.civ).sort((x,y)=>hexDist(x.tile,u.at,S.W)-hexDist(y.tile,u.at,S.W))[0];if(home){const spot=[home.tile,...within(home.tile,2,S.W,S.H)].find(k=>canEnter(S,u,k));if(spot!=null){u.at=spot;u.goto=null}}}
-  for(const o of S.civs)if(o.alive&&(o.met.includes(a)||o.id===a||o.id===b))note(S,o.id,`🕊 ${S.civs[a].name}과(와) ${S.civs[b].name}이(가) 평화 협정을 맺었어요`,null);updateVision(S,a);updateVision(S,b)}
+  for(const o of S.civs)if(o.alive&&(o.met.includes(a)||o.id===a||o.id===b))note(S,o.id,`🕊 ${S.civs[a].name}과(와) ${S.civs[b].name}이(가) 상생 협약을 맺었어요`,null);updateVision(S,a);updateVision(S,b)}
 function aiAcceptsPeace(S,ai,other){const t=S.turn-(S.war[ai<other?ai+'-'+other:other+'-'+ai]||S.turn);return t>=8&&power(S,ai)<power(S,other)*1.35}
 
 /* ═══ 11. 도시 점령 · 문명 탈락 · 승리 ═══ */
 function captureCity(S,c,u){const old=c.civ,O=S.civs[old],N=S.civs[u.civ];
-  for(const o of unitsAt(S,c.tile).filter(o=>o.civ!==u.civ))killUnit(S,o,'도시와 함께 무너졌어요');
+  for(const o of unitsAt(S,c.tile).filter(o=>o.civ!==u.civ))killUnit(S,o,'지점과 함께 인수됐어요');
   c.civ=u.civ;c.pop=Math.max(1,Math.ceil(c.pop/2));c.food=0;c.prod=0;c.build=null;c.hp=Math.round(c.maxHp*.35);c.buildings=c.buildings.filter(b=>b!=='walls');c.maxHp=200;c.hp=Math.min(c.hp,c.maxHp);
   if(c.capital){c.capital=false;O.capital=null;const next=S.cities.find(x=>x.civ===old&&x.id!==c.id);if(next){next.capital=true;O.capital=next.id}}
   // 영토 안 타일은 그대로 이 도시 몫
   emit(S,{type:'move',unit:u.id,civ:u.civ,from:u.at,to:c.tile});u.at=c.tile;u.moves=0;u.fort=0;u.goto=null;assignWork(S,c);c.build=aiPickBuild(S,c);
-  emit(S,{type:'capture',city:c.id,civ:u.civ,from:old});note(S,u.civ,`🏰 ${c.name}을(를) 점령했어요!`,c.tile,{city:c.id});note(S,old,`💥 ${c.name}을(를) ${N.name}에게 빼앗겼어요`,c.tile,{city:c.id});
-  for(const o of S.civs)if(o.id!==u.civ&&o.id!==old&&o.met.includes(u.civ))note(S,o.id,`${N.name}이(가) ${O.name}의 ${c.name}을(를) 점령했어요`,null);
+  emit(S,{type:'capture',city:c.id,civ:u.civ,from:old});note(S,u.civ,`🏥 ${c.name}을(를) 인수했어요!`,c.tile,{city:c.id});note(S,old,`💥 ${c.name}이(가) ${N.name}에 인수됐어요`,c.tile,{city:c.id});
+  for(const o of S.civs)if(o.id!==u.civ&&o.id!==old&&o.met.includes(u.civ))note(S,o.id,`${N.name}이(가) ${O.name} ${c.name}을(를) 인수했어요`,null);
   if(!S.cities.some(x=>x.civ===old)){O.alive=false;for(const x of S.units.filter(x=>x.civ===old))S.units.splice(S.units.indexOf(x),1);for(const k in S.war)if(k.split('-').map(Number).includes(old))delete S.war[k];
-    for(const o of S.civs)note(S,o.id,`☠ ${O.name}이(가) 역사 속으로 사라졌어요`,null,{war:true})}
+    for(const o of S.civs)note(S,o.id,`🔒 ${O.name}이(가) 폐업했어요`,null,{war:true})}
   updateVision(S,u.civ);updateVision(S,old);checkVictory(S)}
 function score(S,civ){const C=S.civs[civ];let s=0;for(const c of S.cities)if(c.civ===civ)s+=10+c.pop*4+c.buildings.length*3;s+=C.techs.length*6;for(const k in S.wonders)if(S.wonders[k].civ===civ)s+=25;s+=Math.floor(C.gold/50);return Math.round(s)}
 function checkVictory(S){if(S.over)return S.over;
   const alive=S.civs.filter(c=>c.alive);
   // 정복: 다른 문명의 첫 수도를 모두 차지 (또는 다른 문명이 모두 사라짐)
   for(const C of alive){if(!S.cities.some(c=>c.civ===C.id))continue;const others=S.civs.filter(o=>o.id!==C.id);
-    if(others.length&&others.every(o=>{const cap=S.cities.find(c=>c.origCap&&c.founder===o.id);return !o.alive||!!cap&&cap.civ===C.id})){S.over={civ:C.id,kind:'정복',turn:S.turn};break}}
+    if(others.length&&others.every(o=>{const cap=S.cities.find(c=>c.origCap&&c.founder===o.id);return !o.alive||!!cap&&cap.civ===C.id})){S.over={civ:C.id,kind:'인수 합병',turn:S.turn};break}}
   if(!S.over)for(const C of alive)if(C.techs.includes('asset')&&C.gold>=GOAL_GOLD){S.over={civ:C.id,kind:'목표자산 20억',turn:S.turn};break}
-  if(!S.over&&!S.civs[S.player].alive)S.over={civ:alive[0]?alive[0].id:-1,kind:'정복',turn:S.turn,lost:true};
-  if(!S.over&&S.turn>MAX_TURN){let b=alive[0];for(const C of alive)if(score(S,C.id)>score(S,b.id))b=C;S.over={civ:b.id,kind:'점수',turn:S.turn}}
+  if(!S.over&&!S.civs[S.player].alive)S.over={civ:alive[0]?alive[0].id:-1,kind:'인수 합병',turn:S.turn,lost:true};
+  if(!S.over&&S.turn>MAX_TURN){let b=alive[0];for(const C of alive)if(score(S,C.id)>score(S,b.id))b=C;S.over={civ:b.id,kind:'평판 점수',turn:S.turn}}
   if(S.over)emit(S,{type:'over',over:S.over});return S.over}
 
 /* ═══ 12. 알림 · 이벤트 ═══ */
@@ -399,14 +407,17 @@ function startTurnFor(S,civ){const C=S.civs[civ];
   for(const u of [...S.units])if(u.civ===civ&&u.goto!=null&&S.units.includes(u)){const p=findPath(S,u,u.goto);if(p)followPath(S,u,p);else u.goto=null}
   updateVision(S,civ)}
 function endCivTurn(S,civ){const C=S.civs[civ];if(!C.alive)return;
+  // 불법위임치과: 보건소 단속 — 매출 30% 벌금 · 지점 하나 평판 하락 · 영업정지(생산 초기화)
+  const tr=C.trait||{};if(tr.raid&&S.turn>15&&rng(S)<tr.raid){const mine=S.cities.filter(c=>c.civ===civ);if(mine.length){const c=pick(S,mine),fine=Math.round(C.gold*.3);C.gold-=fine;c.hp=Math.max(1,c.hp-60);c.prod=0;
+    emit(S,{type:'raid',civ,city:c.id});for(const o of S.civs)if(o.met.includes(civ)||o.id===civ)note(S,o.id,`🚨 보건소 단속! ${C.name} ${c.name}이(가) 불법 위임 진료로 적발됐어요 — 벌금 ${fine} · 영업정지`,c.tile,{war:o.id===civ})}}
   for(const c of S.cities.filter(c=>c.civ===civ)){cityShoot(S,c)}
   for(const c of S.cities.filter(c=>c.civ===civ))processCity(S,c);
   const inc=civIncome(S,civ);C.gold=Math.max(0,C.gold+inc.gold);
   if(!C.research||C.techs.includes(C.research))C.research=C.ai?aiPickTech(S,civ):null;
   if(C.research){C.progress+=inc.science;const cost=techCost(S,C.research);if(C.progress>=cost){C.progress-=cost;C.techs.push(C.research);note(S,civ,`🔬 ${TECHS[C.research].name} 연구 완료${TECHS[C.research].unlocks.length?' — '+TECHS[C.research].unlocks.join(', '):''}`,null,{tech:C.research});
-      emit(S,{type:'tech',civ,tech:C.research});C.research=C.ai?aiPickTech(S,civ):null;if(!C.ai)note(S,civ,'다음 연구할 기술을 골라 주세요',null,{needsTech:true})}}
+      emit(S,{type:'tech',civ,tech:C.research});C.research=C.ai?aiPickTech(S,civ):null;if(!C.ai)note(S,civ,'다음 연구를 골라 주세요',null,{needsTech:true})}}
 }
-// 플레이어가 '턴 종료'를 누르면: 플레이어 도시 처리 → 컴퓨터 문명 차례 → 새 턴
+// 플레이어가 '턴 종료'를 누르면: 플레이어 지점 처리 → 경쟁 치과 차례 → 새 턴
 function endTurn(S){if(S.over)return;S.events.length=0;
   if(S.civs[S.player].ai)aiTurn(S,S.player);
   endCivTurn(S,S.player);

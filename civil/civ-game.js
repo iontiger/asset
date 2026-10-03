@@ -1,9 +1,9 @@
-/* 덴포토 문명 — 화면 조작 · 판 · 턴 진행 (규칙은 civ-rules.js, 그림은 civ-view.js)
+/* 덴포토 치과 경쟁 — 화면 조작 · 판 · 턴 진행 (규칙은 civ-rules.js, 그림은 civ-view.js)
    마을(3d/)의 iframe 안에서 열리면 ✕ 버튼이 postMessage {dpCiv:'close'} 로 마을에 돌아간다.
-   저장: localStorage 'dentphoto-civ-v1' (턴마다 자동), 기록 'dentphoto-civ-record-v1'. 시험용 window.civDebug */
+   저장: localStorage 'dentphoto-civ-v2' (턴마다 자동), 기록 'dentphoto-civ-record-v1'. 시험용 window.civDebug */
 (function(){
 'use strict';
-const C=window.CIV,$=s=>document.querySelector(s),SAVE='dentphoto-civ-v1',REC='dentphoto-civ-record-v1';
+const C=window.CIV,$=s=>document.querySelector(s),SAVE='dentphoto-civ-v2',REC='dentphoto-civ-record-v1';
 const view=new CivView($('#map3d'),$('#labels'));
 let S=null,sel=null,pendingAttack=null,busy=false,shownLog=0,pickCiv='dent',hover=null,lastHoverPath=null;
 const P=()=>S.civs[S.player];
@@ -14,12 +14,15 @@ const store={get(k){try{return localStorage.getItem(k)}catch{return null}},set(k
 
 /* ═══ 시작 화면 ═══ */
 function startScreen(){const box=$('#civPick');box.innerHTML='';
-  for(const c of C.CIVS){const b=document.createElement('button');b.style.setProperty('--civ',c.color);b.innerHTML=`<span class="dot"></span><b>${esc(c.name)}</b><small>${esc(c.leader)}</small>`;b.classList.toggle('on',c.key===pickCiv);b.onclick=()=>{pickCiv=c.key;startScreen()};box.appendChild(b)}
+  const n={small:3,normal:4,large:5}[$('#optSize').value]||4;
+  C.CIVS.forEach((c,k)=>{const b=document.createElement('div');b.className='civ-card'+(k===0?' on':'')+(k>=n?' off':'');b.style.setProperty('--civ',c.color);
+    b.innerHTML=`<span class="dot"></span><b>${esc(c.name)}${k===0?' <em>우리</em>':''}</b><small>${esc(c.motto||c.leader)}</small>`;box.appendChild(b)});
   const sv=store.get(SAVE);let info=null;try{if(sv){const o=JSON.parse(sv);info=o&&o.turn?{turn:o.turn,name:o.civs[o.player].name,over:o.over}:null}}catch{}
   $('#btContinue').hidden=!info||!!info.over;if(info)$('#btContinue').textContent=`이어하기 — ${info.name} · ${info.turn}턴`;$('#start').hidden=false}
-$('#btNew').onclick=()=>{newGame({civ:pickCiv,size:$('#optSize').value,difficulty:$('#optDiff').value})};
+$('#optSize').onchange=()=>startScreen();
+$('#btNew').onclick=()=>{newGame({size:$('#optSize').value,difficulty:$('#optDiff').value})};
 $('#btContinue').onclick=()=>{try{loadGame(C.load(store.get(SAVE)))}catch(e){toast('저장된 게임을 불러오지 못했어요: '+e.message,'war')}};
-function newGame(opt){S=C.newGame(opt);begin();toast(`🏕 ${P().name}의 이야기가 시작됐어요. 개척자로 첫 도시를 세워 보세요 (B)`,'good');const st=S.units.find(u=>u.civ===S.player&&u.type==='settler');if(st)select(st)}
+function newGame(opt){S=C.newGame(opt);begin();toast(`🦷 ${P().name}의 개원 이야기가 시작됐어요. 개원팀으로 본원을 열어 보세요 (B)`,'good');const st=S.units.find(u=>u.civ===S.player&&u.type==='settler');if(st)select(st)}
 function loadGame(s){S=s;begin();toast(`${P().name} · ${S.turn}턴부터 이어 해요`)}
 function begin(){$('#start').hidden=true;closeModal();closeCity();view.setState(S);shownLog=S.log.length;
   const cap=S.cities.find(c=>c.civ===S.player&&c.capital)||S.cities.find(c=>c.civ===S.player);const u=S.units.find(u=>u.civ===S.player);view.dist=21;view.centerOn(cap?cap.tile:u?u.at:0,true);sel=null;refresh()}
@@ -30,14 +33,14 @@ function refresh(){if(!S)return;const Pc=P(),inc=C.civIncome(S,S.player);
   $('#stGold b').textContent=fmt(Pc.gold);$('#stGold small').textContent=(inc.gold>=0?'+':'')+fmt(inc.gold);
   const r=Pc.research;$('#stSci').classList.toggle('need',!r&&Object.keys(C.TECHS).some(k=>C.canResearch(S,S.player,k)));
   if(r){const cost=C.techCost(S,r),left=Math.max(1,Math.ceil((cost-Pc.progress)/Math.max(.5,inc.science)));$('#stSci b').textContent=C.TECHS[r].name;$('#stSci small').textContent=`+${fmt(inc.science)} · ${left}턴`;$('#stSci .bar u').style.width=Math.min(100,Pc.progress/cost*100)+'%'}
-  else{$('#stSci b').textContent=Object.keys(C.TECHS).every(k=>Pc.techs.includes(k))?'모든 기술 완료':'연구 고르기';$('#stSci small').textContent=`+${fmt(inc.science)}`;$('#stSci .bar u').style.width='0'}
-  $('#stGoal b').textContent=eok(Pc.gold);$('#stGoal .bar u').style.width=Math.min(100,Pc.gold/C.GOAL_GOLD*100)+'%';$('#stGoal').title=Pc.techs.includes('asset')?'금 2,000(=20억)에 닿으면 목표자산 승리!':'자산 경영 기술을 배우고 금 2,000(=20억)을 모으면 목표자산 승리';
+  else{$('#stSci b').textContent=Object.keys(C.TECHS).every(k=>Pc.techs.includes(k))?'모든 연구 완료':'연구 고르기';$('#stSci small').textContent=`+${fmt(inc.science)}`;$('#stSci .bar u').style.width='0'}
+  $('#stGoal b').textContent=eok(Pc.gold);$('#stGoal .bar u').style.width=Math.min(100,Pc.gold/C.GOAL_GOLD*100)+'%';$('#stGoal').title=Pc.techs.includes('asset')?'매출 금고 2,000(=20억)에 닿으면 목표자산 승리!':'자산 경영을 연구하고 매출 2,000(=20억)을 모으면 목표자산 승리';
   const nx=nextTodo();const b=$('#btNext');b.textContent=nx.label;b.classList.toggle('wait',nx.kind!=='end');$('#btEnd').hidden=nx.kind==='end'||!!S.over;b.disabled=busy||!!S.over&&nx.kind==='end';
   view.syncAll();drawMini();if(sel&&!S.units.includes(sel))sel=null;showUnit()}
 function nextTodo(){if(S.over)return {kind:'end',label:'게임 끝'};const Pc=P();
   if(!Pc.research&&Object.keys(C.TECHS).some(k=>C.canResearch(S,S.player,k)))return {kind:'tech',label:'🔬 연구 고르기'};
-  const city=S.cities.find(c=>c.civ===S.player&&!c.build);if(city)return {kind:'city',city,label:`🏗 ${city.name} 생산 고르기`};
-  const idle=idleList();if(idle.length)return {kind:'unit',label:`다음 유닛 (${idle.length}) →`};
+  const city=S.cities.find(c=>c.civ===S.player&&!c.build);if(city)return {kind:'city',city,label:`🏗 ${city.name} 준비 고르기`};
+  const idle=idleList();if(idle.length)return {kind:'unit',label:`다음 직원 (${idle.length}) →`};
   return {kind:'end',label:'턴 종료 ⏎'}}
 function idleList(){return C.idleUnits(S,S.player).filter(u=>u.skip!==S.turn)}
 $('#btNext').onclick=()=>doNext();$('#btEnd').onclick=()=>endTurn();
@@ -50,7 +53,7 @@ function goHome(){if(S&&!S.over)store.set(SAVE,C.save(S));if(window.parent&&wind
 function toast(text,kind,at,extra){const box=$('#notes'),b=document.createElement('button');b.className='note'+(kind?' '+kind:'');b.textContent=text;
   b.onclick=()=>{if(extra&&extra.city!=null){const c=S.cities.find(c=>c.id===extra.city);if(c&&c.civ===S.player){openCity(c);return}}if(extra&&extra.needsTech){openTech();return}if(at!=null)view.centerOn(at)};
   box.appendChild(b);while(box.children.length>6)box.firstChild.remove();setTimeout(()=>{b.classList.add('fade');setTimeout(()=>b.remove(),600)},kind==='war'?11000:7000)}
-function flushLog(){for(;shownLog<S.log.length;shownLog++){const L=S.log[shownLog];if(L.quiet&&S.log.length-shownLog>8)continue;toast(L.text,L.war||/빼앗|쓰러|사라|굶주/.test(L.text)?'war':/완성|완료|점령|세웠|찾았|합류/.test(L.text)?'good':'',L.at,L)}}
+function flushLog(){for(;shownLog<S.log.length;shownLog++){const L=S.log[shownLog];if(L.quiet&&S.log.length-shownLog>8)continue;toast(L.text,L.war||/빼앗|물러|폐업|줄어|단속|인수됐/.test(L.text)?'war':/완성|완료|인수했|열었|매출 \+|합류|스카우트/.test(L.text)?'good':'',L.at,L)}}
 
 /* ═══ 유닛 선택 · 판 ═══ */
 function select(u,center){sel=u;pendingAttack=null;hideTip();closeCity();if(u&&center)view.centerOn(u.at);marks();showUnit()}
@@ -61,17 +64,17 @@ function marks(path){view.clearMarks();if(!sel||!S.units.includes(sel))return;vi
   const p=path||(sel.goto!=null?C.findPath(S,sel,sel.goto):null);if(p)view.pathLine(p)}
 function showUnit(){const box=$('#unitPanel');if(!sel||!S||!S.units.includes(sel)){box.hidden=true;return}const u=sel,D=C.UNITS[u.type],mine=u.civ===S.player,civ=S.civs[u.civ];
   box.style.setProperty('--civ',civ.color);
-  const str=D.rs?`원거리 ${D.rs} · 사거리 ${D.range} · 힘 ${D.str}`:D.str?`힘 ${D.str}`:'민간';
+  const str=D.rs?`원거리 홍보 ${D.rs} · 사거리 ${D.range} · 경쟁력 ${D.str}`:D.str?`경쟁력 ${D.str}`:'지원 인력';
   let acts='';
   if(mine){const a=(id,label,key,main,dis,title)=>`<button data-act="${id}" class="${main?'main':''}" ${dis?'disabled':''} ${title?`title="${esc(title)}"`:''}>${label}${key?`<kbd>${key}</kbd>`:''}</button>`;
-    if(D.found){const ok=C.canFound(S,u);acts+=a('found','🏠 도시 세우기','B',true,!ok,ok?'':'다른 도시와 3칸 이상 떨어진 우리 땅이나 빈 땅에서만 세울 수 있어요')}
-    if(D.work){if(u.build){const M=C.IMPROVE[u.build];acts+=`<button disabled>${M.icon} ${M.name} 짓는 중 ${u.buildT}/${M.turns}</button>`+a('stopwork','중지')}
+    if(D.found){const ok=C.canFound(S,u);acts+=a('found','🏥 지점 열기','B',true,!ok,ok?'':'다른 지점과 3칸 이상 떨어진 우리 상권이나 빈 땅에서만 열 수 있어요')}
+    if(D.work){if(u.build){const M=C.IMPROVE[u.build];acts+=`<button disabled>${M.icon} ${M.name} 만드는 중 ${u.buildT}/${M.turns}</button>`+a('stopwork','중지')}
       else for(const [k,M] of Object.entries(C.IMPROVE))if(C.canImprove(S,u,k))acts+=a('imp:'+k,`${M.icon} ${M.name} (${M.turns}턴)`,k==='farm'?'1':k==='mine'?'2':k==='lumber'?'3':'4',true)}
-    if(!D.civilian)acts+=a('fortify',u.fortify?'🛡 주둔 중':'🛡 주둔','F',false,u.fortify);
+    if(!D.civilian)acts+=a('fortify',u.fortify?'🛡 지키는 중':'🛡 지키기','F',false,u.fortify);
     if(u.goto!=null)acts+=a('cancel','➜ 이동 취소');
-    acts+=a('skip','⏭ 이번 턴 쉬기','␣')+a('sleep','💤 잠자기','Z')+a('disband','✖ 해산')}
-  const st=mine?`이동 ${+u.moves.toFixed(1)}/${D.moves}`:`${civ.name}${C.isWar(S,S.player,u.civ)?' · 전쟁 중':''}`;
-  box.innerHTML=`<div class="u-head"><span class="u-icon">${D.icon}</span><div><b>${D.name}</b><small>${str} · ${st}${u.xp?` · 경험 ${u.xp}`:''}</small><div class="hpbar"><u style="width:${u.hp}%"></u></div></div></div>${D.desc?`<p class="u-desc">${esc(D.desc)}</p>`:''}<div class="u-actions">${acts}</div>`;
+    acts+=a('skip','⏭ 이번 턴 쉬기','␣')+a('sleep','💤 휴가','Z')+a('disband','✖ 퇴사')}
+  const st=mine?`이동 ${+u.moves.toFixed(1)}/${D.moves}`:`${civ.name}${C.isWar(S,S.player,u.civ)?' · 경쟁 중':''}`;
+  box.innerHTML=`<div class="u-head"><span class="u-icon">${D.icon}</span><div><b>${D.name}</b><small>${str} · ${st}${u.xp?` · 경력 ${u.xp}`:''}</small><div class="hpbar"><u style="width:${u.hp}%"></u></div></div></div>${D.desc?`<p class="u-desc">${esc(D.desc)}</p>`:''}<div class="u-actions">${acts}</div>`;
   box.hidden=false;box.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>unitAct(b.dataset.act))}
 function unitAct(act){const u=sel;if(!u||busy)return;
   if(act==='found'){const ev0=S.events.length;const c=C.foundCity(S,u);if(c){sel=null;play(S.events.slice(ev0)).then(()=>{openCity(c);after()})}return}
@@ -81,7 +84,7 @@ function unitAct(act){const u=sel;if(!u||busy)return;
   if(act==='cancel'){u.goto=null;after()}
   if(act==='skip'){u.skip=S.turn;after(true)}
   if(act==='sleep'){u.sleep=true;u.goto=null;after(true)}
-  if(act==='disband'){if(confirm(`${C.UNITS[u.type].name}을(를) 해산할까요?`)){S.units.splice(S.units.indexOf(u),1);sel=null;after()}}}
+  if(act==='disband'){if(confirm(`${C.UNITS[u.type].name}을(를) 퇴사시킬까요?`)){S.units.splice(S.units.indexOf(u),1);sel=null;after()}}}
 // 행동 뒤: 화면 맞추기, 끝난 유닛이면 다음 유닛으로
 function after(advance){C.updateVision(S,S.player);flushLog();refresh();if(advance||sel&&(sel.moves<=0||sel.acted)){const list=idleList().filter(x=>x!==sel);if(list.length){select(list[0],true);return}sel=null;view.clearMarks();showUnit()}else marks()}
 function play(ev,opt){busy=true;$('#btNext').disabled=true;return view.play(ev,opt).then(()=>{busy=false;refresh()})}
@@ -104,19 +107,19 @@ function moveAlong(u,p){const ev0=S.events.length;u.goto=p[p.length-1];u.fortify
   play(S.events.slice(ev0)).then(()=>after(u.moves<=0))}
 function doAttack(u,i){const ev0=S.events.length;pendingAttack=null;hideTip();
   if(!C.attack(S,u,i))return;play(S.events.slice(ev0)).then(()=>{if(S.over)gameOver();after(true)})}
-function attackTip(u,i){const pv=C.preview(S,u,i);if(!pv)return;const city=C.cityAt(S,i),def=C.militaryAt(S,i)||C.civilianAt(S,i),name=city?`🏰 ${city.name}`:def?C.UNITS[def.type].icon+' '+C.UNITS[def.type].name:'';
-  const tip=$('#tip');tip.innerHTML=pv.capture?`<h4>${name} 사로잡기</h4><button class="atk">사로잡기</button>`:
-    `<h4>${pv.ranged?'🏹 원거리 공격':'⚔ 공격'} → ${name}</h4><div class="vs"><div><small>우리 힘</small><b>${pv.a.toFixed(1)}</b><small>받는 피해 ~${Math.min(100,pv.take)}</small></div><div>vs</div><div><small>상대 힘</small><b>${pv.d.toFixed(1)}</b><small>주는 피해 ~${pv.deal}${city?` / 체력 ${city.hp}`:def?` / 체력 ${def.hp}`:''}</small></div></div>
-    ${pv.take>=u.hp?'<small style="color:#c8402f">⚠ 이 공격으로 유닛이 쓰러질 수 있어요</small><br>':''}<button class="atk">공격하기</button> <button class="no">취소</button>`;
+function attackTip(u,i){const pv=C.preview(S,u,i);if(!pv)return;const city=C.cityAt(S,i),def=C.militaryAt(S,i)||C.civilianAt(S,i),name=city?`🏥 ${city.name}`:def?C.UNITS[def.type].icon+' '+C.UNITS[def.type].name:'';
+  const tip=$('#tip');tip.innerHTML=pv.capture?`<h4>${name} 스카우트</h4><button class="atk">스카우트하기</button>`:
+    `<h4>${pv.ranged?'📣 원거리 홍보전':city?'🏥 지점 공략':'⚔ 환자 유치 경쟁'} → ${name}</h4><div class="vs"><div><small>우리 경쟁력</small><b>${pv.a.toFixed(1)}</b><small>받는 피해 ~${Math.min(100,pv.take)}</small></div><div>vs</div><div><small>상대 경쟁력</small><b>${pv.d.toFixed(1)}</b><small>주는 피해 ~${pv.deal}${city?` / 평판 ${city.hp}`:def?` / 체력 ${def.hp}`:''}</small></div></div>
+    ${pv.take>=u.hp?'<small style="color:#c8402f">⚠ 이 경쟁에서 직원이 물러날 수 있어요</small><br>':''}<button class="atk">겨루기</button> <button class="no">취소</button>`;
   tip.hidden=false;tip.querySelector('.atk').onclick=()=>doAttack(u,i);const no=tip.querySelector('.no');if(no)no.onclick=()=>{pendingAttack=null;hideTip();marks()}}
 function tileTip(i,extra){const Pc=P();if(!Pc.explored[i]){hideTip();return}const T=S.tiles[i],tr=C.TERRAIN[T.t],y=C.tileYield(S,S.tiles,i);
-  const own=T.owner!=null?S.cities.find(c=>c.id===T.owner):null;const parts=[`<b>${T.wonder?'⛰ 목표봉 (자연경관)':tr.name}</b>`];
-  if(T.wonder)parts.push('<small>2칸 안의 도시: 과학 +3 · 금 +2</small>');
-  else if(!tr.block)parts.push(`<small>🍞${y.f} ⚙${y.p} 💰${y.g}${tr.def?' · 방어 +25%':''}${tr.move>1&&tr.move<9?' · 이동 2':''}</small>`);
+  const own=T.owner!=null?S.cities.find(c=>c.id===T.owner):null;const parts=[`<b>${T.wonder?'⛰ 목표봉 (명소)':tr.name}</b>`];
+  if(T.wonder)parts.push('<small>2칸 안의 지점: 연구 +3 · 매출 +2</small>');
+  else if(!tr.block)parts.push(`<small>🙂${y.f} ⚙${y.p} 💰${y.g}${tr.def?' · 방어 +25%':''}${tr.move>1&&tr.move<9?' · 이동 2':''}</small>`);
   if(T.res)parts.push(`<small>${C.RESOURCES[T.res].icon} ${C.RESOURCES[T.res].name}</small>`);
-  if(T.imp)parts.push(`<small>${C.IMPROVE[T.imp].icon} ${C.IMPROVE[T.imp].name}</small>`);if(T.road)parts.push('<small>🛤 도로</small>');if(T.ruin)parts.push('<small>💎 보물상자 — 유닛이 들어가면 열려요</small>');
-  if(own)parts.push(`<small>${esc(S.civs[own.civ].name)} · ${esc(own.name)} 영토</small>`);
-  const c=C.cityAt(S,i);if(c&&c.civ!==S.player)parts.push(`<small>🏰 ${esc(c.name)} · 인구 ${c.pop} · 방어 ${C.cityStr(S,c).toFixed(1)} · 체력 ${c.hp}/${c.maxHp}</small>`);
+  if(T.imp)parts.push(`<small>${C.IMPROVE[T.imp].icon} ${C.IMPROVE[T.imp].name}</small>`);if(T.road)parts.push('<small>🚌 셔틀버스 노선</small>');if(T.ruin)parts.push('<small>💎 보물상자 — 직원이 들어가면 열려요</small>');
+  if(own)parts.push(`<small>${esc(S.civs[own.civ].name)} · ${esc(own.name)} 상권</small>`);
+  const c=C.cityAt(S,i);if(c&&c.civ!==S.player)parts.push(`<small>🏥 ${esc(c.name)} · 체어 ${c.pop} · 방어 ${C.cityStr(S,c).toFixed(1)} · 평판 ${c.hp}/${c.maxHp}</small>`);
   if(extra)parts.push(`<small style="color:#c8402f">${extra}</small>`);
   const tip=$('#tip');tip.innerHTML=parts.join('<br>');tip.hidden=false;clearTimeout(tileTip.t);tileTip.t=setTimeout(hideTip,4200)}
 function hideTip(){$('#tip').hidden=true}
@@ -129,17 +132,17 @@ function openCity(c){if(!c||c.civ!==S.player)return;openCityId=c.id;hideTip();co
   const cost=cur&&cur.kind!=='project'?C.itemCost(cur):0,turns=cur&&cur.kind!=='project'?Math.max(1,Math.ceil((cost-c.prod)/Math.max(.5,y.p))):null,buy=C.buyCost(S,c);
   const row=(it)=>{const D=(it.kind==='unit'?C.UNITS:it.kind==='building'?C.BUILDINGS:it.kind==='wonder'?C.WONDERS:C.PROJECTS)[it.id],on=cur&&cur.kind===it.kind&&cur.id===it.id;
     const t=it.kind==='project'?'':`${D.cost} · ${Math.max(1,Math.ceil((D.cost-(on?c.prod:Math.min(c.prod,D.cost)))/Math.max(.5,y.p)))}턴`;
-    const info=it.kind==='unit'?(D.str?`힘 ${D.str}${D.rs?` · 원거리 ${D.rs}`:''} · 이동 ${D.moves}`:'')+(D.desc?' · '+D.desc:''):
-      D.desc||[D.f&&`🍞+${D.f}`,D.p&&`⚙+${D.p}`,D.g&&`💰+${D.g}`,D.s&&`🔬+${D.s}`,D.gp&&`금 +${D.gp*100}%`,D.sp&&`과학 +${D.sp*100|0}%`].filter(Boolean).join(' ');
-    return `<button class="opt ${on?'on':''}" data-k="${it.kind}" data-id="${it.id}"><span class="ic">${D.icon}</span><span>${D.name}${it.kind==='wonder'?' <small style="display:inline">불가사의</small>':''}<small>${esc(info)}</small></span><span class="t">${t}</span></button>`};
+    const info=it.kind==='unit'?(D.str?`경쟁력 ${D.str}${D.rs?` · 원거리 ${D.rs}`:''} · 이동 ${D.moves}`:'')+(D.desc?' · '+D.desc:''):
+      D.desc||[D.f&&`🙂+${D.f}`,D.p&&`⚙+${D.p}`,D.g&&`💰+${D.g}`,D.s&&`🔬+${D.s}`,D.gp&&`매출 +${D.gp*100}%`,D.sp&&`연구 +${D.sp*100|0}%`].filter(Boolean).join(' ');
+    return `<button class="opt ${on?'on':''}" data-k="${it.kind}" data-id="${it.id}"><span class="ic">${D.icon}</span><span>${D.name}${it.kind==='wonder'?' <small style="display:inline">랜드마크</small>':''}<small>${esc(info)}</small></span><span class="t">${t}</span></button>`};
   const opts=C.buildOptions(S,c);const grp=k=>opts.filter(o=>o.kind===k).map(row).join('');
   const built=c.buildings.map(b=>{const D=C.BUILDINGS[b]||C.WONDERS[b];return `<span>${D.icon} ${D.name}</span>`}).join('')||'<span>아직 없어요</span>';
-  box.innerHTML=`<div class="c-head"><span class="pop">${c.pop}</span><div><h3>${c.capital?'★ ':''}${esc(c.name)}</h3><small>체력 ${c.hp}/${c.maxHp} · 방어 ${C.cityStr(S,c).toFixed(1)} · 식량 ${Math.floor(c.food)}/${fb}${grow?` · ${grow}턴 뒤 성장`:y.surplus<0?' · 굶주림!':''}</small></div><button class="x" title="닫기 (Esc)">✕</button></div>
-    <div class="c-yield"><div><b>${fmt(y.f)}</b>🍞 식량 ${y.surplus>=0?'+':''}${fmt(y.surplus)}</div><div><b>${y.p.toFixed(1)}</b>⚙ 생산</div><div><b>${y.g.toFixed(1)}</b>💰 금</div><div><b>${y.s.toFixed(1)}</b>🔬 과학</div></div>
-    <div class="c-now">${cur?`<span class="big">${curD.icon}</span><div class="prog"><b>${curD.name}</b><small style="display:block;color:#7b876e;font-size:11px">${cur.kind==='project'?'생산력 → 금':`${Math.floor(c.prod)}/${cost} · ${turns}턴`}</small>${cur.kind!=='project'?`<div class="hpbar"><u style="width:${Math.min(100,c.prod/cost*100)}%"></u></div>`:''}</div>
-      ${isFinite(buy)?`<button class="buy" ${buy>Pc.gold||c.boughtTurn===S.turn?'disabled':''}>💰 ${fmt(buy)} 사기</button>`:''}`:'<span class="big">❔</span><div class="prog"><b>무엇을 만들까요?</b><small style="display:block;color:#7b876e">아래에서 골라 주세요</small></div>'}</div>
-    <div class="c-list"><h5>유닛</h5>${grp('unit')}<h5>건물</h5>${grp('building')||'<small style="color:#7b876e">새 기술을 배우면 늘어나요</small>'}${grp('wonder')?'<h5>불가사의</h5>'+grp('wonder'):''}<h5>프로젝트</h5>${grp('project')}<h5>지은 것</h5><div class="chips">${built}</div></div>`;
-  box.hidden=false;box.querySelector('.x').onclick=closeCity;const bb=box.querySelector('.buy');if(bb)bb.onclick=()=>{if(C.buy(S,c)){toast(`💰 ${c.name}: 사들였어요`,'good');flushLog();refresh();openCity(c)}};
+  box.innerHTML=`<div class="c-head"><span class="pop">${c.pop}</span><div><h3>${c.capital?'★ ':''}${esc(c.name)}</h3><small>평판 ${c.hp}/${c.maxHp} · 방어 ${C.cityStr(S,c).toFixed(1)} · 환자 ${Math.floor(c.food)}/${fb}${grow?` · ${grow}턴 뒤 체어 추가`:y.surplus<0?' · 환자 감소!':''}</small></div><button class="x" title="닫기 (Esc)">✕</button></div>
+    <div class="c-yield"><div><b>${fmt(y.f)}</b>🙂 환자 ${y.surplus>=0?'+':''}${fmt(y.surplus)}</div><div><b>${y.p.toFixed(1)}</b>⚙ 진료력</div><div><b>${y.g.toFixed(1)}</b>💰 매출</div><div><b>${y.s.toFixed(1)}</b>🔬 연구</div></div>
+    <div class="c-now">${cur?`<span class="big">${curD.icon}</span><div class="prog"><b>${curD.name}</b><small style="display:block;color:#7b876e;font-size:11px">${cur.kind==='project'?'진료력 → 매출':`${Math.floor(c.prod)}/${cost} · ${turns}턴`}</small>${cur.kind!=='project'?`<div class="hpbar"><u style="width:${Math.min(100,c.prod/cost*100)}%"></u></div>`:''}</div>
+      ${isFinite(buy)?`<button class="buy" ${buy>Pc.gold||c.boughtTurn===S.turn?'disabled':''}>💰 ${fmt(buy)} 바로 구매</button>`:''}`:'<span class="big">❔</span><div class="prog"><b>무엇을 준비할까요?</b><small style="display:block;color:#7b876e">아래에서 골라 주세요</small></div>'}</div>
+    <div class="c-list"><h5>직원 채용</h5>${grp('unit')}<h5>시설</h5>${grp('building')||'<small style="color:#7b876e">새 연구를 마치면 늘어나요</small>'}${grp('wonder')?'<h5>랜드마크</h5>'+grp('wonder'):''}<h5>경영</h5>${grp('project')}<h5>갖춘 시설</h5><div class="chips">${built}</div></div>`;
+  box.hidden=false;box.querySelector('.x').onclick=closeCity;const bb=box.querySelector('.buy');if(bb)bb.onclick=()=>{if(C.buy(S,c)){toast(`💰 ${c.name}: 바로 들여놓았어요`,'good');flushLog();refresh();openCity(c)}};
   box.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{c.build={kind:b.dataset.k,id:b.dataset.id};refresh();openCity(c)});
   view.centerOn(c.tile)}
 function closeCity(){$('#cityPanel').hidden=true;openCityId=null}
@@ -154,24 +157,25 @@ function openTech(){if(!S)return;const Pc=P(),inc=C.civIncome(S,S.player),depth=
   let html='';for(const d of Object.keys(cols).sort((a,b)=>a-b))for(let r=0;r<6;r++){const k=cols[d][r];if(!k){html+='<span></span>';continue}const T=C.TECHS[k],known=Pc.techs.includes(k),now=Pc.research===k,av=C.canResearch(S,S.player,k);
     const cost=C.techCost(S,k),turns=Math.max(1,Math.ceil((cost-(now?Pc.progress:0))/Math.max(.5,inc.science)));
     html+=`<button class="tech ${known?'known':now?'now':av?'avail':'locked'}" data-t="${k}" ${known||!av?'disabled':''} style="grid-column:${+d+1};grid-row:${r+1}"><b>${known?'✓ ':now?'🔬 ':''}${T.name}</b><small>${known?'완료':`${cost} · ${turns}턴`}${T.req.length?` · ← ${T.req.map(q=>C.TECHS[q].name).join(', ')}`:''}</small><small>${esc((T.unlocks||[]).join(' · ')||T.desc||'')}</small></button>`}
-  const card=modal(`<button class="close">✕</button><h2>🔬 기술</h2><p class="sub">과학 +${fmt(inc.science)}/턴 · 배운 기술 ${Pc.techs.length}/${Object.keys(C.TECHS).length}. 다음에 연구할 기술을 고르세요. 마지막 '자산 경영'을 배우고 금 2,000(=20억)을 모으면 목표자산 승리!</p><div class="tech-grid">${html}</div>`,'wide');
+  const card=modal(`<button class="close">✕</button><h2>🔬 치의학 연구</h2><p class="sub">연구 +${fmt(inc.science)}/턴 · 마친 연구 ${Pc.techs.length}/${Object.keys(C.TECHS).length}. 다음 연구를 고르세요. 마지막 '자산 경영'을 마치고 매출 2,000(=20억)을 모으면 목표자산 승리!</p><div class="tech-grid">${html}</div>`,'wide');
   card.querySelectorAll('.tech.avail,.tech.now').forEach(b=>b.onclick=()=>{Pc.research=b.dataset.t;closeModal();refresh();toast(`🔬 ${C.TECHS[Pc.research].name} 연구를 시작했어요`)})}
 function openDiplo(){if(!S)return;const Pc=P(),mine=C.power(S,S.player);
-  const rows=S.civs.filter(c=>c.id!==S.player).map(c=>{if(!Pc.met.includes(c.id))return `<div class="diplo" style="--civ:#bbb"><span class="dot"></span><div><b>아직 만나지 못한 문명</b><small>지도를 넓혀 보세요</small></div></div>`;
+  const rows=S.civs.filter(c=>c.id!==S.player).map(c=>{if(!Pc.met.includes(c.id))return `<div class="diplo" style="--civ:#bbb"><span class="dot"></span><div><b>아직 모르는 경쟁 치과</b><small>상권을 넓혀 보세요</small></div></div>`;
     const war=C.isWar(S,S.player,c.id),ratio=C.power(S,c.id)/Math.max(1,mine),cities=S.cities.filter(x=>x.civ===c.id).length;
-    const mood=!c.alive?'사라짐':ratio>1.4?'우리보다 강해요':ratio<.7?'우리보다 약해요':'비슷해요';
-    return `<div class="diplo" style="--civ:${c.color}"><span class="dot"></span><div><b>${esc(c.name)}</b><small>${esc(c.leader)} · 도시 ${cities} · 군사력 ${mood} · 점수 ${C.score(S,c.id)}</small></div><span class="st ${war?'war':''}">${!c.alive?'—':war?'⚔ 전쟁':'🕊 평화'}</span>${c.alive?war?`<button data-peace="${c.id}">평화 제안</button>`:`<button data-war="${c.id}">전쟁 선포</button>`:''}</div>`}).join('');
-  const card=modal(`<button class="close">✕</button><h2>🤝 외교</h2><p class="sub">${esc(Pc.name)} · 점수 ${C.score(S,S.player)} · 평화 중에는 서로의 영토에 들어갈 수 없어요.</p>${rows}`);
-  card.querySelectorAll('[data-war]').forEach(b=>b.onclick=()=>{const id=+b.dataset.war;if(!confirm(`${S.civs[id].name}에 전쟁을 선포할까요?`))return;C.declareWar(S,S.player,id);flushLog();closeModal();refresh();marks()});
-  card.querySelectorAll('[data-peace]').forEach(b=>b.onclick=()=>{const id=+b.dataset.peace;if(C.aiAcceptsPeace(S,id,S.player)){C.makePeace(S,S.player,id);flushLog();closeModal();refresh();marks()}else toast(`${S.civs[id].name}: "아직은 싸울 거예요" (전쟁이 8턴 넘게 이어지고 우리가 충분히 강해야 받아들여요)`,'war')})}
-function openHelp(){modal(`<button class="close">✕</button><div class="help"><h2>덴포토 문명 — 도움말</h2>
-  <h3>조작</h3><ul><li>유닛을 누르면 갈 수 있는 칸(흰색)과 공격할 수 있는 칸(빨강)이 보여요. 칸을 누르면 그곳으로 가고, 먼 곳은 여러 턴에 걸쳐 갑니다.</li>
-  <li>빨간 칸을 누르면 예상 피해가 나오고, 한 번 더 누르면 공격해요.</li><li>끌어서 지도 이동 · 휠/두 손가락으로 확대 · 도시 이름표를 누르면 도시 화면.</li>
-  <li>단축키: <span class="kbd">⏎</span> 다음/턴 종료 · <span class="kbd">B</span> 도시 세우기 · <span class="kbd">F</span> 주둔 · <span class="kbd">␣</span> 쉬기 · <span class="kbd">Z</span> 잠자기 · <span class="kbd">1~4</span> 일꾼 작업 · <span class="kbd">T</span> 기술 · <span class="kbd">WASD/화살표</span> 지도 이동 · <span class="kbd">Esc</span> 닫기</li></ul>
-  <h3>도시</h3><p>도시는 인구만큼 둘레 칸을 일궈 🍞식량 · ⚙생산 · 💰금 · 🔬과학을 얻어요. 식량이 차면 인구가 늘고 영토가 넓어집니다. 개척자를 만들면 인구가 1 줄어요. 목표봉(⛰) 2칸 안의 도시는 과학 +3 · 금 +2.</p>
-  <h3>전투</h3><p>힘과 체력으로 피해가 정해져요. 언덕 · 숲은 방어 +25%, 주둔 +25%, 창병은 기마 유닛에 강하고 투석기 · 대포는 도시 공격에 강해요. 도시 체력을 0으로 만든 뒤 근접 유닛이 들어가면 점령합니다. 도시는 해마다 둘레 2칸의 적을 쏩니다.</p>
-  <h3>승리</h3><ul><li>🏰 정복 — 모든 문명의 첫 수도를 차지</li><li>🏆 목표자산 — '자산 경영'을 배우고 금 2,000(=20억)을 모으기</li><li>⭐ 점수 — ${C.MAX_TURN}턴이 지나면 점수가 가장 높은 문명</li></ul>
-  <p>마을 3D 모델(집 · 시장 · 금고 · 탑 · 등대 · 분수 · 열기구)과 우편배달부 오토바이가 그대로 들어 있어요.</p></div>`)}
+    const mood=!c.alive?'폐업':ratio>1.4?'우리보다 강해요':ratio<.7?'우리보다 약해요':'비슷해요';
+    return `<div class="diplo" style="--civ:${c.color}"><span class="dot"></span><div><b>${esc(c.name)}</b><small>${esc(c.leader)} · 지점 ${cities} · 경쟁력 ${mood} · 평판 점수 ${C.score(S,c.id)}</small></div><span class="st ${war?'war':''}">${!c.alive?'—':war?'⚔ 경쟁 중':'🕊 상생'}</span>${c.alive?war?`<button data-peace="${c.id}">상생 제안</button>`:`<button data-war="${c.id}">환자 유치 전쟁</button>`:''}</div>`}).join('');
+  const card=modal(`<button class="close">✕</button><h2>🤝 경쟁 치과</h2><p class="sub">${esc(Pc.name)} · 평판 점수 ${C.score(S,S.player)} · 상생 협약 중에는 서로의 상권에 들어갈 수 없어요.</p>${rows}`);
+  card.querySelectorAll('[data-war]').forEach(b=>b.onclick=()=>{const id=+b.dataset.war;if(!confirm(`${S.civs[id].name}에 환자 유치 전쟁을 선포할까요?`))return;C.declareWar(S,S.player,id);flushLog();closeModal();refresh();marks()});
+  card.querySelectorAll('[data-peace]').forEach(b=>b.onclick=()=>{const id=+b.dataset.peace;if(C.aiAcceptsPeace(S,id,S.player)){C.makePeace(S,S.player,id);flushLog();closeModal();refresh();marks()}else toast(`${S.civs[id].name}: "아직은 물러설 수 없어요" (경쟁이 8턴 넘게 이어지고 우리가 충분히 강해야 받아들여요)`,'war')})}
+function openHelp(){modal(`<button class="close">✕</button><div class="help"><h2>덴포토 치과 경쟁 — 도움말</h2>
+  <h3>조작</h3><ul><li>직원을 누르면 갈 수 있는 칸(흰색)과 겨룰 수 있는 칸(빨강)이 보여요. 칸을 누르면 그곳으로 가고, 먼 곳은 여러 턴에 걸쳐 갑니다.</li>
+  <li>빨간 칸을 누르면 예상 결과가 나오고, 한 번 더 누르면 겨뤄요.</li><li>끌어서 지도 이동 · 휠/두 손가락으로 확대 · 지점 이름표를 누르면 지점 화면.</li>
+  <li>단축키: <span class="kbd">⏎</span> 다음/턴 종료 · <span class="kbd">B</span> 지점 열기 · <span class="kbd">F</span> 지키기 · <span class="kbd">␣</span> 쉬기 · <span class="kbd">Z</span> 휴가 · <span class="kbd">1~4</span> 일꾼 작업 · <span class="kbd">T</span> 기술 · <span class="kbd">WASD/화살표</span> 지도 이동 · <span class="kbd">Esc</span> 닫기</li></ul>
+  <h3>지점</h3><p>지점은 체어 수만큼 둘레 상권에서 🙂환자 · ⚙진료력 · 💰매출 · 🔬연구를 얻어요. 환자가 차면 체어가 늘고 상권이 넓어집니다. 개원팀을 꾸리면 체어가 1 줄어요. 목표봉(⛰) 2칸 안의 지점은 연구 +3 · 매출 +2.</p>
+  <h3>경쟁 치과</h3><ul>${C.CIVS.map(c=>`<li><b style="color:${c.color}">${esc(c.name)}</b> — ${esc(c.motto)}</li>`).join('')}</ul>
+  <h3>환자 유치 경쟁</h3><p>경쟁력과 체력으로 결과가 정해져요. 언덕 동네 · 공원 숲은 방어 +25%, 지키기 +25%, 보험청구팀은 광고 차량 · 앰뷸런스에 강하고 현수막 부대 · TV 광고는 지점 공략에 강해요. 지점 평판을 0으로 만든 뒤 가까이 있는 직원이 들어가면 그 지점을 인수합니다. 지점은 해마다 둘레 2칸의 경쟁 직원에게 홍보전을 펼쳐요. 불법위임치과는 가끔 보건소 단속에 걸려 벌금과 영업정지를 받아요.</p>
+  <h3>승리</h3><ul><li>🏥 인수 합병 — 경쟁 치과의 본점을 모두 인수</li><li>🏆 목표자산 — '자산 경영'을 마치고 매출 2,000(=20억)을 모으기</li><li>⭐ 평판 점수 — ${C.MAX_TURN}턴이 지나면 평판 점수가 가장 높은 치과</li></ul>
+  <p>지점 건물은 마을 3D 모델(집 · 시장 · 금고 · 탑 · 등대 · 분수 · 열기구)로 짓고, 지점마다 큰 이 간판이 서 있어요.</p></div>`)}
 function openMenu(){const card=modal(`<button class="close">✕</button><h2>메뉴</h2><p class="sub">${S?`${esc(P().name)} · ${S.turn}턴 · 지도 시드 ${S.seed}`:''}</p><div class="row-btns"><button data-m="save">💾 저장</button><button data-m="new">🆕 새 게임</button><button data-m="home" class="go">🏡 마을로 돌아가기</button></div>`);
   card.querySelector('[data-m=save]').onclick=()=>{if(S){store.set(SAVE,C.save(S));toast('💾 저장했어요','good')}closeModal()};
   card.querySelector('[data-m=new]').onclick=()=>{closeModal();if(!S||S.over||confirm('지금 게임을 저장하고 새 게임을 시작할까요?')){if(S&&!S.over)store.set(SAVE,C.save(S));startScreen()}};
@@ -181,18 +185,18 @@ function gameOver(){const o=S.over;if(!o)return;const win=o.civ===S.player&&!o.l
   try{window.parent!==window&&window.parent.postMessage({dpCiv:'finish',win,kind:o.kind,turn:o.turn},'*')}catch{}
   store.set(SAVE,C.save(S));
   const rows=S.civs.map(c=>`<tr><td><span class="dot" style="background:${c.color}"></span>${esc(c.name)}${c.id===S.player?' (우리)':''}</td><td>${S.cities.filter(x=>x.civ===c.id).length}</td><td>${c.techs.length}</td><td>${fmt(c.gold)}</td><td><b>${C.score(S,c.id)}</b></td></tr>`).join('');
-  const card=modal(`<h2>${win?'🎉 승리!':'🏳 게임 끝'}</h2><p class="sub">${o.turn}턴 · ${esc(W?W.name:'')} — ${o.kind} 승리${win?'! 덴포토의 이름이 역사에 남았어요.':''}</p>
-    <table class="score-table"><tr><th>문명</th><th>도시</th><th>기술</th><th>금</th><th>점수</th></tr>${rows}</table>
+  const card=modal(`<h2>${win?'🎉 승리!':'🏳 게임 끝'}</h2><p class="sub">${o.turn}턴 · ${esc(W?W.name:'')} — ${o.kind} 승리${win?'! 동네 사람들이 덴포토 치과를 첫손에 꼽아요.':''}</p>
+    <table class="score-table"><tr><th>치과</th><th>지점</th><th>연구</th><th>매출</th><th>평판</th></tr>${rows}</table>
     <div class="row-btns"><button data-m="look">지도 둘러보기</button><button data-m="new">🆕 새 게임</button><button data-m="home" class="go">🏡 마을로</button></div>`);
   card.querySelector('[data-m=look]').onclick=closeModal;card.querySelector('[data-m=new]').onclick=()=>{closeModal();startScreen()};card.querySelector('[data-m=home]').onclick=goHome}
 
 /* ═══ 턴 끝내기 ═══ */
-async function endTurn(){if(busy||!S||S.over)return;busy=true;sel=null;view.clearMarks();showUnit();closeCity();hideTip();$('#btNext').disabled=true;$('#btNext').textContent='다른 문명 차례…';
+async function endTurn(){if(busy||!S||S.over)return;busy=true;sel=null;view.clearMarks();showUnit();closeCity();hideTip();$('#btNext').disabled=true;$('#btNext').textContent='경쟁 치과 차례…';
   await new Promise(r=>setTimeout(r,30));
   const ev=C.endTurn(S);await view.play(ev,{fast:true,cap:3.2});busy=false;
   store.set(SAVE,C.save(S));flushLog();refresh();
   if(S.over){gameOver();return}
-  if(S.peaceOffer&&S.peaceOffer.turn>=S.turn-1){const id=S.peaceOffer.from;S.peaceOffer=null;if(C.isWar(S,S.player,id)){const card=modal(`<h2>🕊 평화 제안</h2><p class="sub">${esc(S.civs[id].name)}의 ${esc(S.civs[id].leader)}: "이제 그만 싸우고 평화롭게 지냅시다."</p><div class="row-btns"><button data-m="no">거절</button><button data-m="yes" class="go">평화 협정 맺기</button></div>`);
+  if(S.peaceOffer&&S.peaceOffer.turn>=S.turn-1){const id=S.peaceOffer.from;S.peaceOffer=null;if(C.isWar(S,S.player,id)){const card=modal(`<h2>🕊 상생 제안</h2><p class="sub">${esc(S.civs[id].name)}의 ${esc(S.civs[id].leader)}: "출혈 경쟁은 그만하고 상생합시다."</p><div class="row-btns"><button data-m="no">거절</button><button data-m="yes" class="go">상생 협약 맺기</button></div>`);
     card.querySelector('[data-m=yes]').onclick=()=>{C.makePeace(S,S.player,id);flushLog();closeModal();refresh()};card.querySelector('[data-m=no]').onclick=closeModal}}
   else S.peaceOffer=null;
   const list=idleList();if(list.length)select(list[0],true)}
