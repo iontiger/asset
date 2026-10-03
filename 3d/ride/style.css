@@ -15,3 +15,15 @@
 
 /* 폭설 평원: 화면 가장자리에 하얗게 낀 성에 (opacity 는 game.js 가 눈 세기로 맞춘다) */
 #frost{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse 75% 68% at 50% 46%,rgba(255,255,255,0) 52%,rgba(240,246,252,.55) 82%,rgba(250,252,255,.92) 100%);transition:opacity .4s}
+
+/* 편지 수집 '띠링~' */
+.ding-word{position:fixed;z-index:30;pointer-events:none;transform:translate(-50%,-50%);font-weight:700;font-size:24px;color:#b46a1f;letter-spacing:1px;background:#fffbedf0;border-radius:22px;padding:6px 16px;box-shadow:0 0 0 2px #ffd86a,0 0 24px #ffd86acc,0 6px 16px #0002;white-space:nowrap;animation:dingWord 1.25s cubic-bezier(.2,.9,.3,1) forwards}
+.ding-word b{font-size:16px;color:#d18a2c;margin-left:4px}
+@keyframes dingWord{0%{opacity:0;transform:translate(-50%,-30%) scale(.4)}14%{opacity:1;transform:translate(-50%,-80%) scale(1.25)}28%{transform:translate(-50%,-95%) scale(1)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-190%) scale(.95)}}
+.ding-fly{position:fixed;z-index:31;pointer-events:none;margin:-22px 0 0 -22px;width:44px;height:44px;display:grid;place-items:center;font-size:30px;color:#aa7953;background:#fffbed;border-radius:50%;box-shadow:0 0 0 3px #ffd86a,0 0 24px #ffd86a;transition:transform .6s cubic-bezier(.55,0,.75,.45),opacity .6s ease-in}
+.mission.bump{animation:missionBump .55s ease-out}
+.mission.bump .envelope{animation:envBump .55s ease-out}
+.mission.bump #letters{display:inline-block;animation:numBump .55s ease-out;color:#c27a2a}
+@keyframes missionBump{0%{box-shadow:0 0 0 0 #ffd86a00}30%{box-shadow:0 0 0 6px #ffd86aaa,0 0 30px #ffd86a}100%{box-shadow:0 6px 25px #58654e0d}}
+@keyframes envBump{0%{transform:scale(1)}35%{transform:scale(1.45) rotate(-12deg)}65%{transform:scale(.9) rotate(6deg)}100%{transform:scale(1)}}
+@keyframes numBump{0%{transform:scale(1)}35%{transform:scale(1.6) translateY(-3px)}100%{transform:scale(1)}}
