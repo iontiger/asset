@@ -117,6 +117,8 @@ for(const turn of ROAD_PATH.turns){const warning=new T.Group();warning.position.
 const itemMeshes=[];
 for(const item of ride.items){let root=new T.Group();root.position.copy(drivePoint(item.z,item.x*9));scene.add(root);
  if(item.type==='letter'){box(root,0,1.2,0,.8,.52,.12,'#fff2cd');beam(root,[-.38,1.42,.08],[0,1.15,.08],.014,'#b98a58');beam(root,[0,1.15,.08],[.38,1.42,.08],.014,'#b98a58');ball(root,0,1.14,.095,.065,'#c47052');const halo=mesh(new T.TorusGeometry(.62,.024,6,32),'#e9c977',root,0,1.2,0);halo.material=new T.MeshBasicMaterial({color:'#f6d486'});
+  // 편지는 두 배 크기 (가운데가 땅에서 1.6 높이)
+  const big=new T.Group();while(root.children.length)big.add(root.children[0]);big.scale.setScalar(2);big.position.y=1.6-1.2*2;root.add(big);
  }else{const inC=item.z>ADVENTURE.fork.start&&item.z<ADVENTURE.fork.end;const r=mesh(new T.DodecahedronGeometry(item.radius,1),inC?'#c08a5c':'#777466',root,0,item.radius*.7,0);if(inC)r.material=new T.MeshStandardMaterial({color:'#c08a5c',roughness:.9,flatShading:true});r.scale.set(1,.85,1);r.rotation.set(.15,item.id,.17);
    for(let j=0;j<5;j++){const a=j*2.4;const chip=mesh(new T.DodecahedronGeometry(.2+j*.045,0),inC?'#d4a272':'#948570',root,Math.cos(a)*(item.radius+1),.15,Math.sin(a)*(item.radius+.7));chip.scale.y=.6}
    const warn=mesh(new T.RingGeometry(item.radius+.6,item.radius+.72,36), '#d18f43',root,0,.04,0);warn.rotation.x=-Math.PI/2;warn.material=new T.MeshBasicMaterial({color:'#e3ac55',transparent:true,opacity:.6,side:T.DoubleSide});root.userData.warning=warn;
