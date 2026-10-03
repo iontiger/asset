@@ -16,4 +16,15 @@ assert(A.snowAmt(92000)===1&&A.snowAmt(84500)===0&&A.snowAmt(100000)===0,'Snow o
 r=new Ride();r.start();r.items=[];r.pos=88000;r.speed=400;tick(r,['w'],240);assert(r.events.length>=0&&r.speed<240,'Deep snow caps the speed');assert(r.inSnow);
 const snowSpeed=r.speed;tick(r,['w','d'],40);const p1=r.player;tick(r,['w'],12);assert(r.player>p1,'Bike keeps sliding after steering is released');
 r=new Ride();r.start();r.items=[];r.pos=70500;r.speed=400;tick(r,['w'],60);assert(r.speed>390,'Normal road keeps full speed');
-console.log('PASS: manual drift, rewards, glancing hits, near misses, perfect landing, anti-hold timing, branch lock, shorter cliff route, safe-route collision suppression, combos, restart, snow plain, rock-free canyon');
+// 뉴욕 시내: 게이트 정지 · 신호/과속 감점 · 정체 차단 · 터치 자동정지
+{const C=require('./city.js');const run=(mode,auto)=>{const q=new Ride();q.start();q.items=[];q.branchChoice='safe';q.pos=19000;q.speed=480;q.autoStop=!!auto;const ev=[];let t=0,minGate=Infinity,blocked=false;const k=new Set(['w']);
+ while(q.pos<40500&&t<400){q.update(1/60,k);t+=1/60;ev.push(...q.events);const u=C.uOf(q.pos);if(u>20&&u<45)minGate=Math.min(minGate,q.speed);if(u>C.jam.u0&&u<C.jam.u1&&q.speed<1&&q.player>-.2)blocked=true;
+  const nl=C.nextLight(q);k.clear();if(mode==='careful'){if(nl&&nl.s.state!=='green'&&nl.dist<30&&nl.dist>0)k.add('s');else if(q.speed<118)k.add('w')}else k.add('w')}
+ return {q,ev,t,minGate,blocked}};
+ const careful=run('careful'),reckless=run('reckless'),auto=run('reckless',true);
+ assert(careful.q.pos>=40000,'Careful rider leaves the city');assert(careful.minGate<2,'Gate light stops the bike at 0 km/h');
+ assert(!careful.ev.some(x=>x.type==='penalty'),'Careful rider is never fined');assert(careful.blocked,'Cars ahead in the jam block the bike');
+ const pens=reckless.ev.filter(x=>x.type==='penalty');assert(pens.some(x=>x.kind==='signal'&&x.points===-200),'Red light costs 200');assert(pens.some(x=>x.kind==='speed'&&x.points===-150),'Speeding costs 150');
+ assert(!auto.ev.some(x=>x.type==='penalty'),'Touch auto-stop never runs a red');
+ const c=new Ride();c.start();c.items=[];c.branchChoice='cliff';c.pos=31000;c.speed=420;tick(c,['w'],30);assert.equal(Math.round(c.speed/2),250,'Canyon still cruises at 250')}
+console.log('PASS: manual drift, rewards, glancing hits, near misses, perfect landing, anti-hold timing, branch lock, shorter cliff route, safe-route collision suppression, combos, restart, snow plain, rock-free canyon, NYC lights/cameras/jam');

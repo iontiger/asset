@@ -8,7 +8,8 @@
  const fork={start:20000,end:40000,chooseFrom:18500};
  // The canyon road is the base path itself; the village detour swings out to the left.
  function branchOffset(s,choice='safe'){if(choice==='cliff'||s<=fork.start||s>=fork.end)return 0;return -50*Math.sin(Math.PI*(s-fork.start)/(fork.end-fork.start))**2}
- function travelScale(s,choice){const derivative=(branchOffset(s+1,choice)-branchOffset(s-1,choice))*10;return 1/Math.sqrt(1+derivative*derivative)}
+ // 마을길(safe)은 뉴욕 시내 격자 길(city.js) — 같은 s 구간을 더 긴 시내 길에 대응시킨다.
+ function travelScale(s,choice){if(choice==='safe'&&s>fork.start&&s<fork.end&&root.CITY)return root.CITY.travelScale;const derivative=(branchOffset(s+1,choice)-branchOffset(s-1,choice))*10;return 1/Math.sqrt(1+derivative*derivative)}
  const sstep=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t)};
  // 목표봉: a round peak centred on the road at s=peak; radius in world units.
  const mountain={start:49000,peak:55000,end:61000,height:72,radius:300,name:'목표봉'};
@@ -47,6 +48,7 @@
  const nightAmt=s=>sstep(night.start,night.full,s);
  const nightBiome={name:'별빛 밤길',ground:'#9da779',road:'#bfa584',sky:'#101a38',fog:'#1b2544',fogNear:45,fogFar:210};
  const blizzard={name:'폭설 평원',ground:'#eef1f3',road:'#f3f5f7',sky:'#d9dfe5',fog:'#e6ebef',fogNear:24,fogFar:150};
- function biome(s,choice){if(choice==='cliff'&&s>fork.start+250&&s<fork.end-250)return canyon;if(snowAmt(s)>.5)return blizzard;if(nightAmt(s)>.55)return nightBiome;let b=biomes[0];for(const x of biomes)if(s>=x.from)b=x;return b}
- const api={fork,branchOffset,travelScale,biomes,canyon,biome,mountain,mountainField,mountainMask,creek,creekX,snow,snowAmt,snowCover,blizzard,sstep,night,nightAmt,nightBiome};root.ADVENTURE=api;if(typeof module!=='undefined')module.exports=api;
+ const city={name:'뉴욕 시내',ground:'#8d9196',road:'#3d4146',sky:'#b4c6d6',fog:'#c2ccd4',fogNear:70,fogFar:430};
+ function biome(s,choice){if(choice==='cliff'&&s>fork.start+250&&s<fork.end-250)return canyon;if(choice==='safe'&&s>fork.start&&s<fork.end)return city;if(snowAmt(s)>.5)return blizzard;if(nightAmt(s)>.55)return nightBiome;let b=biomes[0];for(const x of biomes)if(s>=x.from)b=x;return b}
+ const api={fork,branchOffset,travelScale,biomes,canyon,city,biome,mountain,mountainField,mountainMask,creek,creekX,snow,snowAmt,snowCover,blizzard,sstep,night,nightAmt,nightBiome};root.ADVENTURE=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

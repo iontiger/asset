@@ -115,3 +115,17 @@
 .overlay.finished .welcome>:not(.finish-card){grid-column:2}
 .overlay.finished .primary,.overlay.finished .welcome .ghost{margin-left:0}
 @media(max-width:800px){.overlay.finished .welcome{grid-template-columns:1fr;text-align:center;width:min(420px,92vw)}.overlay.finished .finish-card{grid-row:auto;margin:0 auto 14px}.overlay.finished .finish-card img{width:min(210px,56vw)}.overlay.finished .welcome>:not(.finish-card){grid-column:1}.overlay.finished .welcome h2{margin:12px 0 6px}.overlay.finished .primary,.overlay.finished .welcome .ghost{margin-left:auto}}
+/* 뉴욕 시내: 감점 팝업(화면 가운데) · 번쩍임 */
+.penalty{position:fixed;z-index:9;left:50%;top:42%;transform:translate(-50%,-50%) scale(.6);opacity:0;pointer-events:none;text-align:center;padding:22px 42px 20px;border-radius:26px;background:#fff8f5f2;border:3px solid #e03b2f;box-shadow:0 18px 60px #b0201855,0 0 0 8px #e03b2f22;color:#2b1a17;min-width:300px}
+.penalty b{display:block;font-size:76px;line-height:1;font-weight:900;color:#e03b2f;letter-spacing:-2px}
+.penalty span{display:block;margin-top:10px;font-size:22px;font-weight:800}
+.penalty small{display:block;margin-top:6px;font-size:13px;color:#7a5a52}
+.penalty.speed{border-color:#1d3557;box-shadow:0 18px 60px #1d355755,0 0 0 8px #1d355722}.penalty.speed b{color:#1d3557}
+.penalty.show{animation:penaltyPop 2.3s cubic-bezier(.2,1.4,.4,1) forwards}
+@keyframes penaltyPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.5) rotate(-4deg)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.08) rotate(2deg)}20%{transform:translate(-50%,-50%) scale(1) rotate(-1deg)}26%{transform:translate(-52%,-50%) scale(1)}32%{transform:translate(-48%,-50%) scale(1)}38%{transform:translate(-50%,-50%) scale(1)}82%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-62%) scale(.96)}}
+.penalty-flash{position:fixed;inset:0;z-index:8;pointer-events:none;opacity:0}
+.penalty-flash.signal{background:radial-gradient(circle at 50% 50%,#ff3b3000 30%,#ff3b30aa 100%)}
+.penalty-flash.speed{background:#ffffff}
+.penalty-flash.show{animation:penFlash .7s ease-out}
+@keyframes penFlash{0%{opacity:.95}100%{opacity:0}}
+@media(max-width:800px){.penalty{min-width:230px;padding:16px 26px}.penalty b{font-size:56px}.penalty span{font-size:17px}}
