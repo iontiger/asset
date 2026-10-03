@@ -67,8 +67,8 @@
 .howto{width:min(540px,90vw);background:#fffbeed9;border:1px solid #fff;border-radius:20px;padding:16px 24px 14px;box-shadow:0 14px 50px #374d3324;text-align:center}
 .howto-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 14px;margin:12px 0 10px;font-size:11px}
 .howto-keys span{display:flex;gap:4px;align-items:center;justify-content:center;white-space:nowrap}
-.howto p{margin:0;font-size:10px;line-height:1.8;color:#78816a}.touch-note{display:none}
-@media(hover:none){.touch-note{display:inline}}
+.howto p{margin:0;font-size:10px;line-height:1.8;color:#78816a}
+
 @media(max-width:800px){.scoreboard{min-width:0;padding:7px 12px 8px;border-radius:14px}.scoreboard #score{font-size:22px}.scoreboard .score-label{font-size:7px;letter-spacing:2px}.score-sub{gap:8px}.score-sub small{font-size:7px}.score-pop{font-size:15px;right:10px}
 .milestone-fx .big b{font-size:56px;-webkit-text-stroke:2px #9a5b16}.milestone-fx .big span{font-size:15px}
 .howto{padding:12px 14px}.howto-keys{grid-template-columns:repeat(2,1fr);font-size:10px;gap:8px}.overlay{gap:10px}}
@@ -88,3 +88,11 @@
 .is-boosting .dashboard{border:2px solid #ff4a3d;margin:-1px;box-shadow:0 0 4px #fff,0 0 10px #ff3b30,0 0 22px #ff3b30,0 0 44px #ff2d2dcc,inset 0 0 12px #ff3b3088;animation:neonOn .45s steps(1,end),neonPulse 1.1s ease-in-out .45s infinite}
 @keyframes neonOn{0%{box-shadow:0 8px 30px #34432c20;border-color:#ff4a3d66}20%{box-shadow:0 0 4px #fff,0 0 10px #ff3b30,0 0 22px #ff3b30,0 0 44px #ff2d2dcc,inset 0 0 12px #ff3b3088;border-color:#ff4a3d}35%{box-shadow:0 0 6px #ff3b3055;border-color:#ff4a3d55}55%{box-shadow:0 0 4px #fff,0 0 10px #ff3b30,0 0 22px #ff3b30,0 0 44px #ff2d2dcc,inset 0 0 12px #ff3b3088;border-color:#ff4a3d}}
 @keyframes neonPulse{0%,100%{box-shadow:0 0 4px #fff,0 0 10px #ff3b30,0 0 22px #ff3b30,0 0 44px #ff2d2dcc,inset 0 0 12px #ff3b3088}50%{box-shadow:0 0 3px #fff,0 0 7px #ff3b30,0 0 15px #ff3b30cc,0 0 30px #ff2d2d99,inset 0 0 8px #ff3b3066}}
+
+/* 휴대폰(터치) 화면: 네 모서리 카드(코스 · 명소 · 속도계 · 점수판)와 아래 버튼을 숨겨 깔끔하게. 시작 팝업 조작 설명은 터치용 한 줄만 */
+.howto-touch{display:none}
+.touch-mode .journey,.touch-mode .landmark-guide,.touch-mode .bottom,.touch-mode .touch{display:none!important}
+.touch-mode .howto-keys,.touch-mode .howto>p:not(.howto-touch){display:none}
+.touch-mode .howto-touch{display:block;margin:10px 0 2px;font-size:13px;line-height:1.9;color:var(--ink)}
+.touch-mode .howto-touch b{color:#46634c}
+.touch-mode .drive-hint{bottom:90px}

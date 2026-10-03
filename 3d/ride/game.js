@@ -177,7 +177,7 @@ const landingRing=new T.Mesh(new T.RingGeometry(1.3,1.6,48),new T.MeshBasicMater
 function notify(text){$('toast').textContent=text;toastTime=2.6;$('toast').style.opacity=1}
 function soundTone(freq){sound.chime(freq)}
 function show(title,description,button){$('overlay').classList.remove('hidden');document.querySelector('.welcome h2').innerHTML=title;document.querySelector('.welcome p').innerHTML=description;$('start').innerHTML=button+' <span>↗</span>'}
-function start(){const fresh=ride.mode!=='paused';ride.start();sound.musicLoad();if(fresh){sound.musicReset();gotAt.clear();sparkLife.fill(0);mud.clear();mudT=0;dustPool.forEach(d=>d.life=0);dustBudget=0;lastDustPos=0;warnedTurns.clear();turnBlend=0;jumpCameraBlend=0;lastTrack=-100;trackDummy.scale.setScalar(0);trackDummy.updateMatrix();for(let i=0;i<900;i++)tracks.setMatrixAt(i,trackDummy.matrix);tracks.instanceMatrix.needsUpdate=true;}keys.clear();$('overlay').classList.add('hidden');$('pause').textContent='Ⅱ';notify('↑ 또는 W로 출발! 3D 마을에서 편지 80통을 모아보세요.');syncCamera(true)}
+function start(){const fresh=ride.mode!=='paused';ride.start();sound.musicLoad();if(fresh){sound.musicReset();gotAt.clear();sparkLife.fill(0);mud.clear();mudT=0;dustPool.forEach(d=>d.life=0);dustBudget=0;lastDustPos=0;warnedTurns.clear();turnBlend=0;jumpCameraBlend=0;lastTrack=-100;trackDummy.scale.setScalar(0);trackDummy.updateMatrix();for(let i=0;i<900;i++)tracks.setMatrixAt(i,trackDummy.matrix);tracks.instanceMatrix.needsUpdate=true;}keys.clear();$('overlay').classList.add('hidden');$('pause').textContent='Ⅱ';notify(touchMode?'자동으로 출발! 화면 왼쪽 · 오른쪽을 눌러 방향을 바꿔요.':'↑ 또는 W로 출발! 3D 마을에서 편지 80통을 모아보세요.');syncCamera(true)}
 function pause(){if(ride.mode==='playing'){ride.pause();keys.clear();show('잠시, 쉬어가요.','마을의 바람은 기다려 줄 거예요.','이어서 달리기');$('pause').textContent='▶';sound.silence()}else if(ride.mode==='paused')start()}
 function finish(){keys.clear();sound.silence();if(embedded)try{parent.postMessage({dpRide:'finish',letters:ride.letters,score:ride.score,time:ride.elapsed,branch:ride.branchChoice},'*')}catch(e){}const isRecord=ride.score>bestScore;bestScore=Math.max(bestScore,ride.score);bestTime=bestTime===null?ride.elapsed:Math.min(bestTime,ride.elapsed);try{localStorage.setItem('dentphoto-record-v1',JSON.stringify({score:bestScore,time:bestTime}))}catch(e){}
 show(isRecord?'새로운 최고 기록!':'마을에 도착했어요.',`${ride.score.toLocaleString()}점 · 최고 ${bestScore.toLocaleString()}점<br>편지 ${ride.letters}통 · 아슬아슬 회피 ${ride.nearMisses}회<br>${Math.floor(ride.elapsed/60)}분 ${Math.floor(ride.elapsed%60)}초 · 최단 ${Math.floor(bestTime/60)}분 ${Math.floor(bestTime%60)}초<br>${ride.branchChoice==='cliff'?'협곡 헤어핀':'마을 우회로'}로 달렸어요.`,'다시 여행하기')}
@@ -190,6 +190,18 @@ $('sound').innerHTML=SPEAKER(!sound.muted);$('sound').title=sound.muted?'소리 
 for(const ev of ['pointerdown','keydown'])addEventListener(ev,()=>{if(!sound.muted)sound.unlock()},{capture:true});
 $('sound').addEventListener('click',async()=>{try{const muted=await sound.toggle();$('sound').innerHTML=SPEAKER(!muted);$('sound').title=muted?'소리 켜기':'소리 끄기';$('sound').setAttribute('aria-label',muted?'소리 켜기':'소리 끄기');notify(muted?'소리를 껐어요.':'엔진 · 바람 · 노면 효과음을 켰어요.')}catch(e){notify('이 브라우저에서 소리를 시작하지 못했어요.')}});
 addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();if((k==='p'||k==='escape')&&!e.repeat)pause();else if(k==='enter'&&ride.mode!=='playing')start();else keys.add(k)});addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));addEventListener('blur',()=>{keys.clear();if(ride.mode==='playing')pause()});
+// 휴대폰(터치 화면): 자동으로 계속 가속하고, 화면 가운데를 기준으로 왼쪽을 누르면 왼쪽, 오른쪽을 누르면 오른쪽으로 방향을 튼다.
+// 네 모서리 카드와 아래 버튼은 숨기고(CSS .touch-mode), 가운데 안내 문구만 남긴다.
+let touchMode=matchMedia('(pointer:coarse)').matches&&('ontouchstart' in window||navigator.maxTouchPoints>0);
+document.body.classList.toggle('touch-mode',touchMode);
+const steerTouches=new Map();
+function steerFromTouches(){keys.delete('arrowleft');keys.delete('arrowright');const xs=[...steerTouches.values()];if(!xs.length)return;const x=xs[xs.length-1];keys.add(x<innerWidth/2?'arrowleft':'arrowright')}
+{const ignore=t=>t.closest&&t.closest('button,a,#overlay,.fork-choice,header');
+ // 감지가 빗나가도 첫 손가락 터치에서 터치 모드로 바꾼다
+ addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&!touchMode){touchMode=true;document.body.classList.add('touch-mode');$('game').style.touchAction='none'}if(!touchMode||e.pointerType==='mouse'||ignore(e.target)||ride.mode!=='playing')return;steerTouches.set(e.pointerId,e.clientX);steerFromTouches()});
+ addEventListener('pointermove',e=>{if(!steerTouches.has(e.pointerId))return;steerTouches.set(e.pointerId,e.clientX);steerFromTouches()});
+ for(const ev of ['pointerup','pointercancel'])addEventListener(ev,e=>{if(steerTouches.delete(e.pointerId))steerFromTouches()});
+ if(touchMode)$('game').style.touchAction='none'}
 document.querySelectorAll('[data-key]').forEach(b=>{b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);keys.add(b.dataset.key)});for(const ev of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(ev,()=>keys.delete(b.dataset.key))});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();ride.pause();keys.clear();show('3D 화면이 잠시 멈췄어요.','다시 불러오면 여행을 새로 시작할 수 있어요.','새로 불러오기');$('start').onclick=()=>location.reload()});
@@ -237,14 +249,14 @@ const forkActive=r.mode==='playing'&&r.pos>=ADVENTURE.fork.chooseFrom&&r.pos<ADV
 $('safe-route').classList.toggle('selected',r.branchChoice==='safe');$('cliff-route').classList.toggle('selected',r.branchChoice==='cliff');
 const upcoming=ROAD_PATH.turns.find(t=>t.end>r.pos),hint=$('drive-hint');
 if(r.crashing)hint.textContent='도로 복귀 중…';
-else if(r.jumping)hint.textContent=r.airV<0&&r.airY<4?'지금 E! · PERFECT 착지':'착지 직전 E · 타이밍 보너스';
+else if(r.jumping)hint.textContent=touchMode?'두둥실 · 공중 비행 중':r.airV<0&&r.airY<4?'지금 E! · PERFECT 착지':'착지 직전 E · 타이밍 보너스';
 else if(r.drifting)hint.textContent='DRIFT '+Math.min(100,Math.round(r.driftCharge/1.1*100))+'% · 부스트 충전';
 else if(upcoming&&upcoming.start-r.pos<650)hint.textContent=(upcoming.side>0?'↱':'↰')+' 170° '+Math.max(0,Math.round((upcoming.start-r.pos)/5))+'m · 자동 드리프트';
-else if(r.pos>ADVENTURE.fork.start&&r.pos<ADVENTURE.fork.end)hint.textContent=r.branchChoice==='cliff'?'협곡 헤어핀 · 250km/h · ↓ 제동':'마을 우회로 · 안전 구간';else if(r.pos>MT.start-800&&r.pos<MT.end)hint.textContent=r.pos<MT.peak?'⛰ 목표봉 오르막 · 정상까지 '+Math.round((MT.peak-r.pos)/5)+' m':'⬇ 목표봉 내리막 · 속도 주의';else if(r.snow>.05)hint.textContent='❄ 폭설 · 바퀴가 눈에 잠겼어요 — 미끄러우니 핸들을 일찍 살짝';else if(r.pos>CK.start-500&&r.pos<CK.end){const f=CK.fords.find(f=>f>r.pos);hint.textContent=f&&f-r.pos<900?'〰 '+Math.round((f-r.pos)/5)+' m 앞 개울 건너기 · 흙탕물!':'개울가 · 흙탕물이 튀어요'}else hint.textContent='';
+else if(r.pos>ADVENTURE.fork.start&&r.pos<ADVENTURE.fork.end)hint.textContent=r.branchChoice==='cliff'?(touchMode?'협곡 헤어핀 · 250km/h':'협곡 헤어핀 · 250km/h · ↓ 제동'):'마을 우회로 · 안전 구간';else if(r.pos>MT.start-800&&r.pos<MT.end)hint.textContent=r.pos<MT.peak?'⛰ 목표봉 오르막 · 정상까지 '+Math.round((MT.peak-r.pos)/5)+' m':'⬇ 목표봉 내리막 · 속도 주의';else if(r.snow>.05)hint.textContent='❄ 폭설 · 바퀴가 눈에 잠겼어요 — 미끄러우니 핸들을 일찍 살짝';else if(r.pos>CK.start-500&&r.pos<CK.end){const f=CK.fords.find(f=>f>r.pos);hint.textContent=f&&f-r.pos<900?'〰 '+Math.round((f-r.pos)/5)+' m 앞 개울 건너기 · 흙탕물!':'개울가 · 흙탕물이 튀어요'}else hint.textContent='';
 hint.hidden=r.mode!=='playing'||!hint.textContent;
 }
 let last=performance.now(),frame=0;syncCamera(true);hud();
-function tick(now){const dt=Math.min((now-last)/1000,.05);last=now;time+=dt;ride.update(dt,keys);
+function tick(now){const dt=Math.min((now-last)/1000,.05);last=now;time+=dt;if(touchMode){if(ride.mode==='playing')keys.add('arrowup');else{keys.delete('arrowup');steerTouches.clear();keys.delete('arrowleft');keys.delete('arrowright')}}ride.update(dt,keys);
 if(ride.mode==='playing')ROAD_PATH.turns.forEach((t,i)=>{if(ride.pos>t.start-350&&ride.pos<t.end&&!warnedTurns.has(i)){warnedTurns.add(i);notify('↪ 170° 헤어핀! S를 눌러 드리프트하세요.')}});
 for(const event of ride.events){
 if(event.type==='nearMiss'){soundTone(880);notify('아슬아슬 회피! +'+event.points+' · COMBO ×'+event.combo)}
