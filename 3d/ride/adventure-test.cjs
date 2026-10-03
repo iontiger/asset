@@ -23,7 +23,7 @@ r=new Ride();r.start();r.items=[];r.pos=70500;r.speed=400;tick(r,['w'],60);asser
  return {q,ev,t,minGate,blocked}};
  const careful=run('careful'),reckless=run('reckless'),auto=run('reckless',true);
  assert(careful.q.pos>=40000,'Careful rider leaves the city');assert(careful.minGate<2,'Gate light stops the bike at 0 km/h');
- assert(!careful.ev.some(x=>x.type==='penalty'),'Careful rider is never fined');assert(careful.blocked,'Cars ahead in the jam block the bike');
+ assert(!careful.ev.some(x=>x.type==='penalty'),'Careful rider is never fined');assert(!careful.ev.some(x=>x.type==='letter'),'No letters in the NYC streets');assert(careful.blocked,'Cars ahead in the jam block the bike');
  const pens=reckless.ev.filter(x=>x.type==='penalty');assert(pens.some(x=>x.kind==='signal'&&x.points===-200),'Red light costs 200');assert(pens.some(x=>x.kind==='speed'&&x.points===-150),'Speeding costs 150');
  assert(!auto.ev.some(x=>x.type==='penalty'),'Touch auto-stop never runs a red');
  const c=new Ride();c.start();c.items=[];c.branchChoice='cliff';c.pos=31000;c.speed=420;tick(c,['w'],30);assert.equal(Math.round(c.speed/2),250,'Canyon still cruises at 250')}
