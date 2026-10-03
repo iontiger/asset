@@ -2,6 +2,7 @@
 (function(root){
   const adventure=root.ADVENTURE||(typeof require==='function'?require('./adventure.js'):null);
   const path=root.ROAD_PATH||(typeof require==='function'?require('./road-path.js'):null);
+  const city=root.CITY||(typeof require==='function'?require('./city.js'):null);
   const LANDMARKS=[
     {z:1700,x:-1.85,model:'fountain',name:'중앙 나무 분수',scale:1.25},
     {z:6400,x:1.9,model:'rosehouse',name:'주택가',scale:1.1},
@@ -28,7 +29,7 @@
       for(let i=0;i<160;i++){const z=1050+i*645;if(adventure.creek.fords.some(f=>Math.abs(z-f)<450))continue;if(z>adventure.fork.start-400&&z<adventure.fork.end+400)continue;   // 협곡(갈림길) 구간에는 낙석이 없다
         this.items.push({z,x:Math.sin(i*3.7+.8)*.78,type:'rock',id:1000+i,radius:2.1+(i%3)*.45})}
     }
-    reset(){this.pos=0;this.speed=0;this.player=0;this.steer=0;this.energy=100;this.letters=0;this.elapsed=0;this.hit=0;this.boost=false;this.airY=0;this.airV=0;this.crashing=false;this.jumping=false;this.flightY=0;this.flightAge=0;this.jumped=new Set();this.surface='dirt';this.crashAge=0;this.grassCooldown=0;this.shake=0;this.falling=new Map();this.visited=new Set();this.collected=new Set();this.events=[];this.score=0;this.combo=0;this.comboTime=0;this.nearMisses=0;this.driftCharge=0;this.drifting=false;this.drifted=new Set();this.rockPassed=new Set();this.branchChoice='cliff';this.snow=0;this.latV=0;this.slip=0;this.inSnow=false;this.landingPress=-99;this.wasLandingKey=false;this.bonusTime=0;}
+    reset(){this.pos=0;this.speed=0;this.player=0;this.steer=0;this.energy=100;this.letters=0;this.elapsed=0;this.hit=0;this.boost=false;this.airY=0;this.airV=0;this.crashing=false;this.jumping=false;this.flightY=0;this.flightAge=0;this.jumped=new Set();this.surface='dirt';this.crashAge=0;this.grassCooldown=0;this.shake=0;this.falling=new Map();this.visited=new Set();this.collected=new Set();this.events=[];this.score=0;this.combo=0;this.comboTime=0;this.nearMisses=0;this.driftCharge=0;this.drifting=false;this.drifted=new Set();this.rockPassed=new Set();this.branchChoice='cliff';this.snow=0;this.latV=0;this.slip=0;this.inSnow=false;this.landingPress=-99;this.wasLandingKey=false;this.bonusTime=0;this.city=city.newState();}
     reward(base,type){this.combo=Math.min(5,this.combo+1);this.comboTime=8;const points=base*this.combo;this.score+=points;this.events.push({type,points,combo:this.combo});}
     chooseBranch(choice){if(this.pos<adventure.fork.start&&['safe','cliff'].includes(choice)){this.branchChoice=choice;return true}return false}
     start(){if(this.mode!=='paused')this.reset();this.mode='playing'}
@@ -52,7 +53,10 @@
       if(!this.jumping&&(this.airY>0||this.airV>0)){this.airV-=19*dt;this.airY=Math.max(0,this.airY+this.airV*dt);if(!this.airY)this.airV=0;}
       const up=keys.has('w')||keys.has('arrowup'),down=keys.has('s')||keys.has('arrowdown')||keys.has('shift');
       const dir=Number(keys.has('d')||keys.has('arrowright'))-Number(keys.has('a')||keys.has('arrowleft'));
-      const turn=path.turns.find(t=>this.pos>=t.start&&this.pos<=t.end);
+      // 뉴욕 시내(마을길): 신호 · 차량을 움직이고, 헤어핀 드리프트는 없다
+      const cityOn=this.branchChoice==='safe'&&this.pos>adventure.fork.start-3000&&this.pos<adventure.fork.end+100,inCity=cityOn&&this.pos>=adventure.fork.start&&this.pos<adventure.fork.end;
+      if(cityOn)city.update(this,dt);
+      const turn=inCity?null:path.turns.find(t=>this.pos>=t.start&&this.pos<=t.end);
       this.drifting=!!(turn&&this.speed>90&&!this.jumping&&this.airY<.15&&Math.abs(this.player)<.95);
       if(this.drifting){this.driftCharge+=dt;if(this.driftCharge>=1.1&&!this.drifted.has(turn.start)){this.drifted.add(turn.start);this.energy=Math.min(100,this.energy+35);this.reward(300,'drift');}}
       else this.driftCharge=0;
@@ -68,6 +72,7 @@
       const force=down?-240:this.drifting?-12:canyonCruise?(this.speed<limit?Math.max(acceleration,260):-18):up?(this.speed>limit?-100:acceleration):-38-70*snow;
       const nextSpeed=Math.max(0,this.speed+force*dt);
       this.speed=this.speed>limit?Math.max(limit,nextSpeed):Math.min(limit,nextSpeed);
+      if(cityOn){const c=city.cap(this);if(this.speed>c)this.speed=Math.max(c,this.speed-420*dt)}
       this.energy=Math.max(0,Math.min(100,this.energy+(this.boost?-23:12)*dt));
       this.steer+=(dir-this.steer)*Math.min(1,dt*8);
       // 눈길에서는 옆으로 미끄러진다: 핸들을 꺾어도 천천히 따라오고, 놓아도 계속 흘러가며, 저절로 꼬리가 흔들린다
@@ -77,15 +82,16 @@
       this.slip=snow>0?this.latV-want:0;
       this.player+=this.latV*dt;
       this.player-=Math.sin(this.pos/1500)*this.speed*dt*.00010;
-      this.player=Math.max(-1.12,Math.min(1.12,this.player));
-      if(Math.abs(this.player)>.94&&this.speed>100)this.speed=Math.max(100,this.speed-dt*220);
-      if(!this.jumping&&Math.abs(this.player)>.97&&this.speed>25&&this.grassCooldown<=0){
+      this.player=Math.max(-1.12,Math.min(1.12,this.player));if(inCity)this.player=Math.max(-1,Math.min(.5,this.player));
+      if(!inCity&&Math.abs(this.player)>.94&&this.speed>100)this.speed=Math.max(100,this.speed-dt*220);
+      if(!inCity&&!this.jumping&&Math.abs(this.player)>.97&&this.speed>25&&this.grassCooldown<=0){
         const side=Math.sign(this.player);this.player-=side*.19;this.speed*=.78;this.airV=4.5+this.speed*.005;this.grassCooldown=.85;this.shake=.5;
         this.events.push({type:'grass',side});
       }
       const before=this.pos;this.pos=Math.min(this.length,this.pos+this.speed*1.35*dt*adventure.travelScale(this.pos,this.branchChoice));
+      if(cityOn)city.after(this,before,dt);
       for(const f of adventure.creek.fords)if(before<f&&this.pos>=f&&!this.jumping&&!this.crashing){this.speed*=.86;this.shake=Math.max(this.shake,.45);this.events.push({type:'ford'})}
-      const surface=surfaceAt(this.pos);if(surface!==this.surface){this.surface=surface;if(surface==='stone')this.events.push({type:'stone'})}
+      const surface=inCity?'asphalt':surfaceAt(this.pos);if(surface!==this.surface){this.surface=surface;if(surface==='stone')this.events.push({type:'stone'})}
       if(this.jumping){this.flightAge+=dt;this.airV-=16*dt;this.flightY+=this.airV*dt;this.airY=Math.max(0,this.flightY-roadHeight(this.pos));
         if(this.airY<=0&&this.airV<0){this.jumping=false;this.airV=0;this.shake=.65;if(this.elapsed-this.landingPress<=.3){this.shake=.15;this.energy=Math.min(100,this.energy+20);this.speed=Math.min(520,this.speed+100);this.bonusTime=1.5;this.reward(500,'perfectLand')}else this.events.push({type:'jumpLand'})}
       }
