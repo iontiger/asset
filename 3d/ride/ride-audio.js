@@ -1,11 +1,17 @@
-/* Procedural engine, wind, gravel and impact audio; no remote files. */
+/* Procedural engine, wind, gravel and impact audio, plus the background song upbeat.mp3 (starts at the first jump). */
 class RideSound {
- constructor(){this.muted=true}
+ constructor(){this.muted=true;this.music=null;this.musicOn=false}
+ // 배경 음악: 처음 언덕을 넘어 공중에 뜨는 순간 시작해 반복 재생. 소리 버튼(스피커)을 따라 음소거되고,
+ // 일시정지 · 다른 탭 · 도착 때는 멈췄다가 다시 달리면 이어서 나온다. 새로 출발하면 처음부터.
+ musicLoad(){if(this.music)return;const m=this.music=new Audio('upbeat.mp3');m.loop=true;m.preload='auto';m.volume=.55;m.muted=this.muted}
+ musicStart(){this.musicLoad();if(this.musicOn)return;this.musicOn=true;this.music.currentTime=0;this.music.play().catch(()=>{})}
+ musicReset(){this.musicOn=false;if(this.music){this.music.pause();try{this.music.currentTime=0}catch(e){}}}
+ musicSync(r){const m=this.music;if(!m||!this.musicOn)return;m.muted=this.muted;const want=r.mode==='playing'&&!document.hidden;if(want&&m.paused)m.play().catch(()=>{});else if(!want&&!m.paused)m.pause()}
  async toggle(){if(!this.ctx){const A=window.AudioContext||window.webkitAudioContext;this.ctx=new A();const a=this.ctx;this.master=a.createGain();this.master.gain.value=0;this.master.connect(a.destination);
  this.engine=a.createOscillator();this.engine.type='sawtooth';const filter=a.createBiquadFilter();filter.type='lowpass';filter.frequency.value=380;this.motor=a.createGain();this.motor.gain.value=0;this.engine.connect(filter);filter.connect(this.motor);this.motor.connect(this.master);this.engine.start();
  this.noise=a.createBuffer(1,a.sampleRate*2,a.sampleRate);const d=this.noise.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
  const loop=(freq)=>{const n=a.createBufferSource();n.buffer=this.noise;n.loop=true;const f=a.createBiquadFilter();f.type='bandpass';f.frequency.value=freq;f.Q.value=.5;const g=a.createGain();g.gain.value=0;n.connect(f);f.connect(g);g.connect(this.master);n.start();return g};this.wind=loop(1000);this.gravel=loop(190);}
- this.muted=!this.muted;await this.ctx.resume();this.master.gain.setTargetAtTime(this.muted?0:.45,this.ctx.currentTime,.1);return this.muted;}
+ this.muted=!this.muted;if(this.music)this.music.muted=this.muted;await this.ctx.resume();this.master.gain.setTargetAtTime(this.muted?0:.45,this.ctx.currentTime,.1);return this.muted;}
  update(r,t){if(!this.ctx)return;const a=this.ctx,active=r.mode==='playing',v=active?r.speed/520:0;this.engine.frequency.setTargetAtTime(32+v*155+Math.sin(t*28)*v*4,a.currentTime,.06);this.motor.gain.setTargetAtTime(active?.045+v*.025:0,a.currentTime,.1);this.wind.gain.setTargetAtTime(v*v*.16,a.currentTime,.1);this.gravel.gain.setTargetAtTime(active&&r.airY<.1?(r.surface==='stone'?.06+Math.abs(Math.sin(t*75))*.09:.015)*v:0,a.currentTime,.03)}
  silence(){if(!this.ctx)return;for(const g of [this.motor,this.wind,this.gravel])g.gain.setTargetAtTime(0,this.ctx.currentTime,.04)}
  chime(freq=660){if(!this.ctx||this.muted)return;const a=this.ctx,o=a.createOscillator(),g=a.createGain();o.frequency.value=freq;g.gain.setValueAtTime(.1,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.22);o.connect(g);g.connect(this.master);o.start();o.stop(a.currentTime+.23)}

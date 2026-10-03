@@ -177,7 +177,7 @@ const landingRing=new T.Mesh(new T.RingGeometry(1.3,1.6,48),new T.MeshBasicMater
 function notify(text){$('toast').textContent=text;toastTime=2.6;$('toast').style.opacity=1}
 function soundTone(freq){sound.chime(freq)}
 function show(title,description,button){$('overlay').classList.remove('hidden');document.querySelector('.welcome h2').innerHTML=title;document.querySelector('.welcome p').innerHTML=description;$('start').innerHTML=button+' <span>↗</span>'}
-function start(){const fresh=ride.mode!=='paused';ride.start();if(fresh){gotAt.clear();sparkLife.fill(0);mud.clear();mudT=0;dustPool.forEach(d=>d.life=0);dustBudget=0;lastDustPos=0;warnedTurns.clear();turnBlend=0;jumpCameraBlend=0;lastTrack=-100;trackDummy.scale.setScalar(0);trackDummy.updateMatrix();for(let i=0;i<900;i++)tracks.setMatrixAt(i,trackDummy.matrix);tracks.instanceMatrix.needsUpdate=true;}keys.clear();$('overlay').classList.add('hidden');$('pause').textContent='Ⅱ';notify('↑ 또는 W로 출발! 3D 마을에서 편지 80통을 모아보세요.');syncCamera(true)}
+function start(){const fresh=ride.mode!=='paused';ride.start();sound.musicLoad();if(fresh){sound.musicReset();gotAt.clear();sparkLife.fill(0);mud.clear();mudT=0;dustPool.forEach(d=>d.life=0);dustBudget=0;lastDustPos=0;warnedTurns.clear();turnBlend=0;jumpCameraBlend=0;lastTrack=-100;trackDummy.scale.setScalar(0);trackDummy.updateMatrix();for(let i=0;i<900;i++)tracks.setMatrixAt(i,trackDummy.matrix);tracks.instanceMatrix.needsUpdate=true;}keys.clear();$('overlay').classList.add('hidden');$('pause').textContent='Ⅱ';notify('↑ 또는 W로 출발! 3D 마을에서 편지 80통을 모아보세요.');syncCamera(true)}
 function pause(){if(ride.mode==='playing'){ride.pause();keys.clear();show('잠시, 쉬어가요.','마을의 바람은 기다려 줄 거예요.','이어서 달리기');$('pause').textContent='▶';sound.silence()}else if(ride.mode==='paused')start()}
 function finish(){keys.clear();sound.silence();if(embedded)try{parent.postMessage({dpRide:'finish',letters:ride.letters,score:ride.score,time:ride.elapsed,branch:ride.branchChoice},'*')}catch(e){}const isRecord=ride.score>bestScore;bestScore=Math.max(bestScore,ride.score);bestTime=bestTime===null?ride.elapsed:Math.min(bestTime,ride.elapsed);try{localStorage.setItem('dentphoto-record-v1',JSON.stringify({score:bestScore,time:bestTime}))}catch(e){}
 show(isRecord?'새로운 최고 기록!':'마을에 도착했어요.',`${ride.score.toLocaleString()}점 · 최고 ${bestScore.toLocaleString()}점<br>편지 ${ride.letters}통 · 아슬아슬 회피 ${ride.nearMisses}회<br>${Math.floor(ride.elapsed/60)}분 ${Math.floor(ride.elapsed%60)}초 · 최단 ${Math.floor(bestTime/60)}분 ${Math.floor(bestTime%60)}초<br>${ride.branchChoice==='cliff'?'협곡 헤어핀':'마을 우회로'}로 달렸어요.`,'다시 여행하기')}
@@ -255,7 +255,7 @@ if(event.type==='ford'){sound.impact(.6);burst(drivePoint(ride.pos,ride.player*9
 if(event.type==='grass'){sound.impact(.35);burst(drivePoint(ride.pos,ride.player*9),42,1.6,true);notify('풀숲 충격! 도로 쪽으로 튕겨 나갑니다.')}
 if(event.type==='rockfall')notify('⚠ 앞쪽 낙석! 큰 바위를 피하세요.');
 if(event.type==='rockland'){burst(drivePoint(event.z,event.x*9),60,2);if(Math.abs(event.z-ride.pos)<650)ride.shake=Math.max(ride.shake,.35);}
-if(event.type==='jump'){soundTone(440);notify('언덕 점프! 오른쪽에서 비행을 따라갑니다.')}
+if(event.type==='jump'){soundTone(440);sound.musicStart();notify('언덕 점프! 오른쪽에서 비행을 따라갑니다.')}
 if(event.type==='jumpLand'){sound.impact(.7);burst(drivePoint(ride.pos,ride.player*9),60,1.7);soundTone(95);notify('쿵! 착지 완료 — 다시 전속력!')}
 if(event.type==='stone')notify('돌 포장길 — 덜덜덜! 핸들을 잡으세요.');
 if(event.type==='snowIn'){sound.impact(.4);burst(drivePoint(ride.pos,ride.player*9),50,1.4,'snow');notify('❄ 갑자기 폭설! 바퀴가 눈에 반쯤 잠겨요 — 느리고 미끄러워요.')}
@@ -280,7 +280,7 @@ for(const {item,root,baseY} of itemMeshes){root.position.copy(drivePoint(item.z,
    snowPos[i*3]=c.x+f.x*14+x*44+Math.sin(time*.8+i)*.6-h*.55;snowPos[i*3+1]=c.y-6+h*1.15;snowPos[i*3+2]=c.z+f.z*14+z*44+Math.cos(time*.6+i*.7)*.6}snowGeo.attributes.position.needsUpdate=true}}
 for(let i=0;i<180;i++){petalPositions[i*3]=bike.position.x+Math.sin(i*54.1+time*.15)*25;petalPositions[i*3+1]=bike.position.y+((i*.73-time*.23)%12+12)%12;petalPositions[i*3+2]=bike.position.z+Math.cos(i*3.1+time*.03)*35}petalGeo.attributes.position.needsUpdate=true;
 camera.updateMatrixWorld();for(const l of labels){const dz=l.s-ride.pos;projected.copy(l.position).project(camera);const visible=dz>60&&dz<1500&&Math.abs(projected.x)<.85&&projected.y>-.65&&projected.y<.6&&projected.z<1;l.e.style.display=visible?'block':'none';if(visible){l.e.style.left=(projected.x*.5+.5)*innerWidth+'px';l.e.style.top=(-projected.y*.5+.5)*innerHeight+'px';l.e.textContent=(ride.visited.has(l.index)?'✓ ':'')+landmarks[l.index].name}}
-sound.update(ride,time);
+sound.update(ride,time);sound.musicSync(ride);
 const rush=ride.mode==='playing'?T.MathUtils.smoothstep(ride.speed,150,460):0;
 windMat.opacity=rush*.32;wind.visible=rush>.01;windTravel+=ride.mode==='playing'?ride.speed*dt*.018:0;
 for(let i=0;i<64;i++){const side=i%2?1:-1,z=-3-((i*1.73-windTravel)%27+27)%27,x=side*(2.8+(i%7)*.6),y=Math.sin(i*7.13)*7;
