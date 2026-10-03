@@ -1,6 +1,6 @@
-/* 덴포토 문명 — 3D 화면 (Three.js r160, 3d/ride/vendor/three.min.js 를 같이 쓴다)
-   육각 지형 · 숲/언덕/산/협곡 · 자원 · 보물상자 · 목표봉, 도시(마을 3D 모델 VillageModels 재사용) · 유닛 · 국경 · 안개.
-   화면 위 글자(도시 이름표 · 유닛 배지 · 피해 숫자)는 HTML 로 올린다. */
+/* 덴포토 치과 경쟁 — 3D 화면 (Three.js r160, 3d/ride/vendor/three.min.js 를 같이 쓴다)
+   육각 지형 · 숲/언덕/산/협곡 · 자원 · 보물상자 · 목표봉, 지점(마을 3D 모델 VillageModels 재사용) · 유닛 · 국경 · 안개.
+   화면 위 글자(지점 이름표 · 유닛 배지 · 피해 숫자)는 HTML 로 올린다. */
 (function(root){
 'use strict';
 const T=root.THREE,CIV=root.CIV,SQ3=Math.sqrt(3);
@@ -140,6 +140,11 @@ class View{
       const tw=new T.Mesh(new T.CylinderGeometry(.08,.09,.28,6),mat('#a89d86'));tw.position.set(Math.cos(ang+Math.PI/6)*.9,.18,Math.sin(ang+Math.PI/6)*.9);g.add(tw)}}
     const pole=new T.Mesh(new T.CylinderGeometry(.012,.012,.7,5),mat('#5a4632'));pole.position.set(.62,.42,-.42);g.add(pole);
     const flag=new T.Mesh(new T.PlaneGeometry(.3,.18),mat(col,{side:T.DoubleSide}));flag.position.set(.77,.68,-.42);g.add(flag);g.userData.flag=flag;
+    // 치과 간판 — 기둥 위 큰 이 (지점마다)
+    {const W=mat('#fbfbf6'),X=-.62,Z=-.4,sp=new T.Mesh(new T.CylinderGeometry(.02,.02,.8,5),mat('#7d8790'));sp.position.set(X,.45,Z);g.add(sp);
+      const disc=new T.Mesh(new T.CylinderGeometry(.22,.22,.04,18),mat(col));disc.rotation.x=Math.PI/2;disc.position.set(X,.92,Z);g.add(disc);
+      const cr=new T.Mesh(new T.SphereGeometry(.11,12,8),W);cr.scale.set(1.25,.8,.6);cr.position.set(X,.96,Z+.04);g.add(cr);
+      for(const d of [-.055,.055]){const rt=new T.Mesh(new T.ConeGeometry(.045,.15,6),W);rt.rotation.z=Math.PI;rt.position.set(X+d,.84,Z+.04);g.add(rt)}}
     if(c.capital){const star=new T.Mesh(new T.OctahedronGeometry(.07),mat('#f6d77a',{emissive:'#d8a83a',emissiveIntensity:.5}));star.position.set(.62,.82,-.42);g.add(star)}
     g.remove(flag);const b=bake(g);b.add(flag);b.userData.flag=flag;return b}
   syncCities(){const S=this.S,seenIds=new Set();
@@ -159,21 +164,42 @@ class View{
     const add=(geo,m,x,y,z,rx=0,ry=0,rz=0)=>{const o=new T.Mesh(geo,m);o.position.set(x,y,z);o.rotation.set(rx,ry,rz);g.add(o);return o};
     add(new T.CylinderGeometry(.2,.22,.04,14),mat('#fffbed'),0,.02,0);add(new T.TorusGeometry(.21,.025,6,18),body,0,.04,0,Math.PI/2);
     const person=(x=0,z=0,s=1)=>{add(new T.CylinderGeometry(.06*s,.08*s,.2*s,8),body,x,.16*s,z);add(new T.SphereGeometry(.055*s,10,8),skin,x,.31*s,z)};
+    const white=mat('#f7f7f2'),red=mat('#e0453a'),glass=mat('#9fd3e6',{metalness:.2,roughness:.2}),mint=mat('#8fe0cf');
+    const coat=(x=0,z=0)=>{add(new T.CylinderGeometry(.065,.085,.13,8),white,x,.12,z)};   // 흰 가운 자락
+    const tooth=(x,y,z,s=1)=>{add(new T.SphereGeometry(.06*s,10,8),white,x,y,z);add(new T.BoxGeometry(.12*s,.05*s,.08*s),white,x,y-.02*s,z);for(const d of [-.03,.03])add(new T.ConeGeometry(.025*s,.08*s,6),white,x+d*s,y-.08*s,z,Math.PI)};
+    const wheels=(xs,zs,r=.045)=>{for(const x of xs)for(const z of zs)add(new T.CylinderGeometry(r,r,.03,10),dark,x,r,z,0,0,Math.PI/2)};
     switch(u.type){
-      case 'settler':add(new T.BoxGeometry(.3,.12,.18),wood,.02,.12,0);add(new T.CylinderGeometry(.1,.1,.3,10,1,false,0,Math.PI),mat('#f3ead2'),.02,.18,0,0,0,Math.PI/2);for(const x of [-.1,.14])for(const z of [-.1,.1])add(new T.TorusGeometry(.045,.012,5,10),dark,x,.06,z);person(-.2,0,.85);break;
-      case 'worker':person(0,0);add(new T.CylinderGeometry(.01,.01,.26,5),wood,.1,.22,0,0,0,-.5);add(new T.BoxGeometry(.12,.025,.03),metal,.16,.33,0,0,0,-.5);break;
-      case 'scout':{// 오토바이 우편배달부
-        add(new T.TorusGeometry(.06,.02,6,12),dark,0,.08,.13,0,Math.PI/2);add(new T.TorusGeometry(.06,.02,6,12),dark,0,.08,-.13,0,Math.PI/2);add(new T.BoxGeometry(.07,.07,.26),mat('#d8442f'),0,.15,0);
-        add(new T.BoxGeometry(.11,.08,.09),mat('#cf9452'),0,.2,-.12);add(new T.BoxGeometry(.14,.015,.015),metal,0,.22,.12);add(new T.CylinderGeometry(.045,.05,.12,8),mat('#3d6fb8'),0,.26,-.01);add(new T.SphereGeometry(.045,10,8),skin,0,.35,.0);add(new T.CylinderGeometry(.05,.05,.03,10),mat('#28406e'),0,.39,0);break}
-      case 'warrior':person();add(new T.CylinderGeometry(.015,.03,.2,6),wood,.1,.2,0,0,0,-.4);add(new T.CylinderGeometry(.06,.06,.02,10),wood,-.08,.18,.02,Math.PI/2);break;
-      case 'archer':person();add(new T.TorusGeometry(.1,.01,5,12,Math.PI),wood,.09,.21,0,0,Math.PI/2,Math.PI/2);add(new T.CylinderGeometry(.03,.03,.14,6),mat('#8b5a32'),-.06,.2,-.05,.3);break;
-      case 'spear':person();add(new T.CylinderGeometry(.008,.008,.46,5),wood,.09,.24,0);add(new T.ConeGeometry(.02,.06,5),metal,.09,.49,0);add(new T.BoxGeometry(.02,.12,.1),mat(col),-.07,.17,0);break;
-      case 'sword':person();add(new T.BoxGeometry(.015,.2,.03),metal,.1,.25,0,0,0,-.2);add(new T.BoxGeometry(.02,.14,.11),metal,-.08,.18,0);break;
-      case 'musket':person();add(new T.CylinderGeometry(.01,.012,.34,6),dark,.08,.24,0,0,0,-.15);add(new T.CylinderGeometry(.065,.065,.025,10),mat('#2a2a3a'),0,.37,0);break;
-      case 'horse':case 'knight':{add(new T.BoxGeometry(.11,.11,.3),mat(u.type==='knight'?'#e8e4dc':'#8a5a32'),0,.17,0);add(new T.BoxGeometry(.07,.13,.08),mat(u.type==='knight'?'#e8e4dc':'#8a5a32'),0,.27,.15,-.5);for(const x of [-.04,.04])for(const z of [-.11,.11])add(new T.CylinderGeometry(.015,.015,.12,5),dark,x,.06,z);
-        add(new T.CylinderGeometry(.045,.055,.13,8),body,0,.3,-.02);add(new T.SphereGeometry(.045,10,8),u.type==='knight'?metal:skin,0,.4,-.02);if(u.type==='knight')add(new T.CylinderGeometry(.008,.012,.42,5),wood,.08,.32,.1,Math.PI/2.4);break}
-      case 'catapult':add(new T.BoxGeometry(.24,.05,.3),wood,0,.08,0);add(new T.BoxGeometry(.03,.3,.03),wood,0,.22,-.02,-.6);add(new T.SphereGeometry(.04,8,6),mat('#8f877a'),0,.34,-.13);for(const x of [-.13,.13])for(const z of [-.1,.1])add(new T.CylinderGeometry(.045,.045,.02,10),wood,x,.05,z,0,0,Math.PI/2);break;
-      case 'cannon':add(new T.CylinderGeometry(.035,.045,.3,10),dark,0,.14,.03,Math.PI/2.2);for(const x of [-.08,.08])add(new T.CylinderGeometry(.065,.065,.02,12),wood,x,.07,-.02,0,0,Math.PI/2);break}
+      case 'settler':{// 개원팀 — 치과 이삿짐 트럭 + 지붕 위 큰 이
+        add(new T.BoxGeometry(.2,.17,.24),white,0,.14,-.04);add(new T.BoxGeometry(.18,.12,.1),body,0,.11,.14);add(new T.BoxGeometry(.16,.05,.01),glass,0,.15,.19);
+        add(new T.BoxGeometry(.205,.03,.245),body,0,.17,-.04);wheels([-.1,.1],[-.12,.12]);tooth(0,.32,-.04,.9);break}
+      case 'worker':// 인테리어팀 — 안전모 · 페인트 롤러
+        person(0,0);add(new T.SphereGeometry(.06,10,6,0,Math.PI*2,0,Math.PI/2),mat('#f2c230'),0,.33,0);add(new T.CylinderGeometry(.008,.008,.24,5),metal,.1,.23,0,0,0,-.4);add(new T.CylinderGeometry(.03,.03,.1,10),mat('#9fd0f0'),.16,.34,0,0,0,Math.PI/2);break;
+      case 'scout':{// 홍보 오토바이 — 뒤에 전단지 상자
+        add(new T.TorusGeometry(.06,.02,6,12),dark,0,.08,.13,0,Math.PI/2);add(new T.TorusGeometry(.06,.02,6,12),dark,0,.08,-.13,0,Math.PI/2);add(new T.BoxGeometry(.07,.07,.26),mint,0,.15,0);
+        add(new T.BoxGeometry(.13,.1,.1),white,0,.21,-.13);tooth(0,.3,-.13,.45);add(new T.BoxGeometry(.14,.015,.015),metal,0,.22,.12);add(new T.CylinderGeometry(.045,.05,.12,8),body,0,.26,-.01);add(new T.SphereGeometry(.045,10,8),skin,0,.35,.0);add(new T.CylinderGeometry(.05,.05,.03,10),white,0,.39,0);break}
+      case 'warrior':// 치위생사 — 마스크 · 큰 칫솔
+        person();add(new T.BoxGeometry(.08,.035,.03),mint,0,.3,.05);add(new T.CylinderGeometry(.058,.058,.03,10),white,0,.36,0);
+        add(new T.CylinderGeometry(.012,.012,.3,6),mat('#5fb0e0'),.11,.24,0,0,0,-.25);add(new T.BoxGeometry(.03,.06,.04),white,.15,.38,0,0,0,-.25);break;
+      case 'archer':// 블로그 마케터 — 확성기 · 노트북
+        person();add(new T.ConeGeometry(.05,.12,10,1,true),mat('#f2c230'),.12,.3,0,0,0,-Math.PI/2.4);add(new T.BoxGeometry(.12,.012,.09),dark,-.08,.18,.06);add(new T.BoxGeometry(.12,.08,.01),glass,-.08,.22,.02,-.3);break;
+      case 'spear':// 보험청구팀 — 서류 더미 · 결재판
+        person();for(let k=0;k<4;k++)add(new T.BoxGeometry(.11,.02,.14),k%2?white:mat('#f3ead2'),.12,.03+k*.022,.05,0,k*.2);add(new T.BoxGeometry(.09,.12,.01),mat('#8a6236'),-.08,.2,.07,-.3);add(new T.BoxGeometry(.07,.09,.012),white,-.08,.2,.076,-.3);break;
+      case 'sword':// 보존과 전문의 — 흰 가운 · 치과 거울 · 이마 반사경
+        person();coat();add(new T.CylinderGeometry(.006,.006,.22,5),metal,.1,.24,0,0,0,-.3);add(new T.CylinderGeometry(.025,.025,.006,10),glass,.135,.34,0,Math.PI/2);add(new T.CylinderGeometry(.03,.03,.008,10),metal,0,.34,.05,Math.PI/2);break;
+      case 'musket':// 임플란트 전문의 — 머리 위 임플란트 나사
+        person();coat();add(new T.CylinderGeometry(.06,.06,.025,10),mint,0,.37,0);
+        add(new T.CylinderGeometry(.025,.012,.16,8),metal,.13,.3,0);for(let k=0;k<4;k++)add(new T.TorusGeometry(.024-k*.003,.006,4,10),metal,.13,.25+k*.035,0,Math.PI/2);tooth(.13,.44,0,.5);break;
+      case 'horse':// 광고 차량 — 옆에 큰 광고판
+        add(new T.BoxGeometry(.16,.12,.3),white,0,.12,0);add(new T.BoxGeometry(.15,.07,.08),glass,0,.16,.12);wheels([-.09,.09],[-.1,.1]);
+        add(new T.BoxGeometry(.02,.18,.26),body,.0,.3,-.02);add(new T.BoxGeometry(.024,.06,.14),white,0,.32,-.02);break;
+      case 'knight':// 응급 앰뷸런스 — 흰 차 · 빨간 띠 · 경광등
+        add(new T.BoxGeometry(.18,.17,.32),white,0,.14,0);add(new T.BoxGeometry(.185,.03,.325),red,0,.14,0);add(new T.BoxGeometry(.16,.06,.01),glass,0,.18,.165);
+        add(new T.BoxGeometry(.06,.025,.06),mat('#4ea0ff'),0,.24,.08);add(new T.BoxGeometry(.012,.07,.025),red,.093,.17,-.05);add(new T.BoxGeometry(.012,.025,.07),red,.093,.17,-.05);wheels([-.1,.1],[-.11,.11]);add(new T.BoxGeometry(.06,.02,.04),body,0,.235,-.08);break;
+      case 'catapult':// 현수막 부대 — 장대 둘 · 이 그림 현수막
+        person(-.12,.0,.85);for(const x of [-.06,.18])add(new T.CylinderGeometry(.01,.01,.42,5),wood,x,.21,0);add(new T.BoxGeometry(.24,.13,.01),body,.06,.33,0);tooth(.06,.34,.012,.45);break;
+      case 'cannon':// TV 광고 — 받침 위 큰 화면
+        add(new T.CylinderGeometry(.02,.02,.14,6),dark,0,.1,0);add(new T.BoxGeometry(.16,.02,.1),dark,0,.03,0);add(new T.BoxGeometry(.3,.2,.03),dark,0,.27,0);
+        add(new T.BoxGeometry(.27,.17,.005),body,0,.27,.017);tooth(0,.28,.03,.6);break}
     g.scale.setScalar(1.7);return bake(g)}
   unitSlot(u){const S=this.S,p=this.pos(u.at),D=CIV.UNITS[u.type],city=S.tiles[u.at].city!=null,other=S.units.some(o=>o.at===u.at&&o.id!==u.id);
     if(city)p.add(new T.Vector3(D.civilian?.32:-.32,.08,.5));else if(other)p.x+=D.civilian?.26:-.26;return p}
