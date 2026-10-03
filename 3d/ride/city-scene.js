@@ -157,8 +157,8 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
  for(let i=0;i<PEDN;i++){const p=pedPaths[i%pedPaths.length];peds.push({p,t:p.a+rnd()*(p.b-p.a),v:(rnd()<.5?-1:1)*(1+rnd()*.7),lat:p.side*(HALF+1.4+rnd()*2.4),ph:rnd()*6,c:SHIRT[Math.floor(rnd()*SHIRT.length)]})}
  const pedBody=new T.InstancedMesh(new T.CylinderGeometry(.3,.33,.8,8).translate(0,1.3,0),SM('#ffffff'),PEDN),pedHead=new T.InstancedMesh(new T.SphereGeometry(.27,10,8).translate(0,1.98,0),SM('#e0b48f'),PEDN),pedLegs=new T.InstancedMesh(mergeGeo([-.13,.13].map(x=>new T.CylinderGeometry(.12,.11,.9,6).translate(x,.45,0))),SM('#2f3540'),PEDN);
  peds.forEach((q,i)=>pedBody.setColorAt(i,cc.set(q.c)));pedBody.castShadow=pedHead.castShadow=true;g.add(pedBody,pedHead,pedLegs);
- // 이름표를 단 마을 친구 17명 (city-npc.js)
- const npc=root.CITY_NPC?root.CITY_NPC.build({T,g,paths:pedPaths,P,WV,YC,HALF}):null;
+ // 이름표를 단 마을 친구 18명 (city-npc.js)
+ const npc=root.CITY_NPC?root.CITY_NPC.build({T,g,paths:pedPaths,P,WV,YC,HALF,C}):null;
 
  // ── 표지판 · 입구 현수막 · 신호등 · 단속 카메라
  const signTex={};const signMat=(key,w,h,draw)=>{if(!signTex[key])signTex[key]=new T.MeshStandardMaterial({map:tex(w,h,draw),roughness:.6,side:T.DoubleSide});return signTex[key]};
