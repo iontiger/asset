@@ -1,5 +1,5 @@
-/* 뉴욕 시내를 걷는 마을 친구 17명 (DentPhoto 마을 NPC — 클라라만 마을에 남았다).
-   보도를 오가며 걷고, 머리 위 말풍선 이름표(이름 · 하는 일)를 띄운다. 바이크가 가까이 오면 이름표가 인사말로 바뀌고 손을 흔든다.
+/* 뉴욕 시내를 걷는 마을 친구 18명 (DentPhoto 마을 NPC 모두, 클라라 포함).
+   달리는 방향 오른쪽 보도에서만 오가며 걷고, 머리 위 말풍선 이름표(이름 · 하는 일)를 띄운다. 바이크가 가까이 오면 이름표가 인사말로 바뀌고 손을 흔든다.
    city-scene.js 가 보도 경로(paths)와 좌표 함수(P · WV)를 넘겨 준다. */
 (function(root){
  const PEOPLE=[
@@ -19,10 +19,11 @@
   ['티바이러스','바이오 연구원','blackcat','#f4f6f8','손 씻어요~',{}],
   ['윈터드림','겨울 동화 작가','polar','#dcecf8','눈 올까?',{scarf:'#7fb2d9'}],
   ['원조익평','원조 투자 고수','tiger','#3f4a5c','길게 보자!',{hat:'fedora',hatC:'#5a4636'}],
-  ['산타우찬이','산타 선물 배달부','deer','#d8322f','호호호! 선물이요~',{hat:'santa',hatC:'#d8322f'}]];
+  ['산타우찬이','산타 선물 배달부','deer','#d8322f','호호호! 선물이요~',{hat:'santa',hatC:'#d8322f'}],
+  ['클라라','호두까기 인형 발레리나','pinkrabbit','#f9c9d8','사뿐사뿐~ 빙그르르!',{bow:'#f06c9a'}]];
  // 동물별 머리 색 · 귀 모양
  const ANIMAL={cat:['#f1c48f','tri'],sheep:['#f6f1e6','round'],penguin:['#2a2d33','none'],owl:['#9a7a5a','tuft'],dog:['#d9a46c','flop'],raccoon:['#8d8f94','round'],fox:['#e3843c','tri'],squirrel:['#c07a45','tri'],
-  bear:['#a8774f','round'],rabbit:['#f5f1ea','long'],sukuna:['#f0d2c0','none'],porong:['#ffd6e6','long'],hamster:['#f2c48d','round'],blackcat:['#2b2b30','tri'],polar:['#f4f6f8','round'],tiger:['#f0a03c','round'],deer:['#c48a57','antler']};
+  bear:['#a8774f','round'],rabbit:['#f5f1ea','long'],sukuna:['#f0d2c0','none'],porong:['#ffd6e6','long'],hamster:['#f2c48d','round'],blackcat:['#2b2b30','tri'],polar:['#f4f6f8','round'],tiger:['#f0a03c','round'],deer:['#c48a57','antler'],pinkrabbit:['#f7c6d6','long']};
  function tag(T,name,role,greet){const c=document.createElement('canvas');c.width=512;c.height=176;const x=c.getContext('2d');
   const w=512,h=136,r=30;x.fillStyle='rgba(16,22,42,.86)';x.beginPath();x.moveTo(r,0);x.arcTo(w,0,w,h,r);x.arcTo(w,h,0,h,r);x.lineTo(w/2+18,h);x.lineTo(w/2,h+30);x.lineTo(w/2-18,h);x.arcTo(0,h,0,0,r);x.arcTo(0,0,w,0,r);x.closePath();x.fill();
   x.strokeStyle=greet?'#ffd36b':'rgba(255,255,255,.35)';x.lineWidth=5;x.stroke();x.textAlign='center';x.textBaseline='middle';
@@ -30,12 +31,13 @@
   if(greet){x.fillStyle='#ffd36b';x.font=font(34,800);x.fillText(name,w/2,40);x.fillStyle='#ffffff';x.font=font(40,800);x.fillText('“'+greet+'”',w/2,94)}
   else{x.fillStyle='#ffffff';x.font=font(46,800);x.fillText(name,w/2,52);x.fillStyle='#c9d4ea';x.font=font(28,600);x.fillText(role,w/2,100)}
   const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.anisotropy=4;return t}
- function build({T,g,paths,P,WV,YC,HALF}){
+ function build({T,g,paths,P,WV,YC,HALF,C}){
   const SM=(c,o)=>new T.MeshStandardMaterial(Object.assign({color:c,roughness:.75},o||{}));
   const body=new T.CylinderGeometry(.34,.4,.95,10).translate(0,1.36,0),leg=new T.CylinderGeometry(.13,.12,.9,7),arm=new T.CylinderGeometry(.09,.08,.72,6).translate(0,-.34,0),head=new T.SphereGeometry(.36,14,10).translate(0,2.2,0);
   const legMat=SM('#2f3540'),eyeMat=new T.MeshBasicMaterial({color:'#1b1b1f'}),eye=new T.SphereGeometry(.045,6,5),umbG=new T.ConeGeometry(1,.42,10).translate(0,2.95,0);
-  // 보도 경로를 길 전체에 고르게 나눠 한 사람씩
-  const list=paths.filter(p=>p.b-p.a>24),npcs=[];
+  // 달리는 방향 오른쪽 보도만 골라 길 전체에 고르게 나눠 한 사람씩 (건너편은 잘 안 보인다)
+  const rightSide=s=>{const r=C.segs[s.k].right;return Math.sign(s.axis==='F'?r[0]:r[1])};
+  const list=paths.filter(p=>p.b-p.a>24&&p.s.k!==undefined&&p.side===rightSide(p.s)),npcs=[];
   PEOPLE.forEach(([name,role,animal,shirt,greet,look],i)=>{const path=list[Math.floor((i+.5)*list.length/PEOPLE.length)];if(!path)return;
    const [hc,ear]=ANIMAL[animal]||['#e0b48f','none'],o=new T.Group(),skin=SM(hc),sh=SM(shirt);
    o.add(new T.Mesh(body,sh),new T.Mesh(head,skin));
@@ -59,7 +61,7 @@
    o.traverse(m=>{if(m.isMesh)m.castShadow=true});
    const tags=[tag(T,name,role,''),tag(T,name,role,greet)],sp=new T.Sprite(new T.SpriteMaterial({map:tags[0],transparent:true,depthWrite:false,fog:false,toneMapped:false}));sp.scale.set(3.3,1.13,1);sp.position.y=3.85;sp.renderOrder=5;o.add(sp);
    o.scale.setScalar(1.1);g.add(o);
-   npcs.push({name,o,sp,tags,legs,arms,umb,path,t:path.a+(path.b-path.a)*((i*.37)%1),v:(i%2?1:-1)*(1.05+(i%4)*.12),lat:path.side*(HALF+2.1+(i%3)*.6),ph:i*1.3,near:false})});
+   npcs.push({name,o,sp,tags,legs,arms,umb,path,t:path.a+(path.b-path.a)*((i*.37)%1),v:(i%2?1:-1)*(1.05+(i%4)*.12),lat:path.side*(HALF+1.5+(i%3)*.5),ph:i*1.3,near:false})});
   const prev=new T.Vector3();
   function update(time,dt,bikePos,env){const rain=env?env.rain>.15:false;
    for(const n of npcs){const p0=P(n.path.s,n.t,n.lat),d=WV(p0[0],p0[1],YC).distanceTo(bikePos),show=d<160;n.o.visible=show;if(!show)continue;

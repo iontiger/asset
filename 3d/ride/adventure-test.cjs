@@ -30,5 +30,5 @@ r=new Ride();r.start();r.items=[];r.pos=70500;r.speed=400;tick(r,['w'],60);asser
 {const E=require('./city-env.js'),at=p=>E.env(p);assert.equal(Math.round(at(0).hour),12);assert.equal(Math.round(at(1).hour)%24,12,'Leaves the city at noon');assert(at(.5).dark>.95&&at(0).dark<.01&&at(1).dark<.01,'Night falls in the middle');
  assert.deepEqual([.1,.35,.6,.9].map(p=>at(p).season),['spring','summer','autumn','winter']);assert(at(.38).rain>.9&&at(.38).season==='summer','Summer downpour');assert(at(.88).snow>.9&&at(.88).season==='winter','Winter blizzard');
  let h=12,turned=0;for(let p=.01;p<=1;p+=.01){const x=at(p).hour;if(x<h-12)turned++;else assert(x>=h-1e-9,'Clock only moves forward');h=x}assert.equal(turned,1,'Clock passes midnight once')}
-{const N=require('./city-npc.js').PEOPLE;assert.equal(N.length,17,'17 named NPCs walk the city');assert.equal(new Set(N.map(n=>n[0])).size,17);assert(!N.some(n=>n[0]==='클라라'))}
+{const N=require('./city-npc.js').PEOPLE;assert.equal(N.length,18,'18 named NPCs walk the city');assert.equal(new Set(N.map(n=>n[0])).size,18);assert(N.some(n=>n[0]==='클라라'))}
 console.log('PASS: manual drift, rewards, glancing hits, near misses, perfect landing, anti-hold timing, branch lock, shorter cliff route, safe-route collision suppression, combos, restart, snow plain, rock-free canyon, NYC lights/cameras/jam, NYC 24h seasons');
