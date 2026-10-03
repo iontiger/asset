@@ -31,6 +31,8 @@
 /* 오른쪽 위: 편지 개수 (봄날 시계 자리) · 스피커 소리 버튼 */
 .mail-count{display:flex;align-items:center;gap:7px;height:40px;padding:0 16px 0 13px;margin-right:6px;border-radius:20px;background:#fffbedd9;border:1px solid #fff9;box-shadow:0 4px 16px #58654e14;font-size:18px;font-weight:600;white-space:nowrap}
 .mail-count .envelope{font-size:20px;color:#aa7953;display:inline-block}
+/* 목표 80통을 채우면 숫자가 빨간색 */
+.mail-count #letters.goal,.mail-count.bump #letters.goal{color:#d8322a}
 .mail-count small{font-size:12px;font-weight:500;opacity:.5}
 #sound{display:grid;place-items:center}#sound svg{display:block}
 @media(max-width:800px){.mail-count{height:36px;padding:0 12px 0 10px;font-size:16px;margin-right:2px}.mail-count .envelope{font-size:17px}}
