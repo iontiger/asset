@@ -161,19 +161,24 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
  const npc=root.CITY_NPC?root.CITY_NPC.build({T,g,paths:pedPaths,P,WV,YC,HALF,C}):null;
 
  // ── 표지판 · 입구 현수막 · 신호등 · 단속 카메라
- const signTex={};const signMat=(key,w,h,draw)=>{if(!signTex[key])signTex[key]=new T.MeshStandardMaterial({map:tex(w,h,draw),roughness:.6,side:T.DoubleSide});return signTex[key]};
+ const signTex={};const signMat=(key,w,h,draw)=>{if(!signTex[key]){const t=tex(w,h,draw);t.anisotropy=8;signTex[key]=new T.MeshStandardMaterial({map:t,emissiveMap:t,emissive:'#ffffff',emissiveIntensity:.32,roughness:.6})}return signTex[key]};
  const pole=(R,F,h,c='#3b4246',r=.12)=>{const m=new T.Mesh(new T.CylinderGeometry(r,r*1.15,h,8),SM(c,{metalness:.4,roughness:.5}));m.position.copy(WV(R,F,YC+.24+h/2));m.castShadow=true;g.add(m);return m};
- const panel=(R,F,y,w,h,mat,face)=>{const m=new T.Mesh(new T.PlaneGeometry(w,h),mat);m.position.copy(WV(R,F,y));const d=dirW(face[0],face[1]);m.rotation.y=Math.atan2(d.x,d.z);m.castShadow=true;g.add(m);return m};
+ // 표지판 판은 기둥 앞(달려오는 쪽)으로 띄워 붙이고 뒤에 금속 뒷판을 댄다 — 기둥이 글자를 가리지 않게
+ const backMat=SM('#8a9096',{metalness:.5,roughness:.45});
+ const panel=(R,F,y,w,h,mat,face)=>{const dw=dirW(face[0],face[1]),d=new T.Vector3(dw.x,0,dw.z).normalize(),m=new T.Mesh(new T.PlaneGeometry(w,h),mat);m.position.copy(WV(R,F,y)).addScaledVector(d,.3);m.rotation.y=Math.atan2(d.x,d.z);m.castShadow=true;g.add(m);
+  const b=new T.Mesh(new T.BoxGeometry(w+.06,h+.06,.05),backMat);b.position.copy(m.position).addScaledVector(d,-.035);b.rotation.y=m.rotation.y;b.castShadow=true;g.add(b);return m};
  const limitMat=signMat('limit',256,320,(x,w,h)=>{x.fillStyle='#fff';x.fillRect(0,0,w,h);x.strokeStyle='#111';x.lineWidth=12;x.strokeRect(14,14,w-28,h-28);x.fillStyle='#111';x.textAlign='center';x.font=`800 44px ${FONT}`;x.fillText('SPEED',w/2,78);x.fillText('LIMIT',w/2,126);x.font=`900 130px ${FONT}`;x.fillText(String(C.LIMIT),w/2,262)});
  const camWarnMat=signMat('camwarn',384,256,(x,w,h)=>{x.fillStyle='#ffcc00';x.fillRect(0,0,w,h);x.strokeStyle='#111';x.lineWidth=10;x.strokeRect(10,10,w-20,h-20);x.fillStyle='#111';x.textAlign='center';x.font=`900 46px ${FONT}`;x.fillText('과속 단속 카메라',w/2,74);x.font=`800 34px ${FONT}`;x.fillText('SPEED CAMERA AHEAD',w/2,124);x.beginPath();x.arc(w/2,188,46,0,7);x.fillStyle='#fff';x.fill();x.lineWidth=11;x.strokeStyle='#d62828';x.stroke();x.fillStyle='#111';x.font=`900 46px ${FONT}`;x.fillText(String(C.LIMIT),w/2,205)});
- C.segs.forEach((s,k)=>{const d=k===0?27:s.dS0+12;if(d>s.len-20)return;const p=SP(k,d,HALF+1.1);pole(p[0],p[1],3.6);panel(p[0],p[1],YC+3.4,1.15,1.45,limitMat,[-s.dir[0],-s.dir[1]])});
- for(const c of C.cameras){const s=C.segs[c.k];const w=SP(c.k,Math.max(s.dS0+3,c.d-38),HALF+1.1);pole(w[0],w[1],3.8);panel(w[0],w[1],YC+3.5,2.1,1.4,camWarnMat,[-s.dir[0],-s.dir[1]])}
+ const warnD=c=>Math.max(C.segs[c.k].dS0+3,c.d-38);
+ C.segs.forEach((s,k)=>{let d=k===0?27:s.dS0+12;for(const c of C.cameras)if(c.k===k&&Math.abs(warnD(c)-d)<12)d=warnD(c)+14;   // 단속 예고판과 겹치지 않게
+  if(d>s.len-20)return;const p=SP(k,d,HALF+1.1);pole(p[0],p[1],3.9);panel(p[0],p[1],YC+3.55,1.5,1.9,limitMat,[-s.dir[0],-s.dir[1]])});
+ for(const c of C.cameras){const s=C.segs[c.k];const w=SP(c.k,warnD(c),HALF+1.1);pole(w[0],w[1],3.8);panel(w[0],w[1],YC+3.5,2.1,1.4,camWarnMat,[-s.dir[0],-s.dir[1]])}
  // 입구 현수막
  {const s=C.segs[0],a=SP(0,14,-(WALK-.8)),b=SP(0,14,WALK-.8);pole(a[0],a[1],12.6,'#2b3033',.2);pole(b[0],b[1],12.6,'#2b3033',.2);
   const ban=signMat('banner',1024,200,(x,w,h)=>{const gr=x.createLinearGradient(0,0,w,0);gr.addColorStop(0,'#0b2545');gr.addColorStop(1,'#13315c');x.fillStyle=gr;x.fillRect(0,0,w,h);x.fillStyle='#f4d35e';x.textAlign='center';x.font=`900 74px ${FONT}`;x.fillText('NEW YORK CITY',w/2,96);x.fillStyle='#fff';x.font=`700 40px ${FONT}`;x.fillText('뉴욕 시내 · 신호 준수 · 제한속도 '+C.LIMIT+' km/h',w/2,160)});
   const m=new T.Mesh(new T.PlaneGeometry(2*(WALK-.8),3.2),ban);const p=SP(0,14,0);m.position.copy(WV(p[0],p[1],C.y(14)+11.2));const d=dirW(-s.dir[0],-s.dir[1]);m.rotation.y=Math.atan2(d.x,d.z);g.add(m)}
  // 모서리마다 다음 길 이름(초록 표지) — 좌회전 ↰ / 우회전 ↱
- C.marks.forEach(mk=>{const s=C.segs[mk.k],p=SP(mk.k,s.len-WALK-2.2,HALF+1.1);if(!C.lights.some(l=>l.k===mk.k&&Math.abs(l.d-(s.len-WALK-4.5))<1))pole(p[0],p[1],5.2);
+ C.marks.forEach(mk=>{const s=C.segs[mk.k],p=SP(mk.k,s.len-WALK-6,HALF+1.1);pole(p[0],p[1],5.2);   // 신호등 기둥보다 앞(달려오는 쪽)에 따로 세운다
   const mat=signMat('st'+mk.k,512,128,(x,w,h)=>{x.fillStyle='#0f6b3a';x.fillRect(0,0,w,h);x.strokeStyle='#fff';x.lineWidth=6;x.strokeRect(8,8,w-16,h-16);x.fillStyle='#fff';x.textAlign='center';x.font=`900 64px ${FONT}`;x.fillText((mk.side<0?'↰ ':'')+mk.to+(mk.side>0?' ↱':''),w/2,86)});
   panel(p[0],p[1],YC+5.4,3.6,.9,mat,[-s.dir[0],-s.dir[1]])});
  // 신호등: 오른쪽 보도의 기둥 + 차선 위로 뻗은 팔 + 3색 등. 머리 두 개(높은 곳 · 기둥).
