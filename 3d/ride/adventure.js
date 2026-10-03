@@ -42,7 +42,11 @@
   {from:96000,name:'노을빛 마을',ground:'#9da779',road:'#bfa584',sky:'#e4cab2',fog:'#dfd0b3'}];
  // 협곡 헤어핀(기본 길) 안쪽은 '협곡 특급' 하늘 — 맑은 파란 하늘과 사암 절벽
  const canyon={name:'협곡 특급길',ground:'#bd9c73',road:'#b88d5d',sky:'#9fcaee',fog:'#cfe4f2',fogNear:110,fogFar:520};
+ // 별빛 밤길: 폭설 평원이 끝난 뒤(98500)부터 도착까지 해가 지고 밤이 된다 — 가로등 · 헤드라이트 · 반딧불 (game.js)
+ const night={start:98500,full:100300};
+ const nightAmt=s=>sstep(night.start,night.full,s);
+ const nightBiome={name:'별빛 밤길',ground:'#9da779',road:'#bfa584',sky:'#101a38',fog:'#1b2544',fogNear:45,fogFar:210};
  const blizzard={name:'폭설 평원',ground:'#eef1f3',road:'#f3f5f7',sky:'#d9dfe5',fog:'#e6ebef',fogNear:24,fogFar:150};
- function biome(s,choice){if(choice==='cliff'&&s>fork.start+250&&s<fork.end-250)return canyon;if(snowAmt(s)>.5)return blizzard;let b=biomes[0];for(const x of biomes)if(s>=x.from)b=x;return b}
- const api={fork,branchOffset,travelScale,biomes,canyon,biome,mountain,mountainField,mountainMask,creek,creekX,snow,snowAmt,snowCover,blizzard,sstep};root.ADVENTURE=api;if(typeof module!=='undefined')module.exports=api;
+ function biome(s,choice){if(choice==='cliff'&&s>fork.start+250&&s<fork.end-250)return canyon;if(snowAmt(s)>.5)return blizzard;if(nightAmt(s)>.55)return nightBiome;let b=biomes[0];for(const x of biomes)if(s>=x.from)b=x;return b}
+ const api={fork,branchOffset,travelScale,biomes,canyon,biome,mountain,mountainField,mountainMask,creek,creekX,snow,snowAmt,snowCover,blizzard,sstep,night,nightAmt,nightBiome};root.ADVENTURE=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);
