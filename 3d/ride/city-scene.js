@@ -157,6 +157,8 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
  for(let i=0;i<PEDN;i++){const p=pedPaths[i%pedPaths.length];peds.push({p,t:p.a+rnd()*(p.b-p.a),v:(rnd()<.5?-1:1)*(1+rnd()*.7),lat:p.side*(HALF+1.4+rnd()*2.4),ph:rnd()*6,c:SHIRT[Math.floor(rnd()*SHIRT.length)]})}
  const pedBody=new T.InstancedMesh(new T.CylinderGeometry(.3,.33,.8,8).translate(0,1.3,0),SM('#ffffff'),PEDN),pedHead=new T.InstancedMesh(new T.SphereGeometry(.27,10,8).translate(0,1.98,0),SM('#e0b48f'),PEDN),pedLegs=new T.InstancedMesh(mergeGeo([-.13,.13].map(x=>new T.CylinderGeometry(.12,.11,.9,6).translate(x,.45,0))),SM('#2f3540'),PEDN);
  peds.forEach((q,i)=>pedBody.setColorAt(i,cc.set(q.c)));pedBody.castShadow=pedHead.castShadow=true;g.add(pedBody,pedHead,pedLegs);
+ // 이름표를 단 마을 친구 17명 (city-npc.js)
+ const npc=root.CITY_NPC?root.CITY_NPC.build({T,g,paths:pedPaths,P,WV,YC,HALF}):null;
 
  // ── 표지판 · 입구 현수막 · 신호등 · 단속 카메라
  const signTex={};const signMat=(key,w,h,draw)=>{if(!signTex[key])signTex[key]=new T.MeshStandardMaterial({map:tex(w,h,draw),roughness:.6,side:T.DoubleSide});return signTex[key]};
@@ -236,7 +238,7 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
   crownMat.color.set(E.leaf);bulbMat.emissiveIntensity=.6+3.6*d;steam.material.opacity=.42+.25*cov;
   lampGlow.visible=d>.02;lampGlow.material.opacity=d*.85;carGlow.visible=d>.02||E.weather>.3;carGlow.material.opacity=Math.max(d,E.weather*.7)*.95;umb.visible=E.rain>.15}
  function update(time,dt,ride,cenv,bikePos){const st=ride.city;if(!st)return;
-  env=cenv||(DEF?DEF.env(Math.max(0,Math.min(1,C.uOf(ride.pos)/C.Lc))):null);if(env)weather(env,ride,bikePos);
+  env=cenv||(DEF?DEF.env(Math.max(0,Math.min(1,C.uOf(ride.pos)/C.Lc))):null);if(env)weather(env,ride,bikePos);if(npc&&bikePos)npc.update(time,dt,bikePos,env);
   sigs.forEach(sg=>{const s=st.lights[sg.l.i].state;for(const k of ['red','yellow','green'])sg.mats[k].color.set(s===k?LAMPC[k]:'#2a2a2a');
    const lamp=sg.heads[0].children[['red','yellow','green'].indexOf(s)*2+2];if(lamp){lamp.getWorldPosition(sg.glow.position);sg.glow.material.color.set(LAMPC[s]);sg.glow.material.opacity=Math.min(1,(.45+.15*Math.sin(time*6))*(1+(env?env.dark:0)*.9));sg.glow.scale.setScalar(1.9*(1+(env?env.dark:0)*.7))}});
   // 가로 길 차량: 내 신호가 빨간불인 교차로에서만
@@ -250,6 +252,6 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
   cams.forEach(cm=>{cm.t=Math.max(0,cm.t-dt);cm.flash.material.opacity=cm.t>0?Math.min(1,cm.t*3):0;cm.led.material.color.set(Math.sin(time*5)>0?'#ff3030':'#551010')});
  }
  function flash(i){if(cams[i])cams[i].t=.45}
- return {group:g,update,flash,buildings:blds.length,lampPos:lamps.map(l=>l.bulb)}}
+ return {group:g,update,flash,buildings:blds.length,lampPos:lamps.map(l=>l.bulb),npc}}
 root.CITY_SCENE={build};
 })(typeof window!=='undefined'?window:globalThis);
