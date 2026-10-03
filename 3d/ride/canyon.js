@@ -92,7 +92,7 @@ function build({T,scene,drivePoint,ride,fork,landmarks,turns}){
   inst([[new T.IcosahedronGeometry(1,0),white]],bush);
   inst([[new T.DodecahedronGeometry(1,0),st]],stone);
 
-  // 표지판 — 헤어핀 바깥쪽 노란 갈매기 표지 · 낙석 주의
+  // 표지판 — 헤어핀 바깥쪽 노란 갈매기 표지 · 헤어핀 주의
   const gap=s=>{const a=drivePoint(s,0,'safe'),b=drivePoint(s,0,'cliff');return Math.hypot(a.x-b.x,a.z-b.z)};
   const wood=SM('#7a5a3a');
   const chev=dir=>boardTexture(T,(c,w,h)=>{c.fillStyle='#f2c230';c.fillRect(0,0,w,h);c.strokeStyle='#3b2a1a';c.lineWidth=10;c.strokeRect(5,5,w-10,h-10);c.fillStyle='#2b2520';
@@ -103,7 +103,7 @@ function build({T,scene,drivePoint,ride,fork,landmarks,turns}){
     for(let s=t.start-120;s<=t.end;s+=120){let lat=out*11.5;if(out<0){const gp=gap(s);if(gp>.5&&gp<26)lat=-(gp+11.5)}
       const p=drivePoint(s,lat,'cliff'),aim=drivePoint(s-80,out*4,'cliff');post(p,1.6);
       const b=new T.Mesh(new T.PlaneGeometry(2.3,1.15),chevMat[t.side]);b.position.set(p.x,p.y+2.05,p.z);b.lookAt(aim.x,p.y+2.05,aim.z);b.castShadow=true;scene.add(b)}}
-  const rockTex=boardTexture(T,(c,w,h)=>{c.fillStyle='#fff6dc';c.fillRect(0,0,w,h);c.strokeStyle='#d0402c';c.lineWidth=12;c.strokeRect(6,6,w-12,h-12);c.fillStyle='#2b2520';c.font='bold 54px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('🪨 낙석 주의',w/2,h/2+2)},384,128);
+  const rockTex=boardTexture(T,(c,w,h)=>{c.fillStyle='#fff6dc';c.fillRect(0,0,w,h);c.strokeStyle='#d0402c';c.lineWidth=12;c.strokeRect(6,6,w-12,h-12);c.fillStyle='#2b2520';c.font='bold 54px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('⚠ 헤어핀 주의',w/2,h/2+2)},384,128);
   for(const s of [fork.start+500,turns[1]?turns[1].start-700:fork.start+6000]){const p=drivePoint(s,12.5,'cliff'),aim=drivePoint(s-80,4,'cliff');post(p,2.2);
     const b=new T.Mesh(new T.PlaneGeometry(3.6,1.2),new T.MeshStandardMaterial({map:rockTex,side:T.DoubleSide,roughness:.6}));b.position.set(p.x,p.y+2.7,p.z);b.lookAt(aim.x,p.y+2.7,aim.z);b.castShadow=true;scene.add(b)}
 

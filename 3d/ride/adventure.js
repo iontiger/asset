@@ -1,7 +1,8 @@
 /* Course layout shared by the simulation, the renderer and the tests (units: 5 = 1 m, 21.6 km in all).
    - fork: the canyon hairpins (default) or the village detour, 20000–40000 (4 km)
    - mountain: the road climbs over 목표봉 and comes back down
-   - creek: the road follows a stream and splashes through three fords */
+   - creek: the road follows a stream and splashes through three fords
+   - snow: a sudden blizzard on the flat plain between the fishing pier and the lighthouse */
 (function(root){
  const path=root.ROAD_PATH||(typeof require==='function'?require('./road-path.js'):null);
  const fork={start:20000,end:40000,chooseFrom:18500};
@@ -26,6 +27,11 @@
   for(const f of creek.fords){if(s<f-260)return edge(s,side*W);if(s<=f+260)return edge(s,side*W+(-side*W*2)*sstep(f-260,f+260,s));side=-side}
   return edge(s,side*W);
   function edge(s,x){if(s<creek.start)return x+Math.sign(x)*40*sstep(creek.start,creek.start-1200,s);if(s>creek.end)return x+Math.sign(x)*40*sstep(creek.end,creek.end+1200,s);return x}}
+ // 폭설 평원: 낚시터(84500)와 등대(100000) 사이 평지에 갑자기 폭설 — 바퀴가 반쯤 잠기고 느려지고 미끄럽다.
+ const snow={start:86500,end:98500,ramp:260,depth:.52,name:'폭설 평원'};
+ const snowAmt=s=>Math.min(sstep(snow.start,snow.start+snow.ramp,s),sstep(snow.end+snow.ramp,snow.end,s));
+ // 눈 덮인 땅 · 길 색 (조금 더 넓게 하얘진다)
+ const snowCover=s=>Math.min(sstep(snow.start-500,snow.start,s),sstep(snow.end+700,snow.end,s));
  const biomes=[
   {from:0,name:'꽃바람 초원',ground:'#92ad67',road:'#caaa79',sky:'#bfdfe6',fog:'#cedfc4'},
   {from:18000,name:'황금빛 협곡',ground:'#bd9c73',road:'#bd8e61',sky:'#d9d6be',fog:'#dec7a5'},
@@ -36,6 +42,7 @@
   {from:96000,name:'노을빛 마을',ground:'#9da779',road:'#bfa584',sky:'#e4cab2',fog:'#dfd0b3'}];
  // 협곡 헤어핀(기본 길) 안쪽은 '협곡 특급' 하늘 — 맑은 파란 하늘과 사암 절벽
  const canyon={name:'협곡 특급길',ground:'#bd9c73',road:'#b88d5d',sky:'#9fcaee',fog:'#cfe4f2',fogNear:110,fogFar:520};
- function biome(s,choice){if(choice==='cliff'&&s>fork.start+250&&s<fork.end-250)return canyon;let b=biomes[0];for(const x of biomes)if(s>=x.from)b=x;return b}
- const api={fork,branchOffset,travelScale,biomes,canyon,biome,mountain,mountainField,mountainMask,creek,creekX,sstep};root.ADVENTURE=api;if(typeof module!=='undefined')module.exports=api;
+ const blizzard={name:'폭설 평원',ground:'#eef1f3',road:'#f3f5f7',sky:'#d9dfe5',fog:'#e6ebef',fogNear:24,fogFar:150};
+ function biome(s,choice){if(choice==='cliff'&&s>fork.start+250&&s<fork.end-250)return canyon;if(snowAmt(s)>.5)return blizzard;let b=biomes[0];for(const x of biomes)if(s>=x.from)b=x;return b}
+ const api={fork,branchOffset,travelScale,biomes,canyon,biome,mountain,mountainField,mountainMask,creek,creekX,snow,snowAmt,snowCover,blizzard,sstep};root.ADVENTURE=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);
