@@ -96,7 +96,7 @@
         if(this.jumping&&(o.type==='letter'?this.airY>2:this.airY>o.radius*1.7))continue;
         const isRock=o.type==='rock';
         if(isRock&&this.pos>=adventure.fork.start&&this.pos<adventure.fork.end&&this.branchChoice==='safe')continue;
-        if(!isRock){if(o.z>=before&&o.z<=this.pos&&Math.abs(o.x-this.player)<.22&&!this.collected.has(o.id)){this.collected.add(o.id);this.letters++;this.score+=100;this.events.push({type:'letter'})}continue}
+        if(!isRock){if(o.z>=before&&o.z<=this.pos&&Math.abs(o.x-this.player)<.22&&!this.collected.has(o.id)){this.collected.add(o.id);this.letters++;this.score+=100;this.events.push({type:'letter',id:o.id,z:o.z,x:o.x})}continue}
         if(this.rockPassed.has(o.id)||(this.falling.get(o.id)||0)<.75)continue;
         const dx=Math.abs(o.x-this.player)*9,radius=o.radius+.35;
         if(before<=o.z&&this.pos>=o.z&&dx>radius&&dx<radius+1.35&&this.speed>150){this.rockPassed.add(o.id);this.nearMisses++;this.energy=Math.min(100,this.energy+12);this.reward(200,'nearMiss');continue}
