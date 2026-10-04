@@ -368,6 +368,7 @@ const biome=cenv?{sky:cenv.sky,fog:cenv.fog,fogNear:cenv.fogNear,fogFar:cenv.fog
 landingRing.visible=ride.jumping;
 if(ride.jumping){let t=0,s=ride.pos,y=ride.flightY,v=ride.airV;while(t<4){t+=.04;s+=ride.speed*1.35*.04*ADVENTURE.travelScale(s,ride.branchChoice);v-=16*.04;y+=v*.04;if(y<=height(s))break}landingRing.position.copy(drivePoint(s,ride.player*9));landingRing.position.y+=.05;landingRing.material.color.set(ride.airV<0&&ride.airY<4?'#a9e6a0':'#f1d886');}
 updateGhost();updateNight(dt);if(frame++%4===0)hud();if(window.rideCamHook)window.rideCamHook(camera);
+ if(cityScene.wet&&cityScene.group.visible)cityScene.wet.render(renderer,scene,camera,!!(post&&post.on));
  if(post&&post.on&&cityScene.group.visible)post.render(dt,cenv);else renderer.render(scene,camera);requestAnimationFrame(tick)}
 // ── 고스트 라이더: 내가 완주한 주행을 0.2초마다 기록해 두었다가, 다음 판에서 첫 언덕을 넘은 뒤부터 반투명 바이크로 같이 달린다.
 //    처음(기록 없음)에는 나오지 않는다. 더 빨리 완주하면 그 주행으로 바뀐다. 기록은 이 브라우저 localStorage.
