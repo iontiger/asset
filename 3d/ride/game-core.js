@@ -29,7 +29,7 @@
       for(let i=0;i<160;i++){const z=1050+i*645;if(adventure.creek.fords.some(f=>Math.abs(z-f)<450))continue;if(z>adventure.fork.start-400&&z<adventure.fork.end+400)continue;   // 협곡(갈림길) 구간에는 낙석이 없다
         this.items.push({z,x:Math.sin(i*3.7+.8)*.78,type:'rock',id:1000+i,radius:2.1+(i%3)*.45})}
     }
-    reset(){this.practice=false;this.pos=0;this.speed=0;this.player=0;this.steer=0;this.energy=100;this.letters=0;this.elapsed=0;this.hit=0;this.boost=false;this.airY=0;this.airV=0;this.crashing=false;this.jumping=false;this.flightY=0;this.flightAge=0;this.jumped=new Set();this.surface='dirt';this.crashAge=0;this.grassCooldown=0;this.shake=0;this.falling=new Map();this.visited=new Set();this.collected=new Set();this.events=[];this.score=0;this.combo=0;this.comboTime=0;this.nearMisses=0;this.driftCharge=0;this.drifting=false;this.drifted=new Set();this.rockPassed=new Set();this.branchChoice='cliff';this.snow=0;this.latV=0;this.slip=0;this.inSnow=false;this.landingPress=-99;this.wasLandingKey=false;this.bonusTime=0;this.city=city.newState();}
+    reset(){this.practice=false;this.pos=0;this.speed=0;this.player=0;this.steer=0;this.energy=100;this.letters=0;this.elapsed=0;this.hit=0;this.boost=false;this.airY=0;this.airV=0;this.crashing=false;this.jumping=false;this.flightY=0;this.flightAge=0;this.jumped=new Set();this.surface='dirt';this.crashAge=0;this.grassCooldown=0;this.shake=0;this.falling=new Map();this.visited=new Set();this.collected=new Set();this.events=[];this.score=0;this.combo=0;this.comboTime=0;this.nearMisses=0;this.driftCharge=0;this.drifting=false;this.drifted=new Set();this.rockPassed=new Set();this.branchChoice='cliff';this.snow=0;this.latV=0;this.grassBounce=0;this.slip=0;this.inSnow=false;this.landingPress=-99;this.wasLandingKey=false;this.bonusTime=0;this.city=city.newState();}
     reward(base,type){this.combo=Math.min(5,this.combo+1);this.comboTime=8;const points=base*this.combo;this.score+=points;this.events.push({type,points,combo:this.combo});}
     chooseBranch(choice){if(this.pos<adventure.fork.start&&['safe','cliff'].includes(choice)){this.branchChoice=choice;return true}return false}
     start(){if(this.mode!=='paused')this.reset();this.mode='playing'}
@@ -92,12 +92,14 @@
       this.latV+=(want-this.latV)*Math.min(1,dt*grip);
       if(snow>0&&!this.jumping)this.latV+=(Math.sin(this.elapsed*1.7+this.pos*.0021)+Math.sin(this.elapsed*.63+1.3)*.6)*snow*Math.min(1,this.speed/160)*.55*dt;
       this.slip=snow>0?this.latV-want:0;
+      // 풀숲 충격 직후에는 도로 안쪽으로 튕겨 나가는 힘이 잠깐 이어진다(눈길 미끄럼 · 손을 뗀 폰에서도 다시 풀숲으로 끌려가지 않게)
+      if(this.grassBounce){this.player+=this.grassBounce*dt;this.grassBounce*=Math.exp(-dt*3.2);if(Math.abs(this.grassBounce)<.02)this.grassBounce=0}
       this.player+=this.latV*dt;
       this.player-=Math.sin(this.pos/1500)*this.speed*dt*.00010;
       this.player=Math.max(-1.12,Math.min(1.12,this.player));if(inCity)this.player=Math.max(-1,Math.min(.5,this.player));
       if(!inCity&&Math.abs(this.player)>.94&&this.speed>100)this.speed=Math.max(100,this.speed-dt*220);
       if(!inCity&&!this.jumping&&Math.abs(this.player)>.97&&this.speed>25&&this.grassCooldown<=0){
-        const side=Math.sign(this.player);this.player-=side*.19;this.speed*=.78;this.airV=4.5+this.speed*.005;this.grassCooldown=.85;this.shake=.5;
+        const side=Math.sign(this.player);this.player-=side*.19;if(Math.sign(this.latV)===side)this.latV=0;this.grassBounce=-side*1.1;this.speed*=.78;this.airV=4.5+this.speed*.005;this.grassCooldown=.85;this.shake=.5;
         this.events.push({type:'grass',side});
       }
       const before=this.pos;this.pos=Math.min(this.length,this.pos+this.speed*1.35*dt*adventure.travelScale(this.pos,this.branchChoice));

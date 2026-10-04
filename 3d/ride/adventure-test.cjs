@@ -53,4 +53,9 @@ r=new Ride();r.start();r.items=[];r.pos=70500;r.speed=400;tick(r,['w'],60);asser
 {const fs=require('fs'),path=require('path');const gif=fs.readFileSync(path.join(__dirname,'nyc','loading.gif'));assert(gif.slice(0,6).toString()==='GIF89a'&&gif.length<400000,'NYC loading gif');
  const html=fs.readFileSync(path.join(__dirname,'index.html'),'utf8'),gjs=fs.readFileSync(path.join(__dirname,'game.js'),'utf8');assert(html.includes('id="city-loading"')&&html.includes('nyc/loading.gif'),'loading overlay in html');
  assert(/function prepCity\(\)/.test(gjs)&&gjs.includes("cityPrep.state==='loading'")&&gjs.includes('compileAsync'),'city prep pauses and precompiles')}
-console.log('PASS: manual drift, rewards, glancing hits, near misses, perfect landing, anti-hold timing, branch lock, shorter cliff route, safe-route collision suppression, combos, restart, snow plain, rock-free canyon, NYC lights/cameras/jam, NYC 24h seasons, NYC Blender kit, NYC street life, Times Square, puddles, people kit, phone textures, city loading GIF');
+{// 풀숲 충격 뒤 손을 떼면(폰) 도로 안쪽으로 튕겨 나가고, 눈길에서도 다시 풀숲에 끌려가지 않는다
+ for(const [start,side] of [[3000,1],[3000,-1],[90000,1],[90000,-1]]){const g=new Ride();g.start();g.items=[];g.pos=start;g.speed=380;let hit=false,t=0;const into=side>0?'arrowright':'arrowleft';
+  while(t<6&&!hit){g.update(1/60,new Set(['arrowup',into]));t+=1/60;hit=g.events.some(e=>e.type==='grass');g.events.length=0}assert(hit,'grass hit '+start);
+  let again=0;for(let k=0;k<240;k++){g.update(1/60,new Set(['arrowup']));if(g.events.some(e=>e.type==='grass'))again++;g.events.length=0}
+  assert.equal(again,0,'no repeated grass hits after release '+start+' '+side);assert(Math.abs(g.player)<.75,'bounced toward the road center '+start+' '+side+' '+g.player)}}
+console.log('PASS: manual drift, rewards, glancing hits, near misses, perfect landing, anti-hold timing, branch lock, shorter cliff route, safe-route collision suppression, combos, restart, snow plain, rock-free canyon, NYC lights/cameras/jam, NYC 24h seasons, NYC Blender kit, NYC street life, Times Square, puddles, people kit, phone textures, city loading GIF, grass bounce');
