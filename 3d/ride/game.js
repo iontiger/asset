@@ -292,13 +292,15 @@ function cityHint(r){const pu=CITY.uOf(r.pos),nl=CITY.nextLight(r),m=d=>Math.max
 function deliveryHud(r){
  const box=$('delivery-mission');box.hidden=!(r.branchChoice==='safe'&&r.pos>=F.start&&r.pos<F.end&&r.mode==='playing');
  document.body.classList.toggle('has-delivery-mission',!box.hidden);
- if(box.hidden)return;
+ if(box.hidden){box.classList.remove('near-delivery','urgent-delivery');return;}
  const d=CITY.nextDelivery(r),states=r.city.deliveries,missed=states.filter(s=>s.status==='missed').length;
+ const remaining=d?Math.max(0,(CITY.sOf(d.u)-r.pos)/5):Infinity;
+ box.classList.toggle('near-delivery',remaining<=500);box.classList.toggle('urgent-delivery',remaining<=100);
  $('delivery-title').textContent=`✉ 뉴욕 배달 ${r.city.delivered}/3`;
  const progress=$('delivery-progress');progress.value=d?states[d.i].wait:0;progress.hidden=!d||states[d.i].wait===0;
  $('delivery-detail').textContent=!d?(missed?`배달 종료 · 지나친 우체통 ${missed}곳`:'모두 배달했어요! 완수 보너스 +1,000점'):
  states[d.i].wait>0?`${d.name} · 배달 중 ${Math.round(states[d.i].wait/CITY.DELIVERY_WAIT*100)}%`:
- `${d.name} · ${Math.max(0,Math.round((CITY.sOf(d.u)-r.pos)/5))} m 앞 · ${touchMode?'오른쪽 차선에서 자동 정차':'표시 구역에서 ↓ / S로 1.5초 정차'}`;
+ `${d.name} · ${Math.round(remaining)} m 앞`;
 }
 function hud(){deliveryHud(ride);const r=ride;{const ck=$('city-clock');if(cenv&&r.mode!=='finished'){ck.hidden=false;ck.textContent=`${cenv.dark>.5?'🌙':cenv.dusk>.4?'🌅':cenv.icon} ${CITY_ENV.clock(cenv.hour)} · ${cenv.seasonName}${cenv.rain>.3?' · 폭우':cenv.snow>.3?' · 폭설':''}`}else ck.hidden=true}document.body.classList.toggle('is-drifting',r.drifting);document.body.classList.toggle('is-boosting',r.mode==='playing'&&keys.has(' '));$('speed').textContent=String(Math.round(r.speed/2)).padStart(2,'0');$('needle').style.left=Math.min(100,r.speed/5.2)+'%';$('letters').textContent=r.letters;$('letters').classList.toggle('goal',r.letters>=80);$('distance').textContent=(r.pos/5000).toFixed(2)+' / '+(r.length/5000).toFixed(2)+' km';$('area').textContent=ADVENTURE.biome(r.pos,r.branchChoice).name;const next=landmarks.find(l=>l.z>r.pos);$('next-landmark').textContent=next?.name||'바닷바람 우체국';$('landmark-progress').textContent=`${r.visited.size} / 7곳 방문 · ${Math.round(((next?.z||r.length)-r.pos)/5)} m 앞`;drawProgress(r);
 updateScore(r);$('combo').textContent=r.combo?'COMBO ×'+r.combo+' · '+r.comboTime.toFixed(1)+'s':'CLEAN RIDE';$('best-score').textContent='BEST '+bestScore.toLocaleString();
@@ -363,6 +365,7 @@ if(toastTime>0){toastTime-=dt;if(toastTime<=0)$('toast').style.opacity=0}syncCam
 wheels.forEach(w=>w.rotation.x-=ride.mode==='playing'?ride.speed*1.35/20*dt/.5:0);bike.visible=true;updateDust(dt);updateGroundFX(dt);updateSparkles(dt);mc.update(time,dt);
 {const safe=ride.branchChoice==='safe';cityScene.group.visible=safe&&ride.pos>F.start-6000&&ride.pos<F.end+5000;canyonGroup.visible=!(safe&&ride.pos>F.start-3000&&ride.pos<F.end+3000);cenv=cityEnvNow();if(cityScene.group.visible){cityScene.setWinK(post&&post.on?1:.6);cityScene.update(time,dt,ride,cenv,bike.position)}
  sound.city&&sound.city(ride.mode==='playing'&&cityScene.group.visible&&CITY.inCity(ride.pos,ride.branchChoice),cenv?cenv.wet:0,ride.speed,cityScene.walk,dt)}
+const roadSpray=CITY_WET.trySplash(ride,cenv,dt,CITY);if(roadSpray)mud.splash(roadSpray.cover,roadSpray.side,'water');
 // Riding beside the creek throws muddy water onto the lens — more when the bike runs close to the water.
 {const cx=ride.mode==='playing'&&ride.pos>CK.start-300&&ride.pos<CK.end+300?ADVENTURE.creekX(ride.pos):null;if(cx!==null&&ride.speed>60&&!ride.jumping&&!ride.crashing){const px=ride.player*9,near=Math.max(0,Math.min(1,1-(Math.abs(px-cx)-3)/10));mudT-=dt*(.35+near*1.5)*Math.min(1,ride.speed/300);if(mudT<=0){mudT=.7+Math.random()*.6;const side=Math.sign(cx-px)||1;mud.splash(.05+near*.12,side*.8);burst(drivePoint(ride.pos-6,px+side*2),8,.9,'mud')}}}
 if(ride.mode==='playing'||ride.mode==='finished')mud.update(dt);mud.draw();

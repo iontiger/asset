@@ -143,3 +143,11 @@
 @media(max-width:800px){.delivery-mission{top:118px;right:12px;width:min(250px,calc(100vw - 24px));padding:10px 12px}.delivery-mission strong{font-size:12px}.delivery-mission span{font-size:11px}}
 
 .has-delivery-mission .landmark-guide{display:none}
+
+@property --delivery-angle{syntax:'<angle>';initial-value:0deg;inherits:false}
+.delivery-mission.near-delivery{--delivery-neon:#ffe45c;border-color:var(--delivery-neon);box-shadow:0 0 8px var(--delivery-neon),0 0 22px #ffe45c66}
+.delivery-mission.urgent-delivery{--delivery-neon:#ff4545;box-shadow:0 0 10px var(--delivery-neon),0 0 26px #ff454580}
+.delivery-mission.near-delivery::before{content:'';position:absolute;inset:-2px;border-radius:inherit;padding:3px;background:conic-gradient(from var(--delivery-angle),transparent 0deg 230deg,var(--delivery-neon) 295deg,#fff 330deg,var(--delivery-neon) 350deg,transparent 360deg);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:delivery-orbit 2s linear infinite;pointer-events:none}
+.delivery-mission.urgent-delivery::before{animation-duration:1.1s}
+@keyframes delivery-orbit{to{--delivery-angle:360deg}}
+@media(prefers-reduced-motion:reduce){.delivery-mission.near-delivery::before{animation:none}}
