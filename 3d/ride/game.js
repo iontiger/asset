@@ -2,7 +2,7 @@
 (() => {
 const embedded=window.parent!==window,T=THREE,$=id=>document.getElementById(id),canvas=$('game'),ride=new Ride(),keys=new Set(),landmarks=RIDE_LANDMARKS;
 let renderer;
-try{renderer=new T.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});}catch(e){document.querySelector('.welcome h2').textContent='3D 화면을 열 수 없어요.';document.querySelector('.welcome p').textContent='WebGL을 지원하는 브라우저에서 하드웨어 가속을 켜고 다시 열어주세요.';$('start').disabled=true;return;}
+try{renderer=new T.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});}catch(e){document.querySelector('.welcome h2').textContent='3D 화면을 열 수 없어요.';document.querySelector('.welcome p').textContent='WebGL을 지원하는 브라우저에서 하드웨어 가속을 켜고 다시 열어주세요.';$('start').disabled=true;$('title-screen').remove();return;}
 renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.setSize(innerWidth,innerHeight);
 renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
@@ -227,7 +227,7 @@ const SPEAKER=on=>`<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="
 $('sound').innerHTML=SPEAKER(!sound.muted);$('sound').title=sound.muted?'소리 켜기':'소리 끄기';$('sound').setAttribute('aria-label',$('sound').title);
 for(const ev of ['pointerdown','keydown'])addEventListener(ev,()=>{if(!sound.muted)sound.unlock()},{capture:true});
 $('sound').addEventListener('click',async()=>{try{const muted=await sound.toggle();$('sound').innerHTML=SPEAKER(!muted);$('sound').title=muted?'소리 켜기':'소리 끄기';$('sound').setAttribute('aria-label',muted?'소리 켜기':'소리 끄기');notify(muted?'소리를 껐어요.':'엔진 · 바람 · 노면 효과음을 켰어요.')}catch(e){notify('이 브라우저에서 소리를 시작하지 못했어요.')}});
-addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();if((k==='p'||k==='escape')&&!e.repeat)pause();else if(k==='enter'&&ride.mode!=='playing')start();else keys.add(k)});addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));addEventListener('blur',()=>{keys.clear();if(ride.mode==='playing')pause()});
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();{const ts=$('title-screen');if(ts&&!ts.classList.contains('out')){e.preventDefault();if((k==='enter'||k===' ')&&!e.repeat&&!$('title-start').disabled)$('title-start').click();return}}if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();if((k==='p'||k==='escape')&&!e.repeat)pause();else if(k==='enter'&&ride.mode!=='playing')start();else keys.add(k)});addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));addEventListener('blur',()=>{keys.clear();if(ride.mode==='playing')pause()});
 // 휴대폰(터치 화면): 자동으로 계속 가속하고, 화면 가운데를 기준으로 왼쪽을 누르면 왼쪽, 오른쪽을 누르면 오른쪽으로 방향을 튼다.
 // 네 모서리 카드와 아래 버튼은 숨기고(CSS .touch-mode), 가운데 안내 문구만 남긴다.
 let touchMode=matchMedia('(pointer:coarse)').matches&&('ontouchstart' in window||navigator.maxTouchPoints>0);
@@ -448,5 +448,8 @@ function updateNight(dt){const n=Math.max(ADVENTURE.nightAmt(ride.pos),cenv?cenv
   pts.geometry.attributes.position.needsUpdate=true});
  if(!cenv&&!nightNoted&&n>.3&&ride.mode==='playing'){nightNoted=true;notify('🌙 해가 졌어요 · 헤드라이트를 켜고 가로등 길을 달려요')}}
 requestAnimationFrame(tick);
+// 타이틀 화면(title.jpg): 처음 열면 덮고 있다가, 준비가 끝나면 하단 '시작하기'로 바로 출발한다
+{const ts=$('title-screen'),tb=$('title-start');tb.disabled=false;tb.textContent='시작하기';tb.focus();
+ tb.addEventListener('click',()=>{ts.classList.add('out');setTimeout(()=>ts.remove(),500);start()},{once:true})}
 window.rideDebug={ride,cityPrep,start,keys,camera,renderer,canyon,cityScene,get post(){return post},scene,T,drivePoint,mud,snowfall,sound,snap:()=>{syncCamera(true);skySnap=true}};window.getGameState=()=>({mode:ride.mode,pos:ride.pos,speed:ride.speed,letters:ride.letters,energy:ride.energy,landmarksVisited:ride.visited.size,airHeight:ride.airY,crashing:ride.crashing,jumping:ride.jumping,surface:ride.surface,score:ride.score,combo:ride.combo,drifting:ride.drifting,branch:ride.branchChoice,renderer:'Three.js WebGL',drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles});
 })();
