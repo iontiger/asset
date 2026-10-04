@@ -34,6 +34,8 @@ r=new Ride();r.start();r.items=[];r.pos=70500;r.speed=400;tick(r,['w'],60);asser
 {const fs=require('fs'),path=require('path'),D=path.join(__dirname,'nyc'),man=JSON.parse(fs.readFileSync(path.join(D,'nyc.json'))),bin=fs.statSync(path.join(D,'nyc.bin')).size;   // 블렌더 뉴욕 키트
  for(const k of ['car','taxi','lamp','hydrant','trash','mailbox','fire_escape'])assert(man.meshes[k],'kit has '+k);
  for(const [k,e] of Object.entries(man.meshes)){for(const a of ['pos','nor','uv'])assert(e[a][0]%4===0&&e[a][0]+e[a][1]*4<=bin,k+' '+a+' in bin');assert(e.idx[0]+e.idx[1]*(e.i32?4:2)<=bin);assert(e.tris<=2000,k+' stays light')}
- for(const st of ['brick','lime','deco','glass']){assert(man.kits[st]&&man.meshes[st+'_up']&&man.meshes[st+'_gr']&&man.meshes[st+'_co']);for(const t of ['c','m','fc','fm'])assert(fs.existsSync(path.join(D,st+'_'+t+'.jpg')),st+'_'+t)}
+ for(const st of ['brick','lime','deco','glass']){assert(man.kits[st]&&man.meshes[st+'_up']&&man.meshes[st+'_gr']&&man.meshes[st+'_co']);for(const t of ['c','m','n','fc','fm','fn'])assert(fs.existsSync(path.join(D,st+'_'+t+'.jpg')),st+'_'+t)}
+ for(const f of ['asphalt_c.jpg','asphalt_n.jpg','walk_c.jpg','walk_n.jpg','city_1k.hdr','CREDITS.md'])assert(fs.existsSync(path.join(D,f)),f);
+ {const Q=require('./ride-post.js');assert(Q.Grade&&typeof Q.make==='function')}
  const R=require('./city-real.js');assert.equal(R.styleOf({glass:true,h:40,col:'#4f6b85'}),'glass');assert.equal(R.styleOf({glass:false,h:40,col:'#8f4e3d'}),'brick');assert.equal(R.styleOf({glass:false,h:40,col:'#d6cfc1'}),'lime');assert.equal(R.styleOf({glass:false,h:120,col:'#8f4e3d'}),'deco')}
 console.log('PASS: manual drift, rewards, glancing hits, near misses, perfect landing, anti-hold timing, branch lock, shorter cliff route, safe-route collision suppression, combos, restart, snow plain, rock-free canyon, NYC lights/cameras/jam, NYC 24h seasons, NYC Blender kit');

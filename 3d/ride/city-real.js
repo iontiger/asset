@@ -8,15 +8,16 @@ const BRICK=['#a8604a','#8f4e3d','#a2765a','#7f6f62'],LIME=['#d6cfc1','#c9c2b4',
 function styleOf(b){return b.glass?'glass':b.h>90?'deco':BRICK.includes(b.col)?'brick':LIME.includes(b.col)?'lime':'deco'}
 function apply(X,A){
  const {T,g,WV,P,dirW,rotOf,YC,WALK,dmy,at}=X,K=A.kits;
- // ── 하늘 반사용 환경맵 (위는 하늘, 아래는 길 색 — 작은 장면을 PMREM 으로 굽는다)
- let env=null;
- if(X.renderer){const es=new T.Scene(),sg=new T.SphereGeometry(10,32,16),col=[],c=new T.Color(),sky=new T.Color('#a9c8e6'),hor=new T.Color('#e4e6e4'),grd=new T.Color('#4c5054');
+ // ── 하늘 반사 · 조명용 환경맵: 실제 도시 거리 HDRI(city_1k.hdr). 못 받으면 위는 하늘, 아래는 길 색인 작은 장면을 굽는다
+ let env=null;const hdr=A.hdr&&A.hdr();
+ if(X.renderer&&hdr){const pm=new T.PMREMGenerator(X.renderer);env=pm.fromEquirectangular(hdr).texture;pm.dispose();hdr.dispose()}
+ else if(X.renderer){const es=new T.Scene(),sg=new T.SphereGeometry(10,32,16),col=[],c=new T.Color(),sky=new T.Color('#a9c8e6'),hor=new T.Color('#e4e6e4'),grd=new T.Color('#4c5054');
   const pa=sg.attributes.position;for(let i=0;i<pa.count;i++){const y=pa.getY(i)/10;c.copy(y>0?hor.clone().lerp(sky,Math.pow(y,.6)):hor.clone().lerp(grd,Math.min(1,-y*4)));col.push(c.r,c.g,c.b)}
   sg.setAttribute('color',new T.Float32BufferAttribute(col,3));es.add(new T.Mesh(sg,new T.MeshBasicMaterial({vertexColors:true,side:T.BackSide})));
   const pm=new T.PMREMGenerator(X.renderer);env=pm.fromScene(es,0).texture;pm.dispose();sg.dispose()}
  const envMats=[];const withEnv=(m,k)=>{if(env){m.envMap=env;m.envMapIntensity=k;m.userData.envK=k;envMats.push(m)}return m};
  // ── 건물 앞면 재질: 아틀라스 색 + 거칠기/금속 + 밤 창문 불빛 (모듈마다 · 평판은 칸마다 켜지고 꺼짐)
- const facadeMat=(st,flat)=>{const ttag=flat?'f':'',m=withEnv(new T.MeshStandardMaterial({map:A.tex(st+'_'+ttag+'c'),roughnessMap:A.tex(st+'_'+ttag+'m'),metalnessMap:A.tex(st+'_'+ttag+'m'),roughness:1,metalness:1,vertexColors:!!flat}),.85);
+ const facadeMat=(st,flat)=>{const ttag=flat?'f':'',m=withEnv(new T.MeshStandardMaterial({map:A.tex(st+'_'+ttag+'c'),roughnessMap:A.tex(st+'_'+ttag+'m'),metalnessMap:A.tex(st+'_'+ttag+'m'),normalMap:A.tex(st+'_'+ttag+'n'),roughness:1,metalness:1,vertexColors:!!flat}),.85);
   m.defines=Object.assign(flat?{FLATW:''}:{},st==='glass'?{GLASSW:''}:{});   // 유리 커튼월은 창이 넓어 불빛을 줄인다
   m.onBeforeCompile=sh=>{sh.uniforms.uNight=X.NIGHT;
    // 불 켜짐은 꼭짓점에서 모듈 위치로 한 번 정한다 (조각마다 해시하면 정밀도 때문에 줄무늬가 생긴다)
@@ -87,9 +88,23 @@ totalEmissiveRadiance+=wm*step(.42,hh)*uNight*mix(vec3(1.,.66,.32),vec3(.66,.8,1
   carKit={begin(){sedan.n=taxi.n=0},put(mx,col,isTaxi){const s=isTaxi?taxi:sedan;if(s.n>=X.MAXC)return;s.paint.setMatrixAt(s.n,mx);s.rest.setMatrixAt(s.n,mx);s.paint.setColorAt(s.n,cc.set(col));s.n++},
    end(){for(const s of [sedan,taxi]){for(const m of [s.paint,s.rest]){m.count=s.n;m.instanceMatrix.needsUpdate=true}s.paint.instanceColor.needsUpdate=true}}};
   for(const m of X.carMeshes){m.visible=false}X.setCarKit(carKit);swapped.push('car','taxi')}
+ // ── 바닥: 실사 아스팔트(약 1.5 m 반복 · 노멀맵) · 콘크리트 보도(1.6 m 판 줄눈) · 상자 빌딩 옆면에 구운 층 텍스처
+ const ac=A.tex('asphalt_c'),an=A.tex('asphalt_n');
+ if(ac&&an){const k=14/1.5;for(const t of [ac,an])t.repeat.set(k,k);Object.assign(X.asMat,{map:ac,normalMap:an,roughness:.9});X.asMat.normalScale.set(.9,.9);X.asMat.needsUpdate=true;X.setAsBase(1.15)}
+ const wc=A.tex('walk_c');
+ if(wc){const ax=new T.Vector2(X.ax.x,X.ax.z).normalize(),af=new T.Vector2(X.af.x,X.af.z).normalize(),U={uWalkC:{value:wc},uO:{value:new T.Vector2(X.o0.x,X.o0.z)},uAx:{value:ax},uAf:{value:af}};
+  X.walkMat.onBeforeCompile=sh=>{Object.assign(sh.uniforms,U);
+   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWP2;varying vec3 vWN2;').replace('#include <begin_vertex>','#include <begin_vertex>\nvWP2=(modelMatrix*vec4(transformed,1.)).xyz;vWN2=normalize(mat3(modelMatrix)*objectNormal);');
+   sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWP2;varying vec3 vWN2;uniform sampler2D uWalkC;uniform vec2 uO;uniform vec2 uAx;uniform vec2 uAf;').replace('#include <color_fragment>',`#include <color_fragment>
+if(vWN2.y>.5){vec2 d=vWP2.xz-uO,cu=vec2(dot(d,uAx),dot(d,uAf));diffuseColor.rgb*=texture2D(uWalkC,cu/2.4).rgb*vec3(1.5,1.5,1.58);vec2 fj=fract(cu/1.6);vec2 e=min(fj,1.-fj);float jt=1.-smoothstep(.006,.02,min(e.x,e.y));diffuseColor.rgb*=1.-.32*jt;}`)};
+  X.walkMat.customProgramCacheKey=()=>'nyc-walk';X.walkMat.needsUpdate=true}
+ if(A.tex('lime_fc')&&A.tex('glass_fc')){X.BOXTEX.mc.value=A.tex('lime_fc');X.BOXTEX.mm.value=A.tex('lime_fm');X.BOXTEX.gc.value=A.tex('glass_fc');X.BOXTEX.gm.value=A.tex('glass_fm');X.BOXTEX.on.value=1}
+ // 장면의 나머지 재질(상자 빌딩 · 보도 · 표지판 · 신호등 …)도 같은 하늘빛을 받게
+ if(env)g.traverse(o=>{if(!o.isMesh)return;for(const m of Array.isArray(o.material)?o.material:[o.material])if(m&&m.isMeshStandardMaterial&&!m.envMap)withEnv(m,m.metalness>.3?.8:.45)});
+ for(const m of [X.asMat,X.walkMat])if(m.userData.envK){m.userData.envK=.22;m.envMapIntensity=.22}   // 길바닥은 하늘을 은은하게만
  // 밤에는 하늘 반사를 줄이고 차 등 · 택시 표시등을 밝힌다
- function update(E){const d=E.dark;for(const m of envMats)m.envMapIntensity=m.userData.envK*(1-.82*d)*(1-.4*E.weather);
+ function update(E){const d=E.dark;for(const m of envMats)m.envMapIntensity=m.userData.envK*(1-.9*d)*(1-.45*E.weather);
   for(const n of ['car_head','car_tail','taxi_sign'])if(MATC[n])MATC[n].emissiveIntensity=MATC[n].userData.glow*(1+3.5*d)}
- return {facade,props,faces,faceList,tris,swapped,update,styleOf}}
+ return {facade,props,faces,faceList,tris,swapped,update,styleOf,env}}
 const api={apply,styleOf};root.CITY_REAL=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

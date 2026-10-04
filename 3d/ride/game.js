@@ -90,6 +90,8 @@ const canyon=CANYON.build({T,scene:canyonGroup,drivePoint:legacyDrive,ride,fork:
 // 뉴욕 시내(갈림길 2 · 마을길): 빌딩 숲 · 신호등 · 단속 카메라 · 차량 — city-scene.js
 const cityScene=CITY_SCENE.build({T,scene,C:CITY});
 // 블렌더 뉴욕 키트(nyc/): 받아지면 빌딩 앞면 · 차 · 가로 소품을 사실적인 모델로 바꾼다. 못 받으면 원래 시내 그대로.
+// 고화질 후처리(ride-post.js): PC 는 시내에서 GTAO · 블룸 · 색 보정을 켠다. 폰 · ?q=low 는 끈다
+let post=null;if(window.RIDE_POST&&RIDE_POST.quality()==='high')try{post=RIDE_POST.make(renderer,scene,camera,{adaptive:!/[?&]q=high/.test(location.search)})}catch(e){console.warn('후처리 없이 그려요',e)}
 if(window.NYC_ASSETS&&window.CITY_REAL)NYC_ASSETS.load(T).then(A=>{const r=cityScene.upgrade(A,renderer);if(r)console.info('NYC kit',r.faces,'faces',r.tris,'tris',r.swapped.join(','))}).catch(e=>console.warn('NYC 키트를 못 불러와 기본 시내로 그려요',e));
 // 목표봉 (up and over) and the creek with its three fords — see mountain-creek.js.
 const mc=MOUNTAIN_CREEK.build({T,scene,point,height,heading,groundAt,ride});
@@ -238,7 +240,7 @@ function steerFromTouches(){keys.delete('arrowleft');keys.delete('arrowright');c
  for(const ev of ['pointerup','pointercancel'])addEventListener(ev,e=>{if(steerTouches.delete(e.pointerId))steerFromTouches()});
  if(touchMode)$('game').style.touchAction='none'}
 document.querySelectorAll('[data-key]').forEach(b=>{b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);keys.add(b.dataset.key)});for(const ev of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(ev,()=>keys.delete(b.dataset.key))});
-addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);if(post)post.setSize()});
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();ride.pause();keys.clear();show('3D 화면이 잠시 멈췄어요.','다시 불러오면 여행을 새로 시작할 수 있어요.','새로 불러오기');$('start').onclick=()=>location.reload()});
 const look=new T.Vector3(),cameraGoal=new T.Vector3(),projected=new T.Vector3();
 function syncCamera(snap=false,dt=.016){const p=drivePoint(ride.pos,ride.player*9);bike.position.copy(p);bike.position.y+=ride.airY;bike.rotation.y=driveHeading(ride.pos)-ride.slip*.55;bike.rotation.x=Math.atan((drivePoint(ride.pos+10,0).y-drivePoint(ride.pos-10,0).y)/(drivePoint(ride.pos+10,0).distanceTo(drivePoint(ride.pos-10,0))||.999));lean.rotation.z=-ride.steer*.16+(ride.snow>0&&ride.mode==='playing'?Math.sin(time*5.3)*.05*ride.snow*Math.min(1,ride.speed/150):0);const stoneShake=ride.surface==='stone'&&ride.mode==='playing'&&ride.airY<.1?Math.min(1,ride.speed/220):0;lean.position.y=Math.sin(time*16)*ride.speed*.00005+Math.sin(time*86)*stoneShake*.055;
@@ -364,7 +366,8 @@ windGeo.attributes.position.needsUpdate=true;
 const biome=cenv?{sky:cenv.sky,fog:cenv.fog,fogNear:cenv.fogNear,fogFar:cenv.fogFar}:ADVENTURE.biome(ride.pos,ride.branchChoice),skyK=skySnap?1:1-Math.exp(-dt*(cenv?3:1.5));skySnap=false;scene.background.lerp(new T.Color(biome.sky),skyK);scene.fog.color.lerp(new T.Color(biome.fog),skyK);scene.fog.near+=((biome.fogNear||65)-scene.fog.near)*skyK;scene.fog.far+=((biome.fogFar||230)-scene.fog.far)*skyK;
 landingRing.visible=ride.jumping;
 if(ride.jumping){let t=0,s=ride.pos,y=ride.flightY,v=ride.airV;while(t<4){t+=.04;s+=ride.speed*1.35*.04*ADVENTURE.travelScale(s,ride.branchChoice);v-=16*.04;y+=v*.04;if(y<=height(s))break}landingRing.position.copy(drivePoint(s,ride.player*9));landingRing.position.y+=.05;landingRing.material.color.set(ride.airV<0&&ride.airY<4?'#a9e6a0':'#f1d886');}
-updateGhost();updateNight(dt);if(frame++%4===0)hud();renderer.render(scene,camera);requestAnimationFrame(tick)}
+updateGhost();updateNight(dt);if(frame++%4===0)hud();if(window.rideCamHook)window.rideCamHook(camera);
+ if(post&&post.on&&cityScene.group.visible)post.render(dt,cenv);else renderer.render(scene,camera);requestAnimationFrame(tick)}
 // ── 고스트 라이더: 내가 완주한 주행을 0.2초마다 기록해 두었다가, 다음 판에서 첫 언덕을 넘은 뒤부터 반투명 바이크로 같이 달린다.
 //    처음(기록 없음)에는 나오지 않는다. 더 빨리 완주하면 그 주행으로 바뀐다. 기록은 이 브라우저 localStorage.
 const GHOST_KEY='dentphoto-ghost-v1',GHOST_DT=.2;
@@ -426,5 +429,5 @@ function updateNight(dt){const n=Math.max(ADVENTURE.nightAmt(ride.pos),cenv?cenv
   pts.geometry.attributes.position.needsUpdate=true});
  if(!cenv&&!nightNoted&&n>.3&&ride.mode==='playing'){nightNoted=true;notify('🌙 해가 졌어요 · 헤드라이트를 켜고 가로등 길을 달려요')}}
 requestAnimationFrame(tick);
-window.rideDebug={ride,start,keys,camera,renderer,canyon,cityScene,scene,T,drivePoint,mud,snowfall,sound,snap:()=>{syncCamera(true);skySnap=true}};window.getGameState=()=>({mode:ride.mode,pos:ride.pos,speed:ride.speed,letters:ride.letters,energy:ride.energy,landmarksVisited:ride.visited.size,airHeight:ride.airY,crashing:ride.crashing,jumping:ride.jumping,surface:ride.surface,score:ride.score,combo:ride.combo,drifting:ride.drifting,branch:ride.branchChoice,renderer:'Three.js WebGL',drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles});
+window.rideDebug={ride,start,keys,camera,renderer,canyon,cityScene,get post(){return post},scene,T,drivePoint,mud,snowfall,sound,snap:()=>{syncCamera(true);skySnap=true}};window.getGameState=()=>({mode:ride.mode,pos:ride.pos,speed:ride.speed,letters:ride.letters,energy:ride.energy,landmarksVisited:ride.visited.size,airHeight:ride.airY,crashing:ride.crashing,jumping:ride.jumping,surface:ride.surface,score:ride.score,combo:ride.combo,drifting:ride.drifting,branch:ride.branchChoice,renderer:'Three.js WebGL',drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles});
 })();
