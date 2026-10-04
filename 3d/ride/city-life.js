@@ -3,38 +3,15 @@
    - 비둘기는 바이크가 가까이 오면 한꺼번에 날아오른다(밤에는 보이지 않는다). 새로 출발하면 제자리로 돌아온다.
    city-scene.js 가 좌표 함수를 넘겨 준다. update() 는 {walk} 를 돌려준다(가까운 횡단보도에 건너는 사람이 있으면 true — 보행 신호음). */
 (function(root){
-const SKIN=['#f1c7a5','#e0ac85','#c68863','#8d5a3b','#5c3a24','#f5d6bd'],TOP=['#1d1f24','#2f3d55','#7a2e2e','#c9b48a','#3b5b4a','#e8e4da','#5b4a6e','#b65c2b','#30343a','#8a8f96'],LEGC=['#22262c','#34405a','#4a3d33','#1b1c1f','#6b6f75'];
-function build({T,g,C,SP,WV,YC,HALF,WALK,rotOf,glowTex,rnd}){
+function build({T,g,C,SP,WV,YC,HALF,WALK,rotOf,glowTex,rnd,crowd}){
  const SM=(c,o)=>new T.MeshStandardMaterial(Object.assign({color:c,roughness:.8},o||{}));
- const dmy=new T.Object3D(),M=new T.Matrix4(),L=new T.Matrix4(),cc=new T.Color(),hidden=new T.Matrix4().makeScale(0,0,0);
- // ── 사람(관절 4개: 다리 둘 · 팔 둘이 걸음에 맞춰 흔들린다)
- const MAXP=72;
- const parts={
-  torso:new T.InstancedMesh(new T.CylinderGeometry(.27,.22,.78,10).scale(1,1,.68).translate(0,1.36,0),SM('#ffffff',{roughness:.85}),MAXP),
-  hips:new T.InstancedMesh(new T.CylinderGeometry(.23,.25,.24,10).scale(1,1,.7).translate(0,.93,0),SM('#ffffff'),MAXP),
-  head:new T.InstancedMesh(new T.SphereGeometry(.17,12,10).scale(.92,1.1,1).translate(0,1.98,0),SM('#ffffff',{roughness:.6}),MAXP),
-  hair:new T.InstancedMesh(new T.SphereGeometry(.18,12,8,0,Math.PI*2,0,Math.PI*.55).scale(.95,1.05,1.02).translate(0,2.0,.01),SM('#2a1f18',{roughness:.9}),MAXP),
-  legL:new T.InstancedMesh(new T.CylinderGeometry(.095,.075,.86,7).translate(0,-.43,0),SM('#ffffff'),MAXP),
-  legR:new T.InstancedMesh(new T.CylinderGeometry(.095,.075,.86,7).translate(0,-.43,0),SM('#ffffff'),MAXP),
-  armL:new T.InstancedMesh(new T.CylinderGeometry(.07,.055,.66,6).translate(0,-.33,0),SM('#ffffff'),MAXP),
-  armR:new T.InstancedMesh(new T.CylinderGeometry(.07,.055,.66,6).translate(0,-.33,0),SM('#ffffff'),MAXP)};
- for(const m of Object.values(parts)){m.count=0;m.castShadow=true;m.frustumCulled=false;g.add(m)}
- const hipL=new T.Matrix4().makeTranslation(-.12,.9,0),hipR=new T.Matrix4().makeTranslation(.12,.9,0),shL=new T.Matrix4().makeTranslation(-.33,1.68,0),shR=new T.Matrix4().makeTranslation(.33,1.68,0),rx=new T.Matrix4(),rz=new T.Matrix4();
- let pn=0;
- function person(x,y,z,ry,swing,q){if(pn>=MAXP)return;dmy.position.set(x,y,z);dmy.rotation.set(0,ry,0);dmy.scale.setScalar(q.h);dmy.updateMatrix();M.copy(dmy.matrix);
-  for(const k of ['torso','hips','head','hair'])parts[k].setMatrixAt(pn,M);
-  const limb=(m,base,a,side)=>{rz.makeRotationZ(side*.07);rx.makeRotationX(a);L.copy(M).multiply(base).multiply(rx).multiply(rz);m.setMatrixAt(pn,L)};
-  limb(parts.legL,hipL,swing*.55,0);limb(parts.legR,hipR,-swing*.55,0);limb(parts.armL,shL,-swing*.45,-1);limb(parts.armR,shR,swing*.45,1);
-  if(!q.painted){q.painted=true}
-  parts.torso.setColorAt(pn,cc.set(q.top));parts.armL.setColorAt(pn,cc);parts.armR.setColorAt(pn,cc);parts.hips.setColorAt(pn,cc.set(q.leg));parts.legL.setColorAt(pn,cc);parts.legR.setColorAt(pn,cc);parts.head.setColorAt(pn,cc.set(q.skin));parts.hair.setColorAt(pn,cc.set(q.hair));pn++}
- function people(){for(const m of Object.values(parts)){m.count=pn;m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true}}
- const HAIR=['#1d1612','#3a2a1e','#6b4a2c','#a07a4a','#2b2b2b','#c9c2b8'];
- const newPerson=()=>({top:TOP[Math.floor(rnd()*TOP.length)],leg:LEGC[Math.floor(rnd()*LEGC.length)],skin:SKIN[Math.floor(rnd()*SKIN.length)],hair:HAIR[Math.floor(rnd()*HAIR.length)],h:.92+rnd()*.16,ph:rnd()*6});
+ const dmy=new T.Object3D(),L=new T.Matrix4(),hidden=new T.Matrix4().makeScale(0,0,0);
+ const newPerson=()=>root.CITY_PEOPLE.look(rnd);
  // ── 신호 교차로 횡단보도(정지선 바로 앞): 양쪽 연석에 4명씩
  const EDGE=WALK-1.5,CURB=HALF+1.1;
- const xings=C.lights.map(l=>{const s=C.segs[l.k],d=l.d+4.5+(WALK-HALF)/2,crowd=[];
-  for(let i=0;i<8;i++){const side=i<4?-1:1;crowd.push(Object.assign(newPerson(),{side,lat:side*(CURB+rnd()*(EDGE-CURB)),off:(rnd()-.5)*3.2,go:0,v:0,state:'wait',delay:0}))}
-  return {l,s,d,crowd,u:C.uAt(l.k,d)}});
+ const xings=C.lights.map(l=>{const s=C.segs[l.k],d=l.d+4.5+(WALK-HALF)/2,ppl=[];
+  for(let i=0;i<8;i++){const side=i<4?-1:1;ppl.push(Object.assign(newPerson(),{side,lat:side*(CURB+rnd()*(EDGE-CURB)),off:(rnd()-.5)*3.2,go:0,v:0,state:'wait',delay:0}))}
+  return {l,s,d,crowd:ppl,u:C.uAt(l.k,d)}});
  // ── 비둘기: 달리는 방향 오른쪽 보도에 떼마다 7마리
  const birdMat=SM('#7d828c',{roughness:.7}),wingMat=SM('#5f646e',{roughness:.75,side:T.DoubleSide});
  const flocks=[];for(let k=1;k<C.segs.length-1;k++){const s=C.segs[k];for(let d=s.dS0+24;d<s.dS1-24;d+=64){if(C.lights.some(l=>l.k===k&&Math.abs(l.d+14-d)<20))continue;const f={k,d,u:C.uAt(k,d),birds:[],up:false,t:0};
@@ -52,7 +29,7 @@ function build({T,g,C,SP,WV,YC,HALF,WALK,rotOf,glowTex,rnd}){
  const stSteam=new T.Points(stGeo,new T.PointsMaterial({map:glowTex,color:'#f4f4f2',size:5.5,transparent:true,opacity:.5,depthWrite:false}));stSteam.frustumCulled=false;g.add(stSteam);
 
  let walkNear=false;
- function update(time,dt,ride,env,bikePos){const st=ride.city;if(!st)return {walk:false};pn=0;walkNear=false;const pu=C.uOf(ride.pos),fast=ride.speed>80,dark=env?env.dark:0;
+ function update(time,dt,ride,env,bikePos){const st=ride.city;if(!st)return {walk:false};walkNear=false;const pu=C.uOf(ride.pos),fast=ride.speed>80,dark=env?env.dark:0;
   for(const X of xings){const ls=st.lights[X.l.i],dist=X.u-pu;if(dist<-60||dist>320)continue;const red=ls.state==='red'&&!(fast&&dist<35&&dist>-4);
    for(const q of X.crowd){
     if(q.state==='wait'&&red){q.state='delay';q.delay=.3+rnd()*2.4}
@@ -62,8 +39,7 @@ function build({T,g,C,SP,WV,YC,HALF,WALK,rotOf,glowTex,rnd}){
     if(q.state==='clear'){want=4.2;if(Math.abs(q.lat)>=CURB+.3){q.state='wait';q.side=Math.sign(q.lat)}}
     q.v+=(want-q.v)*Math.min(1,dt*5);q.lat+=q.go*q.v*dt;if(q.state==='walk'||q.state==='clear')walkNear=walkNear||(dist<60&&q.state==='walk');
     const p=SP(X.l.k,X.d+q.off,q.lat),w=C.world(p[0],p[1]),moving=q.v>.2,ry=moving?rotOf(X.s.right[0]*q.go,X.s.right[1]*q.go):rotOf(-X.s.right[0]*Math.sign(q.lat),-X.s.right[1]*Math.sign(q.lat));
-    const sw=moving?Math.sin(time*q.v*3.4+q.ph)*Math.min(1,q.v):Math.sin(time*1.3+q.ph)*.04;person(w.x,YC+(Math.abs(q.lat)>HALF?.24:.02)+(moving?Math.abs(Math.sin(time*q.v*3.4+q.ph))*.04:0),w.z,ry,sw,q)}}
-  people();
+    if(moving)q.wp=(q.wp||q.ph)+dt*q.v*3.4;crowd.person(w.x,YC+(Math.abs(q.lat)>HALF?.24:.02),w.z,ry,moving?q.wp:time*.8+q.ph,moving?Math.min(1,q.v/1.5):0,q)}}
   // 비둘기
   let n=0;const show=dark<.6&&ride.mode!=='finished';
   for(const f of flocks){const dist=f.u-pu;
@@ -82,6 +58,6 @@ function build({T,g,C,SP,WV,YC,HALF,WALK,rotOf,glowTex,rnd}){
   stacks.forEach((s,j)=>{for(let i=0;i<SN;i++){const f=(time*.28+i/SN)%1,k=(j*SN+i)*3;stPos[k]=s.x+Math.sin(i*2.1+time*.6)*f*2.6+f*f*3;stPos[k+1]=YC+2.7+f*11;stPos[k+2]=s.z+Math.cos(i*1.3+time*.5)*f*2.6}});stGeo.attributes.position.needsUpdate=true;
   stSteam.material.opacity=.42+(env?env.snowCover*.2+env.weather*.1:0);
   return {walk:walkNear}}
- return {update,xings,flocks,stacks,get people(){return pn}}}
+ return {update,xings,flocks,stacks}}
 root.CITY_LIFE={build};if(typeof module!=='undefined')module.exports={build};
 })(typeof window!=='undefined'?window:globalThis);
