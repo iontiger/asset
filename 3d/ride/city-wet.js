@@ -3,6 +3,26 @@
    - 웅덩이는 젖은 정도(E.wet)에 따라 커지고 마르면 사라진다. 저화질은 하늘빛(HDRI) 반사만.
    - render() 는 game.js 가 화면을 그리기 직전에 부른다(시내가 보이고 젖었을 때만 반사 장면을 반 해상도로 그림). */
 (function(root){
+// CPU counterpart of the puddle shader, used only for nearby oncoming wheels.
+const fract=x=>x-Math.floor(x),mix=(a,b,t)=>a+(b-a)*t;
+const wh=(x,z)=>fract(Math.sin(x*127.1+z*311.7)*43758.5453);
+function wn(x,z){const ix=Math.floor(x),iz=Math.floor(z);let fx=fract(x),fz=fract(z);fx=fx*fx*(3-2*fx);fz=fz*fz*(3-2*fz);return mix(mix(wh(ix,iz),wh(ix+1,iz),fx),mix(wh(ix,iz+1),wh(ix+1,iz+1),fx),fz)}
+function puddleAt(x,z,wet){if(wet<=.05)return 0;const n=wn(x*.085,z*.085)*.6+wn(x*.21+7,z*.21+7)*.28+wn(x*.8+3,z*.8+3)*.12;const t=Math.max(0,Math.min(1,(n-(.74-.15*wet))/.03));return t*t*(3-2*t)}
+function trySplash(r,E,dt,C){
+ if(r.mode!=='playing'||!C.inCity(r.pos,r.branchChoice)||!E||E.season!=='summer'||E.rain<.6||E.wet<.5||r.jumping||r.crashing)return null;
+ const st=r.city.spray||(r.city.spray={cooldown:0,passed:new Set()});st.cooldown=Math.max(0,st.cooldown-dt);
+ const u=C.uOf(r.pos),me=C.onSeg(u,C.latOf(u,r.player));
+ for(const c of r.city.cars){const dist=c.d-me.d;
+  if(c.k!==me.k||dist>14||dist< -14){st.passed.delete(c.id);continue}
+  if(c.gone||c.lane!==-1||c.v<1.5||dist< -3||dist>10||st.passed.has(c.id)||st.cooldown>0||Math.abs(me.lat+C.LANE)>8)continue;
+  let wet=0;
+  for(const front of [-2,2])for(const side of [-.9,.9]){const p=C.segPoint(c.k,c.d+front,-C.LANE+side),w=C.world(...p);wet=Math.max(wet,puddleAt(w.x,w.z,E.wet))}
+  if(wet<.2)continue;
+  st.passed.add(c.id);st.cooldown=1.4;
+  return {cover:.09+.1*Math.min(1,(c.v+C.toU(r.speed))/20)*wet,side:Math.sign(-C.LANE-me.lat)||-1,carId:c.id};
+ }
+ return null;
+}
 function attach({T,mat,Y}){
  const U={uWet:{value:0},uRain:{value:0},uTime:{value:0},uRefl:{value:null},uReflMat:{value:new T.Matrix4()},uReflOn:{value:0}};
  mat.onBeforeCompile=sh=>{Object.assign(sh.uniforms,U);
@@ -40,5 +60,5 @@ if(uReflOn>.5&&uWet>.05){vec2 rip=vec2(0.);
   const vis=mat.visible,sm=renderer.shadowMap.autoUpdate,prevRT=renderer.getRenderTarget();mat.visible=false;renderer.shadowMap.autoUpdate=false;
   renderer.setRenderTarget(rt);renderer.clear();renderer.render(scene,vcam);renderer.setRenderTarget(prevRT);mat.visible=vis;renderer.shadowMap.autoUpdate=sm;U.uReflOn.value=1;return true}
  return {U,setEnv,render,get on(){return on}}}
-root.CITY_WET={attach};if(typeof module!=='undefined')module.exports={attach};
+root.CITY_WET={attach,puddleAt,trySplash};if(typeof module!=='undefined')module.exports=root.CITY_WET;
 })(typeof window!=='undefined'?window:globalThis);

@@ -29,10 +29,22 @@
       for(let i=0;i<160;i++){const z=1050+i*645;if(adventure.creek.fords.some(f=>Math.abs(z-f)<450))continue;if(z>adventure.fork.start-400&&z<adventure.fork.end+400)continue;   // 협곡(갈림길) 구간에는 낙석이 없다
         this.items.push({z,x:Math.sin(i*3.7+.8)*.78,type:'rock',id:1000+i,radius:2.1+(i%3)*.45})}
     }
-    reset(){this.pos=0;this.speed=0;this.player=0;this.steer=0;this.energy=100;this.letters=0;this.elapsed=0;this.hit=0;this.boost=false;this.airY=0;this.airV=0;this.crashing=false;this.jumping=false;this.flightY=0;this.flightAge=0;this.jumped=new Set();this.surface='dirt';this.crashAge=0;this.grassCooldown=0;this.shake=0;this.falling=new Map();this.visited=new Set();this.collected=new Set();this.events=[];this.score=0;this.combo=0;this.comboTime=0;this.nearMisses=0;this.driftCharge=0;this.drifting=false;this.drifted=new Set();this.rockPassed=new Set();this.branchChoice='cliff';this.snow=0;this.latV=0;this.slip=0;this.inSnow=false;this.landingPress=-99;this.wasLandingKey=false;this.bonusTime=0;this.city=city.newState();}
+    reset(){this.practice=false;this.pos=0;this.speed=0;this.player=0;this.steer=0;this.energy=100;this.letters=0;this.elapsed=0;this.hit=0;this.boost=false;this.airY=0;this.airV=0;this.crashing=false;this.jumping=false;this.flightY=0;this.flightAge=0;this.jumped=new Set();this.surface='dirt';this.crashAge=0;this.grassCooldown=0;this.shake=0;this.falling=new Map();this.visited=new Set();this.collected=new Set();this.events=[];this.score=0;this.combo=0;this.comboTime=0;this.nearMisses=0;this.driftCharge=0;this.drifting=false;this.drifted=new Set();this.rockPassed=new Set();this.branchChoice='cliff';this.snow=0;this.latV=0;this.slip=0;this.inSnow=false;this.landingPress=-99;this.wasLandingKey=false;this.bonusTime=0;this.city=city.newState();}
     reward(base,type){this.combo=Math.min(5,this.combo+1);this.comboTime=8;const points=base*this.combo;this.score+=points;this.events.push({type,points,combo:this.combo});}
     chooseBranch(choice){if(this.pos<adventure.fork.start&&['safe','cliff'].includes(choice)){this.branchChoice=choice;return true}return false}
     start(){if(this.mode!=='paused')this.reset();this.mode='playing'}
+    startFrom(pos,branch='cliff'){
+      if(!Number.isFinite(pos)||pos<0||pos>=this.length||!['cliff','safe'].includes(branch))return false;
+      this.reset();this.pos=pos;this.branchChoice=branch;this.practice=pos>0;this.mode='playing';
+      LANDMARKS.forEach((l,i)=>{if(l.z<pos)this.visited.add(i)});
+      if(branch==='safe'){
+        const u=city.uOf(pos);
+        city.lights.forEach(l=>{if(l.u<u)Object.assign(this.city.lights[l.i],{state:'green',done:true})});
+        city.cameras.forEach(c=>{if(c.u<u)this.city.cams[c.i]=true});
+        city.deliveries.forEach(d=>{if(d.u+5<u)this.city.deliveries[d.i].status='missed'});
+      }
+      return true;
+    }
     pause(){if(this.mode==='playing')this.mode='paused'}
     update(dt,keys){this.events=[];if(this.mode!=='playing')return;dt=Math.min(dt,.05);this.elapsed+=dt;this.comboTime=Math.max(0,this.comboTime-dt);if(!this.comboTime)this.combo=0;this.bonusTime=Math.max(0,this.bonusTime-dt);
       if(keys.has('1'))this.chooseBranch('cliff');if(keys.has('2'))this.chooseBranch('safe');
