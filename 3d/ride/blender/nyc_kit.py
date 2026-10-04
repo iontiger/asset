@@ -17,20 +17,41 @@ H = 3.9          # 층 높이 (게임 창문 셰이더와 같다)
 G = 4.875        # 1층(가게) 높이 = 1.25 층
 C_H = 1.4        # 코니스 높이
 T = 0.45         # 벽 두께 (게임에서 건물 상자 앞면을 이만큼 들여 놓는다)
-ATLAS = 1024
+ATLAS = 2048
+FLAT = 1024
+
+# 실사 스캔 원본 (처음 한 번 받아 blender/scans/ 에 둔다 — 저장소에는 다듬은 결과만 nyc/ 에 커밋). 출처 · 라이선스: nyc/CREDITS.md
+SCANS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scans')
+RAW = 'https://raw.githubusercontent.com/'
+SCAN_URLS = {
+    'brick_diffuse.jpg': RAW + 'mrdoob/three.js/r160/examples/textures/brick_diffuse.jpg',
+    'brick_bump.jpg': RAW + 'mrdoob/three.js/r160/examples/textures/brick_bump.jpg',
+    'brick_roughness.jpg': RAW + 'mrdoob/three.js/r160/examples/textures/brick_roughness.jpg',
+    'rockyGround_basecolor.png': RAW + 'BabylonJS/Assets/master/textures/rockyGround_basecolor.png',
+    'rockyGround_normal.png': RAW + 'BabylonJS/Assets/master/textures/rockyGround_normal.png',
+    'rock.png': RAW + 'BabylonJS/Assets/master/textures/rock.png',
+    'potsdamer_platz_1k.hdr': RAW + 'pmndrs/drei-assets/master/hdri/potsdamer_platz_1k.hdr',
+}
+def scan(name):
+    path = os.path.join(SCANS, name)
+    if not os.path.exists(path):
+        import urllib.request
+        os.makedirs(SCANS, exist_ok=True)
+        with urllib.request.urlopen(SCAN_URLS[name]) as r, open(path, 'wb') as f: f.write(r.read())
+    return path
 
 # ───────────────────────── 장면 · 재질 ─────────────────────────
 def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     sc = bpy.context.scene
     sc.render.engine = 'CYCLES'; sc.cycles.device = 'CPU'; sc.cycles.samples = 24
-    sc.render.bake.margin = 4
+    sc.render.bake.margin = 8
     w = bpy.data.worlds.new('w'); sc.world = w; w.use_nodes = True
     w.node_tree.nodes['Background'].inputs['Color'].default_value = (1, 1, 1, 1)
 
 MATS = {}
 def mat(name, color, rough=.8, metal=0., mask=0., tex=None, scale=1.):
-    """tex: None | 'brick' | 'stone' | 'noise' | 'chevron' | 'granite' — 굽기용 절차적 무늬."""
+    """tex: None | 'photo_brick'(실사 스캔) | 'brick' | 'stone' | 'noise' | 'chevron' | 'granite' — 굽기용 무늬. 무늬가 있으면 결(범프)도 같이 굽는다."""
     if name in MATS: return MATS[name]
     m = bpy.data.materials.new(name); m.use_nodes = True; nt = m.node_tree; N = nt.nodes; L = nt.links
     p = N['Principled BSDF']; p.inputs['Roughness'].default_value = rough; p.inputs['Metallic'].default_value = 0
@@ -39,8 +60,18 @@ def mat(name, color, rough=.8, metal=0., mask=0., tex=None, scale=1.):
     c = [x ** 2.2 for x in c] + [1]
     tc = N.new('ShaderNodeTexCoord'); mp = N.new('ShaderNodeMapping'); L.new(tc.outputs['Object'], mp.inputs['Vector'])
     mp.inputs['Scale'].default_value = (scale, scale, scale)
-    col_out = None
-    if tex == 'brick':
+    col_out = None; bump_h = None; rough_out = None
+    if tex == 'photo_brick':
+        # 실사 벽돌 사진(약 2.2 m 한 장)을 벽면(XZ)에 상자 투영 — 창 옆 벽 두께 면에도 결이 이어진다
+        mp.inputs['Scale'].default_value = (1 / 2.2, 1 / 2.2, 1 / 2.2)
+        def photo(fname):
+            t = N.new('ShaderNodeTexImage'); t.image = bpy.data.images.load(scan(fname), check_existing=True)
+            t.image.colorspace_settings.name = 'Non-Color'   # 색 공간은 아래 감마로 직접 (bpy 모듈엔 OCIO 설정이 없을 수 있다)
+            t.projection = 'BOX'; t.projection_blend = .25; L.new(mp.outputs['Vector'], t.inputs['Vector']); return t
+        gm = N.new('ShaderNodeGamma'); gm.inputs['Gamma'].default_value = 2.2; L.new(photo('brick_diffuse.jpg').outputs['Color'], gm.inputs['Color'])
+        col_out = gm.outputs['Color']; bump_h = photo('brick_bump.jpg').outputs['Color']
+        rough_out = photo('brick_roughness.jpg').outputs['Color']
+    elif tex == 'brick':
         b = N.new('ShaderNodeTexBrick'); L.new(mp.outputs['Vector'], b.inputs['Vector'])
         # 벽면은 XZ 평면 — 벽돌 무늬가 그 면에 서도록 Y/Z 를 바꾼 좌표를 넣는다
         sep = N.new('ShaderNodeSeparateXYZ'); com = N.new('ShaderNodeCombineXYZ')
@@ -64,7 +95,7 @@ def mat(name, color, rough=.8, metal=0., mask=0., tex=None, scale=1.):
         k = {'stone': (.86, 1.05), 'noise': (.8, 1.08), 'granite': (.55, 1.4)}[tex]
         ramp.color_ramp.elements[0].color = [min(1, x * k[0]) for x in c[:3]] + [1]
         ramp.color_ramp.elements[1].color = [min(1, x * k[1]) for x in c[:3]] + [1]
-        col_out = ramp.outputs['Color']
+        col_out = ramp.outputs['Color']; bump_h = nz.outputs['Fac']
     elif tex == 'chevron':
         wv = N.new('ShaderNodeTexWave'); wv.wave_profile = 'TRI'; wv.inputs['Scale'].default_value = 3.0
         L.new(mp.outputs['Vector'], wv.inputs['Vector'])
@@ -73,8 +104,16 @@ def mat(name, color, rough=.8, metal=0., mask=0., tex=None, scale=1.):
         col_out = ramp.outputs['Color']
     if col_out is not None: L.new(col_out, p.inputs['Base Color'])
     else: p.inputs['Base Color'].default_value = c
+    if bump_h is not None:   # 결 → 노멀맵으로 굽힌다
+        bp = N.new('ShaderNodeBump'); bp.inputs['Strength'].default_value = .9 if tex == 'photo_brick' else .35
+        bp.inputs['Distance'].default_value = .015 if tex == 'photo_brick' else .006
+        L.new(bump_h, bp.inputs['Height']); L.new(bp.outputs['Normal'], p.inputs['Normal'])
     # ORM 굽기용: Emission(R 창문 마스크, G 거칠기, B 금속)
     em = N.new('ShaderNodeEmission'); em.inputs['Color'].default_value = (mask, rough, metal, 1); em.inputs['Strength'].default_value = 1
+    if rough_out is not None:
+        cm = N.new('ShaderNodeCombineColor'); cm.inputs['Red'].default_value = mask; cm.inputs['Blue'].default_value = metal
+        sep = N.new('ShaderNodeSeparateColor'); L.new(rough_out, sep.inputs['Color']); L.new(sep.outputs['Red'], cm.inputs['Green'])
+        L.new(cm.outputs['Color'], em.inputs['Color'])
     m['em'] = em.name; m['pb'] = p.name; m['out'] = out.name
     m['info'] = json.dumps({'color': color, 'rough': rough, 'metal': metal, 'mask': mask})
     img = N.new('ShaderNodeTexImage'); img.name = 'BAKE'; N.active = img
@@ -159,7 +198,7 @@ def window_double_hung(x0, x1, z0, z1, frame, glass, depth=.16, muntins=True):
             x = x0 + (x1 - x0) * k / 3; box(x - .015, x + .015, depth + .02, depth + .05, zm, z1 - f, frame)
 
 def style_brick(W=3.0):
-    brick = mat('brick', '#8f4130', tex='brick'); stone = mat('stone_trim', '#c9bfa8', tex='stone', rough=.85)
+    brick = mat('brick', '#8f4130', tex='photo_brick'); stone = mat('stone_trim', '#c9bfa8', tex='stone', rough=.85)
     white = mat('paint_white', '#e6e1d6', rough=.55); glass = mat('glass', '#1d2a33', rough=.06, metal=.55, mask=1)
     iron = mat('cast_iron', '#24302a', rough=.5, metal=.3); sign = mat('sign_band', '#1c1f22', rough=.6)
     shop = mat('glass_shop', '#2a3a44', rough=.05, metal=.5, mask=1); cop = mat('cornice_metal', '#857c6c', rough=.65, metal=.2)
@@ -283,6 +322,8 @@ def fire_escape(W=3.0):
 def bake_atlas(objs, name, size=ATLAS):
     img = bpy.data.images.new(name + '_c', size, size); ao = bpy.data.images.new(name + '_ao', size, size)
     orm = bpy.data.images.new(name + '_m', size, size)
+    for im in (ao, orm): im.colorspace_settings.name = 'Non-Color'   # 색(_c)만 sRGB 로 저장된다 — pixels 는 저장된 값 그대로
+    nrm = bpy.data.images.new(name + '_n', size, size); nrm.colorspace_settings.name = 'Non-Color'
     sc = bpy.context.scene; bk = sc.render.bake; bk.use_clear = True
     def run(kind, image, **kw):
         set_bake_image(image)
@@ -292,10 +333,11 @@ def bake_atlas(objs, name, size=ATLAS):
             bk.use_clear = first; first = False
             bpy.ops.object.bake(type=kind, **kw)
     mode('albedo'); run('DIFFUSE', img, pass_filter={'COLOR'}); run('AO', ao)
+    run('NORMAL', nrm)
     mode('orm'); run('EMIT', orm); mode('albedo')
-    return img, ao, orm
+    return img, ao, orm, nrm
 
-def bake_flat(high, W, rect_img, name, size=512):
+def bake_flat(high, W, rect_img, name, size=FLAT):
     """윗층 3D 모듈을 앞면 평판에 구워 멀리 있는 층용 텍스처(색·AO·노멀·ORM)를 만든다."""
     bpy.ops.mesh.primitive_plane_add(size=1); pl = bpy.context.active_object
     pl.scale = (W, H, 1); pl.rotation_euler = (math.pi / 2, 0, 0); pl.location = (W / 2, -.35, H / 2)
@@ -305,9 +347,9 @@ def bake_flat(high, W, rect_img, name, size=512):
     n = m.node_tree.nodes.new('ShaderNodeTexImage'); m.node_tree.nodes.active = n
     out = {}
     sc = bpy.context.scene; bk = sc.render.bake; bk.use_selected_to_active = True; bk.cage_extrusion = .9; bk.use_clear = True
-    for kind, key, kw in (('DIFFUSE', 'c', {'pass_filter': {'COLOR'}}), ('AO', 'ao', {}), ('EMIT', 'm', {})):
+    for kind, key, kw in (('DIFFUSE', 'c', {'pass_filter': {'COLOR'}}), ('AO', 'ao', {}), ('NORMAL', 'n', {}), ('EMIT', 'm', {})):
         img = bpy.data.images.new(name + '_fl_' + key, size, size)
-        if key == 'n': img.colorspace_settings.name = 'Non-Color'
+        if key != 'c': img.colorspace_settings.name = 'Non-Color'
         n.image = img
         mode('orm' if key == 'm' else 'albedo')
         bpy.ops.object.select_all(action='DESELECT'); high.select_set(True); pl.select_set(True); bpy.context.view_layer.objects.active = pl
@@ -327,6 +369,26 @@ def save_jpg(arr, path, srgb=True, q=88):
 
 def compose(c, ao):
     a = ao[..., :1]; return c * (.42 + .58 * a)
+
+def ground_textures(size=1024):
+    """아스팔트 · 보도 콘크리트: 실사 자갈 바닥 스캔(색 · 노멀)을 흑백으로 빼고 밝기를 맞춘다. 게임에서 세계 좌표로 반복해 깐다."""
+    from PIL import Image, ImageFilter
+    base = Image.open(scan('rockyGround_basecolor.png')).convert('RGB').resize((size, size), Image.LANCZOS)
+    nrm = Image.open(scan('rockyGround_normal.png')).convert('RGB').resize((size, size), Image.LANCZOS)
+    a = np.asarray(base).astype(np.float32) / 255; l = (a * [.2126, .7152, .0722]).sum(-1, keepdims=True)
+    def grade(x, mean, contrast, tint):
+        x = (x - x.mean()) * contrast + mean; return np.clip(x * np.array(tint), 0, 1)
+    rng = np.random.default_rng(3)
+    asp = grade(l, .30, 1.25, [.98, .99, 1.02]) * (1 + .05 * rng.standard_normal((size, size, 1)))   # 자갈이 박힌 짙은 회색
+    save_jpg(np.repeat(asp, 1, -1) if asp.shape[-1] == 3 else np.repeat(asp, 3, -1), os.path.join(OUT, 'asphalt_c.jpg'), srgb=False, q=86)
+    nb = np.asarray(nrm).astype(np.float32) / 255
+    save_jpg(nb, os.path.join(OUT, 'asphalt_n.jpg'), srgb=False, q=86)
+    soft = np.asarray(base.filter(ImageFilter.GaussianBlur(2))).astype(np.float32) / 255; ls = (soft * [.2126, .7152, .0722]).sum(-1, keepdims=True)
+    con = grade(ls, .70, .45, [1.0, .99, .965]) * (1 + .035 * rng.standard_normal((size, size, 1)))  # 밝은 콘크리트 · 잔 얼룩
+    save_jpg(np.repeat(con, 3, -1) if con.shape[-1] == 1 else con, os.path.join(OUT, 'walk_c.jpg'), srgb=False, q=86)
+    flat = np.array([.5, .5, 1.]); save_jpg(flat + (nb - flat) * .45, os.path.join(OUT, 'walk_n.jpg'), srgb=False, q=86)
+    # 하늘빛(도시 HDRI) 그대로 복사
+    import shutil; shutil.copy(scan('potsdamer_platz_1k.hdr'), os.path.join(OUT, 'city_1k.hdr'))
 
 # ───────────────────────── 내보내기 ─────────────────────────
 MAT_INFO = lambda m: json.loads(m['info'])
@@ -378,12 +440,18 @@ def build_facades():
         fe = fire_escape(k['W']) if name == 'brick' else None
         uv_into(k['up'], (0, .5, .5, 1)); uv_into(k['gr'], (.5, .5, 1, 1)); uv_into(k['co'], (0, .25, .5, .5))
         if fe: uv_into(fe, (.5, 0, 1, .5)); objs.append(fe)
-        c, ao, orm = bake_atlas(objs, name)
-        save_jpg(compose(px(c), px(ao)), os.path.join(OUT, name + '_c.jpg'))
+        # 모듈들이 모두 원점에 겹쳐 있으면 서로를 가려 AO 가 새카매진다 — 굽는 동안만 옆으로 떼어 놓는다
+        for i, o in enumerate(objs): o.location.x = i * 25
+        c, ao, orm, nrm = bake_atlas(objs, name)
+        save_jpg(compose(px(c), px(ao)), os.path.join(OUT, name + '_c.jpg'), srgb=False, q=84)   # 굽기 이미지가 이미 sRGB
         save_jpg(px(orm), os.path.join(OUT, name + '_m.jpg'), srgb=False)
+        save_jpg(px(nrm), os.path.join(OUT, name + '_n.jpg'), srgb=False, q=84)
+        k['up'].location.x = 0
         pl, fl = bake_flat(k['up'], k['W'], None, name)
-        save_jpg(compose(px(fl['c']), px(fl['ao'])), os.path.join(OUT, name + '_fc.jpg'))
+        for o in objs: o.location.x = 0
+        save_jpg(compose(px(fl['c']), px(fl['ao'])), os.path.join(OUT, name + '_fc.jpg'), srgb=False)
         save_jpg(px(fl['m']), os.path.join(OUT, name + '_fm.jpg'), srgb=False)
+        save_jpg(px(fl['n']), os.path.join(OUT, name + '_fn.jpg'), srgb=False)
         for part in ('up', 'gr', 'co'): export(k[part], name + '_' + part)
         export(pl, name + '_fl')
         if fe: export(fe, 'fire_escape')
@@ -392,6 +460,7 @@ def build_facades():
 
 if __name__ == '__main__':
     import sys
+    ground_textures()
     build_facades()
     try:
         import nyc_props; nyc_props.build(globals())

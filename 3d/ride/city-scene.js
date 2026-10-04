@@ -42,7 +42,9 @@ function build({T,scene,C}){
   for(let i=0;i<7;i++){x.strokeStyle='rgba(25,27,30,.35)';x.lineWidth=1+rnd()*2;x.beginPath();let px=rnd()*w,py=rnd()*h;x.moveTo(px,py);for(let j=0;j<6;j++){px+=(rnd()-.5)*50;py+=(rnd()-.5)*50;x.lineTo(px,py)}x.stroke()}});
  asphalt.wrapS=asphalt.wrapT=T.RepeatWrapping;
  const asMat=SM('#ffffff',{map:asphalt,roughness:.93,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
- {const pos=[],uv=[],idx=[];const quad=(a,b,c,d,y)=>{const n=pos.length/3;for(const p of [a,b,c,d]){const w=C.world(p[0],p[1]);pos.push(w.x,y,w.z);uv.push(w.x/14,w.z/14)}idx.push(n,n+2,n+1,n,n+3,n+2)};
+ {const pos=[],uv=[],idx=[];const quad=(a,b,c,d,y)=>{const n=pos.length/3;for(const p of [a,b,c,d]){const w=C.world(p[0],p[1]);pos.push(w.x,y,w.z);uv.push(w.x/14,w.z/14)}
+   // 위를 보게 감는다 (길 방향에 따라 뒤집혀 아래를 보면 위에서 안 그려진다)
+   const ux=pos[3*n+3]-pos[3*n],uz=pos[3*n+5]-pos[3*n+2],vx=pos[3*n+6]-pos[3*n],vz=pos[3*n+8]-pos[3*n+2];if(uz*vx-ux*vz>0)idx.push(n,n+1,n+2,n,n+2,n+3);else idx.push(n,n+2,n+1,n,n+3,n+2)};
   for(const s of S){const [lo,hi]=flat(s);if(hi-lo<.1)continue;const a=P(s,lo,-HALF),b=P(s,hi,-HALF),c=P(s,hi,HALF),d=P(s,lo,HALF);quad(a,b,c,d,YC+.02)}
   // 입구 오르막 · 출구 내리막: 경로를 따라가는 리본 (흙길 반폭 9 → 시내 4.95)
   for(const [u0,u1] of [[0,33],[C.Lc-48,C.Lc]]){const n0=pos.length/3,steps=Math.ceil((u1-u0)/1.5);for(let i=0;i<=steps;i++){const u=u0+(u1-u0)*i/steps,p=C.localAt(u),nn=C.pathNormal(u),wd=HALF+(9-HALF)*(1-Math.min(1,C.latScale(u)<1?(1-C.latScale(u))/.45:0)),y=C.y(u)+.03;
@@ -82,24 +84,28 @@ function build({T,scene,C}){
  for(let R=BB.r0;R<BB.r1;R+=15)for(let F=BB.f0;F<BB.f1;F+=15){const w=10+rnd()*8,d=10+rnd()*8,r0=R+rnd()*3,f0=F+rnd()*3;if(free(r0,r0+w,f0,f0+d))addB(r0,r0+w,f0,f0+d,18+Math.pow(rnd(),1.3)*105,null)}
  // 창문: 층(3.9) · 칸 격자를 월드 좌표로 그린다. 유리 빌딩은 커튼월.
  const NIGHT={value:0};   // 밤이 되면 창문마다 불이 켜진다 (CITY_ENV.dark)
- const winMat=glass=>{const m=SM('#ffffff',{roughness:.82,metalness:glass?.25:.02});m.onBeforeCompile=sh=>{sh.uniforms.uNight=NIGHT;
+ // 블렌더 키트가 오면(city-real.js) 상자 빌딩 옆 · 뒷면에도 구운 실사 층 텍스처(석회석 / 유리 커튼월)를 칸 · 층 격자대로 입힌다
+ const BOXTEX={on:{value:0},mc:{value:null},mm:{value:null},gc:{value:null},gm:{value:null}};
+ const winMat=glass=>{const m=SM('#ffffff',{roughness:.82,metalness:glass?.25:.02});m.onBeforeCompile=sh=>{sh.uniforms.uNight=NIGHT;sh.uniforms.uFlatOn=BOXTEX.on;sh.uniforms.uFC=glass?BOXTEX.gc:BOXTEX.mc;sh.uniforms.uFM=glass?BOXTEX.gm:BOXTEX.mm;
    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;varying vec3 vWN;').replace('#include <begin_vertex>',`#include <begin_vertex>
 vec4 wpp=vec4(transformed,1.0);vec3 wn=objectNormal;
 #ifdef USE_INSTANCING
 wpp=instanceMatrix*wpp;wn=mat3(instanceMatrix)*wn;
 #endif
 wpp=modelMatrix*wpp;vWP=wpp.xyz;vWN=normalize(mat3(modelMatrix)*wn);`);
-   sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;varying vec3 vWN;uniform float uNight;float h21(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}').replace('#include <color_fragment>',`#include <color_fragment>
+   sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;varying vec3 vWN;uniform float uNight;uniform float uFlatOn;uniform sampler2D uFC;uniform sampler2D uFM;float h21(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}').replace('#include <color_fragment>',`#include <color_fragment>
 float winMask=0.,litW=0.;vec3 nn=normalize(vWN);
 if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2)})/3.9;
  vec2 cell=vec2(a/${glass?'2.3':'3.0'},fy);vec2 f=fract(cell),id=floor(cell);
+ float lit=h21(id+floor(vWP.xz*.013));litW=lit;
+ if(uFlatOn>.5&&fy>=1.25){vec2 tuv=vec2(cell.x,fy-1.25);diffuseColor.rgb*=texture2D(uFC,tuv).rgb*${glass?'2.1':'1.75'};winMask=smoothstep(.35,.7,texture2D(uFM,tuv).r);}else{
  ${glass?'winMask=step(.05,f.x)*step(f.x,.95)*step(.08,f.y)*step(f.y,.96);':'winMask=step(.2,f.x)*step(f.x,.8)*step(.26,f.y)*step(f.y,.84);'}
- winMask*=step(1.25,fy);float lit=h21(id+floor(vWP.xz*.013));litW=lit;
+ winMask*=step(1.25,fy);
  vec3 gl=${glass?'mix(diffuseColor.rgb*.62,vec3(.62,.74,.84),.35+.35*f.y+lit*.12)':'mix(vec3(.15,.2,.26),vec3(.45,.56,.66),.25+.5*f.y)+lit*.08'};
  diffuseColor.rgb=mix(diffuseColor.rgb,gl,winMask*.94);
  float sf=(1.-step(1.15,fy))*step(.22,fract(fy))*step(.08,fract(a/5.5))*step(fract(a/5.5),.9);
  diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.17,.21,.24),sf*.85);
- float band=step(.92,fract(fy))*(1.-winMask);diffuseColor.rgb*=1.-band*.18;
+ float band=step(.92,fract(fy))*(1.-winMask);diffuseColor.rgb*=1.-band*.18;}
 }else diffuseColor.rgb*=.72;`).replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.22,winMask);').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=winMask*step(.4,litW)*uNight*mix(vec3(1.,.74,.4),vec3(.7,.84,1.),step(.82,litW))*(1.1+litW);')};return m};
  const tiers=[];   // 높은 빌딩의 윗단 · 첨탑
  for(const b of blds){if(b.h>110){const cx=(b.r0+b.r1)/2,cz=(b.f0+b.f1)/2,w=b.r1-b.r0,d=b.f1-b.f0;tiers.push({r0:cx-w*.36,r1:cx+w*.36,f0:cz-d*.36,f1:cz+d*.36,y:b.h,h:b.h*.17,glass:b.glass,col:b.col});
@@ -240,10 +246,10 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
  const carGlow=new T.Points(cgGeo,new T.PointsMaterial({map:glowTex,vertexColors:true,size:1.5,transparent:true,opacity:0,depthWrite:false,blending:T.AdditiveBlending}));carGlow.frustumCulled=false;carGlow.visible=false;g.add(carGlow);
  const umb=new T.InstancedMesh(new T.ConeGeometry(.95,.42,10).translate(0,2.62,0),SM('#ffffff',{side:T.DoubleSide,roughness:.5}),PEDN);peds.forEach((q,i)=>umb.setColorAt(i,cc.set(SHIRT[(i*7+3)%SHIRT.length])));umb.visible=false;g.add(umb);
  const v3=new T.Vector3(),GL=[[-.68,.92,-2.5],[.68,.92,-2.5],[-.72,.95,2.5],[.72,.95,2.5]];
- const DEF=root.CITY_ENV;let env=null;
+ const DEF=root.CITY_ENV;let env=null,asBase=1;
  let flashT=0;
  function weather(E,ride,bikePos){const d=E.dark,wet=E.wet,cov=E.snowCover;NIGHT.value=d;
-  asMat.color.setScalar(1-.42*wet);asMat.roughness=.93-.62*wet;walkMat.roughness=.9-.5*wet;
+  asMat.color.setScalar(asBase*(1-.42*wet));asMat.roughness=.92-.5*wet;walkMat.roughness=.9-.5*wet;
   for(const m of [asMat,walkMat,paintMat]){m.emissive.set('#dfe6ee');m.emissiveIntensity=cov*(.62-.45*d)}
   crownMat.color.set(E.leaf);bulbMat.emissiveIntensity=.6+3.6*d;steam.material.opacity=.42+.25*cov;
   lampGlow.visible=d>.02;lampGlow.material.opacity=d*.85;carGlow.visible=d>.02||E.weather>.3;carGlow.material.opacity=Math.max(d,E.weather*.7)*.95;umb.visible=E.rain>.15}
@@ -265,7 +271,7 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
  // 블렌더 뉴욕 키트(nyc/)가 내려오면 빌딩 앞면 · 차 · 가로 소품을 사실적인 모델로 바꾼다. 못 받으면 지금 모습 그대로.
  let real=null;
  function upgrade(A,renderer){if(real||!root.CITY_REAL)return null;
-  real=root.CITY_REAL.apply({T,g,C,WV,P,dirW,rotOf,YC,HALF,WALK,blds,boxAt,lamps,hyd,bins,mail,old,bulbMat,NIGHT,dmy,at,MAXC,carMeshes,setCarKit:k=>{carKit=k},renderer},A);return real}
+  real=root.CITY_REAL.apply({T,g,C,WV,P,dirW,rotOf,YC,HALF,WALK,blds,boxAt,BOXTEX,asMat,walkMat,setAsBase:v=>{asBase=v},ax,af,o0,lamps,hyd,bins,mail,old,bulbMat,NIGHT,dmy,at,MAXC,carMeshes,setCarKit:k=>{carKit=k},renderer},A);return real}
  return {group:g,update,flash,upgrade,get real(){return real},buildings:blds.length,lampPos:lamps.map(l=>l.bulb),npc}}
 root.CITY_SCENE={build};
 })(typeof window!=='undefined'?window:globalThis);
