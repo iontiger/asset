@@ -199,6 +199,10 @@ function notify(text){$('toast').textContent=text;toastTime=2.6;$('toast').style
 function soundTone(freq){sound.chime(freq)}
 // 뉴욕 시내: 감점은 화면 가운데 큰 팝업 + 붉은(신호) / 흰(카메라) 번쩍임, 경적은 두 음
 function honk(){soundTone(392);setTimeout(()=>soundTone(330),140)}
+// 배달 완료도 신호 위반과 같은 큰 박스(#penalty)로 띄운다 — 초록 테두리 · 금빛 번쩍
+function rewardFX(points,title,sub,kind){const el=$('penalty');el.innerHTML=`<b>${points}</b><span>${title}</span><small>${sub}</small>`;
+ el.className='penalty '+kind;void el.offsetWidth;el.classList.add('show');clearTimeout(penaltyFX.t);penaltyFX.t=setTimeout(()=>el.classList.remove('show'),2300);
+ const f=$('penalty-flash');f.className='penalty-flash delivery';void f.offsetWidth;f.classList.add('show')}
 function penaltyFX(e){const el=$('penalty');el.innerHTML=`<b>${e.points}</b><span>${e.kind==='signal'?'🚦 신호 위반':'📷 과속 단속 · '+e.kmh+' km/h'}</span><small>${e.kind==='signal'?'빨간불에 정지선을 넘었어요':'제한속도 '+CITY.LIMIT+' km/h를 넘었어요'}</small>`;
  el.className='penalty '+e.kind;void el.offsetWidth;el.classList.add('show');clearTimeout(penaltyFX.t);penaltyFX.t=setTimeout(()=>el.classList.remove('show'),2300);
  const f=$('penalty-flash');f.className='penalty-flash '+e.kind;void f.offsetWidth;f.classList.add('show');sound.impact(.45);soundTone(196);
@@ -373,8 +377,8 @@ if(event.type==='stone')notify('돌 포장길 — 덜덜덜! 핸들을 잡으세
 if(event.type==='snowIn'){sound.impact(.4);burst(drivePoint(ride.pos,ride.player*9),50,1.4,'snow');notify('❄ 갑자기 폭설! 바퀴가 눈에 반쯤 잠겨요 — 느리고 미끄러워요.')}
 if(event.type==='snowOut')notify('눈길을 빠져나왔어요 — 다시 속도를 내요!');
 if(event.type==='land'){sound.impact(.8);burst(drivePoint(ride.pos,0),55,1.8);soundTone(90);notify('쿵! 도로 복귀 — 다시 가속하세요.');}
-if(event.type==='delivery'){sound.ding();notify('✉ '+event.name+' 배달 완료! +'+event.points+'점 ('+event.count+'/3)')}
-if(event.type==='deliveryComplete'){soundTone(1100);notify('✉ 뉴욕 배달 3곳 완료! 배달 +500 · 완수 보너스 +1,000점')}
+if(event.type==='delivery'){sound.ding();rewardFX('+'+event.points,'✉ 배달 완료 · '+event.count+'/3',event.name+'에 편지를 넣었어요','delivery')}
+if(event.type==='deliveryComplete'){soundTone(1100);rewardFX('+'+(500+event.points).toLocaleString(),'🎉 뉴욕 배달 3곳 완수!','배달 +500 · 완수 보너스 +'+event.points.toLocaleString()+'점','delivery all')}
 if(event.type==='deliveryMissed')notify(event.name+'을 지나쳤어요 · 다음 배달을 이어가세요');
 if(event.type==='cityIn')notify('🗽 뉴욕 시내! 제한속도 '+CITY.LIMIT+' km/h · 입구 신호에서 멈춰요');
 if(event.type==='cityGo'){soundTone(660);notify('🟢 초록불! 0 km/h에서 직접 출발하세요')}
