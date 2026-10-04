@@ -89,6 +89,8 @@ function clearOfRoad(p,r=18){return routeSamples.every(q=>Math.hypot(p.x-q.x,p.z
 const canyon=CANYON.build({T,scene:canyonGroup,drivePoint:legacyDrive,ride,fork:ADVENTURE.fork,landmarks,turns:ROAD_PATH.turns});
 // 뉴욕 시내(갈림길 2 · 마을길): 빌딩 숲 · 신호등 · 단속 카메라 · 차량 — city-scene.js
 const cityScene=CITY_SCENE.build({T,scene,C:CITY});
+// 블렌더 뉴욕 키트(nyc/): 받아지면 빌딩 앞면 · 차 · 가로 소품을 사실적인 모델로 바꾼다. 못 받으면 원래 시내 그대로.
+if(window.NYC_ASSETS&&window.CITY_REAL)NYC_ASSETS.load(T).then(A=>{const r=cityScene.upgrade(A,renderer);if(r)console.info('NYC kit',r.faces,'faces',r.tris,'tris',r.swapped.join(','))}).catch(e=>console.warn('NYC 키트를 못 불러와 기본 시내로 그려요',e));
 // 목표봉 (up and over) and the creek with its three fords — see mountain-creek.js.
 const mc=MOUNTAIN_CREEK.build({T,scene,point,height,heading,groundAt,ride});
 for(let s=82000;s<96000;s+=180){const p=point(s,40);if(!clearOfRoad(p,27))continue;const ice=ADVENTURE.snowCover(s)>.5,water=new T.Mesh(new T.PlaneGeometry(40,10),new T.MeshStandardMaterial({color:ice?'#cfe2ea':'#6aafb9',roughness:ice?.15:.3,metalness:.15,side:T.DoubleSide}));water.rotation.set(-Math.PI/2,0,heading(s));water.position.copy(p);water.position.y-=2;scene.add(water);for(let j=0;j<(ice?0:3);j++){const foam=box(scene,p.x+j*5,p.y-1.97,p.z,3,.025,.08,'#dce9d8');foam.rotation.y=heading(s)}}

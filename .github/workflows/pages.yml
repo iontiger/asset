@@ -46,7 +46,7 @@ jobs:
           # 실사 화질용 사진 무늬 · 하늘빛 (3d/assets/real, 출처는 CREDITS.md)
           cp -r 3d/assets _site/3d/
           # 우체국에서 여는 우편배달 게임 '바람을 따라' (Three.js, 따로 된 페이지) → /asset/3d/ride/
-          mkdir -p _site/3d/ride && cp 3d/ride/*.html 3d/ride/*.js 3d/ride/*.css 3d/ride/*.mp3 _site/3d/ride/ && cp -r 3d/ride/vendor _site/3d/ride/
+          mkdir -p _site/3d/ride && cp 3d/ride/*.html 3d/ride/*.js 3d/ride/*.css 3d/ride/*.mp3 _site/3d/ride/ && cp -r 3d/ride/vendor 3d/ride/nyc _site/3d/ride/
           # 마을 '문명 전당'에서 여는 턴제 문명 게임 '덴포토 문명' (3d/ride 의 three.min.js · 마을 모델을 같이 씀) → /asset/civil/
           mkdir -p _site/civil && cp civil/*.html civil/*.js civil/*.css _site/civil/ && rm -f _site/civil/*.cjs
           # 게임 페이지의 js · css 주소에 커밋 번호를 붙여, 브라우저가 옛 파일(예: 옛 game.js)과 새 index.html 을 섞어 쓰지 않게 한다
