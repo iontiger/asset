@@ -44,5 +44,7 @@ r=new Ride();r.start();r.items=[];r.pos=70500;r.speed=400;tick(r,['w'],60);asser
  for(let i=0;i<200;i++)C.update(r,.05);const c=st.cars[0];assert(c.v<.05&&c.d>=L.cross+C.WALK+4.5+2.6-1.1,'oncoming car waits at its stop line '+c.d.toFixed(1));
  st.lights[L.i].state='green';for(let i=0;i<60;i++)C.update(r,.05);assert(st.cars[0].v>3,'and drives on when green');
  const html=fs.readFileSync(path.join(__dirname,'index.html'),'utf8');assert(html.indexOf('city-life.js')>html.indexOf('city-npc.js')&&html.indexOf('city-life.js')<html.indexOf('city-scene.js'));
- assert(typeof require('./city-life.js').build==='function');const au=fs.readFileSync(path.join(__dirname,'ride-audio.js'),'utf8');for(const k of ['city(','horn(','siren(','chirp('])assert(au.includes(' '+k),k)}
-console.log('PASS: manual drift, rewards, glancing hits, near misses, perfect landing, anti-hold timing, branch lock, shorter cliff route, safe-route collision suppression, combos, restart, snow plain, rock-free canyon, NYC lights/cameras/jam, NYC 24h seasons, NYC Blender kit, NYC street life');
+ assert(typeof require('./city-life.js').build==='function');
+ for(const f of ['city-ts.js','city-wet.js'])assert(html.indexOf(f)>html.indexOf('city-life.js')&&html.indexOf(f)<html.indexOf('city-scene.js'),f);
+ {const TS=require('./city-ts.js');assert(TS.STOCKS.length>=8&&['logo','stocks','musical','iny','news','wave','ride'].every(k=>typeof TS.DRAW[k]==='function'));assert(typeof require('./city-wet.js').attach==='function')}const au=fs.readFileSync(path.join(__dirname,'ride-audio.js'),'utf8');for(const k of ['city(','horn(','siren(','chirp('])assert(au.includes(' '+k),k)}
+console.log('PASS: manual drift, rewards, glancing hits, near misses, perfect landing, anti-hold timing, branch lock, shorter cliff route, safe-route collision suppression, combos, restart, snow plain, rock-free canyon, NYC lights/cameras/jam, NYC 24h seasons, NYC Blender kit, NYC street life, Times Square, puddles');

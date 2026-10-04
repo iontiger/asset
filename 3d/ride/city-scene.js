@@ -42,6 +42,8 @@ function build({T,scene,C}){
   for(let i=0;i<7;i++){x.strokeStyle='rgba(25,27,30,.35)';x.lineWidth=1+rnd()*2;x.beginPath();let px=rnd()*w,py=rnd()*h;x.moveTo(px,py);for(let j=0;j<6;j++){px+=(rnd()-.5)*50;py+=(rnd()-.5)*50;x.lineTo(px,py)}x.stroke()}});
  asphalt.wrapS=asphalt.wrapT=T.RepeatWrapping;
  const asMat=SM('#ffffff',{map:asphalt,roughness:.93,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
+ // 비 온 뒤 물웅덩이 · 젖은 길 반사 (city-wet.js)
+ const wet=root.CITY_WET?root.CITY_WET.attach({T,mat:asMat,Y:YC+.02}):null;
  {const pos=[],uv=[],idx=[];const quad=(a,b,c,d,y)=>{const n=pos.length/3;for(const p of [a,b,c,d]){const w=C.world(p[0],p[1]);pos.push(w.x,y,w.z);uv.push(w.x/14,w.z/14)}
    // 위를 보게 감는다 (길 방향에 따라 뒤집혀 아래를 보면 위에서 안 그려진다)
    const ux=pos[3*n+3]-pos[3*n],uz=pos[3*n+5]-pos[3*n+2],vx=pos[3*n+6]-pos[3*n],vz=pos[3*n+8]-pos[3*n+2];if(uz*vx-ux*vz>0)idx.push(n,n+1,n+2,n,n+2,n+3);else idx.push(n,n+2,n+1,n,n+3,n+2)};
@@ -142,9 +144,11 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
   (x,w,h)=>{for(let i=0;i<16;i++)for(let j=0;j<10;j++){x.fillStyle=(i+j)%2?'#111':'#f6c90e';x.fillRect(i*w/16,j*h/10,w/16,h/10)}x.fillStyle='#f6c90e';x.fillRect(40,70,w-80,h-140);x.fillStyle='#111';x.textAlign='center';x.font=`900 80px ${FONT}`;x.fillText('TAXI 212',w/2,h*.6)},
   (x,w,h)=>{x.fillStyle='#023e8a';x.fillRect(0,0,w,h);x.fillStyle='#90e0ef';x.textAlign='center';x.font=`800 64px ${FONT}`;x.fillText('NEW YORK',w/2,h*.42);x.fillText('DENTAL',w/2,h*.42+72);x.fillStyle='#fff';x.font=`600 30px ${FONT}`;x.fillText('SMILE · 웃어요',w/2,h*.42+124)}];
  const adMats=ADS.map(d=>new T.MeshBasicMaterial({map:tex(512,320,d),toneMapped:false,side:T.DoubleSide}));
- {const V1=C.V[1];let n=0;fronts.forEach((b,i)=>{const f=b.front,t=(f.t0+f.t1)/2,p=P(f.s,t,0),nearTS=Math.hypot(p[0]-V1[0],p[1]-V1[1])<70;if(b.h<16||!(nearTS||i%4===1)||n>34)return;n++;
+ {const V1=C.V[1];let n=0;fronts.forEach((b,i)=>{const f=b.front,t=(f.t0+f.t1)/2,p=P(f.s,t,0),nearTS=Math.hypot(p[0]-V1[0],p[1]-V1[1])<70;if(nearTS&&root.CITY_TS)return;if(b.h<16||!(nearTS||i%4===1)||n>34)return;n++;
    const big=nearTS?1.5:1,nrm=f.s.axis==='F'?[-f.side,0]:[0,-f.side],q=P(f.s,t,f.side*(WALK+.3)),y=YC+8+rnd()*Math.min(14,b.h-12)*.8;
    const m=new T.Mesh(new T.PlaneGeometry(8.6*big,5.4*big),adMats[(i*5+n)%adMats.length]);m.position.copy(WV(q[0],q[1],y+2.7*big));m.rotation.y=Math.atan2(dirW(...nrm).x,dirW(...nrm).z);g.add(m)})}
+ // 타임스스퀘어 (city-ts.js): BROADWAY · W 42 ST 모서리 빌딩을 움직이는 전광판으로 덮는다
+ const ts=root.CITY_TS?root.CITY_TS.build({T,g,C,blds,P,WV,dirW,YC,WALK}):null;
 
  const mergeGeo=list=>{const pos=[],nor=[];for(const geo of list){const ng=geo.index?geo.toNonIndexed():geo;pos.push(...ng.attributes.position.array);nor.push(...ng.attributes.normal.array)}const out=new T.BufferGeometry();out.setAttribute('position',new T.Float32BufferAttribute(pos,3));out.setAttribute('normal',new T.Float32BufferAttribute(nor,3));return out};
  // ── 가로등 · 가로수 · 소화전 · 사람
@@ -256,7 +260,7 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
   crownMat.color.set(E.leaf);bulbMat.emissiveIntensity=.6+3.6*d;steam.material.opacity=.42+.25*cov;
   lampGlow.visible=d>.02;lampGlow.material.opacity=d*.85;carGlow.visible=d>.02||E.weather>.3;carGlow.material.opacity=Math.max(d,E.weather*.7)*.95;umb.visible=E.rain>.15}
  function update(time,dt,ride,cenv,bikePos){const st=ride.city;if(!st)return;
-  env=cenv||(DEF?DEF.env(Math.max(0,Math.min(1,C.uOf(ride.pos)/C.Lc))):null);if(env){weather(env,ride,bikePos);if(real)real.update(env)}if(npc&&bikePos)npc.update(time,dt,bikePos,env);
+  env=cenv||(DEF?DEF.env(Math.max(0,Math.min(1,C.uOf(ride.pos)/C.Lc))):null);if(env){weather(env,ride,bikePos);if(wet)wet.setEnv(env,time);if(real)real.update(env)}if(npc&&bikePos)npc.update(time,dt,bikePos,env);
   sigs.forEach(sg=>{const s=st.lights[sg.l.i].state;for(const k of ['red','yellow','green'])sg.mats[k].color.set(s===k?LAMPC[k]:'#2a2a2a');
    const lamp=sg.heads[0].children[['red','yellow','green'].indexOf(s)*2+2];if(lamp){lamp.getWorldPosition(sg.glow.position);sg.glow.material.color.set(LAMPC[s]);sg.glow.material.opacity=Math.min(1,(.45+.15*Math.sin(time*6))*(1+(env?env.dark:0)*.9));sg.glow.scale.setScalar(1.9*(1+(env?env.dark:0)*.7))}});
   // 가로 길 차량: 내 신호가 빨간불이면 지나가고, 아니면 가로 길 정지선 앞에 줄 서서 기다린다(바이크 가까운 교차로만)
@@ -273,7 +277,7 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
    x.v+=Math.max(-14*dt,Math.min(6*dt,target-x.v));x.p+=x.dir*x.v*dt}
   for(let i=crossers.length-1;i>=0;i--){const x=crossers[i];if((x.p-x.end)*x.dir>0||Math.abs(C.uAt(x.k,x.d)-pu)>300)crossers.splice(i,1)}
   drawCars(st.cars,dt);
-  if(life)lifeOut=life.update(time,dt,ride,env,bikePos);
+  if(life)lifeOut=life.update(time,dt,ride,env,bikePos);if(ts)ts.update(dt,pu,env);
   peds.forEach((q,i)=>{q.t+=q.v*dt;if(q.t<q.p.a||q.t>q.p.b){q.v=-q.v;q.t=Math.max(q.p.a,Math.min(q.p.b,q.t))}const p=P(q.p.s,q.t,q.lat),bob=Math.abs(Math.sin(time*7+q.ph))*.08;
    dmy.position.copy(WV(p[0],p[1],YC+.24+bob));dmy.rotation.set(0,0,0);dmy.scale.set(1,1,1);dmy.updateMatrix();pedBody.setMatrixAt(i,dmy.matrix);pedHead.setMatrixAt(i,dmy.matrix);pedLegs.setMatrixAt(i,dmy.matrix);umb.setMatrixAt(i,dmy.matrix)});pedBody.instanceMatrix.needsUpdate=pedHead.instanceMatrix.needsUpdate=pedLegs.instanceMatrix.needsUpdate=umb.instanceMatrix.needsUpdate=true;
   vents.forEach((v,j)=>{const w=C.world(v[0],v[1]);for(let i=0;i<VN;i++){const f=((time*.35+i/VN)%1),k=(j*VN+i)*3;ventPos[k]=w.x+Math.sin(i*2.3+time)*f*1.6;ventPos[k+1]=YC+.2+f*7;ventPos[k+2]=w.z+Math.cos(i*1.7+time*.8)*f*1.6}});ventGeo.attributes.position.needsUpdate=true;
@@ -284,6 +288,6 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
  let real=null;
  function upgrade(A,renderer){if(real||!root.CITY_REAL)return null;
   real=root.CITY_REAL.apply({T,g,C,WV,P,dirW,rotOf,YC,HALF,WALK,blds,boxAt,BOXTEX,asMat,walkMat,setAsBase:v=>{asBase=v},ax,af,o0,lamps,hyd,bins,mail,old,bulbMat,NIGHT,dmy,at,MAXC,carMeshes,setCarKit:k=>{carKit=k},renderer},A);return real}
- return {group:g,update,flash,upgrade,get real(){return real},buildings:blds.length,lampPos:lamps.map(l=>l.bulb),npc,life,get crossers(){return crossers},get walk(){return lifeOut.walk}}}
+ return {group:g,update,flash,upgrade,get real(){return real},buildings:blds.length,lampPos:lamps.map(l=>l.bulb),npc,life,ts,wet,get crossers(){return crossers},get walk(){return lifeOut.walk}}}
 root.CITY_SCENE={build};
 })(typeof window!=='undefined'?window:globalThis);
