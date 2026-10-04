@@ -207,7 +207,7 @@ function show(title,description,button){$('overlay').classList.remove('hidden','
 function start(){const fresh=ride.mode!=='paused';ride.start();sound.musicLoad();if(fresh){sound.musicReset();ghostReset();nightReset();cityNoted.clear();boltT=0;gotAt.clear();sparkLife.fill(0);mud.clear();mudT=0;dustPool.forEach(d=>d.life=0);dustBudget=0;lastDustPos=0;warnedTurns.clear();turnBlend=0;jumpCameraBlend=0;lastTrack=-100;trackDummy.scale.setScalar(0);trackDummy.updateMatrix();for(let i=0;i<900;i++)tracks.setMatrixAt(i,trackDummy.matrix);tracks.instanceMatrix.needsUpdate=true;}keys.clear();$('overlay').classList.add('hidden');$('pause').textContent='Ⅱ';notify(touchMode?'자동으로 출발! 화면 왼쪽 · 오른쪽을 눌러 방향을 바꿔요.':'↑ 또는 W로 출발! 3D 마을에서 편지 80통을 모아보세요.');syncCamera(true)}
 function pause(){if(ride.mode==='playing'){ride.pause();keys.clear();show('잠시, 쉬어가요.','마을의 바람은 기다려 줄 거예요.','이어서 달리기');$('pause').textContent='▶';sound.silence()}else if(ride.mode==='paused')start()}
 function finish(){ghostSave();keys.clear();sound.silence();if(embedded)try{parent.postMessage({dpRide:'finish',letters:ride.letters,score:ride.score,time:ride.elapsed,branch:ride.branchChoice},'*')}catch(e){}const isRecord=ride.score>bestScore;bestScore=Math.max(bestScore,ride.score);bestTime=bestTime===null?ride.elapsed:Math.min(bestTime,ride.elapsed);try{localStorage.setItem('dentphoto-record-v1',JSON.stringify({score:bestScore,time:bestTime}))}catch(e){}
-show(isRecord?'새로운 최고 기록!':'마을에 도착했어요.',`${ride.score.toLocaleString()}점 · 최고 ${bestScore.toLocaleString()}점<br>편지 ${ride.letters}통 · 아슬아슬 회피 ${ride.nearMisses}회<br>${Math.floor(ride.elapsed/60)}분 ${Math.floor(ride.elapsed%60)}초 · 최단 ${Math.floor(bestTime/60)}분 ${Math.floor(bestTime%60)}초<br>${ride.branchChoice==='cliff'?'협곡 헤어핀':'뉴욕 시내'}로 달렸어요.`,'다시 여행하기');finishCard(isRecord)}
+show(isRecord?'새로운 최고 기록!':'마을에 도착했어요.',`${ride.score.toLocaleString()}점 · 최고 ${bestScore.toLocaleString()}점<br>편지 ${ride.letters}통 · 아슬아슬 회피 ${ride.nearMisses}회<br>${Math.floor(ride.elapsed/60)}분 ${Math.floor(ride.elapsed%60)}초 · 최단 ${Math.floor(bestTime/60)}분 ${Math.floor(bestTime%60)}초<br>${ride.branchChoice==='cliff'?'협곡 헤어핀':'뉴욕 시내 · 배달 '+ride.city.delivered+'/3'}로 달렸어요.`,'다시 여행하기');finishCard(isRecord)}
 // 완주 카드: 라이더 + 무작위 명소 하나를 따로 찍어 1080×1350 PNG 로 만든다(finish-card.js). '다른 명소로'는 명소만 다시 뽑는다.
 let card=null,cardInfo=null,cardPick=-1;
 function riderCopy(){const sv=[lean.rotation.clone(),riderRig.position.clone(),riderRig.rotation.clone(),bike.visible];lean.rotation.set(0,0,0);riderRig.position.set(0,0,0);riderRig.rotation.set(0,0,0);bike.visible=true;
@@ -289,7 +289,18 @@ function cityHint(r){const pu=CITY.uOf(r.pos),nl=CITY.nextLight(r),m=d=>Math.max
  const mk=CITY.marks.find(k=>k.ub>pu);if(mk&&mk.ua-pu<80)return (mk.side<0?'↰ 좌회전':'↱ 우회전')+' '+m(Math.max(0,mk.ua-pu))+' · '+mk.to;
  if(pu<0)return '🗽 뉴욕 시내까지 '+m(-pu)+' · 입구 신호에서 멈춰요';
  return '🗽 '+(CITY.segs[CITY.segOf(pu)].name)+' · 제한속도 '+CITY.LIMIT+' km/h';}
-function hud(){const r=ride;{const ck=$('city-clock');if(cenv&&r.mode!=='finished'){ck.hidden=false;ck.textContent=`${cenv.dark>.5?'🌙':cenv.dusk>.4?'🌅':cenv.icon} ${CITY_ENV.clock(cenv.hour)} · ${cenv.seasonName}${cenv.rain>.3?' · 폭우':cenv.snow>.3?' · 폭설':''}`}else ck.hidden=true}document.body.classList.toggle('is-drifting',r.drifting);document.body.classList.toggle('is-boosting',r.mode==='playing'&&keys.has(' '));$('speed').textContent=String(Math.round(r.speed/2)).padStart(2,'0');$('needle').style.left=Math.min(100,r.speed/5.2)+'%';$('letters').textContent=r.letters;$('letters').classList.toggle('goal',r.letters>=80);$('distance').textContent=(r.pos/5000).toFixed(2)+' / '+(r.length/5000).toFixed(2)+' km';$('area').textContent=ADVENTURE.biome(r.pos,r.branchChoice).name;const next=landmarks.find(l=>l.z>r.pos);$('next-landmark').textContent=next?.name||'바닷바람 우체국';$('landmark-progress').textContent=`${r.visited.size} / 7곳 방문 · ${Math.round(((next?.z||r.length)-r.pos)/5)} m 앞`;drawProgress(r);
+function deliveryHud(r){
+ const box=$('delivery-mission');box.hidden=!(r.branchChoice==='safe'&&r.pos>=F.start&&r.pos<F.end&&r.mode==='playing');
+ document.body.classList.toggle('has-delivery-mission',!box.hidden);
+ if(box.hidden)return;
+ const d=CITY.nextDelivery(r),states=r.city.deliveries,missed=states.filter(s=>s.status==='missed').length;
+ $('delivery-title').textContent=`✉ 뉴욕 배달 ${r.city.delivered}/3`;
+ const progress=$('delivery-progress');progress.value=d?states[d.i].wait:0;progress.hidden=!d||states[d.i].wait===0;
+ $('delivery-detail').textContent=!d?(missed?`배달 종료 · 지나친 우체통 ${missed}곳`:'모두 배달했어요! 완수 보너스 +1,000점'):
+ states[d.i].wait>0?`${d.name} · 배달 중 ${Math.round(states[d.i].wait/CITY.DELIVERY_WAIT*100)}%`:
+ `${d.name} · ${Math.max(0,Math.round((CITY.sOf(d.u)-r.pos)/5))} m 앞 · ${touchMode?'오른쪽 차선에서 자동 정차':'표시 구역에서 ↓ / S로 1.5초 정차'}`;
+}
+function hud(){deliveryHud(ride);const r=ride;{const ck=$('city-clock');if(cenv&&r.mode!=='finished'){ck.hidden=false;ck.textContent=`${cenv.dark>.5?'🌙':cenv.dusk>.4?'🌅':cenv.icon} ${CITY_ENV.clock(cenv.hour)} · ${cenv.seasonName}${cenv.rain>.3?' · 폭우':cenv.snow>.3?' · 폭설':''}`}else ck.hidden=true}document.body.classList.toggle('is-drifting',r.drifting);document.body.classList.toggle('is-boosting',r.mode==='playing'&&keys.has(' '));$('speed').textContent=String(Math.round(r.speed/2)).padStart(2,'0');$('needle').style.left=Math.min(100,r.speed/5.2)+'%';$('letters').textContent=r.letters;$('letters').classList.toggle('goal',r.letters>=80);$('distance').textContent=(r.pos/5000).toFixed(2)+' / '+(r.length/5000).toFixed(2)+' km';$('area').textContent=ADVENTURE.biome(r.pos,r.branchChoice).name;const next=landmarks.find(l=>l.z>r.pos);$('next-landmark').textContent=next?.name||'바닷바람 우체국';$('landmark-progress').textContent=`${r.visited.size} / 7곳 방문 · ${Math.round(((next?.z||r.length)-r.pos)/5)} m 앞`;drawProgress(r);
 updateScore(r);$('combo').textContent=r.combo?'COMBO ×'+r.combo+' · '+r.comboTime.toFixed(1)+'s':'CLEAN RIDE';$('best-score').textContent='BEST '+bestScore.toLocaleString();
 const forkActive=r.mode==='playing'&&r.pos>=ADVENTURE.fork.chooseFrom&&r.pos<ADVENTURE.fork.start;$('fork-choice').hidden=!forkActive;
 $('safe-route').classList.toggle('selected',r.branchChoice==='safe');$('cliff-route').classList.toggle('selected',r.branchChoice==='cliff');
@@ -337,6 +348,9 @@ if(event.type==='stone')notify('돌 포장길 — 덜덜덜! 핸들을 잡으세
 if(event.type==='snowIn'){sound.impact(.4);burst(drivePoint(ride.pos,ride.player*9),50,1.4,'snow');notify('❄ 갑자기 폭설! 바퀴가 눈에 반쯤 잠겨요 — 느리고 미끄러워요.')}
 if(event.type==='snowOut')notify('눈길을 빠져나왔어요 — 다시 속도를 내요!');
 if(event.type==='land'){sound.impact(.8);burst(drivePoint(ride.pos,0),55,1.8);soundTone(90);notify('쿵! 도로 복귀 — 다시 가속하세요.');}
+if(event.type==='delivery'){sound.ding();notify('✉ '+event.name+' 배달 완료! +'+event.points+'점 ('+event.count+'/3)')}
+if(event.type==='deliveryComplete'){soundTone(1100);notify('✉ 뉴욕 배달 3곳 완료! 배달 +500 · 완수 보너스 +1,000점')}
+if(event.type==='deliveryMissed')notify(event.name+'을 지나쳤어요 · 다음 배달을 이어가세요');
 if(event.type==='cityIn')notify('🗽 뉴욕 시내! 제한속도 '+CITY.LIMIT+' km/h · 입구 신호에서 멈춰요');
 if(event.type==='cityGo'){soundTone(660);notify('🟢 초록불! 0 km/h에서 직접 출발하세요')}
 if(event.type==='jam'){honk();notify('🚗 교통 체증! 앞차가 움직여야 나아갈 수 있어요')}

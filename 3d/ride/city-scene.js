@@ -186,6 +186,19 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
  C.segs.forEach((s,k)=>{let d=k===0?27:s.dS0+12;for(const c of C.cameras)if(c.k===k&&Math.abs(warnD(c)-d)<12)d=warnD(c)+14;   // 단속 예고판과 겹치지 않게
   if(d>s.len-20)return;const p=SP(k,d,HALF+1.1);pole(p[0],p[1],3.9);panel(p[0],p[1],YC+3.55,1.5,1.9,limitMat,[-s.dir[0],-s.dir[1]])});
  for(const c of C.cameras){const s=C.segs[c.k];const w=SP(c.k,warnD(c),HALF+1.1);pole(w[0],w[1],3.8);panel(w[0],w[1],YC+3.5,2.1,1.4,camWarnMat,[-s.dir[0],-s.dir[1]])}
+ // Mission mailboxes and lane markers remain available without the downloaded model kit.
+ const deliveryMarkers=C.deliveries.map(d=>{
+  const seg=C.segs[d.k],p=SP(d.k,d.d,HALF+.9),face=[-seg.dir[0],-seg.dir[1]];
+  const mat=SM('#227ac0',{emissive:'#125185',emissiveIntensity:.3});
+  const box=new T.Mesh(new T.BoxGeometry(1.1,1.5,.9),mat);box.position.copy(WV(p[0],p[1],YC+1.15));box.rotation.y=rotOf(...seg.dir);box.castShadow=true;g.add(box);
+  pole(p[0],p[1],.55,'#223e56',.15);
+  const label=signMat('delivery'+d.i,512,192,(x,w,h)=>{x.fillStyle='#123b50';x.fillRect(0,0,w,h);x.fillStyle='#f4d35e';x.textAlign='center';x.font=`800 48px ${FONT}`;x.fillText('배달 '+(d.i+1)+' · +500',w/2,76);x.fillStyle='#fff';x.font=`600 32px ${FONT}`;x.fillText('1.5초 정차 / STOP',w/2,140)});
+  panel(p[0],p[1],YC+3.3,3.2,1.2,label,face);
+  const slot=panel(p[0],p[1],YC+1.4,.7,.12,SM('#102536'),face);const front=dirW(...face);slot.position.x+=front.x*.2;slot.position.z+=front.z*.2;
+  const marker=new T.Mesh(new T.PlaneGeometry(4.4,6),new T.MeshBasicMaterial({color:'#f4d35e',transparent:true,opacity:.38,depthWrite:false,side:T.DoubleSide}));
+  const lane=SP(d.k,d.d,LANE);marker.position.copy(WV(lane[0],lane[1],YC+.09));marker.rotation.set(-Math.PI/2,0,-rotOf(...seg.dir));g.add(marker);
+  return {d,mat,marker};
+ });
  // 입구 현수막
  {const s=C.segs[0],a=SP(0,14,-(WALK-.8)),b=SP(0,14,WALK-.8);pole(a[0],a[1],12.6,'#2b3033',.2);pole(b[0],b[1],12.6,'#2b3033',.2);
   const ban=signMat('banner',1024,200,(x,w,h)=>{const gr=x.createLinearGradient(0,0,w,0);gr.addColorStop(0,'#0b2545');gr.addColorStop(1,'#13315c');x.fillStyle=gr;x.fillRect(0,0,w,h);x.fillStyle='#f4d35e';x.textAlign='center';x.font=`900 74px ${FONT}`;x.fillText('NEW YORK CITY',w/2,96);x.fillStyle='#fff';x.font=`700 40px ${FONT}`;x.fillText('뉴욕 시내 · 신호 준수 · 제한속도 '+C.LIMIT+' km/h',w/2,160)});
@@ -260,6 +273,7 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
   crownMat.color.set(E.leaf);bulbMat.emissiveIntensity=.6+3.6*d;steam.material.opacity=.42+.25*cov;
   lampGlow.visible=d>.02;lampGlow.material.opacity=d*.85;carGlow.visible=d>.02||E.weather>.3;carGlow.material.opacity=Math.max(d,E.weather*.7)*.95;umb.visible=E.rain>.15}
  function update(time,dt,ride,cenv,bikePos){const st=ride.city;if(!st)return;
+  deliveryMarkers.forEach(({d,mat,marker})=>{const status=st.deliveries[d.i].status;const color=status==='done'?'#65d895':status==='missed'?'#7e8c98':'#f4d35e';marker.material.color.set(color);mat.color.set(status==='pending'?'#227ac0':color);marker.material.opacity=status==='pending'?.6+.12*Math.sin(time*4):.35});
   env=cenv||(DEF?DEF.env(Math.max(0,Math.min(1,C.uOf(ride.pos)/C.Lc))):null);if(env){weather(env,ride,bikePos);if(wet)wet.setEnv(env,time);if(real)real.update(env)}if(npc&&bikePos)npc.update(time,dt,bikePos,env);
   sigs.forEach(sg=>{const s=st.lights[sg.l.i].state;for(const k of ['red','yellow','green'])sg.mats[k].color.set(s===k?LAMPC[k]:'#2a2a2a');
    const lamp=sg.heads[0].children[['red','yellow','green'].indexOf(s)*2+2];if(lamp){lamp.getWorldPosition(sg.glow.position);sg.glow.material.color.set(LAMPC[s]);sg.glow.material.opacity=Math.min(1,(.45+.15*Math.sin(time*6))*(1+(env?env.dark:0)*.9));sg.glow.scale.setScalar(1.9*(1+(env?env.dark:0)*.7))}});

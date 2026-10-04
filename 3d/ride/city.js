@@ -67,7 +67,25 @@
   // 다른 길: 맞은편 차선으로 차들이 지나간다(내가 그 차선에 있으면 멈춰 준다)
   for(const k of [2,3,4,5,6,7]){const g=segs[k];for(let d=g.len+30,j=0;d>-30;d-=34+((k*7+j*13)%5)*7,j++)cars.push({id:id++,k,d,lane:-1,v:7,flow:true,taxi:(id+k)%3===0,c:(id*3+k)%7})}
   return cars}
- function newState(){return {lights:lights.map(()=>({state:'green',t:0,wait:0,done:false,ran:false})),cams:cameras.map(()=>false),cars:newCars(),jamOn:false,jamT:0,inside:false,bumpT:0,jamNoted:false}}
+ const deliveries=[{k:2,d:65,name:'7 AV 우체통'},{k:3,d:125,name:'W 57 ST 우체통'},{k:6,d:275,name:'PARK AV 우체통'}].map((d,i)=>({...d,i,u:uAt(d.k,d.d)}));
+ const DELIVERY_WAIT=1.5,DELIVERY_POINTS=500,DELIVERY_BONUS=1000;
+ const deliveryLane=r=>{const lat=latOf(uOf(r.pos),r.player);return lat>=.5&&lat<=HALF};
+ function nextDelivery(r){return deliveries.find(d=>r.city.deliveries[d.i].status==='pending')||null}
+ function deliveryAfter(r,before,dt){
+  if(r.branchChoice!=='safe')return;
+  const st=r.city;let pu=uOf(r.pos);
+  for(const d of deliveries){const state=st.deliveries[d.i];if(state.status!=='pending')continue;
+   // Touch auto-drive stops exactly at the marker; desktop riders brake themselves.
+   if(r.autoStop&&deliveryLane(r)&&uOf(before)<=d.u+.001&&pu>=d.u){r.pos=sOf(d.u);r.speed=0;pu=d.u}
+   const stopped=Math.abs(pu-d.u)<=3&&deliveryLane(r)&&r.speed<=2&&r.airY<.15&&!r.jumping&&!r.crashing;
+   state.wait=stopped?Math.min(DELIVERY_WAIT,state.wait+dt):0;
+   if(state.wait>=DELIVERY_WAIT){state.status='done';st.delivered++;r.score+=DELIVERY_POINTS;
+    r.events.push({type:'delivery',name:d.name,points:DELIVERY_POINTS,count:st.delivered});
+    if(st.delivered===deliveries.length){r.score+=DELIVERY_BONUS;r.events.push({type:'deliveryComplete',points:DELIVERY_BONUS})}
+   }else if(pu>d.u+5){state.status='missed';state.wait=0;r.events.push({type:'deliveryMissed',name:d.name})}
+  }
+ }
+ function newState(){return {deliveries:deliveries.map(()=>({status:'pending',wait:0})),delivered:0,lights:lights.map(()=>({state:'green',t:0,wait:0,done:false,ran:false})),cams:cameras.map(()=>false),cars:newCars(),jamOn:false,jamT:0,inside:false,bumpT:0,jamNoted:false}}
  const toSim=v=>v*20/1.35,toU=v=>v*1.35/20;
  function pen(r,kind,pts,extra){r.score=Math.max(0,r.score-pts);r.combo=0;r.comboTime=0;r.events.push(Object.assign({type:'penalty',kind,points:-pts},extra||{}))}
  // 지금 가장 가까운 앞쪽 신호(정지선까지 남은 u 포함)
@@ -102,6 +120,8 @@
   for(const l of lights){const s=st.lights[l.i],dist=l.u-pu;if(dist<-1||dist>140)continue;if(s.state!=='green'&&(l.gate||r.autoStop))c=Math.min(c,68.8*Math.sqrt(Math.max(0,dist-2.5)))}
   for(const m of marks)if(pu<m.ub&&pu>m.ua-70)c=Math.min(c,150+68.8*Math.sqrt(Math.max(0,m.ua-pu)));
   if(r.autoStop&&pu>0&&pu<Lc)c=Math.min(c,112);
+  const delivery=nextDelivery(r);
+  if(r.autoStop&&delivery&&deliveryLane(r)){const dist=delivery.u-pu;if(dist>=0&&dist<60)c=Math.min(c,68.8*Math.sqrt(dist))}
   return c}
  // 이동한 뒤: 앞차에 막힘 · 신호 위반 · 과속 단속
  function after(r,before,dt){const st=r.city,u0=uOf(before);let pu=uOf(r.pos);
@@ -114,10 +134,12 @@
     if(jamCar&&!st.jamNoted){st.jamNoted=true;r.events.push({type:'jam'})}}}
   if(!st.inside&&pu>=0&&pu<Lc){st.inside=true;r.events.push({type:'cityIn'})}
   if(st.inside&&pu>=Lc){st.inside=false;r.events.push({type:'cityOut'})}
+  deliveryAfter(r,before,dt);pu=uOf(r.pos);
   for(const l of lights){const s=st.lights[l.i];if(u0<l.u&&pu>=l.u){if(s.state==='red'&&!s.ran){s.ran=true;s.t=0;pen(r,'signal',200)}s.done=true}}
   for(const c of cameras){if(st.cams[c.i]||!(u0<c.u&&pu>=c.u))continue;st.cams[c.i]=true;const kmh=Math.round(r.speed/2);if(kmh>LIMIT)pen(r,'speed',150,{kmh});else r.events.push({type:'camOk',kmh})}
  }
  const api={P0,yaw0,world,local,V,segs,marks,Lc,travelScale,uOf,sOf,y,YC,latScale,localAt,pathNormal,point,segPoint,onSeg,segOf,uAt,lights,cameras,crossStreets,jam,
+  deliveries,DELIVERY_WAIT,DELIVERY_POINTS,DELIVERY_BONUS,nextDelivery,deliveryLane,
   CR,LANE,HALF,WALK,LIMIT,laneShift,latOf,newState,update,cap,after,nextLight,toSim,toU,
   inCity:(s,choice)=>choice==='safe'&&s>FK.start&&s<FK.end};
  root.CITY=api;if(typeof module!=='undefined')module.exports=api;
