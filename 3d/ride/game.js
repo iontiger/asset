@@ -92,7 +92,8 @@ const cityScene=CITY_SCENE.build({T,scene,C:CITY});
 // 블렌더 뉴욕 키트(nyc/): 받아지면 빌딩 앞면 · 차 · 가로 소품을 사실적인 모델로 바꾼다. 못 받으면 원래 시내 그대로.
 // 고화질 후처리(ride-post.js): PC 는 시내에서 GTAO · 블룸 · 색 보정을 켠다. 폰 · ?q=low 는 끈다
 let post=null;if(window.RIDE_POST&&RIDE_POST.quality()==='high')try{post=RIDE_POST.make(renderer,scene,camera,{adaptive:!/[?&]q=high/.test(location.search)})}catch(e){console.warn('후처리 없이 그려요',e)}
-if(window.NYC_ASSETS&&window.CITY_REAL)NYC_ASSETS.load(T,'nyc/',{small:!post}).then(A=>{const r=cityScene.upgrade(A,renderer);if(r)console.info('NYC kit',r.faces,'faces',r.tris,'tris',r.swapped.join(','))}).catch(e=>console.warn('NYC 키트를 못 불러와 기본 시내로 그려요',e));
+let kitReady=Promise.resolve();
+if(window.NYC_ASSETS&&window.CITY_REAL)kitReady=NYC_ASSETS.load(T,'nyc/',{small:!post}).then(A=>{const r=cityScene.upgrade(A,renderer);if(r)console.info('NYC kit',r.faces,'faces',r.tris,'tris',r.swapped.join(','))}).catch(e=>console.warn('NYC 키트를 못 불러와 기본 시내로 그려요',e));
 // 목표봉 (up and over) and the creek with its three fords — see mountain-creek.js.
 const mc=MOUNTAIN_CREEK.build({T,scene,point,height,heading,groundAt,ride});
 for(let s=82000;s<96000;s+=180){const p=point(s,40);if(!clearOfRoad(p,27))continue;const ice=ADVENTURE.snowCover(s)>.5,water=new T.Mesh(new T.PlaneGeometry(40,10),new T.MeshStandardMaterial({color:ice?'#cfe2ea':'#6aafb9',roughness:ice?.15:.3,metalness:.15,side:T.DoubleSide}));water.rotation.set(-Math.PI/2,0,heading(s));water.position.copy(p);water.position.y-=2;scene.add(water);for(let j=0;j<(ice?0:3);j++){const foam=box(scene,p.x+j*5,p.y-1.97,p.z,3,.025,.08,'#dce9d8');foam.rotation.y=heading(s)}}
@@ -301,8 +302,24 @@ else if(upcoming&&upcoming.start-r.pos<650)hint.textContent=(upcoming.side>0?'�
 else if(r.pos>ADVENTURE.fork.start&&r.pos<ADVENTURE.fork.end)hint.textContent=touchMode?'협곡 헤어핀 · 250km/h':'협곡 헤어핀 · 250km/h · ↓ 제동';else if(r.pos>MT.start-800&&r.pos<MT.end)hint.textContent=r.pos<MT.peak?'⛰ 목표봉 오르막 · 정상까지 '+Math.round((MT.peak-r.pos)/5)+' m':'⬇ 목표봉 내리막 · 속도 주의';else if(r.snow>.05)hint.textContent='❄ 폭설 · 바퀴가 눈에 잠겼어요 — 미끄러우니 핸들을 일찍 살짝';else if(r.pos>CK.start-500&&r.pos<CK.end){const f=CK.fords.find(f=>f>r.pos);hint.textContent=f&&f-r.pos<900?'〰 '+Math.round((f-r.pos)/5)+' m 앞 개울 건너기 · 흙탕물!':'개울가 · 흙탕물이 튀어요'}else hint.textContent='';
 hint.hidden=r.mode!=='playing'||!hint.textContent;
 }
+// 뉴욕 시내 들어가기 전 준비(처음 한 번): 로딩 GIF(nyc/loading.gif)를 띄우고 잠깐 멈춘 채 블렌더 키트가 오기를 기다리고(최대 15초),
+// 시내 셰이더를 미리 컴파일 · 텍스처를 미리 올려서 들어가는 순간 화면이 멈칫하지 않게 한다
+const cityPrep={state:'idle'};
+function prepCity(){cityPrep.state='loading';const el=$('city-loading'),bar=$('city-loading-bar'),msg=$('city-loading-msg'),t0=performance.now();
+ const step=(p,m)=>{bar.style.width=p+'%';if(m)msg.textContent=m},wait=ms=>new Promise(r=>setTimeout(r,ms));
+ el.hidden=false;el.style.opacity=1;step(12,'뉴욕 빌딩 · 차 모델을 받는 중');
+ (async()=>{await Promise.race([kitReady,wait(15000)]);step(55,'빌딩 · 신호등 · 사람들을 준비하는 중');
+  const vis=cityScene.group.visible;cityScene.group.visible=true;
+  try{if(renderer.compileAsync)await renderer.compileAsync(scene,camera);else renderer.compile(scene,camera)}catch(e){console.warn('시내 미리 컴파일 실패',e)}
+  step(82,'거리 불빛을 켜는 중');await wait(30);
+  try{cityScene.group.traverse(o=>{const ms=o.material?[].concat(o.material):[];for(const m of ms)for(const k of ['map','normalMap','roughnessMap','metalnessMap','aoMap','emissiveMap'])if(m[k])renderer.initTexture(m[k])});
+   if(post&&post.on)post.render(0,cityEnvNow())}catch(e){console.warn('시내 미리 그리기 실패',e)}
+  cityScene.group.visible=vis;step(100,'다 됐어요! 출발해요');await wait(Math.max(250,1400-(performance.now()-t0)));   // GIF 는 적어도 한 바퀴쯤 보여 준다
+  el.style.opacity=0;setTimeout(()=>{el.hidden=true},380);cityPrep.state='ready';last=performance.now()})()}
 let last=performance.now(),frame=0;syncCamera(true);hud();
-function tick(now){const dt=Math.min((now-last)/1000,.05);last=now;time+=dt;ride.autoStop=touchMode;if(touchMode){if(ride.mode==='playing')keys.add('arrowup');else{keys.delete('arrowup');steerTouches.clear();keys.delete('arrowleft');keys.delete('arrowright')}}ride.update(dt,keys);
+function tick(now){if(cityPrep.state==='idle'&&ride.mode==='playing'&&ride.branchChoice==='safe'&&ride.pos>F.start-6600&&ride.pos<F.end)prepCity();
+ if(cityPrep.state==='loading'){last=now;requestAnimationFrame(tick);return}   // 시내 준비 중에는 멈춰 둔다
+ const dt=Math.min((now-last)/1000,.05);last=now;time+=dt;ride.autoStop=touchMode;if(touchMode){if(ride.mode==='playing')keys.add('arrowup');else{keys.delete('arrowup');steerTouches.clear();keys.delete('arrowleft');keys.delete('arrowright')}}ride.update(dt,keys);
 if(ride.mode==='playing'&&ride.branchChoice==='cliff')ROAD_PATH.turns.forEach((t,i)=>{if(ride.pos>t.start-350&&ride.pos<t.end&&!warnedTurns.has(i)){warnedTurns.add(i);notify('↪ 170° 헤어핀! S를 눌러 드리프트하세요.')}});
 for(const event of ride.events){
 if(event.type==='nearMiss'){soundTone(880);notify('아슬아슬 회피! +'+event.points+' · COMBO ×'+event.combo)}
@@ -431,5 +448,5 @@ function updateNight(dt){const n=Math.max(ADVENTURE.nightAmt(ride.pos),cenv?cenv
   pts.geometry.attributes.position.needsUpdate=true});
  if(!cenv&&!nightNoted&&n>.3&&ride.mode==='playing'){nightNoted=true;notify('🌙 해가 졌어요 · 헤드라이트를 켜고 가로등 길을 달려요')}}
 requestAnimationFrame(tick);
-window.rideDebug={ride,start,keys,camera,renderer,canyon,cityScene,get post(){return post},scene,T,drivePoint,mud,snowfall,sound,snap:()=>{syncCamera(true);skySnap=true}};window.getGameState=()=>({mode:ride.mode,pos:ride.pos,speed:ride.speed,letters:ride.letters,energy:ride.energy,landmarksVisited:ride.visited.size,airHeight:ride.airY,crashing:ride.crashing,jumping:ride.jumping,surface:ride.surface,score:ride.score,combo:ride.combo,drifting:ride.drifting,branch:ride.branchChoice,renderer:'Three.js WebGL',drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles});
+window.rideDebug={ride,cityPrep,start,keys,camera,renderer,canyon,cityScene,get post(){return post},scene,T,drivePoint,mud,snowfall,sound,snap:()=>{syncCamera(true);skySnap=true}};window.getGameState=()=>({mode:ride.mode,pos:ride.pos,speed:ride.speed,letters:ride.letters,energy:ride.energy,landmarksVisited:ride.visited.size,airHeight:ride.airY,crashing:ride.crashing,jumping:ride.jumping,surface:ride.surface,score:ride.score,combo:ride.combo,drifting:ride.drifting,branch:ride.branchChoice,renderer:'Three.js WebGL',drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles});
 })();
