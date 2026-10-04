@@ -165,3 +165,7 @@
 .course-tooltip{position:absolute;z-index:3;left:0;bottom:22px;width:max-content;max-width:min(300px,75vw);padding:9px 12px;border-radius:8px;background:#203d31f5;color:#fffbed;font-size:11px;line-height:1.5;box-shadow:0 4px 18px #0003;pointer-events:none}
 .course-tooltip[hidden]{display:none}
 .journey{z-index:12}
+/* 폰: 배달 카드는 우체통 500 m 앞(노란 반짝임)부터만 띄우고 정차 안내를 붙인다 · 하단 가운데 점수 */
+.delivery-tip{display:none}.touch-mode .delivery-tip{display:block;margin-top:6px;font-style:normal;font-size:12px;font-weight:700;color:#ffe45c}
+.touch-mode .delivery-mission.far-delivery{display:none}
+.touch-score{display:none}.touch-mode .touch-score{display:flex;position:fixed;z-index:6;left:50%;bottom:max(16px,calc(env(safe-area-inset-bottom) + 10px));transform:translateX(-50%);align-items:baseline;gap:8px;padding:8px 20px;border:1px solid #fff;border-radius:30px;background:#fffbedee;box-shadow:0 6px 22px #34432c30;pointer-events:none}.touch-score small{font-size:9px;font-weight:600;letter-spacing:2px;color:#5f765b}.touch-score b{font-size:24px;font-weight:700;letter-spacing:-.5px;color:#344237;font-variant-numeric:tabular-nums}.touch-score.pop b{animation:tscorePop .45s ease-out}@keyframes tscorePop{40%{transform:scale(1.25);color:#d08a00}}
