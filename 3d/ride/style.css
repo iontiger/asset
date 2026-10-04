@@ -77,8 +77,8 @@
 .course-progress{width:248px;margin-top:16px}
 .cp-track{position:relative;height:4px;border-radius:3px;background:#52664730}
 .cp-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:3px;background:#48674d}
-.cp-ticks i{position:absolute;top:50%;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:#fffbed;border:1.5px solid #48674d99}
-.cp-ticks i.on{background:#c48a46;border-color:#c48a46}
+.cp-ticks .cp-stop{position:absolute;top:50%;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:#fffbed;border:1.5px solid #48674d99}
+.cp-ticks .cp-stop.on{background:#c48a46;border-color:#c48a46}
 .cp-dot{position:absolute;top:50%;left:0;width:15px;height:15px;margin:-7.5px 0 0 -7.5px;border-radius:50%;background:#e07a4f;border:3px solid #fffbed;box-shadow:0 0 0 2px #e07a4f55,0 2px 6px #0003}
 .cp-labels{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;font-size:9px;color:#627c58}
 .cp-labels #distance{font-size:10px;font-weight:600;color:var(--ink)}
@@ -151,3 +151,14 @@
 .delivery-mission.urgent-delivery::before{animation-duration:1.1s}
 @keyframes delivery-orbit{to{--delivery-angle:360deg}}
 @media(prefers-reduced-motion:reduce){.delivery-mission.near-delivery::before{animation:none}}
+
+/* Existing landmark dots double as course start points. */
+.course-progress{position:relative;z-index:12;padding-top:10px;padding-bottom:10px}
+.cp-track::before{content:'';position:absolute;inset:-14px 0}
+.cp-track.can-seek{cursor:pointer}
+.cp-ticks .cp-stop{padding:0;box-sizing:content-box;cursor:pointer;z-index:2;transition:box-shadow .15s}
+.cp-ticks .cp-stop:hover,.cp-ticks .cp-stop:focus-visible{transform:none;box-shadow:0 0 0 4px #fffbed66;background:#fffbed}
+.cp-dot,.cp-fill{pointer-events:none}
+.course-tooltip{position:absolute;z-index:3;left:0;bottom:22px;width:max-content;max-width:min(300px,75vw);padding:9px 12px;border-radius:8px;background:#203d31f5;color:#fffbed;font-size:11px;line-height:1.5;box-shadow:0 4px 18px #0003;pointer-events:none}
+.course-tooltip[hidden]{display:none}
+.journey{z-index:12}

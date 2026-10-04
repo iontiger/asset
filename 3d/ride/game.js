@@ -206,8 +206,8 @@ function penaltyFX(e){const el=$('penalty');el.innerHTML=`<b>${e.points}</b><spa
 function show(title,description,button){$('overlay').classList.remove('hidden','finished');$('finish-card').hidden=true;document.querySelector('.welcome h2').innerHTML=title;document.querySelector('.welcome p').innerHTML=description;$('start').innerHTML=button+' <span>↗</span>'}
 function start(){const fresh=ride.mode!=='paused';ride.start();sound.musicLoad();if(fresh){sound.musicReset();ghostReset();nightReset();cityNoted.clear();boltT=0;gotAt.clear();sparkLife.fill(0);mud.clear();mudT=0;dustPool.forEach(d=>d.life=0);dustBudget=0;lastDustPos=0;warnedTurns.clear();turnBlend=0;jumpCameraBlend=0;lastTrack=-100;trackDummy.scale.setScalar(0);trackDummy.updateMatrix();for(let i=0;i<900;i++)tracks.setMatrixAt(i,trackDummy.matrix);tracks.instanceMatrix.needsUpdate=true;}keys.clear();$('overlay').classList.add('hidden');$('pause').textContent='Ⅱ';notify(touchMode?'자동으로 출발! 화면 왼쪽 · 오른쪽을 눌러 방향을 바꿔요.':'↑ 또는 W로 출발! 3D 마을에서 편지 80통을 모아보세요.');syncCamera(true)}
 function pause(){if(ride.mode==='playing'){ride.pause();keys.clear();show('잠시, 쉬어가요.','마을의 바람은 기다려 줄 거예요.','이어서 달리기');$('pause').textContent='▶';sound.silence()}else if(ride.mode==='paused')start()}
-function finish(){ghostSave();keys.clear();sound.silence();if(embedded)try{parent.postMessage({dpRide:'finish',letters:ride.letters,score:ride.score,time:ride.elapsed,branch:ride.branchChoice},'*')}catch(e){}const isRecord=ride.score>bestScore;bestScore=Math.max(bestScore,ride.score);bestTime=bestTime===null?ride.elapsed:Math.min(bestTime,ride.elapsed);try{localStorage.setItem('dentphoto-record-v1',JSON.stringify({score:bestScore,time:bestTime}))}catch(e){}
-show(isRecord?'새로운 최고 기록!':'마을에 도착했어요.',`${ride.score.toLocaleString()}점 · 최고 ${bestScore.toLocaleString()}점<br>편지 ${ride.letters}통 · 아슬아슬 회피 ${ride.nearMisses}회<br>${Math.floor(ride.elapsed/60)}분 ${Math.floor(ride.elapsed%60)}초 · 최단 ${Math.floor(bestTime/60)}분 ${Math.floor(bestTime%60)}초<br>${ride.branchChoice==='cliff'?'협곡 헤어핀':'뉴욕 시내 · 배달 '+ride.city.delivered+'/3'}로 달렸어요.`,'다시 여행하기');finishCard(isRecord)}
+function finish(){ghostSave();keys.clear();sound.silence();if(embedded&&!ride.practice)try{parent.postMessage({dpRide:'finish',letters:ride.letters,score:ride.score,time:ride.elapsed,branch:ride.branchChoice},'*')}catch(e){}const isRecord=!ride.practice&&ride.score>bestScore;if(!ride.practice){bestScore=Math.max(bestScore,ride.score);bestTime=bestTime===null?ride.elapsed:Math.min(bestTime,ride.elapsed);try{localStorage.setItem('dentphoto-record-v1',JSON.stringify({score:bestScore,time:bestTime}))}catch(e){}}
+show(ride.practice?'구간 주행을 마쳤어요.':isRecord?'새로운 최고 기록!':'마을에 도착했어요.',`${ride.score.toLocaleString()}점 · 최고 ${bestScore.toLocaleString()}점<br>편지 ${ride.letters}통 · 아슬아슬 회피 ${ride.nearMisses}회<br>${Math.floor(ride.elapsed/60)}분 ${Math.floor(ride.elapsed%60)}초 · 최단 ${Math.floor(bestTime/60)}분 ${Math.floor(bestTime%60)}초<br>${ride.branchChoice==='cliff'?'협곡 헤어핀':'뉴욕 시내 · 배달 '+ride.city.delivered+'/3'}로 달렸어요.`,'다시 여행하기');finishCard(isRecord)}
 // 완주 카드: 라이더 + 무작위 명소 하나를 따로 찍어 1080×1350 PNG 로 만든다(finish-card.js). '다른 명소로'는 명소만 다시 뽑는다.
 let card=null,cardInfo=null,cardPick=-1;
 function riderCopy(){const sv=[lean.rotation.clone(),riderRig.position.clone(),riderRig.rotation.clone(),bike.visible];lean.rotation.set(0,0,0);riderRig.position.set(0,0,0);riderRig.rotation.set(0,0,0);bike.visible=true;
@@ -227,7 +227,7 @@ const SPEAKER=on=>`<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="
 $('sound').innerHTML=SPEAKER(!sound.muted);$('sound').title=sound.muted?'소리 켜기':'소리 끄기';$('sound').setAttribute('aria-label',$('sound').title);
 for(const ev of ['pointerdown','keydown'])addEventListener(ev,()=>{if(!sound.muted)sound.unlock()},{capture:true});
 $('sound').addEventListener('click',async()=>{try{const muted=await sound.toggle();$('sound').innerHTML=SPEAKER(!muted);$('sound').title=muted?'소리 켜기':'소리 끄기';$('sound').setAttribute('aria-label',muted?'소리 켜기':'소리 끄기');notify(muted?'소리를 껐어요.':'엔진 · 바람 · 노면 효과음을 켰어요.')}catch(e){notify('이 브라우저에서 소리를 시작하지 못했어요.')}});
-addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();if((k==='p'||k==='escape')&&!e.repeat)pause();else if(k==='enter'&&ride.mode!=='playing')start();else keys.add(k)});addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));addEventListener('blur',()=>{keys.clear();if(ride.mode==='playing')pause()});
+addEventListener('keydown',e=>{if(e.target.closest?.('.course-progress')&&['Enter',' '].includes(e.key))return;const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();if((k==='p'||k==='escape')&&!e.repeat)pause();else if(k==='enter'&&ride.mode!=='playing')start();else keys.add(k)});addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));addEventListener('blur',()=>{keys.clear();if(ride.mode==='playing')pause()});
 // 휴대폰(터치 화면): 자동으로 계속 가속하고, 화면 가운데를 기준으로 왼쪽을 누르면 왼쪽, 오른쪽을 누르면 오른쪽으로 방향을 튼다.
 // 네 모서리 카드와 아래 버튼은 숨기고(CSS .touch-mode), 가운데 안내 문구만 남긴다.
 let touchMode=matchMedia('(pointer:coarse)').matches&&('ontouchstart' in window||navigator.maxTouchPoints>0);
@@ -276,7 +276,30 @@ function syncCamera(snap=false,dt=.016){const p=drivePoint(ride.pos,ride.player*
 }
 const mapPoints=Array.from({length:Math.floor(ride.length/100)+1},(_,i)=>ROAD_PATH.at(i*100));const mapBounds={minX:Math.min(...mapPoints.map(p=>p.x)),maxX:Math.max(...mapPoints.map(p=>p.x)),minZ:Math.min(...mapPoints.map(p=>p.z)),maxZ:Math.max(...mapPoints.map(p=>p.z))};
 // 왼쪽 위 코스 카드의 진행 막대: 출발 → 우체국 가로선 위에 명소 점과 지금 위치
-function drawProgress(r){const box=$('cp-ticks');if(!box.childElementCount)landmarks.forEach(l=>{const t=document.createElement('i');t.title=l.name;box.appendChild(t)});const len=r.length||1;[...box.children].forEach((t,i)=>{t.style.left=Math.min(100,landmarks[i].z/len*100)+'%';t.classList.toggle('on',r.visited.has(i))});const f=Math.max(0,Math.min(1,r.pos/len))*100;$('cp-fill').style.width=f+'%';$('cp-dot').style.left=f+'%'}
+function jumpToLandmark(index){
+ if(cityPrep.state==='loading')return;
+ const l=landmarks[index],branch=ride.branchChoice;
+ ride.mode='ready';start();ride.startFrom(l.z,branch);steerTouches.clear();
+ cityScene.crossers.length=0;clearTimeout(penaltyFX.t);$('penalty').classList.remove('show');$('penalty-flash').classList.remove('show');
+ $('overlay').classList.remove('finished');hideCourseTip();cenv=cityEnvNow();skySnap=true;syncCamera(true);hud();
+ notify(l.name+'에서 새로 출발! · 구간 주행은 최고 기록에 저장되지 않아요.');
+}
+function hideCourseTip(){const tip=$('course-tooltip');if(tip)tip.hidden=true}
+function showCourseTip(i){const l=landmarks[i],tip=$('course-tooltip');tip.textContent=l.name+' · '+(l.z/5000).toFixed(2)+' km · 클릭하여 시작';tip.hidden=false;}
+function drawProgress(r){
+ const box=$('cp-ticks');
+ if(!box.childElementCount){
+  const tip=document.createElement('span');tip.id='course-tooltip';tip.className='course-tooltip';tip.role='tooltip';tip.hidden=true;$('cp-track').appendChild(tip);
+  landmarks.forEach((l,i)=>{const t=document.createElement('button');t.type='button';t.className='cp-stop';t.setAttribute('aria-label',l.name+'에서 시작');t.setAttribute('aria-describedby','course-tooltip');
+   t.addEventListener('click',e=>{e.stopPropagation();jumpToLandmark(i);t.blur()});t.addEventListener('focus',()=>showCourseTip(i));t.addEventListener('blur',hideCourseTip);box.appendChild(t)});
+  const track=$('cp-track'),nearest=e=>{const rect=track.getBoundingClientRect(),x=e.clientX-rect.left;let best=-1,dist=14;landmarks.forEach((l,i)=>{const d=Math.abs(x-l.z/r.length*rect.width);if(d<dist){dist=d;best=i}});return best};
+  track.addEventListener('pointermove',e=>{const i=nearest(e);track.classList.toggle('can-seek',i>=0);if(i>=0)showCourseTip(i);else hideCourseTip()});
+  track.addEventListener('pointerleave',()=>{track.classList.remove('can-seek');hideCourseTip()});
+  track.addEventListener('click',e=>{const i=nearest(e);if(i>=0)jumpToLandmark(i)});
+ }
+ const len=r.length||1;[...box.children].forEach((t,i)=>{t.style.left=Math.min(100,landmarks[i].z/len*100)+'%';t.classList.toggle('on',r.visited.has(i))});
+ const f=Math.max(0,Math.min(1,r.pos/len))*100;$('cp-fill').style.width=f+'%';$('cp-dot').style.left=f+'%';
+}
 // 점수판: 점수가 오를 때마다 숫자가 굴러 오르고 +N 이 떠오르며, 1000점을 넘을 때마다 화면 가운데 큰 축하
 let shownScore=0,lastScore=0;
 function scorePop(delta){const b=$('scoreboard');b.classList.remove('gain');void b.offsetWidth;b.classList.add('gain');const pop=document.createElement('div');pop.className='score-pop';pop.innerHTML='+'+delta.toLocaleString()+(ride.combo>1?'<small>×'+ride.combo+'</small>':'');b.appendChild(pop);pop.addEventListener('animationend',()=>pop.remove());setTimeout(()=>pop.remove(),2500)}
@@ -414,10 +437,11 @@ const ghost=bike.clone(true);
 {const drop=[];ghost.traverse(o=>{if(o.isLight)drop.push(o);else if(o.isMesh){o.material=ghostMat;o.castShadow=o.receiveShadow=false}});drop.forEach(o=>o.parent.remove(o))}
 ghost.visible=false;scene.add(ghost);
 function ghostReset(){ghostRec=[];ghostNext=0;ghostOn=false;ghost.visible=false;$('ghost-gap').hidden=true}
-function ghostSave(){if(ride.pos<ride.length-50||ghostRec.length<10)return;if(ghostRun&&ride.elapsed>=ghostRun.t)return;
+function ghostSave(){if(ride.practice)return;if(ride.pos<ride.length-50||ghostRec.length<10)return;if(ghostRun&&ride.elapsed>=ghostRun.t)return;
  ghostRun={t:+ride.elapsed.toFixed(2),branch:ride.branchChoice,dt:GHOST_DT,s:ghostRec};try{localStorage.setItem(GHOST_KEY,JSON.stringify(ghostRun))}catch(e){}}
 function ghostAt(t){const S=ghostRun.s,f=t/(ghostRun.dt||GHOST_DT),i=Math.floor(f);if(i>=S.length-1){const z=S[S.length-1];return [z[0],z[1]/100,z[2]/10,true]}const a=S[Math.max(0,i)],b=S[Math.max(0,i)+1],k=f-i;return [a[0]+(b[0]-a[0])*k,(a[1]+(b[1]-a[1])*k)/100,(a[2]+(b[2]-a[2])*k)/10,false]}
 function updateGhost(){
+ if(ride.practice){ghost.visible=false;$('ghost-gap').hidden=true;return}
  if(ride.mode==='playing'&&ride.elapsed>=ghostNext){ghostRec.push([Math.round(ride.pos),Math.round(ride.player*100),Math.round(ride.airY*10)]);ghostNext+=GHOST_DT}
  const J=window.ROAD_JUMPS||[4600],unlocked=ride.jumped.has(J[0])||ride.pos>J[0]+800;
  if(!ghostRun||!unlocked||ride.mode==='ready'){ghost.visible=false;$('ghost-gap').hidden=true;return}
