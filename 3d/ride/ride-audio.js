@@ -16,11 +16,26 @@ class RideSound {
  const loop=(freq)=>{const n=a.createBufferSource();n.buffer=this.noise;n.loop=true;const f=a.createBiquadFilter();f.type='bandpass';f.frequency.value=freq;f.Q.value=.5;const g=a.createGain();g.gain.value=0;n.connect(f);f.connect(g);g.connect(this.master);n.start();return g};this.wind=loop(1000);this.gravel=loop(190);}}
  async toggle(){this.init();this.muted=!this.muted;if(this.tracks)for(const m of this.tracks)m.muted=this.muted;await this.ctx.resume();this.master.gain.setTargetAtTime(this.muted?0:.45,this.ctx.currentTime,.1);return this.muted;}
  update(r,t){if(!this.ctx)return;const a=this.ctx,active=r.mode==='playing',v=active?r.speed/520:0;this.engine.frequency.setTargetAtTime(32+v*155+Math.sin(t*28)*v*4,a.currentTime,.06);this.motor.gain.setTargetAtTime(active?.045+v*.025:0,a.currentTime,.1);this.wind.gain.setTargetAtTime(v*v*.16,a.currentTime,.1);this.gravel.gain.setTargetAtTime(active&&r.airY<.1?(r.surface==='stone'?.06+Math.abs(Math.sin(t*75))*.09:.015)*v:0,a.currentTime,.03)}
- silence(){if(!this.ctx)return;for(const g of [this.motor,this.wind,this.gravel,this.rainG].filter(Boolean))g.gain.setTargetAtTime(0,this.ctx.currentTime,.04)}
+ silence(){if(!this.ctx)return;for(const g of [this.motor,this.wind,this.gravel,this.rainG,this.cityG,this.hissG].filter(Boolean))g.gain.setTargetAtTime(0,this.ctx.currentTime,.04)}
  chime(freq=660){if(!this.ctx||this.muted)return;const a=this.ctx,o=a.createOscillator(),g=a.createGain();o.frequency.value=freq;g.gain.setValueAtTime(.1,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.22);o.connect(g);g.connect(this.master);o.start();o.stop(a.currentTime+.23)}
  // 뉴욕 시내 폭우: 빗소리(고음 잡음 고리)와 번개 뒤 우르릉 천둥
  rain(v){if(!this.ctx)return;const a=this.ctx;if(!this.rainG){if(v<.01)return;const n=a.createBufferSource();n.buffer=this.noise;n.loop=true;const f=a.createBiquadFilter();f.type='highpass';f.frequency.value=1800;this.rainG=a.createGain();this.rainG.gain.value=0;n.connect(f);f.connect(this.rainG);this.rainG.connect(this.master);n.start()}
   this.rainG.gain.setTargetAtTime(v*.11,a.currentTime,.3)}
+ // 뉴욕 시내 소리: 차들 웅웅(낮은 잡음) · 가끔 경적 · 멀리서 다가왔다 멀어지는 사이렌 · 젖은 길 타이어 물소리 · 횡단보도 보행 신호음
+ city(on,wet,speed,walk,dt){if(!this.ctx)return;const a=this.ctx,t=a.currentTime;
+  if(!this.cityG){if(!on)return;const mk=(type,freq,q)=>{const n=a.createBufferSource();n.buffer=this.noise;n.loop=true;const f=a.createBiquadFilter();f.type=type;f.frequency.value=freq;f.Q.value=q;const g=a.createGain();g.gain.value=0;n.connect(f);f.connect(g);g.connect(this.master);n.start();return g};
+   this.cityG=mk('lowpass',240,.7);this.hissG=mk('bandpass',2400,.7);this.hornT=2.5;this.sirenT=14;this.chirpT=0}
+  const live=on&&!this.muted;this.cityG.gain.setTargetAtTime(live?.06:0,t,.6);this.hissG.gain.setTargetAtTime(live?wet*Math.min(1,speed/220)*.08:0,t,.15);if(!live)return;
+  if((this.hornT-=dt)<=0){this.hornT=4+Math.random()*8;this.horn(.35+Math.random()*.65)}
+  if((this.sirenT-=dt)<=0){this.sirenT=40+Math.random()*35;this.siren()}
+  if(walk&&(this.chirpT-=dt)<=0){this.chirpT=1;this.chirp()}}
+ horn(near=1){if(!this.ctx||this.muted)return;const a=this.ctx,t=a.currentTime,f=a.createBiquadFilter(),g=a.createGain();f.type='lowpass';f.frequency.value=900+near*1400;g.gain.value=0;f.connect(g);g.connect(this.master);
+  const two=Math.random()<.4,len=.18+Math.random()*.35,base=330+Math.random()*120;for(const k of [1,1.26]){const o=a.createOscillator();o.type='square';o.frequency.value=base*k;o.connect(f);o.start(t);o.stop(t+(two?len*2+.16:len)+.05)}
+  const v=.022*near;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.02);g.gain.setValueAtTime(v,t+len);g.gain.linearRampToValueAtTime(0,t+len+.03);if(two){g.gain.setValueAtTime(0,t+len+.14);g.gain.linearRampToValueAtTime(v,t+len+.16);g.gain.setValueAtTime(v,t+len*2+.14);g.gain.linearRampToValueAtTime(0,t+len*2+.17)}}
+ siren(){if(!this.ctx||this.muted)return;const a=this.ctx,t=a.currentTime,o=a.createOscillator(),f=a.createBiquadFilter(),g=a.createGain(),L=11;o.type='triangle';f.type='lowpass';f.frequency.value=1700;
+  for(let i=0;i<=L*4;i++){const at=t+i/4,dop=1.05-.1*(i/(L*4));o.frequency.setValueAtTime((700+330*Math.sin(i/4*Math.PI*2/2.4))*dop,at)}   // 웅~웅 오르내림 · 지나가며 살짝 낮아짐
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.02,t+L*.45);g.gain.linearRampToValueAtTime(0,t+L);o.connect(f);f.connect(g);g.connect(this.master);o.start(t);o.stop(t+L+.05)}
+ chirp(){if(!this.ctx||this.muted)return;const a=this.ctx,t=a.currentTime;for(const at of [0,.12]){const o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.setValueAtTime(2900,t+at);o.frequency.exponentialRampToValueAtTime(2300,t+at+.08);g.gain.setValueAtTime(0,t+at);g.gain.linearRampToValueAtTime(.03,t+at+.005);g.gain.exponentialRampToValueAtTime(.0008,t+at+.09);o.connect(g);g.connect(this.master);o.start(t+at);o.stop(t+at+.1)}}
  thunder(){if(!this.ctx||this.muted)return;const a=this.ctx,t=a.currentTime,n=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();n.buffer=this.noise;n.loop=true;f.type='lowpass';f.frequency.setValueAtTime(420,t);f.frequency.exponentialRampToValueAtTime(70,t+2.4);
   g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.42,t+.05);g.gain.exponentialRampToValueAtTime(.12,t+.5);g.gain.linearRampToValueAtTime(.2,t+.8);g.gain.exponentialRampToValueAtTime(.001,t+2.8);n.connect(f);f.connect(g);g.connect(this.master);n.start(t);n.stop(t+2.9)}
  // 편지 수집 '띠링~': 맑은 종소리 두 음 (배음 섞인 사인파) + 반짝이는 높은 음

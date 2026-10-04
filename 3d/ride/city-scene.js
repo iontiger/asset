@@ -225,7 +225,7 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
  const CARC=['#f2c12e','#1d2023','#e9e9e6','#9aa1a8','#2b3f63','#a32b2b','#2f5446','#5b5f66'];
  const hidden=new T.Matrix4().makeScale(0,0,0);
  // 신호가 빨간불일 때 가로 길로 지나가는 차(보이기만 한다)
- const crossers=[];let crossT=0;
+ const crossers=[],CSTOP=WALK+3.4;let crossN=0;
  let carKit=null;   // 블렌더 차 (city-real.js) 가 오면 그쪽으로 그린다
  function drawCars(cars,dt){let n=0;if(carKit)carKit.begin();const put=(R,F,ry,col,taxi)=>{if(n>=MAXC)return;dmy.position.copy(WV(R,F,YC+.02));dmy.rotation.set(0,ry,0);dmy.scale.set(1,1,1);dmy.updateMatrix();
    GL.forEach((o,j)=>{v3.set(o[0],o[1],o[2]).applyMatrix4(dmy.matrix);cgPos.set([v3.x,v3.y,v3.z],(n*4+j)*3)});
@@ -238,6 +238,8 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
  // 맨홀 김
  const vents=[[2,30],[3,60],[6,140],[6,260],[4,40]].map(([k,d])=>SP(k,d,-1.4)),VN=16,ventPos=new Float32Array(vents.length*VN*3),ventGeo=new T.BufferGeometry();ventGeo.setAttribute('position',new T.BufferAttribute(ventPos,3));
  const steam=new T.Points(ventGeo,new T.PointsMaterial({map:glowTex,color:'#f2f2f2',size:3.2,transparent:true,opacity:.42,depthWrite:false}));steam.frustumCulled=false;g.add(steam);
+ // 횡단보도 사람들 · 비둘기 · 증기 굴뚝 (city-life.js)
+ const life=root.CITY_LIFE?root.CITY_LIFE.build({T,g,C,SP,WV,YC,HALF,WALK,rotOf,glowTex,rnd}):null;let lifeOut={walk:false};
  for(const v of vents){const m=new T.Mesh(new T.CylinderGeometry(.7,.7,.05,16),SM('#2e3134',{metalness:.5}));m.position.copy(WV(v[0],v[1],YC+.05));g.add(m)}
  // ── 밤 · 날씨: 가로등 불빛 번짐 · 차 전조등/후미등 번짐 · 비 오면 보행자 우산
  const lampGlow=new T.Points(new T.BufferGeometry().setFromPoints(lamps.map(l=>l.bulb)),new T.PointsMaterial({map:glowTex,color:'#ffd9a0',size:4.2,transparent:true,opacity:0,depthWrite:false,blending:T.AdditiveBlending}));lampGlow.visible=false;g.add(lampGlow);
@@ -257,11 +259,21 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
   env=cenv||(DEF?DEF.env(Math.max(0,Math.min(1,C.uOf(ride.pos)/C.Lc))):null);if(env){weather(env,ride,bikePos);if(real)real.update(env)}if(npc&&bikePos)npc.update(time,dt,bikePos,env);
   sigs.forEach(sg=>{const s=st.lights[sg.l.i].state;for(const k of ['red','yellow','green'])sg.mats[k].color.set(s===k?LAMPC[k]:'#2a2a2a');
    const lamp=sg.heads[0].children[['red','yellow','green'].indexOf(s)*2+2];if(lamp){lamp.getWorldPosition(sg.glow.position);sg.glow.material.color.set(LAMPC[s]);sg.glow.material.opacity=Math.min(1,(.45+.15*Math.sin(time*6))*(1+(env?env.dark:0)*.9));sg.glow.scale.setScalar(1.9*(1+(env?env.dark:0)*.7))}});
-  // 가로 길 차량: 내 신호가 빨간불인 교차로에서만
-  crossT-=dt;for(const sg of sigs){const L=sg.l;if(L.cross===undefined||st.lights[L.i].state!=='red')continue;if(crossT<=0){crossT=1.5;const cs=C.crossStreets.find(c=>c.k===L.k&&c.d===L.cross),dir=crossers.length%2?1:-1;
-    crossers.push({k:L.k,d:L.cross,dir,p:dir>0?cs.from:cs.to,end:dir>0?cs.to:cs.from,col:(crossers.length*3)%7,taxi:crossers.length%3===0})}}
-  for(const x of crossers)x.p+=x.dir*11*dt;for(let i=crossers.length-1;i>=0;i--){const x=crossers[i];if((x.p-x.end)*x.dir>0)crossers.splice(i,1)}
+  // 가로 길 차량: 내 신호가 빨간불이면 지나가고, 아니면 가로 길 정지선 앞에 줄 서서 기다린다(바이크 가까운 교차로만)
+  const pu=C.uOf(ride.pos);
+  for(const sg of sigs){const L=sg.l;if(L.cross===undefined||Math.abs(C.uAt(L.k,L.cross)-pu)>260)continue;const red=st.lights[L.i].state==='red';
+   sg.spawnT=(sg.spawnT||0)-dt;if(sg.spawnT>0)continue;const dir=(sg.flip=!sg.flip)?1:-1;
+   if(!red&&crossers.filter(x=>x.L===L&&x.dir===dir).length>=3){sg.spawnT=.6;continue}
+   sg.spawnT=red?1.3:2.4;const cs=C.crossStreets.find(c=>c.k===L.k&&c.d===L.cross);
+   crossers.push({L,k:L.k,d:L.cross,dir,p:dir>0?cs.from:cs.to,end:dir>0?cs.to:cs.from,v:9,col:(crossN*3)%7,taxi:crossN%3===0});crossN++}
+  for(const x of crossers){const red=st.lights[x.L.i].state==='red';let target=11;
+   const toStop=-CSTOP-x.p*x.dir;   // 가로 길 정지선까지 남은 거리(지나갔으면 음수)
+   if(!red&&toStop>-.5)target=Math.min(target,Math.max(0,toStop*1.8));
+   for(const o of crossers){if(o===x||o.L!==x.L||o.dir!==x.dir)continue;const gap=(o.p-x.p)*x.dir;if(gap>0)target=Math.min(target,Math.max(0,(gap-6.6)*1.8))}
+   x.v+=Math.max(-14*dt,Math.min(6*dt,target-x.v));x.p+=x.dir*x.v*dt}
+  for(let i=crossers.length-1;i>=0;i--){const x=crossers[i];if((x.p-x.end)*x.dir>0||Math.abs(C.uAt(x.k,x.d)-pu)>300)crossers.splice(i,1)}
   drawCars(st.cars,dt);
+  if(life)lifeOut=life.update(time,dt,ride,env,bikePos);
   peds.forEach((q,i)=>{q.t+=q.v*dt;if(q.t<q.p.a||q.t>q.p.b){q.v=-q.v;q.t=Math.max(q.p.a,Math.min(q.p.b,q.t))}const p=P(q.p.s,q.t,q.lat),bob=Math.abs(Math.sin(time*7+q.ph))*.08;
    dmy.position.copy(WV(p[0],p[1],YC+.24+bob));dmy.rotation.set(0,0,0);dmy.scale.set(1,1,1);dmy.updateMatrix();pedBody.setMatrixAt(i,dmy.matrix);pedHead.setMatrixAt(i,dmy.matrix);pedLegs.setMatrixAt(i,dmy.matrix);umb.setMatrixAt(i,dmy.matrix)});pedBody.instanceMatrix.needsUpdate=pedHead.instanceMatrix.needsUpdate=pedLegs.instanceMatrix.needsUpdate=umb.instanceMatrix.needsUpdate=true;
   vents.forEach((v,j)=>{const w=C.world(v[0],v[1]);for(let i=0;i<VN;i++){const f=((time*.35+i/VN)%1),k=(j*VN+i)*3;ventPos[k]=w.x+Math.sin(i*2.3+time)*f*1.6;ventPos[k+1]=YC+.2+f*7;ventPos[k+2]=w.z+Math.cos(i*1.7+time*.8)*f*1.6}});ventGeo.attributes.position.needsUpdate=true;
@@ -272,6 +284,6 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
  let real=null;
  function upgrade(A,renderer){if(real||!root.CITY_REAL)return null;
   real=root.CITY_REAL.apply({T,g,C,WV,P,dirW,rotOf,YC,HALF,WALK,blds,boxAt,BOXTEX,asMat,walkMat,setAsBase:v=>{asBase=v},ax,af,o0,lamps,hyd,bins,mail,old,bulbMat,NIGHT,dmy,at,MAXC,carMeshes,setCarKit:k=>{carKit=k},renderer},A);return real}
- return {group:g,update,flash,upgrade,get real(){return real},buildings:blds.length,lampPos:lamps.map(l=>l.bulb),npc}}
+ return {group:g,update,flash,upgrade,get real(){return real},buildings:blds.length,lampPos:lamps.map(l=>l.bulb),npc,life,get crossers(){return crossers},get walk(){return lifeOut.walk}}}
 root.CITY_SCENE={build};
 })(typeof window!=='undefined'?window:globalThis);

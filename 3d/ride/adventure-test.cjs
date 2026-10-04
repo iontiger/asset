@@ -38,4 +38,11 @@ r=new Ride();r.start();r.items=[];r.pos=70500;r.speed=400;tick(r,['w'],60);asser
  for(const f of ['asphalt_c.jpg','asphalt_n.jpg','walk_c.jpg','walk_n.jpg','city_1k.hdr','CREDITS.md'])assert(fs.existsSync(path.join(D,f)),f);
  {const Q=require('./ride-post.js');assert(Q.Grade&&typeof Q.make==='function')}
  const R=require('./city-real.js');assert.equal(R.styleOf({glass:true,h:40,col:'#4f6b85'}),'glass');assert.equal(R.styleOf({glass:false,h:40,col:'#8f4e3d'}),'brick');assert.equal(R.styleOf({glass:false,h:40,col:'#d6cfc1'}),'lime');assert.equal(R.styleOf({glass:false,h:120,col:'#8f4e3d'}),'deco')}
-console.log('PASS: manual drift, rewards, glancing hits, near misses, perfect landing, anti-hold timing, branch lock, shorter cliff route, safe-route collision suppression, combos, restart, snow plain, rock-free canyon, NYC lights/cameras/jam, NYC 24h seasons, NYC Blender kit');
+// 살아 있는 거리: 맞은편 차도 빨간불이면 교차로 건너편 정지선 앞에서 선다 · 시내 소리 · city-life 모듈
+{const fs=require('fs'),path=require('path'),C=require('./city.js');const st=C.newState(),L=C.lights.find(l=>l.cross!==undefined);st.lights[L.i].state='red';st.lights[L.i].done=true;
+ st.cars=[{id:0,k:L.k,d:L.cross+C.WALK+4.5+2.6+30,lane:-1,v:7,flow:true}];const r={pos:C.sOf(5),speed:0,player:0,mode:'paused',city:st,events:[]};
+ for(let i=0;i<200;i++)C.update(r,.05);const c=st.cars[0];assert(c.v<.05&&c.d>=L.cross+C.WALK+4.5+2.6-1.1,'oncoming car waits at its stop line '+c.d.toFixed(1));
+ st.lights[L.i].state='green';for(let i=0;i<60;i++)C.update(r,.05);assert(st.cars[0].v>3,'and drives on when green');
+ const html=fs.readFileSync(path.join(__dirname,'index.html'),'utf8');assert(html.indexOf('city-life.js')>html.indexOf('city-npc.js')&&html.indexOf('city-life.js')<html.indexOf('city-scene.js'));
+ assert(typeof require('./city-life.js').build==='function');const au=fs.readFileSync(path.join(__dirname,'ride-audio.js'),'utf8');for(const k of ['city(','horn(','siren(','chirp('])assert(au.includes(' '+k),k)}
+console.log('PASS: manual drift, rewards, glancing hits, near misses, perfect landing, anti-hold timing, branch lock, shorter cliff route, safe-route collision suppression, combos, restart, snow plain, rock-free canyon, NYC lights/cameras/jam, NYC 24h seasons, NYC Blender kit, NYC street life');
