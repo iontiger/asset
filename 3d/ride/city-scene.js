@@ -168,8 +168,8 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
  old.hyd=inst(new T.CylinderGeometry(.22,.26,.8,8).translate(0,.4,0),SM('#c0302a',{roughness:.5}),hyd,h=>at(h.R,h.F,YC+.24));
  const PEDN=Math.min(90,pedPaths.length*3),peds=[],SHIRT=['#e76f51','#2a9d8f','#264653','#f4a261','#8d99ae','#d62828','#6a4c93','#1d3557','#ffb703','#f1faee'];
  for(let i=0;i<PEDN;i++){const p=pedPaths[i%pedPaths.length];peds.push({p,t:p.a+rnd()*(p.b-p.a),v:(rnd()<.5?-1:1)*(1+rnd()*.7),lat:p.side*(HALF+1.4+rnd()*2.4),ph:rnd()*6,c:SHIRT[Math.floor(rnd()*SHIRT.length)]})}
- const pedBody=new T.InstancedMesh(new T.CylinderGeometry(.3,.33,.8,8).translate(0,1.3,0),SM('#ffffff'),PEDN),pedHead=new T.InstancedMesh(new T.SphereGeometry(.27,10,8).translate(0,1.98,0),SM('#e0b48f'),PEDN),pedLegs=new T.InstancedMesh(mergeGeo([-.13,.13].map(x=>new T.CylinderGeometry(.12,.11,.9,6).translate(x,.45,0))),SM('#2f3540'),PEDN);
- peds.forEach((q,i)=>pedBody.setColorAt(i,cc.set(q.c)));pedBody.castShadow=pedHead.castShadow=true;g.add(pedBody,pedHead,pedLegs);
+ // 사람 그리기(city-people.js): 보도 사람 · 횡단보도 사람을 한꺼번에. 블렌더 사람 키트가 오면 실제 사람 모양으로 바뀐다.
+ const crowd=root.CITY_PEOPLE.make({T,g,max:170});peds.forEach(q=>{q.look=root.CITY_PEOPLE.look(rnd);q.look.top=q.c;q.wp=q.ph});
  // 이름표를 단 마을 친구 18명 (city-npc.js)
  const npc=root.CITY_NPC?root.CITY_NPC.build({T,g,paths:pedPaths,P,WV,YC,HALF,C}):null;
 
@@ -243,7 +243,7 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
  const vents=[[2,30],[3,60],[6,140],[6,260],[4,40]].map(([k,d])=>SP(k,d,-1.4)),VN=16,ventPos=new Float32Array(vents.length*VN*3),ventGeo=new T.BufferGeometry();ventGeo.setAttribute('position',new T.BufferAttribute(ventPos,3));
  const steam=new T.Points(ventGeo,new T.PointsMaterial({map:glowTex,color:'#f2f2f2',size:3.2,transparent:true,opacity:.42,depthWrite:false}));steam.frustumCulled=false;g.add(steam);
  // 횡단보도 사람들 · 비둘기 · 증기 굴뚝 (city-life.js)
- const life=root.CITY_LIFE?root.CITY_LIFE.build({T,g,C,SP,WV,YC,HALF,WALK,rotOf,glowTex,rnd}):null;let lifeOut={walk:false};
+ const life=root.CITY_LIFE?root.CITY_LIFE.build({T,g,C,SP,WV,YC,HALF,WALK,rotOf,glowTex,rnd,crowd}):null;let lifeOut={walk:false};
  for(const v of vents){const m=new T.Mesh(new T.CylinderGeometry(.7,.7,.05,16),SM('#2e3134',{metalness:.5}));m.position.copy(WV(v[0],v[1],YC+.05));g.add(m)}
  // ── 밤 · 날씨: 가로등 불빛 번짐 · 차 전조등/후미등 번짐 · 비 오면 보행자 우산
  const lampGlow=new T.Points(new T.BufferGeometry().setFromPoints(lamps.map(l=>l.bulb)),new T.PointsMaterial({map:glowTex,color:'#ffd9a0',size:4.2,transparent:true,opacity:0,depthWrite:false,blending:T.AdditiveBlending}));lampGlow.visible=false;g.add(lampGlow);
@@ -277,9 +277,11 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
    x.v+=Math.max(-14*dt,Math.min(6*dt,target-x.v));x.p+=x.dir*x.v*dt}
   for(let i=crossers.length-1;i>=0;i--){const x=crossers[i];if((x.p-x.end)*x.dir>0||Math.abs(C.uAt(x.k,x.d)-pu)>300)crossers.splice(i,1)}
   drawCars(st.cars,dt);
-  if(life)lifeOut=life.update(time,dt,ride,env,bikePos);if(ts)ts.update(dt,pu,env);
-  peds.forEach((q,i)=>{q.t+=q.v*dt;if(q.t<q.p.a||q.t>q.p.b){q.v=-q.v;q.t=Math.max(q.p.a,Math.min(q.p.b,q.t))}const p=P(q.p.s,q.t,q.lat),bob=Math.abs(Math.sin(time*7+q.ph))*.08;
-   dmy.position.copy(WV(p[0],p[1],YC+.24+bob));dmy.rotation.set(0,0,0);dmy.scale.set(1,1,1);dmy.updateMatrix();pedBody.setMatrixAt(i,dmy.matrix);pedHead.setMatrixAt(i,dmy.matrix);pedLegs.setMatrixAt(i,dmy.matrix);umb.setMatrixAt(i,dmy.matrix)});pedBody.instanceMatrix.needsUpdate=pedHead.instanceMatrix.needsUpdate=pedLegs.instanceMatrix.needsUpdate=umb.instanceMatrix.needsUpdate=true;
+  crowd.begin();
+  peds.forEach((q,i)=>{q.t+=q.v*dt;if(q.t<q.p.a||q.t>q.p.b){q.v=-q.v;q.t=Math.max(q.p.a,Math.min(q.p.b,q.t))}const p=P(q.p.s,q.t,q.lat),w=C.world(p[0],p[1]);q.wp+=Math.abs(q.v)*dt*3.4;
+   dmy.position.set(w.x,YC+.24,w.z);dmy.rotation.set(0,0,0);dmy.scale.set(1,1,1);dmy.updateMatrix();umb.setMatrixAt(i,dmy.matrix);
+   if(bikePos&&(w.x-bikePos.x)**2+(w.z-bikePos.z)**2>170*170)return;const sg=Math.sign(q.v);crowd.person(w.x,YC+.24,w.z,q.p.s.axis==='F'?rotOf(0,sg):rotOf(sg,0),q.wp,Math.min(1,Math.abs(q.v)/1.4),q.look)});umb.instanceMatrix.needsUpdate=true;
+  if(life)lifeOut=life.update(time,dt,ride,env,bikePos);crowd.end();if(ts)ts.update(dt,pu,env);
   vents.forEach((v,j)=>{const w=C.world(v[0],v[1]);for(let i=0;i<VN;i++){const f=((time*.35+i/VN)%1),k=(j*VN+i)*3;ventPos[k]=w.x+Math.sin(i*2.3+time)*f*1.6;ventPos[k+1]=YC+.2+f*7;ventPos[k+2]=w.z+Math.cos(i*1.7+time*.8)*f*1.6}});ventGeo.attributes.position.needsUpdate=true;
   cams.forEach(cm=>{cm.t=Math.max(0,cm.t-dt);cm.flash.material.opacity=cm.t>0?Math.min(1,cm.t*3):0;cm.led.material.color.set(Math.sin(time*5)>0?'#ff3030':'#551010')});
  }
@@ -287,7 +289,8 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
  // 블렌더 뉴욕 키트(nyc/)가 내려오면 빌딩 앞면 · 차 · 가로 소품을 사실적인 모델로 바꾼다. 못 받으면 지금 모습 그대로.
  let real=null;
  function upgrade(A,renderer){if(real||!root.CITY_REAL)return null;
+  if(root.NYC_ASSETS&&root.NYC_ASSETS.loadPeople)root.NYC_ASSETS.loadPeople(T).then(geo=>{crowd.useKit(geo);if(npc&&npc.useKit)npc.useKit(geo)}).catch(e=>console.warn('NYC people kit',e));
   real=root.CITY_REAL.apply({T,g,C,WV,P,dirW,rotOf,YC,HALF,WALK,blds,boxAt,BOXTEX,asMat,walkMat,setAsBase:v=>{asBase=v},ax,af,o0,lamps,hyd,bins,mail,old,bulbMat,NIGHT,dmy,at,MAXC,carMeshes,setCarKit:k=>{carKit=k},renderer},A);return real}
- return {group:g,update,flash,upgrade,get real(){return real},buildings:blds.length,lampPos:lamps.map(l=>l.bulb),npc,life,ts,wet,get crossers(){return crossers},get walk(){return lifeOut.walk}}}
+ return {group:g,update,flash,upgrade,get real(){return real},buildings:blds.length,lampPos:lamps.map(l=>l.bulb),npc,life,ts,wet,crowd,get crossers(){return crossers},get walk(){return lifeOut.walk}}}
 root.CITY_SCENE={build};
 })(typeof window!=='undefined'?window:globalThis);

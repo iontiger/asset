@@ -61,7 +61,15 @@
    o.traverse(m=>{if(m.isMesh)m.castShadow=true});
    const tags=[tag(T,name,role,''),tag(T,name,role,greet)],sp=new T.Sprite(new T.SpriteMaterial({map:tags[0],transparent:true,depthWrite:false,fog:false,toneMapped:false}));sp.scale.set(3.3,1.13,1);sp.position.y=3.85;sp.renderOrder=5;o.add(sp);
    o.scale.setScalar(1.1);g.add(o);
-   npcs.push({name,o,sp,tags,legs,arms,umb,path,t:path.a+(path.b-path.a)*((i*.37)%1),v:(i%2?1:-1)*(1.05+(i%4)*.12),lat:path.side*(HALF+1.5+(i%3)*.5),ph:i*1.3,near:false})});
+   npcs.push({name,o,sp,tags,legs,arms,umb,old:[o.children[0],...legs,...arms],sh,skin,path,t:path.a+(path.b-path.a)*((i*.37)%1),v:(i%2?1:-1)*(1.05+(i%4)*.12),lat:path.side*(HALF+1.5+(i%3)*.5),ph:i*1.3,near:false})});
+  // 블렌더 사람 키트(city-people.js 와 같은 부위)가 오면 몸통 · 팔다리를 실제 사람 비율로 바꾼다(동물 머리 · 이름표 · 모자는 그대로)
+  function useKit(geo){const G={};for(const k of ['torso','arm','hand','thigh','shin'])if(!(G[k]=geo(k)))return false;const CP=root.CITY_PEOPLE,J=CP.J,K=1.27,L={arm:CP.mirror(G.arm),hand:CP.mirror(G.hand),thigh:CP.mirror(G.thigh),shin:CP.mirror(G.shin)};
+   const vm=m=>{const c=m.clone();c.vertexColors=true;return c},legM=vm(legMat);
+   for(const n of npcs){for(const o of n.old)o.visible=false;const sh=vm(n.sh),sk=vm(n.skin),mk=(geo,mat)=>{const m=new T.Mesh(geo,mat);m.scale.setScalar(K);m.castShadow=true;return m};
+    n.o.add(mk(G.torso,sh));n.knees=[];
+    n.legs=[1,-1].map(sg=>{const grp=new T.Group();grp.position.set(sg*J.hip[0]*K,J.hip[1]*K,J.hip[2]*K);grp.add(mk(sg>0?G.thigh:L.thigh,legM));const kn=new T.Group();kn.position.set(J.knee[0]*K,J.knee[1]*K,J.knee[2]*K);kn.add(mk(sg>0?G.shin:L.shin,legM));grp.add(kn);n.knees.push(kn);n.o.add(grp);return grp});
+    n.arms=[-1,1].map(sg=>{const grp=new T.Group();grp.position.set(sg*J.shoulder[0]*K,J.shoulder[1]*K,J.shoulder[2]*K);grp.add(mk(sg>0?G.arm:L.arm,sh),mk(sg>0?G.hand:L.hand,sk));n.o.add(grp);return grp})}
+   return true}
   const prev=new T.Vector3();
   function update(time,dt,bikePos,env){const rain=env?env.rain>.15:false;
    for(const n of npcs){const p0=P(n.path.s,n.t,n.lat),d=WV(p0[0],p0[1],YC).distanceTo(bikePos),show=d<160;n.o.visible=show;if(!show)continue;
@@ -72,11 +80,11 @@
     n.o.position.copy(w);
     const face=stop?Math.atan2(bikePos.x-w.x,bikePos.z-w.z)+Math.PI:Math.atan2(w2.x-w.x,w2.z-w.z)+Math.PI;
     let dr=face-n.o.rotation.y;dr=Math.atan2(Math.sin(dr),Math.cos(dr));n.o.rotation.y+=dr*Math.min(1,dt*8);
-    const sw=stop?0:Math.sin(time*7+n.ph)*.5;n.legs[0].rotation.x=sw;n.legs[1].rotation.x=-sw;n.arms[0].rotation.x=-sw*.8;
+    const sw=stop?0:Math.sin(time*7+n.ph)*.5;n.legs[0].rotation.x=sw;n.legs[1].rotation.x=-sw;if(n.knees){n.knees[0].rotation.x=stop?0:-(.1+.6*Math.max(0,Math.cos(time*7+n.ph)));n.knees[1].rotation.x=stop?0:-(.1+.6*Math.max(0,-Math.cos(time*7+n.ph)))}n.arms[0].rotation.x=-sw*.8;
     n.arms[1].rotation.x=stop?Math.PI*.92:sw*.8;n.arms[1].rotation.z=stop?Math.sin(time*9+n.ph)*.35:0;
     n.o.position.y+=stop?0:Math.abs(Math.sin(time*7+n.ph))*.06;
     n.umb.visible=rain;n.sp.material.opacity=Math.max(0,Math.min(1,(110-d)/40));
     const k=Math.max(.7,Math.min(2.4,d/26));n.sp.scale.set(3.3*k,1.13*k,1);n.sp.position.y=3.6+.25*k}}   // 멀어도 이름이 읽히고 가까워도 화면을 덮지 않게
-  return {npcs,update,names:PEOPLE.map(p=>p[0])}}
+  return {npcs,update,useKit,names:PEOPLE.map(p=>p[0])}}
  root.CITY_NPC={build,PEOPLE};if(typeof module!=='undefined')module.exports={PEOPLE};
 })(typeof window!=='undefined'?window:globalThis);
