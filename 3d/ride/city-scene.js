@@ -85,7 +85,7 @@ function build({T,scene,C}){
    if(free(r0,r1,f0,f1)){const tall=rnd()<(s.main?.13:.08);addB(r0,r1,f0,f1,tall?150+rnd()*115:(s.main?26:22)+Math.pow(rnd(),1.6)*(s.main?120:95),{s,side,t0:t,t1:t+w});t+=w+.9}else t+=3}}
  for(let R=BB.r0;R<BB.r1;R+=15)for(let F=BB.f0;F<BB.f1;F+=15){const w=10+rnd()*8,d=10+rnd()*8,r0=R+rnd()*3,f0=F+rnd()*3;if(free(r0,r0+w,f0,f0+d))addB(r0,r0+w,f0,f0+d,18+Math.pow(rnd(),1.3)*105,null)}
  // 창문: 층(3.9) · 칸 격자를 월드 좌표로 그린다. 유리 빌딩은 커튼월.
- const NIGHT={value:0};   // 밤이 되면 창문마다 불이 켜진다 (CITY_ENV.dark)
+ const NIGHT={value:0};let winK=1;   // 밤이 되면 창문마다 불이 켜진다 (CITY_ENV.dark). 후처리 없는 저화질은 창 불빛을 줄인다(하얗게 날아가지 않게)
  // 블렌더 키트가 오면(city-real.js) 상자 빌딩 옆 · 뒷면에도 구운 실사 층 텍스처(석회석 / 유리 커튼월)를 칸 · 층 격자대로 입힌다
  const BOXTEX={on:{value:0},mc:{value:null},mm:{value:null},gc:{value:null},gm:{value:null}};
  const winMat=glass=>{const m=SM('#ffffff',{roughness:.82,metalness:glass?.25:.02});m.onBeforeCompile=sh=>{sh.uniforms.uNight=NIGHT;sh.uniforms.uFlatOn=BOXTEX.on;sh.uniforms.uFC=glass?BOXTEX.gc:BOXTEX.mc;sh.uniforms.uFM=glass?BOXTEX.gm:BOXTEX.mm;
@@ -254,7 +254,7 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
  const v3=new T.Vector3(),GL=[[-.68,.92,-2.5],[.68,.92,-2.5],[-.72,.95,2.5],[.72,.95,2.5]];
  const DEF=root.CITY_ENV;let env=null,asBase=1;
  let flashT=0;
- function weather(E,ride,bikePos){const d=E.dark,wet=E.wet,cov=E.snowCover;NIGHT.value=d;
+ function weather(E,ride,bikePos){const d=E.dark,wet=E.wet,cov=E.snowCover;NIGHT.value=d*winK;
   asMat.color.setScalar(asBase*(1-.42*wet));asMat.roughness=.92-.5*wet;walkMat.roughness=.9-.5*wet;
   for(const m of [asMat,walkMat,paintMat]){m.emissive.set('#dfe6ee');m.emissiveIntensity=cov*(.62-.45*d)}
   crownMat.color.set(E.leaf);bulbMat.emissiveIntensity=.6+3.6*d;steam.material.opacity=.42+.25*cov;
@@ -291,6 +291,6 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
  function upgrade(A,renderer){if(real||!root.CITY_REAL)return null;
   if(root.NYC_ASSETS&&root.NYC_ASSETS.loadPeople)root.NYC_ASSETS.loadPeople(T).then(geo=>{crowd.useKit(geo);if(npc&&npc.useKit)npc.useKit(geo)}).catch(e=>console.warn('NYC people kit',e));
   real=root.CITY_REAL.apply({T,g,C,WV,P,dirW,rotOf,YC,HALF,WALK,blds,boxAt,BOXTEX,asMat,walkMat,setAsBase:v=>{asBase=v},ax,af,o0,lamps,hyd,bins,mail,old,bulbMat,NIGHT,dmy,at,MAXC,carMeshes,setCarKit:k=>{carKit=k},renderer},A);return real}
- return {group:g,update,flash,upgrade,get real(){return real},buildings:blds.length,lampPos:lamps.map(l=>l.bulb),npc,life,ts,wet,crowd,get crossers(){return crossers},get walk(){return lifeOut.walk}}}
+ return {group:g,update,flash,upgrade,get real(){return real},buildings:blds.length,lampPos:lamps.map(l=>l.bulb),npc,life,ts,wet,crowd,setWinK:k=>{winK=k},get crossers(){return crossers},get walk(){return lifeOut.walk}}}
 root.CITY_SCENE={build};
 })(typeof window!=='undefined'?window:globalThis);
