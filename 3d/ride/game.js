@@ -330,7 +330,8 @@ if(event.type==='cityOut')notify('시내를 빠져나왔어요 — 다시 바닷
 if(event.type==='landmark')notify('⌖ '+event.name+'에 도착했어요.');if(event.type==='finish')finish()}
 if(toastTime>0){toastTime-=dt;if(toastTime<=0)$('toast').style.opacity=0}syncCamera(false,dt);
 wheels.forEach(w=>w.rotation.x-=ride.mode==='playing'?ride.speed*1.35/20*dt/.5:0);bike.visible=true;updateDust(dt);updateGroundFX(dt);updateSparkles(dt);mc.update(time,dt);
-{const safe=ride.branchChoice==='safe';cityScene.group.visible=safe&&ride.pos>F.start-6000&&ride.pos<F.end+5000;canyonGroup.visible=!(safe&&ride.pos>F.start-3000&&ride.pos<F.end+3000);cenv=cityEnvNow();if(cityScene.group.visible)cityScene.update(time,dt,ride,cenv,bike.position)}
+{const safe=ride.branchChoice==='safe';cityScene.group.visible=safe&&ride.pos>F.start-6000&&ride.pos<F.end+5000;canyonGroup.visible=!(safe&&ride.pos>F.start-3000&&ride.pos<F.end+3000);cenv=cityEnvNow();if(cityScene.group.visible)cityScene.update(time,dt,ride,cenv,bike.position);
+ sound.city&&sound.city(ride.mode==='playing'&&cityScene.group.visible&&CITY.inCity(ride.pos,ride.branchChoice),cenv?cenv.wet:0,ride.speed,cityScene.walk,dt)}
 // Riding beside the creek throws muddy water onto the lens — more when the bike runs close to the water.
 {const cx=ride.mode==='playing'&&ride.pos>CK.start-300&&ride.pos<CK.end+300?ADVENTURE.creekX(ride.pos):null;if(cx!==null&&ride.speed>60&&!ride.jumping&&!ride.crashing){const px=ride.player*9,near=Math.max(0,Math.min(1,1-(Math.abs(px-cx)-3)/10));mudT-=dt*(.35+near*1.5)*Math.min(1,ride.speed/300);if(mudT<=0){mudT=.7+Math.random()*.6;const side=Math.sign(cx-px)||1;mud.splash(.05+near*.12,side*.8);burst(drivePoint(ride.pos-6,px+side*2),8,.9,'mud')}}}
 if(ride.mode==='playing'||ride.mode==='finished')mud.update(dt);mud.draw();

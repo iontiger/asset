@@ -87,6 +87,8 @@
    for(let i=0;i<list.length;i++){const c=list[i];let target;
     if(c.parked){c.v=0;continue}
     if(c.jam){if(!st.jamOn){c.v=0;continue}target=5.8*(1-Math.cos(st.jamT*2*Math.PI/5))}else target=c.flow?7:0;
+    // 맞은편 차도 같은 신호를 본다: 교차로 건너편 정지선 앞에서 선다(이미 교차로에 들어선 차는 그대로)
+    if(c.flow)for(const l of lights){if(l.k!==c.k||l.cross===undefined||st.lights[l.i].state==='green')continue;const stopD=l.cross+WALK+4.5,m=c.d-2.6-stopD;if(m>-1&&m<60)target=Math.min(target,Math.max(0,m*1.6))}
     if(i>0){const ahead=list[i-1],gap=(ahead.d-c.d)*lane-6.4;target=Math.min(target,Math.max(0,gap*1.6))}
     // 내가 이 차 앞(진행 방향)에 같은 차선으로 있으면 기다린다
     if(me&&me.k===c.k&&Math.abs(me.lat-lane*LANE)<3){const gap=(me.d-c.d)*lane-4.4;if(gap>-2.5)target=Math.min(target,Math.max(0,(gap-1)*1.6))}
