@@ -308,7 +308,7 @@ function drawProgress(r){
 let shownScore=0,lastScore=0;
 function scorePop(delta){const b=$('scoreboard');b.classList.remove('gain');void b.offsetWidth;b.classList.add('gain');const pop=document.createElement('div');pop.className='score-pop';pop.innerHTML='+'+delta.toLocaleString()+(ride.combo>1?'<small>×'+ride.combo+'</small>':'');b.appendChild(pop);pop.addEventListener('animationend',()=>pop.remove());setTimeout(()=>pop.remove(),2500)}
 function milestoneFX(k){const b=$('scoreboard');b.classList.remove('milestone');void b.offsetWidth;b.classList.add('milestone');setTimeout(()=>b.classList.remove('milestone'),1700);document.querySelector('.milestone-fx')?.remove();const fx=document.createElement('div');fx.className='milestone-fx';const cols=['#ffcf4d','#f08a5d','#7cc6a4','#f5a6c0','#7fb4e8','#fff3c4'];let html='<div class="rays"></div><div class="big"><b>'+(k*1000).toLocaleString()+'<small>점</small></b><span>돌파!</span></div>';for(let i=0;i<46;i++){const a=i/46*Math.PI*2+Math.random()*.3,d=180+Math.random()*320;html+=`<i style="--c:${cols[i%6]};--x:${(Math.cos(a)*d)|0}px;--y:${(Math.sin(a)*d+120)|0}px;--r:${(Math.random()*900-450)|0}deg;--d:${(Math.random()*.15).toFixed(2)}s"></i>`}fx.innerHTML=html;document.body.appendChild(fx);setTimeout(()=>fx.remove(),2600);sound.fanfare()}
-function updateScore(r){if(r.score<lastScore)lastScore=shownScore=r.score;const delta=r.score-lastScore;if(delta>0){scorePop(delta);const k=Math.floor(r.score/1000);if(k>Math.floor(lastScore/1000))milestoneFX(k);lastScore=r.score}shownScore=Math.min(r.score,shownScore+Math.max(1,(r.score-shownScore)*.12));$('score').textContent=String(Math.round(shownScore)).padStart(5,'0')}
+function updateScore(r){if(r.score<lastScore)lastScore=shownScore=r.score;const delta=r.score-lastScore;if(delta>0){scorePop(delta);const k=Math.floor(r.score/1000);if(k>Math.floor(lastScore/1000))milestoneFX(k);lastScore=r.score}shownScore=Math.min(r.score,shownScore+Math.max(1,(r.score-shownScore)*.12));$('score').textContent=String(Math.round(shownScore)).padStart(5,'0');$('touch-score-num').textContent=Math.round(shownScore).toLocaleString();if(delta>0){const ts=$('touch-score');ts.classList.remove('pop');void ts.offsetWidth;ts.classList.add('pop')}}
 // 시내 안내: 신호(색 · 정지선까지 거리) > 단속 카메라 > 다음 회전 > 제한속도
 function cityHint(r){const pu=CITY.uOf(r.pos),nl=CITY.nextLight(r),m=d=>Math.max(0,Math.round(d*.9))+' m';
  if(nl&&nl.dist<90&&nl.s.state!=='green')return (nl.s.state==='red'?'🔴 빨간불':'🟡 노란불')+' · 정지선까지 '+m(nl.dist)+(nl.l.gate?' · 시내 입구 신호':touchMode?' · 자동 정차':' · ↓ 제동');
@@ -322,6 +322,7 @@ function deliveryHud(r){
  if(box.hidden){box.classList.remove('near-delivery','urgent-delivery');return;}
  const d=CITY.nextDelivery(r),states=r.city.deliveries,missed=states.filter(s=>s.status==='missed').length;
  const remaining=d?Math.max(0,(CITY.sOf(d.u)-r.pos)/5):Infinity;
+ box.classList.toggle('far-delivery',!(remaining<=500||(d&&states[d.i].wait>0)));   // 폰은 노란 반짝임부터만 보인다(.touch-mode CSS)
  box.classList.toggle('near-delivery',remaining<=500);box.classList.toggle('urgent-delivery',remaining<=100);
  $('delivery-title').textContent=`✉ 뉴욕 배달 ${r.city.delivered}/3`;
  const progress=$('delivery-progress');progress.value=d?states[d.i].wait:0;progress.hidden=!d||states[d.i].wait===0;
