@@ -89,6 +89,9 @@ function clearOfRoad(p,r=18){return routeSamples.every(q=>Math.hypot(p.x-q.x,p.z
 const canyon=CANYON.build({T,scene:canyonGroup,drivePoint:legacyDrive,ride,fork:ADVENTURE.fork,landmarks,turns:ROAD_PATH.turns});
 // 뉴욕 시내(갈림길 2 · 마을길): 빌딩 숲 · 신호등 · 단속 카메라 · 차량 — city-scene.js
 const cityScene=CITY_SCENE.build({T,scene,C:CITY});
+// 지진(3회차부터 · quake.js): 판 횟수는 이 브라우저 localStorage. ?quake=1 이면 바로 켠다
+const PLAYS_KEY='dentphoto-plays-v1';let plays=0;try{plays=Number(localStorage.getItem(PLAYS_KEY))||0}catch(e){}
+const quakeFx=QUAKE_FX.build({T,scene,ride,drivePoint,groundAt,burst:(p,n,f)=>burst(p,n,f),onOpen:f=>{if(ride.mode!=='playing')return;burst(drivePoint(f.z,0,'cliff'),40,2.2);burst(drivePoint(f.z,-8,'cliff'),18,1.6);burst(drivePoint(f.z,8,'cliff'),18,1.6);sound.impact(.9)}});
 // 블렌더 뉴욕 키트(nyc/): 받아지면 빌딩 앞면 · 차 · 가로 소품을 사실적인 모델로 바꾼다. 못 받으면 원래 시내 그대로.
 // 고화질 후처리(ride-post.js): PC 는 시내에서 GTAO · 블룸 · 색 보정을 켠다. 폰 · ?q=low 는 끈다
 let post=null;if(window.RIDE_POST&&RIDE_POST.quality()==='high')try{post=RIDE_POST.make(renderer,scene,camera,{adaptive:!/[?&]q=high/.test(location.search)})}catch(e){console.warn('후처리 없이 그려요',e)}
@@ -208,7 +211,7 @@ function penaltyFX(e){const el=$('penalty');el.innerHTML=`<b>${e.points}</b><spa
  const f=$('penalty-flash');f.className='penalty-flash '+e.kind;void f.offsetWidth;f.classList.add('show');sound.impact(.45);soundTone(196);
  if(e.kind==='speed'){const pu=CITY.uOf(ride.pos);let best=0,bd=1e9;CITY.cameras.forEach((c,i)=>{const d=Math.abs(c.u-pu);if(d<bd){bd=d;best=i}});cityScene.flash(best)}}
 function show(title,description,button){$('overlay').classList.remove('hidden','finished');$('finish-card').hidden=true;document.querySelector('.welcome h2').innerHTML=title;document.querySelector('.welcome p').innerHTML=description;$('start').innerHTML=button+' <span>↗</span>'}
-function start(){const fresh=ride.mode!=='paused';ride.start();sound.musicLoad();if(fresh){sound.musicReset();ghostReset();nightReset();cityNoted.clear();boltT=0;gotAt.clear();sparkLife.fill(0);mud.clear();mudT=0;dustPool.forEach(d=>d.life=0);dustBudget=0;lastDustPos=0;warnedTurns.clear();turnBlend=0;jumpCameraBlend=0;lastTrack=-100;trackDummy.scale.setScalar(0);trackDummy.updateMatrix();for(let i=0;i<900;i++)tracks.setMatrixAt(i,trackDummy.matrix);tracks.instanceMatrix.needsUpdate=true;}keys.clear();$('overlay').classList.add('hidden');$('pause').textContent='Ⅱ';notify(touchMode?'자동으로 출발! 화면 왼쪽 · 오른쪽을 눌러 방향을 바꿔요.':'↑ 또는 W로 출발! 3D 마을에서 편지 80통을 모아보세요.');syncCamera(true)}
+function start(){const fresh=ride.mode!=='paused';ride.start();sound.musicLoad();if(fresh){plays++;try{localStorage.setItem(PLAYS_KEY,String(plays))}catch(e){}ride.quakeOn=plays>=3||/[?&]quake=1/.test(location.search);quakeFx.reset();sound.musicReset();ghostReset();nightReset();cityNoted.clear();boltT=0;gotAt.clear();sparkLife.fill(0);mud.clear();mudT=0;dustPool.forEach(d=>d.life=0);dustBudget=0;lastDustPos=0;warnedTurns.clear();turnBlend=0;jumpCameraBlend=0;lastTrack=-100;trackDummy.scale.setScalar(0);trackDummy.updateMatrix();for(let i=0;i<900;i++)tracks.setMatrixAt(i,trackDummy.matrix);tracks.instanceMatrix.needsUpdate=true;}keys.clear();$('overlay').classList.add('hidden');$('pause').textContent='Ⅱ';notify(touchMode?'자동으로 출발! 화면 왼쪽 · 오른쪽을 눌러 방향을 바꿔요.':'↑ 또는 W로 출발! 3D 마을에서 편지 80통을 모아보세요.');syncCamera(true)}
 function pause(){if(ride.mode==='playing'){ride.pause();keys.clear();show('잠시, 쉬어가요.','마을의 바람은 기다려 줄 거예요.','이어서 달리기');$('pause').textContent='▶';sound.silence()}else if(ride.mode==='paused')start()}
 function finish(){ghostSave();keys.clear();sound.silence();if(embedded&&!ride.practice)try{parent.postMessage({dpRide:'finish',letters:ride.letters,score:ride.score,time:ride.elapsed,branch:ride.branchChoice},'*')}catch(e){}const isRecord=!ride.practice&&ride.score>bestScore;if(!ride.practice){bestScore=Math.max(bestScore,ride.score);bestTime=bestTime===null?ride.elapsed:Math.min(bestTime,ride.elapsed);try{localStorage.setItem('dentphoto-record-v1',JSON.stringify({score:bestScore,time:bestTime}))}catch(e){}}
 show(ride.practice?'구간 주행을 마쳤어요.':isRecord?'새로운 최고 기록!':'마을에 도착했어요.',`${ride.score.toLocaleString()}점 · 최고 ${bestScore.toLocaleString()}점<br>편지 ${ride.letters}통 · 아슬아슬 회피 ${ride.nearMisses}회<br>${Math.floor(ride.elapsed/60)}분 ${Math.floor(ride.elapsed%60)}초 · 최단 ${Math.floor(bestTime/60)}분 ${Math.floor(bestTime%60)}초<br>${ride.branchChoice==='cliff'?'협곡 헤어핀':'뉴욕 시내 · 배달 '+ride.city.delivered+'/3'}로 달렸어요.`,'다시 여행하기');finishCard(isRecord)}
@@ -370,6 +373,10 @@ if(event.type==='perfectLand'){soundTone(1100);burst(drivePoint(ride.pos,ride.pl
 if(event.type==='letter'){sound.ding();gotAt.set(event.id,time);const it=ride.items.find(o=>o.id===event.id);if(it)dingFX(it);notify(ride.letters===80?'✉ 편지 80통 수집 완료! 우체국으로 가요.':'✉ 따뜻한 편지 +1')}if(event.type==='hit'){sound.impact(1.5);burst(drivePoint(ride.pos,ride.player*9),85,2.6);notify('쾅! 낙석 충돌 — 공중으로 튕겨 나갔어요!')}
 if(event.type==='ford'){sound.impact(.6);burst(drivePoint(ride.pos,ride.player*9),70,2.2,'mud');mud.splash(.34,(Math.random()-.5)*1.4);notify('첨벙! 개울을 건넜어요 — 흙탕물이 앞을 가려요!')}
 if(event.type==='grass'){sound.impact(.35);burst(drivePoint(ride.pos,ride.player*9),42,1.6,true);notify('풀숲 충격! 도로 쪽으로 튕겨 나갑니다.')}
+if(event.type==='quakeIn'){sound.impact(1);notify('⚠ 지진! 땅이 갈라지고 바위가 굴러 내려와요 · 굴러오는 쪽을 피하세요')}
+if(event.type==='quakeBump'){sound.impact(.6);burst(drivePoint(event.z,ride.player*9),36,1.8)}
+if(event.type==='boulder'){sound.impact(.35);notify(event.side>0?'⚠ 오른쪽 산비탈에서 바위가 굴러와요!':'⚠ 왼쪽 산비탈에서 바위가 굴러와요!')}
+if(event.type==='quakeOut')notify('지진이 잦아들었어요. 갈림길이 다가와요.');
 if(event.type==='rockfall')notify('⚠ 앞쪽 낙석! 큰 바위를 피하세요.');
 if(event.type==='rockland'){burst(drivePoint(event.z,event.x*9),60,2);if(Math.abs(event.z-ride.pos)<650)ride.shake=Math.max(ride.shake,.35);}
 if(event.type==='jump'){soundTone(440);sound.musicStart();notify('언덕 점프! 오른쪽에서 비행을 따라갑니다.')}
@@ -390,7 +397,7 @@ if(event.type==='camOk')notify('📷 단속 카메라 통과 · '+event.kmh+' km
 if(event.type==='cityOut')notify('시내를 빠져나왔어요 — 다시 바닷가 길로!');
 if(event.type==='landmark')notify('⌖ '+event.name+'에 도착했어요.');if(event.type==='finish')finish()}
 if(toastTime>0){toastTime-=dt;if(toastTime<=0)$('toast').style.opacity=0}syncCamera(false,dt);
-wheels.forEach(w=>w.rotation.x-=ride.mode==='playing'?ride.speed*1.35/20*dt/.5:0);bike.visible=true;updateDust(dt);updateGroundFX(dt);updateSparkles(dt);mc.update(time,dt);
+wheels.forEach(w=>w.rotation.x-=ride.mode==='playing'?ride.speed*1.35/20*dt/.5:0);bike.visible=true;updateDust(dt);quakeFx.update(dt,time);sound.rumble&&sound.rumble(ride.mode==='playing'?ride.quake:0);updateGroundFX(dt);updateSparkles(dt);mc.update(time,dt);
 {const safe=ride.branchChoice==='safe';cityScene.group.visible=safe&&ride.pos>F.start-6000&&ride.pos<F.end+5000;canyonGroup.visible=!(safe&&ride.pos>F.start-3000&&ride.pos<F.end+3000);cenv=cityEnvNow();if(cityScene.group.visible){cityScene.setWinK(post&&post.on?1:.6);cityScene.update(time,dt,ride,cenv,bike.position)}
  sound.city&&sound.city(ride.mode==='playing'&&cityScene.group.visible&&CITY.inCity(ride.pos,ride.branchChoice),cenv?cenv.wet:0,ride.speed,cityScene.walk,dt)}
 const roadSpray=CITY_WET.trySplash(ride,cenv,dt,CITY);if(roadSpray)mud.splash(roadSpray.cover,roadSpray.side,'water');
@@ -497,5 +504,5 @@ requestAnimationFrame(tick);
 // 타이틀 화면(title.jpg): 처음 열면 덮고 있다가, 준비가 끝나면 하단 '시작하기'로 바로 출발한다
 {const ts=$('title-screen'),tb=$('title-start');tb.disabled=false;tb.textContent='시작하기';tb.focus();
  tb.addEventListener('click',()=>{ts.classList.add('out');setTimeout(()=>ts.remove(),500);start()},{once:true})}
-window.rideDebug={ride,cityPrep,start,keys,camera,renderer,canyon,cityScene,get post(){return post},scene,T,drivePoint,mud,snowfall,sound,snap:()=>{syncCamera(true);skySnap=true}};window.getGameState=()=>({mode:ride.mode,pos:ride.pos,speed:ride.speed,letters:ride.letters,energy:ride.energy,landmarksVisited:ride.visited.size,airHeight:ride.airY,crashing:ride.crashing,jumping:ride.jumping,surface:ride.surface,score:ride.score,combo:ride.combo,drifting:ride.drifting,branch:ride.branchChoice,renderer:'Three.js WebGL',drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles});
+window.rideDebug={ride,quakeFx,cityPrep,start,keys,camera,renderer,canyon,cityScene,get post(){return post},scene,T,drivePoint,mud,snowfall,sound,snap:()=>{syncCamera(true);skySnap=true}};window.getGameState=()=>({mode:ride.mode,pos:ride.pos,speed:ride.speed,letters:ride.letters,energy:ride.energy,landmarksVisited:ride.visited.size,airHeight:ride.airY,crashing:ride.crashing,jumping:ride.jumping,surface:ride.surface,score:ride.score,combo:ride.combo,drifting:ride.drifting,branch:ride.branchChoice,renderer:'Three.js WebGL',drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles});
 })();

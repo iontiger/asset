@@ -16,9 +16,12 @@ class RideSound {
  const loop=(freq)=>{const n=a.createBufferSource();n.buffer=this.noise;n.loop=true;const f=a.createBiquadFilter();f.type='bandpass';f.frequency.value=freq;f.Q.value=.5;const g=a.createGain();g.gain.value=0;n.connect(f);f.connect(g);g.connect(this.master);n.start();return g};this.wind=loop(1000);this.gravel=loop(190);}}
  async toggle(){this.init();this.muted=!this.muted;if(this.tracks)for(const m of this.tracks)m.muted=this.muted;await this.ctx.resume();this.master.gain.setTargetAtTime(this.muted?0:.45,this.ctx.currentTime,.1);return this.muted;}
  update(r,t){if(!this.ctx)return;const a=this.ctx,active=r.mode==='playing',v=active?r.speed/520:0;this.engine.frequency.setTargetAtTime(32+v*155+Math.sin(t*28)*v*4,a.currentTime,.06);this.motor.gain.setTargetAtTime(active?.045+v*.025:0,a.currentTime,.1);this.wind.gain.setTargetAtTime(v*v*.16,a.currentTime,.1);this.gravel.gain.setTargetAtTime(active&&r.airY<.1?(r.surface==='stone'?.06+Math.abs(Math.sin(t*75))*.09:.015)*v:0,a.currentTime,.03)}
- silence(){if(!this.ctx)return;for(const g of [this.motor,this.wind,this.gravel,this.rainG,this.cityG,this.hissG].filter(Boolean))g.gain.setTargetAtTime(0,this.ctx.currentTime,.04)}
+ silence(){if(!this.ctx)return;for(const g of [this.motor,this.wind,this.gravel,this.rainG,this.cityG,this.hissG,this.rumbleG].filter(Boolean))g.gain.setTargetAtTime(0,this.ctx.currentTime,.04)}
  chime(freq=660){if(!this.ctx||this.muted)return;const a=this.ctx,o=a.createOscillator(),g=a.createGain();o.frequency.value=freq;g.gain.setValueAtTime(.1,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.22);o.connect(g);g.connect(this.master);o.start();o.stop(a.currentTime+.23)}
  // 뉴욕 시내 폭우: 빗소리(고음 잡음 고리)와 번개 뒤 우르릉 천둥
+ // 지진 우르릉: 아주 낮은 소음이 흔들림 세기(v)만큼 커진다
+ rumble(v){if(!this.ctx)return;const a=this.ctx;if(!this.rumbleG){if(v<.01)return;const n=a.createBufferSource();n.buffer=this.noise;n.loop=true;const f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=90;f.Q.value=2.5;this.rumbleG=a.createGain();this.rumbleG.gain.value=0;n.connect(f);f.connect(this.rumbleG);this.rumbleG.connect(this.master);n.start()}
+  this.rumbleG.gain.setTargetAtTime(this.muted?0:v*.9,a.currentTime,.25)}
  rain(v){if(!this.ctx)return;const a=this.ctx;if(!this.rainG){if(v<.01)return;const n=a.createBufferSource();n.buffer=this.noise;n.loop=true;const f=a.createBiquadFilter();f.type='highpass';f.frequency.value=1800;this.rainG=a.createGain();this.rainG.gain.value=0;n.connect(f);f.connect(this.rainG);this.rainG.connect(this.master);n.start()}
   this.rainG.gain.setTargetAtTime(v*.11,a.currentTime,.3)}
  // 뉴욕 시내 소리: 차들 웅웅(낮은 잡음) · 가끔 경적 · 멀리서 다가왔다 멀어지는 사이렌 · 젖은 길 타이어 물소리 · 횡단보도 보행 신호음
