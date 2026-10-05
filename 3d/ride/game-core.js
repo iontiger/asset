@@ -22,13 +22,24 @@
     const sc=adventure.snowCover(s);if(sc>0)h*=1-.9*sc;
     return h;
   }
-  // 지진(3회차부터 · game.js 가 ride.quakeOn 을 켠다): 첫 점프 착지 뒤 ~ 갈림길 전. 땅이 갈라져 솟아오르고(FAULTS), 산비탈에서 바위가 굴러 내려온다(BOULDERS)
+  // 지진(3회차부터 · game.js 가 ride.quakeOn 을 켠다): 첫 점프 착지 뒤 ~ 갈림길 전.
+  //  RAMPS  — 길 전체가 갈라져 앞쪽이 점점 기울며 솟아오른다. 그 위를 달려 올라가 끝(절벽)에서 뛰어내린다.
+  //  BLOCKS — 길 일부가 갈라져 순식간에 솟아오른 땅덩이. 부딪히면 넘어지는 장애물.
+  //  BOULDERS — 산비탈에서 중력으로 빨라지며 굴러 내려와 길을 가로지르는 바위.
   const QUAKE={start:JUMPS[0]+900,end:adventure.fork.start-700,ramp:350};
   const quakeZone=s=>{const a=Math.min(1,Math.max(0,(s-QUAKE.start)/QUAKE.ramp)),b=Math.min(1,Math.max(0,(QUAKE.end-s)/QUAKE.ramp));return Math.min(a,b)};
   const nearJump=z=>JUMPS.some(c=>z>c-650&&z<c+750);
-  const FAULTS=[],BOULDERS=[];
-  for(let z=QUAKE.start+450,i=0;z<QUAKE.end-250;z+=1080,i++)if(!nearJump(z))FAULTS.push({i,z,h:.75+((i*37)%5)*.12,ang:(((i*53)%7)-3)*.035});
-  for(let z=QUAKE.start+850,i=0;z<QUAKE.end-150;z+=740,i++)if(!nearJump(z)&&!FAULTS.some(f=>Math.abs(f.z-z)<180))BOULDERS.push({i,id:5000+i,z,side:[1,-1,1,1,-1,-1,1,-1][i%8],radius:1.55+(i%3)*.35,lead:820+((i*71)%5)*85});
+  const ease=x=>x<=0?0:x>=1?1:x*x*(3-2*x);
+  const RAMPS=[{i:0,z0:6900,len:950,h:8},{i:1,z0:10500,len:1100,h:11},{i:2,z0:16200,len:1000,h:9.5}];
+  const inRampZone=z=>RAMPS.some(R=>z>R.z0-380&&z<R.z0+R.len+1050);
+  const rampRise=(R,pos)=>ease((pos-(R.z0-1300))/(R.len*.8+1300));                 // 다가갈수록 · 올라갈수록 더 기운다
+  const rampLift=(R,s,pos)=>s<R.z0||s>R.z0+R.len?0:R.h*rampRise(R,pos)*Math.pow((s-R.z0)/R.len,1.25);
+  const BLOCK_SPANS=[[.1,1.2],[-1.2,-.1],[-.5,.5],[-1.2,-.3],[.3,1.2],[-.15,.85],[-.85,.15]];
+  const BLOCKS=[];
+  for(let z=QUAKE.start+380,i=0;z<QUAKE.end-200;z+=470+((i*131)%4)*50,i++)if(!nearJump(z)&&!inRampZone(z)){const [x0,x1]=BLOCK_SPANS[BLOCKS.length%BLOCK_SPANS.length];BLOCKS.push({i:BLOCKS.length,id:6000+BLOCKS.length,z,x0,x1,h:2.6+((i*37)%5)*.4,len:60})}
+  const BOULDERS=[];
+  for(let z=QUAKE.start+600,i=0;z<QUAKE.end-150;z+=330,i++)if(!nearJump(z)&&!inRampZone(z)&&!BLOCKS.some(k=>Math.abs(k.z-z)<160)&&!BOULDERS.some(o=>z-o.z<600))BOULDERS.push({i,id:5000+i,z,side:[1,-1,1,1,-1,-1,1,-1][i%8],radius:1.55+(i%3)*.35,lead:820+((i*71)%5)*85});
+  const BLOCK_POP=650,BLOCK_RISE=.35;   // 이만큼 앞(s)에서 솟기 시작해 0.35초 만에 다 솟는다
   const BOULDER_G=1.3,BOULDER_VMAX=2.5,BOULDER_X0=2.35,BOULDER_STOP=2.7;
   const surfaceAt=s=>COBBLES.some(([a,b])=>s>=a&&s<=b)?'stone':'dirt';
   class Ride {
@@ -37,7 +48,7 @@
       for(let i=0;i<160;i++){const z=1050+i*645;if(adventure.creek.fords.some(f=>Math.abs(z-f)<450))continue;if(z>adventure.fork.start-400&&z<adventure.fork.end+400)continue;   // 협곡(갈림길) 구간에는 낙석이 없다
         this.items.push({z,x:Math.sin(i*3.7+.8)*.78,type:'rock',id:1000+i,radius:2.1+(i%3)*.45})}
     }
-    reset(){this.practice=false;this.pos=0;this.speed=0;this.player=0;this.steer=0;this.energy=100;this.letters=0;this.elapsed=0;this.hit=0;this.boost=false;this.airY=0;this.airV=0;this.crashing=false;this.jumping=false;this.flightY=0;this.flightAge=0;this.jumped=new Set();this.surface='dirt';this.crashAge=0;this.grassCooldown=0;this.shake=0;this.falling=new Map();this.visited=new Set();this.collected=new Set();this.events=[];this.score=0;this.combo=0;this.comboTime=0;this.nearMisses=0;this.driftCharge=0;this.drifting=false;this.drifted=new Set();this.rockPassed=new Set();this.branchChoice='cliff';this.snow=0;this.latV=0;this.grassBounce=0;this.slip=0;this.inSnow=false;this.quake=0;this.quakeIn=false;this.boulders=new Map();this.landingPress=-99;this.wasLandingKey=false;this.bonusTime=0;this.city=city.newState();}
+    reset(){this.practice=false;this.pos=0;this.speed=0;this.player=0;this.steer=0;this.energy=100;this.letters=0;this.elapsed=0;this.hit=0;this.boost=false;this.airY=0;this.airV=0;this.crashing=false;this.jumping=false;this.flightY=0;this.flightAge=0;this.jumped=new Set();this.surface='dirt';this.crashAge=0;this.grassCooldown=0;this.shake=0;this.falling=new Map();this.visited=new Set();this.collected=new Set();this.events=[];this.score=0;this.combo=0;this.comboTime=0;this.nearMisses=0;this.driftCharge=0;this.drifting=false;this.drifted=new Set();this.rockPassed=new Set();this.branchChoice='cliff';this.snow=0;this.latV=0;this.grassBounce=0;this.slip=0;this.inSnow=false;this.quake=0;this.quakeIn=false;this.boulders=new Map();this.blocks=new Map();this.rampsSeen=new Set();this.liftY=0;this.liftSlope=0;this.landingPress=-99;this.wasLandingKey=false;this.bonusTime=0;this.city=city.newState();}
     reward(base,type){this.combo=Math.min(5,this.combo+1);this.comboTime=8;const points=base*this.combo;this.score+=points;this.events.push({type,points,combo:this.combo});}
     chooseBranch(choice){if(this.pos<adventure.fork.start&&['safe','cliff'].includes(choice)){this.branchChoice=choice;return true}return false}
     start(){if(this.mode!=='paused')this.reset();this.mode='playing'}
@@ -116,8 +127,23 @@
       if(this.quakeOn){const zq=quakeZone(this.pos);this.quake=zq*(.4+.6*Math.max(0,Math.sin(this.elapsed*1.25))**2);
         if(zq>.3&&!this.quakeIn){this.quakeIn=true;this.events.push({type:'quakeIn'})}else if(this.quakeIn&&this.pos>QUAKE.end){this.quakeIn=false;this.events.push({type:'quakeOut'})}
         if(this.quake>0){this.shake=Math.max(this.shake,this.quake*.42);if(!this.jumping&&!this.crashing)this.player+=Math.sin(this.elapsed*9.7)*this.quake*.16*dt}
-        // 솟아오른 땅(단층)을 넘으면 덜컹 튀어 오른다
-        for(const f of FAULTS)if(before<f.z&&this.pos>=f.z&&!this.jumping&&!this.crashing){this.airV=Math.max(this.airV,4.2+f.h*2.2+this.speed*.004);this.speed*=.9;this.shake=Math.max(this.shake,.75);this.events.push({type:'quakeBump',z:f.z})}
+        // 솟는 땅: 위에 있는 동안 바이크 높이(liftY)를 올리고, 끝을 넘으면 그 높이에서 뛰어내린다(착지는 점프와 같다 · E 타이밍 보너스)
+        this.liftY=0;this.liftSlope=0;
+        for(const R of RAMPS){const end=R.z0+R.len;
+          if(!this.rampsSeen.has(R.i)&&this.pos>R.z0-1300&&this.pos<end){this.rampsSeen.add(R.i);this.events.push({type:'quakeRamp',z:R.z0})}
+          if(this.pos>=R.z0&&this.pos<end&&!this.jumping&&!this.crashing){this.liftY=rampLift(R,this.pos,this.pos);this.liftSlope=(rampLift(R,Math.min(end,this.pos+10),this.pos)-rampLift(R,Math.max(R.z0,this.pos-10),this.pos))/1}
+          if(before<end&&this.pos>=end&&!this.jumping&&!this.crashing){const h=rampLift(R,end,this.pos);this.jumping=true;this.flightAge=0;this.airV=2.2+this.speed*.007;this.flightY=roadHeight(this.pos)+h+.15;this.airY=h+.15;this.liftY=0;this.events.push({type:'quakeLaunch',h})}}
+        // 솟는 땅덩이: 앞쪽 BLOCK_POP 안에 들어오면 순식간에 솟아오른다. 솟은 뒤에는 부딪히면 넘어진다
+        for(const k of BLOCKS){let st=this.blocks.get(k.id);
+          if(!st){if(k.z>this.pos&&k.z-this.pos<BLOCK_POP){st={t:0};this.blocks.set(k.id,st);this.events.push({type:'quakeBlock',z:k.z})}continue}
+          st.t+=dt;const up=Math.min(1,st.t/BLOCK_RISE);if(up<.5||this.rockPassed.has(k.id)||this.crashing||this.hit>0)continue;
+          if(this.jumping&&this.airY>k.h*up*.9)continue;
+          if(!(before<=k.z+k.len/2&&this.pos>=k.z-k.len/2))continue;
+          const pad=.04,inside=this.player>k.x0-pad&&this.player<k.x1+pad,edge=Math.min(Math.abs(this.player-k.x0),Math.abs(this.player-k.x1));
+          if(!inside){if(edge*9<1.4&&this.speed>150&&this.pos>=k.z){this.rockPassed.add(k.id);this.nearMisses++;this.energy=Math.min(100,this.energy+12);this.reward(200,'nearMiss')}continue}
+          this.rockPassed.add(k.id);
+          if(edge<.07){this.speed*=.86;this.shake=.35;this.hit=.4;this.player+=(this.player-(k.x0+k.x1)/2>0?1:-1)*.1;this.events.push({type:'graze'});continue}
+          this.combo=0;this.comboTime=0;this.drifting=false;this.speed*=.4;this.hit=3;this.crashing=true;this.jumping=false;this.crashAge=0;this.airV=13;this.airY=.2;this.boost=false;this.shake=1.5;this.events.push({type:'hit',block:true});break}
         // 굴러 내려오는 바위: 앞쪽 lead 안에 들어오면 산비탈(BOULDER_X0)에서 출발해 중력으로 빨라지며 길을 가로지른다
         for(const b of BOULDERS){let st=this.boulders.get(b.id);
           if(!st){if(b.z>this.pos&&b.z-this.pos<b.lead){st={t:0,x:b.side*BOULDER_X0,v:0,roll:0};this.boulders.set(b.id,st);this.events.push({type:'boulder',id:b.id,z:b.z,side:b.side})}continue}
@@ -131,7 +157,7 @@
           this.rockPassed.add(b.id);
           if(dx>b.radius*.68){this.speed*=.86;this.shake=.35;this.hit=.4;this.player+=Math.sign(this.player-st.x)*.08;this.events.push({type:'graze'});continue}
           this.combo=0;this.comboTime=0;this.drifting=false;this.speed*=.4;this.hit=3;this.crashing=true;this.jumping=false;this.crashAge=0;this.airV=13;this.airY=.2;this.boost=false;this.shake=1.5;this.events.push({type:'hit',boulder:true});break}
-      }else this.quake=0;
+      }else{this.quake=0;this.liftY=0;this.liftSlope=0}
       const surface=inCity?'asphalt':surfaceAt(this.pos);if(surface!==this.surface){this.surface=surface;if(surface==='stone')this.events.push({type:'stone'})}
       if(this.jumping){this.flightAge+=dt;this.airV-=16*dt;this.flightY+=this.airV*dt;this.airY=Math.max(0,this.flightY-roadHeight(this.pos));
         if(this.airY<=0&&this.airV<0){this.jumping=false;this.airV=0;this.shake=.65;if(this.elapsed-this.landingPress<=.3){this.shake=.15;this.energy=Math.min(100,this.energy+20);this.speed=Math.min(520,this.speed+100);this.bonusTime=1.5;this.reward(500,'perfectLand')}else this.events.push({type:'jumpLand'})}
@@ -141,6 +167,7 @@
       }
       for(const o of this.items){
         if(this.jumping&&(o.type==='letter'?this.airY>2:this.airY>o.radius*1.7))continue;
+        if(this.liftY>2&&(o.type==='letter'||this.liftY>o.radius*1.5))continue;   // 솟은 땅 위에서는 길바닥의 편지 · 바위에 닿지 않는다
         const isRock=o.type==='rock';
         if(isRock&&this.pos>=adventure.fork.start&&this.pos<adventure.fork.end&&this.branchChoice==='safe')continue;
         if(o.type==='letter'&&this.branchChoice==='safe'&&o.z>adventure.fork.start&&o.z<adventure.fork.end)continue; // 뉴욕 시내에는 편지가 없다
@@ -158,6 +185,6 @@
       if(this.pos>=this.length){this.mode='finished';this.boost=false;this.events.push({type:'finish'})}
     }
   }
-  root.RIDE_QUAKE={QUAKE,FAULTS,BOULDERS,quakeZone};root.ROAD_HEIGHT=roadHeight;root.ROAD_JUMPS=JUMPS;root.ROAD_COBBLES=COBBLES;root.Ride=Ride;root.RIDE_LANDMARKS=LANDMARKS;
-  if(typeof module!=='undefined')module.exports={Ride,LANDMARKS,JUMPS,COBBLES,roadHeight,surfaceAt,QUAKE,FAULTS,BOULDERS,quakeZone};
+  root.RIDE_QUAKE={QUAKE,RAMPS,BLOCKS,BOULDERS,quakeZone,rampLift,rampRise,BLOCK_POP,BLOCK_RISE};root.ROAD_HEIGHT=roadHeight;root.ROAD_JUMPS=JUMPS;root.ROAD_COBBLES=COBBLES;root.Ride=Ride;root.RIDE_LANDMARKS=LANDMARKS;
+  if(typeof module!=='undefined')module.exports={Ride,LANDMARKS,JUMPS,COBBLES,roadHeight,surfaceAt,QUAKE,RAMPS,BLOCKS,BOULDERS,quakeZone,rampLift,rampRise,BLOCK_POP,BLOCK_RISE};
 })(typeof window!=='undefined'?window:globalThis);

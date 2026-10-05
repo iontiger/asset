@@ -58,13 +58,20 @@ r=new Ride();r.start();r.items=[];r.pos=70500;r.speed=400;tick(r,['w'],60);asser
   while(t<6&&!hit){g.update(1/60,new Set(['arrowup',into]));t+=1/60;hit=g.events.some(e=>e.type==='grass');g.events.length=0}assert(hit,'grass hit '+start);
   let again=0;for(let k=0;k<240;k++){g.update(1/60,new Set(['arrowup']));if(g.events.some(e=>e.type==='grass'))again++;g.events.length=0}
   assert.equal(again,0,'no repeated grass hits after release '+start+' '+side);assert(Math.abs(g.player)<.75,'bounced toward the road center '+start+' '+side+' '+g.player)}}
-{// 지진(3회차부터): 기본은 꺼져 있고, 켜면 첫 점프 뒤 ~ 갈림길 전에 단층 덜컹 · 굴러오는 바위가 생기며, 잘 피하면 부딪히지 않는다
- const G=require('./game-core.js');assert(G.QUAKE.start>G.JUMPS[0]+620&&G.QUAKE.end<A.fork.start,'quake zone between first jump and fork');assert(G.FAULTS.length>=8&&G.BOULDERS.length>=8);
- const run=(on,smart)=>{const q=new Ride();q.start();q.quakeOn=on;q.items=q.items.filter(o=>o.type!=='rock');q.pos=G.QUAKE.start-600;q.speed=380;const ev={};let t=0,vmax=0;
+{// 지진(3회차부터): 기본은 꺼져 있고, 켜면 첫 점프 뒤 ~ 갈림길 전에 길이 기울며 솟아(끝에서 뛰어내림) · 땅덩이가 솟아 길 일부를 막고 · 바위가 굴러오며, 잘 피하면 부딪히지 않는다
+ const G=require('./game-core.js');assert(G.QUAKE.start>G.JUMPS[0]+620&&G.QUAKE.end<A.fork.start,'quake zone between first jump and fork');assert(G.RAMPS.length>=3&&G.BLOCKS.length>=8&&G.BOULDERS.length>=6);
+ for(const R of G.RAMPS)assert(R.z0>G.QUAKE.start&&R.z0+R.len<G.QUAKE.end,'ramp inside quake zone');
+ for(const k of G.BLOCKS)assert(k.x0>-1.25&&k.x1<1.25&&(k.x0>-1||k.x1<1),'block leaves a gap '+k.z);
+ const run=(on,smart)=>{const q=new Ride();q.start();q.quakeOn=on;q.items=q.items.filter(o=>o.type!=='rock');q.pos=G.QUAKE.start-600;q.speed=380;const ev={};let t=0,vmax=0,lift=0,maxSlope=0;
   const pred=(st,b,T)=>{let x=st.x,v=st.v;for(let k=0;k<T;k+=1/60){if(x*b.side>-2.7){v=Math.min(2.5,v+1.3/60);x-=b.side*v/60}}return x};
-  while(q.pos<G.QUAKE.end+400&&t<120){let k=[];if(smart)for(const b of G.BOULDERS){const st=q.boulders.get(b.id);if(!st||b.z<q.pos-30||b.z-q.pos>900)continue;const px=pred(st,b,(b.z-q.pos)/(q.speed*1.35+1)),tg=Math.abs(px)>1.6?0:px>0?Math.max(-.9,px-.75):Math.min(.9,px+.75);if(q.player<tg-.06)k=['arrowright'];else if(q.player>tg+.06)k=['arrowleft'];break}
-   q.update(1/60,new Set(['arrowup',...k]));t+=1/60;for(const st of q.boulders.values())vmax=Math.max(vmax,st.v);for(const e of q.events)ev[e.type]=(ev[e.type]||0)+1}return {ev,vmax}};
- const off=run(false,false);assert(!off.ev.quakeIn&&!off.ev.boulder&&!off.ev.quakeBump,'no quake by default');
- const on=run(true,false);assert.equal(on.ev.quakeIn,1);assert.equal(on.ev.quakeOut,1);assert.equal(on.ev.boulder,G.BOULDERS.length);assert(on.ev.quakeBump>=8,'fault bumps');assert(on.vmax>2,'boulders accelerate under gravity');
- const smart=run(true,true);assert(!smart.ev.hit,'boulders can be dodged')}
+  while(q.pos<G.QUAKE.end+400&&t<120){let k=[];
+   if(smart){let best=null;
+    for(const b of G.BLOCKS){const d=b.z-q.pos;if(d<-40||d>900)continue;const g=[[-1.1,b.x0-.12],[b.x1+.12,1.1]].filter(g=>g[1]-g[0]>.05).sort((A,B)=>Math.abs((A[0]+A[1])/2-q.player)-Math.abs((B[0]+B[1])/2-q.player))[0];best={d,tg:Math.max(g[0],Math.min(g[1],q.player))};break}
+    for(const b of G.BOULDERS){const st=q.boulders.get(b.id);if(!st||b.z<q.pos-30||b.z-q.pos>900)continue;const d=b.z-q.pos;if(best&&best.d<d)break;const px=pred(st,b,d/(q.speed*1.35+1));best={d,tg:Math.abs(px)>1.6?0:px>0?Math.max(-.9,px-.75):Math.min(.9,px+.75)};break}
+    if(best)k=q.player<best.tg-.05?['arrowright']:q.player>best.tg+.05?['arrowleft']:[];if(q.jumping&&q.airV<0&&q.airY<3)k.push('e')}
+   q.update(1/60,new Set(['arrowup',...k]));t+=1/60;lift=Math.max(lift,q.liftY);maxSlope=Math.max(maxSlope,q.liftSlope);for(const st of q.boulders.values())vmax=Math.max(vmax,st.v);for(const e of q.events)ev[e.type]=(ev[e.type]||0)+1}return {ev,vmax,lift,maxSlope}};
+ const off=run(false,false);assert(!off.ev.quakeIn&&!off.ev.boulder&&!off.ev.quakeRamp&&!off.ev.quakeBlock&&off.lift===0,'no quake by default');
+ const on=run(true,false);assert.equal(on.ev.quakeIn,1);assert.equal(on.ev.quakeOut,1);assert.equal(on.ev.boulder,G.BOULDERS.length);assert(on.vmax>2,'boulders accelerate under gravity');
+ assert.equal(on.ev.quakeRamp,G.RAMPS.length);assert.equal(on.ev.quakeLaunch,G.RAMPS.length,'every ramp ends in a jump down');assert.equal(on.ev.quakeBlock,G.BLOCKS.length);assert(on.lift>7&&on.maxSlope>.1,'ground rises steeply under the bike');assert(on.ev.hit>=1,'driving straight hits a risen block');
+ const smart=run(true,true);assert(!smart.ev.hit,'blocks and boulders can be dodged');assert.equal(smart.ev.perfectLand>=G.RAMPS.length,true,'ramp jumps land with E timing')}
 console.log('PASS: manual drift, rewards, glancing hits, near misses, perfect landing, anti-hold timing, branch lock, shorter cliff route, safe-route collision suppression, combos, restart, snow plain, rock-free canyon, NYC lights/cameras/jam, NYC 24h seasons, NYC Blender kit, NYC street life, Times Square, puddles, people kit, phone textures, city loading GIF, grass bounce, earthquake');
