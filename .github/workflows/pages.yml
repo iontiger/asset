@@ -2,6 +2,7 @@
 # 매시 정각 무렵에는 네이버페이 증권 AI 시황 브리핑의 최신 글을 briefing.json 으로 받아 둔다 (휴대폰 투자 탭의 카드 뉴스).
 # 연금 정기투자 기록용 ETF 10:30 가격은 rb1030/ 으로 (.github/scripts/etf_1030.py).
 # 스토캐스틱 매수/매도 신호 종목은 stoch.json 으로 (휴대폰 투자 탭 신호 카드 · PC 투자 정보 화면과 차트용 일봉, .github/scripts/stoch_screen.py).
+# 포트폴리오 투자 카드용 미국 ETF 종가 · 원/달러 환율은 portfolio.json 으로 (.github/scripts/portfolio.py).
 # → https://iontiger.github.io/asset/
 # 처음 한 번: 저장소 Settings → Pages → Source 를 "GitHub Actions" 로 바꿔야 한다.
 name: Deploy to GitHub Pages
@@ -31,7 +32,7 @@ jobs:
     if: github.event_name == 'schedule' || github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
     outputs:
-      deploy: ${{ steps.briefing.outputs.deploy == 'true' || steps.stoch.outputs.changed == 'true' || steps.rbcache.outputs.cache-hit != 'true' || steps.rb1030.outputs.changed == 'true' }}
+      deploy: ${{ steps.briefing.outputs.deploy == 'true' || steps.stoch.outputs.changed == 'true' || steps.rbcache.outputs.cache-hit != 'true' || steps.rb1030.outputs.changed == 'true' || steps.portfolio.outputs.changed == 'true' }}
     steps:
       - uses: actions/checkout@v4
       - id: pages
@@ -100,7 +101,12 @@ jobs:
         id: rb1030
         run: python3 .github/scripts/etf_1030.py _site/rb1030 "${{ steps.pages.outputs.base_url }}"
 
-      - if: steps.briefing.outputs.deploy == 'true' || steps.stoch.outputs.changed == 'true' || steps.rbcache.outputs.cache-hit != 'true' || steps.rb1030.outputs.changed == 'true'
+      # 투자 탭 포트폴리오 투자 카드 — 미국 ETF 일별 종가(배당 포함 수정종가) · 원/달러 환율. 6시간마다 새로 받고, 못 받으면 사이트 것을 그대로 쓴다
+      - name: 포트폴리오 시세 받기
+        id: portfolio
+        run: python3 .github/scripts/portfolio.py _site --site "${{ steps.pages.outputs.base_url }}"
+
+      - if: steps.briefing.outputs.deploy == 'true' || steps.stoch.outputs.changed == 'true' || steps.rbcache.outputs.cache-hit != 'true' || steps.rb1030.outputs.changed == 'true' || steps.portfolio.outputs.changed == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
