@@ -639,6 +639,89 @@
     .rb-table td, .rb-table th { padding-left:5px; padding-right:5px; }
     .rb-tag { padding:3px 7px; }
   }
+  /* ── 연금 리밸런싱 · 휴대폰: 표를 한 종목 한 덩어리(두 줄) 목록으로, 메뉴 다섯 칸은 화면 폭에 나눠 담는다 ── */
+  @media (max-width: 760px) {
+    #view-rebal .rb-bar { flex-direction:column; align-items:stretch; }
+    #rbTabs { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); width:100%; }
+    #rbTabs button { min-width:0; padding:8px 0; font-size:.78rem; letter-spacing:-.02em; white-space:nowrap; }
+    #view-rebal .rb-kpis { grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px; }
+    #view-rebal .rb-kpis .rb-total { grid-column:1 / -1; }
+    #view-rebal .rb-kpis .kpi:not(.rb-total) { padding:11px 12px; min-width:0; }
+    #view-rebal .rb-kpis .kpi:not(.rb-total) .kpi-l { font-size:.72rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    #view-rebal .rb-kpis .kpi:not(.rb-total) .kpi-v { margin-top:4px; font-size:1.02rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    #view-rebal .rb-kpis .kpi:not(.rb-total) .kpi-s { padding-top:3px; font-size:.66rem; line-height:1.4; white-space:normal; }
+    #view-rebal .rb-kv { gap:6px 10px; font-size:.8rem; }
+    #view-rebal .rb-kv b { overflow-wrap:anywhere; }
+
+    #view-rebal .rb-table-wrap { overflow:visible; margin:0; }
+    #view-rebal .rb-table, #view-rebal .rb-table tbody, #view-rebal .rb-table tfoot { display:block; }
+    #view-rebal .rb-table thead { display:none; }
+    #view-rebal .rb-table tr { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:6px 12px; padding:12px 2px; border-bottom:1px solid var(--border); }
+    #view-rebal .rb-table tbody tr:last-child { border-bottom:0; }
+    #view-rebal .rb-table tfoot tr { border-top:1px solid var(--border); border-bottom:0; }
+    #view-rebal .rb-table td { display:block; padding:0; border:0; min-width:0; }
+    #view-rebal .rb-table td:only-child { grid-column:1 / -1; }
+    #view-rebal .rb-table .rb-etf b { max-width:none; }
+    #view-rebal .rb-table td[data-l]::before { content:attr(data-l) ' '; color:var(--muted); font-weight:600; font-size:.72rem; }
+
+    /* 보유 종목: [이름 | 제안] / [비중 막대 | 평가금액] */
+    #rbHoldTable td:nth-child(1) { grid-area:1 / 1; }
+    #rbHoldTable td:nth-child(7) { grid-area:1 / 2; }
+    #rbHoldTable td:nth-child(5) { grid-area:2 / 1; min-width:0; }
+    #rbHoldTable td:nth-child(4) { grid-area:2 / 2; display:block; align-self:end; font-size:.78rem; color:var(--ink-2); }
+    #rbHoldTable td:nth-child(2), #rbHoldTable td:nth-child(3), #rbHoldTable td:nth-child(6) { display:none; }
+    #rbHoldTable td:nth-child(4)::after { content:'원'; }
+    #rbHoldTable td:nth-child(4):empty::after { content:''; }
+    #view-rebal .rb-wcol { min-width:0; }
+    #view-rebal .rb-wtxt span { display:inline; }
+
+    /* 신규 투입 · 정기투자 1회 수량: [이름 | 수량] / [목표 · 실제 | 금액] */
+    #view-rebal #rbInvTable tr, #view-rebal #rbSipTable tr { grid-template-columns:auto minmax(0,1fr) auto; }
+    #rbInvTable td:nth-child(1), #rbSipTable td:nth-child(1) { grid-area:1 / 1 / 2 / 3; }
+    #rbInvTable td:nth-child(5), #rbSipTable td:nth-child(4) { grid-area:1 / 3; text-align:right; }
+    #rbInvTable td:nth-child(2), #rbSipTable td:nth-child(2) { grid-area:2 / 1; font-size:.8rem; text-align:left; }
+    #rbInvTable td:nth-child(7), #rbSipTable td:nth-child(6) { grid-area:2 / 2; display:block; font-size:.8rem; text-align:left; }
+    #rbInvTable td:nth-child(6), #rbSipTable td:nth-child(5) { grid-area:2 / 3; display:block; font-size:.8rem; color:var(--ink-2); }
+    #rbInvTable td:nth-child(3), #rbInvTable td:nth-child(4), #rbSipTable td:nth-child(3) { display:none; }
+    #rbInvTable tbody td:nth-child(2)::before, #rbSipTable tbody td:nth-child(2)::before { content:'목표 '; color:var(--muted); }
+    #rbInvTable tbody td:nth-child(7)::before, #rbSipTable tbody td:nth-child(6)::before { content:'실제 '; color:var(--muted); }
+    #rbInvTable tbody td:nth-child(6)::after, #rbSipTable tbody td:nth-child(5)::after { content:'원'; }
+    #rbInvTable tfoot td:nth-child(1), #rbSipTable tfoot td:nth-child(1) { grid-area:1 / 1; }
+    #rbInvTable tfoot td:nth-child(2), #rbSipTable tfoot td:nth-child(2) { grid-area:1 / 2; font-size:.86rem; }
+    #rbInvTable tfoot td:nth-child(6), #rbSipTable tfoot td:nth-child(5) { grid-area:1 / 3; font-size:.86rem; }
+    #rbInvTable tfoot td:nth-child(5), #rbSipTable tfoot td:nth-child(4) { grid-area:2 / 3; }
+    #rbInvTable tfoot td:nth-child(7), #rbSipTable tfoot td:nth-child(6) { display:none; }
+
+    /* 최근 정기투자: [매수일 | 금액] / [종목별 수량] */
+    #rbSipLog td:nth-child(1) { grid-area:1 / 1; font-weight:700; }
+    #rbSipLog td:nth-child(2) { grid-area:1 / 2; }
+    #rbSipLog td:nth-child(4) { grid-area:2 / 1 / 3 / 3; font-size:.76rem; color:var(--muted); line-height:1.55; }
+    #rbSipLog td:nth-child(3) { display:none; }
+
+    /* 종목 · 설정: [이름 | ✕] / [목표 % 칸 | 보유 주 칸] — 평가금액은 리밸런싱 탭에 있다 */
+    #view-rebal #rbItemsTable tr { grid-template-columns:minmax(0,1fr) minmax(0,1fr) 28px; }
+    #rbItemsTable td:nth-child(1) { grid-area:1 / 1 / 2 / 3; }
+    #rbItemsTable td:nth-child(6) { grid-area:1 / 3; text-align:right; }
+    #rbItemsTable td:nth-child(6) .rb-del { margin-right:-6px; }
+    #rbItemsTable td:nth-child(3) { grid-area:2 / 1; }
+    #rbItemsTable td:nth-child(4) { grid-area:2 / 2; }
+    #rbItemsTable td:nth-child(2), #rbItemsTable td:nth-child(5) { display:none; }
+    #rbItemsTable td:nth-child(3), #rbItemsTable td:nth-child(4) { display:flex; align-items:center; gap:6px; text-align:left; }
+    #rbItemsTable td:nth-child(3)::before { content:'목표 %'; }
+    #rbItemsTable td:nth-child(4)::before { content:'보유 주'; }
+    #rbItemsTable td:nth-child(3)::before, #rbItemsTable td:nth-child(4)::before { flex:none; font-size:.7rem; font-weight:600; color:var(--muted); }
+    #view-rebal #rbItemsTable .rb-in { flex:1; width:auto; min-width:0; padding:7px 4px !important; text-align:center; -moz-appearance:textfield; appearance:textfield; }
+    #view-rebal #rbItemsTable .rb-in::-webkit-inner-spin-button, #view-rebal #rbItemsTable .rb-in::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+
+    /* 기록: [구분 | 총자산] / [일시 | 투입] / [거래] */
+    #rbLogTable td:nth-child(2) { grid-area:1 / 1; }
+    #rbLogTable td:nth-child(4) { grid-area:1 / 2; display:block; font-weight:700; }
+    #rbLogTable td:nth-child(1) { grid-area:2 / 1; font-size:.76rem; color:var(--muted); }
+    #rbLogTable td:nth-child(3) { grid-area:2 / 2; display:block; font-size:.76rem; color:var(--ink-2); }
+    #rbLogTable tbody td:nth-child(3)::before { content:'투입 '; color:var(--muted); }
+    #rbLogTable td:nth-child(6) { grid-area:3 / 1 / 4 / 3; font-size:.74rem; line-height:1.6; color:var(--muted); }
+    #rbLogTable td:nth-child(5) { display:none; }
+  }
   .side-nav .nav-badge.show + kbd { display:none; }
   /* ── 자산 지층 (순자산 추이 카드의 '지층' 보기) ── */
   .strata-wrap { position:relative; }
