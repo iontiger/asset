@@ -41,6 +41,18 @@
   for(let z=QUAKE.start+600,i=0;z<QUAKE.end-150;z+=330,i++)if(!nearJump(z)&&!inRampZone(z)&&!BLOCKS.some(k=>Math.abs(k.z-z)<160)&&!BOULDERS.some(o=>z-o.z<600))BOULDERS.push({i,id:5000+i,z,side:[1,-1,1,1,-1,-1,1,-1][i%8],radius:1.55+(i%3)*.35,lead:820+((i*71)%5)*85});
   const BLOCK_POP=650,BLOCK_RISE=.35;   // 이만큼 앞(s)에서 솟기 시작해 0.35초 만에 다 솟는다
   const BOULDER_G=1.3,BOULDER_VMAX=2.5,BOULDER_X0=2.35,BOULDER_STOP=2.7;
+  // 땅 물결(4회차부터 · ride.waveOn): 목표봉 고갯길부터 목표봉 내리막 끝까지. 바이크가 WAVES 지점에 오면 1700 앞에서 물결(큰 마루 + 뒤따르는 작은 마루)이
+  //  생겨 바이크 쪽으로 밀려온다. 마루를 넘을 때 살짝 튀고, 마루 직전에 E 를 누르면 높이 떠오르며 +300(착지 E 는 점프와 같다).
+  const WAVE={start:41000,end:adventure.mountain.end,lead:1700,c:230,w:170,gap:440,press:.4};
+  const WAVES=[];
+  for(let z=WAVE.start+500,i=0;z<WAVE.end-1900;z+=1650+((i*53)%4)*150,i++)if(!JUMPS.some(c=>c>z-300&&c<z+2300))WAVES.push({i:WAVES.length,id:7000+WAVES.length,z,h:3.2+((i*29)%4)*.35});
+  const waveBump=u=>Math.abs(u)>=1?0:(1+Math.cos(Math.PI*u))/2;
+  const waveCrests=st=>[[st.sc,st.h],[st.sc+WAVE.gap,st.h*.6]];
+  const waveLift=(st,s)=>waveCrests(st).reduce((a,[c,h])=>a+h*waveBump((s-c)/WAVE.w),0);
+  // 흘러내리는 낙석(5회차부터 · ride.slideOn): 목표봉 오르막에 떨어진 바위가 땅에 닿은 뒤 비탈을 따라 바이크 쪽(아래)으로 굴러 내려온다.
+  const SLIDE={from:adventure.mountain.start,to:adventure.mountain.peak,lead:2100,g:210,vmax:330,stop:adventure.mountain.start-200};
+  const rockX=(o,sl)=>o.x+Math.sin(sl.dz*.0035+o.id)*.14*Math.min(1,sl.dz/300);   // 굴러 내려오며 살짝 좌우로 흔들린다
+  const slideRock=o=>o.type==='rock'&&o.z>SLIDE.from+300&&o.z<SLIDE.to;
   const surfaceAt=s=>COBBLES.some(([a,b])=>s>=a&&s<=b)?'stone':'dirt';
   class Ride {
     constructor(){this.length=path.LENGTH;this.mode='ready';this.reset();this.mode='ready';this.items=[];
@@ -48,7 +60,7 @@
       for(let i=0;i<160;i++){const z=1050+i*645;if(adventure.creek.fords.some(f=>Math.abs(z-f)<450))continue;if(z>adventure.fork.start-400&&z<adventure.fork.end+400)continue;   // 협곡(갈림길) 구간에는 낙석이 없다
         this.items.push({z,x:Math.sin(i*3.7+.8)*.78,type:'rock',id:1000+i,radius:2.1+(i%3)*.45})}
     }
-    reset(){this.practice=false;this.pos=0;this.speed=0;this.player=0;this.steer=0;this.energy=100;this.letters=0;this.elapsed=0;this.hit=0;this.boost=false;this.airY=0;this.airV=0;this.crashing=false;this.jumping=false;this.flightY=0;this.flightAge=0;this.jumped=new Set();this.surface='dirt';this.crashAge=0;this.grassCooldown=0;this.shake=0;this.falling=new Map();this.visited=new Set();this.collected=new Set();this.events=[];this.score=0;this.combo=0;this.comboTime=0;this.nearMisses=0;this.driftCharge=0;this.drifting=false;this.drifted=new Set();this.rockPassed=new Set();this.branchChoice='cliff';this.snow=0;this.latV=0;this.grassBounce=0;this.slip=0;this.inSnow=false;this.quake=0;this.quakeIn=false;this.boulders=new Map();this.blocks=new Map();this.rampsSeen=new Set();this.liftY=0;this.liftSlope=0;this.landingPress=-99;this.wasLandingKey=false;this.bonusTime=0;this.city=city.newState();}
+    reset(){this.practice=false;this.pos=0;this.speed=0;this.player=0;this.steer=0;this.energy=100;this.letters=0;this.elapsed=0;this.hit=0;this.boost=false;this.airY=0;this.airV=0;this.crashing=false;this.jumping=false;this.flightY=0;this.flightAge=0;this.jumped=new Set();this.surface='dirt';this.crashAge=0;this.grassCooldown=0;this.shake=0;this.falling=new Map();this.visited=new Set();this.collected=new Set();this.events=[];this.score=0;this.combo=0;this.comboTime=0;this.nearMisses=0;this.driftCharge=0;this.drifting=false;this.drifted=new Set();this.rockPassed=new Set();this.branchChoice='cliff';this.snow=0;this.latV=0;this.grassBounce=0;this.slip=0;this.inSnow=false;this.quake=0;this.quakeIn=false;this.boulders=new Map();this.blocks=new Map();this.rampsSeen=new Set();this.liftY=0;this.liftSlope=0;this.waves=new Map();this.waveNear=0;this.wavePress=-99;this.slides=new Map();this.landingPress=-99;this.wasLandingKey=false;this.bonusTime=0;this.city=city.newState();}
     reward(base,type){this.combo=Math.min(5,this.combo+1);this.comboTime=8;const points=base*this.combo;this.score+=points;this.events.push({type,points,combo:this.combo});}
     chooseBranch(choice){if(this.pos<adventure.fork.start&&['safe','cliff'].includes(choice)){this.branchChoice=choice;return true}return false}
     start(){if(this.mode!=='paused')this.reset();this.mode='playing'}
@@ -68,12 +80,14 @@
     update(dt,keys){this.events=[];if(this.mode!=='playing')return;dt=Math.min(dt,.05);this.elapsed+=dt;this.comboTime=Math.max(0,this.comboTime-dt);if(!this.comboTime)this.combo=0;this.bonusTime=Math.max(0,this.bonusTime-dt);
       if(keys.has('1'))this.chooseBranch('cliff');if(keys.has('2'))this.chooseBranch('safe');
       const landingKey=keys.has('e')||keys.has('s')||keys.has('arrowdown')||keys.has('shift');
-      if(landingKey&&!this.wasLandingKey&&this.jumping)this.landingPress=this.elapsed;this.wasLandingKey=landingKey;
+      if(landingKey&&!this.wasLandingKey){if(this.jumping)this.landingPress=this.elapsed;else this.wavePress=this.elapsed}this.wasLandingKey=landingKey;
       this.hit=Math.max(0,this.hit-dt);this.grassCooldown=Math.max(0,this.grassCooldown-dt);this.shake=Math.max(0,this.shake-dt*1.7);
-      for(const o of this.items)if(!(o.z>adventure.fork.start&&o.z<adventure.fork.end&&this.branchChoice==='safe')&&o.type==='rock'&&o.z-this.pos<1050&&o.z>this.pos-100){
+      for(const o of this.items)if(!(o.z>adventure.fork.start&&o.z<adventure.fork.end&&this.branchChoice==='safe')&&o.type==='rock'&&o.z-this.pos<(this.slideOn&&slideRock(o)?SLIDE.lead:1050)&&o.z>this.pos-100){
         if(!this.falling.has(o.id)){this.falling.set(o.id,0);this.events.push({type:'rockfall',id:o.id,z:o.z,x:o.x})}
         const age=this.falling.get(o.id);this.falling.set(o.id,age+dt);
         if(age<.9&&age+dt>=.9)this.events.push({type:'rockland',z:o.z,x:o.x});
+        if(this.slideOn&&age+dt>=.9&&slideRock(o)){let sl=this.slides.get(o.id);if(!sl){sl={dz:0,v:0,roll:0};this.slides.set(o.id,sl);this.events.push({type:'rockSlide',z:o.z,x:o.x})}
+          const z=o.z-sl.dz;sl.v=z>SLIDE.stop?Math.min(SLIDE.vmax,sl.v+SLIDE.g*dt):Math.max(0,sl.v-SLIDE.g*2*dt);sl.dz+=sl.v*dt;sl.roll+=sl.v*dt/20/o.radius}
       }
       if(this.crashing){this.drifting=false;
         this.crashAge+=dt;this.airV-=17*dt;this.airY+=this.airV*dt;
@@ -158,6 +172,22 @@
           if(dx>b.radius*.68){this.speed*=.86;this.shake=.35;this.hit=.4;this.player+=Math.sign(this.player-st.x)*.08;this.events.push({type:'graze'});continue}
           this.combo=0;this.comboTime=0;this.drifting=false;this.speed*=.4;this.hit=3;this.crashing=true;this.jumping=false;this.crashAge=0;this.airV=13;this.airY=.2;this.boost=false;this.shake=1.5;this.events.push({type:'hit',boulder:true});break}
       }else{this.quake=0;this.liftY=0;this.liftSlope=0}
+      // 땅 물결: 마루가 바이크 쪽으로 밀려오고, 바이크가 마루를 넘는 순간 튀어 오른다(E 를 눌러 두었으면 높이)
+      this.waveNear=0;
+      if(this.waveOn){let lift=0,slope=0;
+        for(const W of WAVES){let st=this.waves.get(W.id);
+          if(!st){if(this.pos>=W.z&&this.pos<W.z+WAVE.lead){st={sc:this.pos+WAVE.lead,h:W.h,crossed:0,t:0};this.waves.set(W.id,st);this.events.push({type:'waveIn',z:W.z,first:W.i===0})}continue}
+          if(st.done)continue;const prev=st.sc;st.t+=dt;st.sc-=WAVE.c*dt;
+          if(st.sc+WAVE.gap+WAVE.w<this.pos-400||st.sc<WAVE.start-800){st.done=true;continue}
+          lift+=waveLift(st,this.pos);slope+=waveLift(st,this.pos+10)-waveLift(st,this.pos-10);
+          const ahead=st.sc-this.pos;if(ahead>0&&ahead<600)this.waveNear=Math.max(this.waveNear,1-ahead/600);
+          waveCrests(st).forEach(([c,h],k)=>{const pc=k?prev+WAVE.gap:prev;if(st.crossed&1<<k||!(before<pc&&this.pos>=c))return;st.crossed|=1<<k;
+            if(this.jumping||this.crashing)return;
+            const big=k===0&&this.elapsed-this.wavePress<=WAVE.press,l=waveLift(st,this.pos);
+            this.jumping=true;this.flightAge=0;this.airV=big?6.5+this.speed*.01:1.6+h*.55;this.flightY=roadHeight(this.pos)+l+.15;this.airY=l+.15;this.shake=Math.max(this.shake,.35);
+            if(big){this.wavePress=-99;this.reward(300,'waveJump')}else this.events.push({type:'waveHop',h})})}
+        if(!this.jumping&&!this.crashing&&lift>0){this.liftY=Math.max(this.liftY,lift);this.liftSlope=slope}
+        if(this.waveNear>0)this.shake=Math.max(this.shake,this.waveNear*.25)}
       const surface=inCity?'asphalt':surfaceAt(this.pos);if(surface!==this.surface){this.surface=surface;if(surface==='stone')this.events.push({type:'stone'})}
       if(this.jumping){this.flightAge+=dt;this.airV-=16*dt;this.flightY+=this.airV*dt;this.airY=Math.max(0,this.flightY-roadHeight(this.pos));
         if(this.airY<=0&&this.airV<0){this.jumping=false;this.airV=0;this.shake=.65;if(this.elapsed-this.landingPress<=.3){this.shake=.15;this.energy=Math.min(100,this.energy+20);this.speed=Math.min(520,this.speed+100);this.bonusTime=1.5;this.reward(500,'perfectLand')}else this.events.push({type:'jumpLand'})}
@@ -173,18 +203,18 @@
         if(o.type==='letter'&&this.branchChoice==='safe'&&o.z>adventure.fork.start&&o.z<adventure.fork.end)continue; // 뉴욕 시내에는 편지가 없다
         if(!isRock){if(o.z>=before&&o.z<=this.pos&&Math.abs(o.x-this.player)<.22&&!this.collected.has(o.id)){this.collected.add(o.id);this.letters++;this.score+=100;this.events.push({type:'letter',id:o.id,z:o.z,x:o.x})}continue}
         if(this.rockPassed.has(o.id)||(this.falling.get(o.id)||0)<.75)continue;
-        const dx=Math.abs(o.x-this.player)*9,radius=o.radius+.35;
-        if(before<=o.z&&this.pos>=o.z&&dx>radius&&dx<radius+1.35&&this.speed>150){this.rockPassed.add(o.id);this.nearMisses++;this.energy=Math.min(100,this.energy+12);this.reward(200,'nearMiss');continue}
-        const closestZ=Math.max(before,Math.min(this.pos,o.z));
-        if(dx*dx+((closestZ-o.z)/20)**2>radius*radius||this.hit>0)continue;
+        const sl=this.slides.get(o.id),oz=sl?o.z-sl.dz:o.z,ox=sl?rockX(o,sl):o.x,dx=Math.abs(ox-this.player)*9,radius=o.radius+.35;
+        if(before<=oz&&this.pos>=oz&&dx>radius&&dx<radius+1.35&&this.speed>150){this.rockPassed.add(o.id);this.nearMisses++;this.energy=Math.min(100,this.energy+12);this.reward(200,'nearMiss');continue}
+        const closestZ=Math.max(before,Math.min(this.pos,oz));
+        if(dx*dx+((closestZ-oz)/20)**2>radius*radius||this.hit>0)continue;
         this.rockPassed.add(o.id);
-        if(dx>o.radius*.68){this.speed*=.86;this.shake=.35;this.hit=.4;this.player+=Math.sign(this.player-o.x)*.08;this.events.push({type:'graze'});continue}
+        if(dx>o.radius*.68){this.speed*=.86;this.shake=.35;this.hit=.4;this.player+=Math.sign(this.player-ox)*.08;this.events.push({type:'graze'});continue}
         this.combo=0;this.comboTime=0;this.drifting=false;this.speed*=.4;this.hit=3;this.crashing=true;this.jumping=false;this.crashAge=0;this.airV=13;this.airY=.2;this.boost=false;this.shake=1.5;this.events.push({type:'hit'});break;
       }
       LANDMARKS.forEach((l,i)=>{if(this.pos>=l.z&&!this.visited.has(i)){this.visited.add(i);this.events.push({type:'landmark',name:l.name})}});
       if(this.pos>=this.length){this.mode='finished';this.boost=false;this.events.push({type:'finish'})}
     }
   }
-  root.RIDE_QUAKE={QUAKE,RAMPS,BLOCKS,BOULDERS,quakeZone,rampLift,rampRise,BLOCK_POP,BLOCK_RISE};root.ROAD_HEIGHT=roadHeight;root.ROAD_JUMPS=JUMPS;root.ROAD_COBBLES=COBBLES;root.Ride=Ride;root.RIDE_LANDMARKS=LANDMARKS;
-  if(typeof module!=='undefined')module.exports={Ride,LANDMARKS,JUMPS,COBBLES,roadHeight,surfaceAt,QUAKE,RAMPS,BLOCKS,BOULDERS,quakeZone,rampLift,rampRise,BLOCK_POP,BLOCK_RISE};
+  root.RIDE_QUAKE={QUAKE,RAMPS,BLOCKS,BOULDERS,quakeZone,rampLift,rampRise,BLOCK_POP,BLOCK_RISE,WAVE,WAVES,waveLift,SLIDE,slideRock,rockX};root.ROAD_HEIGHT=roadHeight;root.ROAD_JUMPS=JUMPS;root.ROAD_COBBLES=COBBLES;root.Ride=Ride;root.RIDE_LANDMARKS=LANDMARKS;
+  if(typeof module!=='undefined')module.exports={Ride,LANDMARKS,JUMPS,COBBLES,roadHeight,surfaceAt,QUAKE,RAMPS,BLOCKS,BOULDERS,quakeZone,rampLift,rampRise,BLOCK_POP,BLOCK_RISE,WAVE,WAVES,waveLift,SLIDE,slideRock,rockX};
 })(typeof window!=='undefined'?window:globalThis);

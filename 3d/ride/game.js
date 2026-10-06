@@ -91,7 +91,7 @@ const canyon=CANYON.build({T,scene:canyonGroup,drivePoint:legacyDrive,ride,fork:
 const cityScene=CITY_SCENE.build({T,scene,C:CITY});
 // 지진(3회차부터 · quake.js): 판 횟수는 이 브라우저 localStorage. ?quake=1 이면 바로 켠다
 const PLAYS_KEY='dentphoto-plays-v1';let plays=0;try{plays=Number(localStorage.getItem(PLAYS_KEY))||0}catch(e){}
-let quakeBlockTold=false;const quakeFx=QUAKE_FX.build({T,scene,ride,drivePoint,groundAt});
+let quakeBlockTold=false,waveTold=false,slideTold=false;const quakeFx=QUAKE_FX.build({T,scene,ride,drivePoint,groundAt});
 // 블렌더 뉴욕 키트(nyc/): 받아지면 빌딩 앞면 · 차 · 가로 소품을 사실적인 모델로 바꾼다. 못 받으면 원래 시내 그대로.
 // 고화질 후처리(ride-post.js): PC 는 시내에서 GTAO · 블룸 · 색 보정을 켠다. 폰 · ?q=low 는 끈다
 let post=null;if(window.RIDE_POST&&RIDE_POST.quality()==='high')try{post=RIDE_POST.make(renderer,scene,camera,{adaptive:!/[?&]q=high/.test(location.search)})}catch(e){console.warn('후처리 없이 그려요',e)}
@@ -147,7 +147,7 @@ for(const item of ride.items){let root=new T.Group();root.position.copy(drivePoi
  if(item.type==='letter'){box(root,0,1.2,0,.8,.52,.12,'#fff2cd');beam(root,[-.38,1.42,.08],[0,1.15,.08],.014,'#b98a58');beam(root,[0,1.15,.08],[.38,1.42,.08],.014,'#b98a58');ball(root,0,1.14,.095,.065,'#c47052');const halo=mesh(new T.TorusGeometry(.62,.024,6,32),'#e9c977',root,0,1.2,0);halo.material=new T.MeshBasicMaterial({color:'#f6d486'});
   // 편지는 두 배 크기 (가운데가 땅에서 1.6 높이)
   const big=new T.Group();while(root.children.length)big.add(root.children[0]);big.scale.setScalar(2);big.position.y=1.6-1.2*2;root.add(big);
- }else{const inC=item.z>ADVENTURE.fork.start&&item.z<ADVENTURE.fork.end;const r=mesh(new T.DodecahedronGeometry(item.radius,1),inC?'#c08a5c':'#777466',root,0,item.radius*.7,0);if(inC)r.material=new T.MeshStandardMaterial({color:'#c08a5c',roughness:.9,flatShading:true});r.scale.set(1,.85,1);r.rotation.set(.15,item.id,.17);
+ }else{const inC=item.z>ADVENTURE.fork.start&&item.z<ADVENTURE.fork.end;const r=mesh(new T.DodecahedronGeometry(item.radius,1),inC?'#c08a5c':'#777466',root,0,item.radius*.7,0);if(inC)r.material=new T.MeshStandardMaterial({color:'#c08a5c',roughness:.9,flatShading:true});r.scale.set(1,.85,1);r.rotation.set(.15,item.id,.17);root.userData.rock=r;
    for(let j=0;j<5;j++){const a=j*2.4;const chip=mesh(new T.DodecahedronGeometry(.2+j*.045,0),inC?'#d4a272':'#948570',root,Math.cos(a)*(item.radius+1),.15,Math.sin(a)*(item.radius+.7));chip.scale.y=.6}
    const warn=mesh(new T.RingGeometry(item.radius+.6,item.radius+.72,36), '#d18f43',root,0,.04,0);warn.rotation.x=-Math.PI/2;warn.material=new T.MeshBasicMaterial({color:'#e3ac55',transparent:true,opacity:.6,side:T.DoubleSide});root.userData.warning=warn;
  }itemMeshes.push({item,root,baseY:root.position.y});}
@@ -211,7 +211,7 @@ function penaltyFX(e){const el=$('penalty');el.innerHTML=`<b>${e.points}</b><spa
  const f=$('penalty-flash');f.className='penalty-flash '+e.kind;void f.offsetWidth;f.classList.add('show');sound.impact(.45);soundTone(196);
  if(e.kind==='speed'){const pu=CITY.uOf(ride.pos);let best=0,bd=1e9;CITY.cameras.forEach((c,i)=>{const d=Math.abs(c.u-pu);if(d<bd){bd=d;best=i}});cityScene.flash(best)}}
 function show(title,description,button){$('overlay').classList.remove('hidden','finished');$('finish-card').hidden=true;document.querySelector('.welcome h2').innerHTML=title;document.querySelector('.welcome p').innerHTML=description;$('start').innerHTML=button+' <span>↗</span>'}
-function start(){const fresh=ride.mode!=='paused';ride.start();sound.musicLoad();if(fresh){plays++;try{localStorage.setItem(PLAYS_KEY,String(plays))}catch(e){}ride.quakeOn=plays>=3||/[?&]quake=1/.test(location.search);quakeFx.reset();quakeBlockTold=false;sound.musicReset();ghostReset();nightReset();cityNoted.clear();boltT=0;gotAt.clear();sparkLife.fill(0);mud.clear();mudT=0;dustPool.forEach(d=>d.life=0);dustBudget=0;lastDustPos=0;warnedTurns.clear();turnBlend=0;jumpCameraBlend=0;lastTrack=-100;trackDummy.scale.setScalar(0);trackDummy.updateMatrix();for(let i=0;i<900;i++)tracks.setMatrixAt(i,trackDummy.matrix);tracks.instanceMatrix.needsUpdate=true;}keys.clear();$('overlay').classList.add('hidden');$('pause').textContent='Ⅱ';notify(touchMode?'자동으로 출발! 화면 왼쪽 · 오른쪽을 눌러 방향을 바꿔요.':'↑ 또는 W로 출발! 3D 마을에서 편지 80통을 모아보세요.');syncCamera(true)}
+function start(){const fresh=ride.mode!=='paused';ride.start();sound.musicLoad();if(fresh){plays++;try{localStorage.setItem(PLAYS_KEY,String(plays))}catch(e){}{const force=/[?&]quake=1/.test(location.search);ride.quakeOn=plays>=3||force;ride.waveOn=plays>=4||force;ride.slideOn=plays>=5||force}waveTold=slideTold=false;quakeFx.reset();quakeBlockTold=false;sound.musicReset();ghostReset();nightReset();cityNoted.clear();boltT=0;gotAt.clear();sparkLife.fill(0);mud.clear();mudT=0;dustPool.forEach(d=>d.life=0);dustBudget=0;lastDustPos=0;warnedTurns.clear();turnBlend=0;jumpCameraBlend=0;lastTrack=-100;trackDummy.scale.setScalar(0);trackDummy.updateMatrix();for(let i=0;i<900;i++)tracks.setMatrixAt(i,trackDummy.matrix);tracks.instanceMatrix.needsUpdate=true;}keys.clear();$('overlay').classList.add('hidden');$('pause').textContent='Ⅱ';notify(touchMode?'자동으로 출발! 화면 왼쪽 · 오른쪽을 눌러 방향을 바꿔요.':'↑ 또는 W로 출발! 3D 마을에서 편지 80통을 모아보세요.');syncCamera(true)}
 function pause(){if(ride.mode==='playing'){ride.pause();keys.clear();show('잠시, 쉬어가요.','마을의 바람은 기다려 줄 거예요.','이어서 달리기');$('pause').textContent='▶';sound.silence()}else if(ride.mode==='paused')start()}
 function finish(){ghostSave();keys.clear();sound.silence();if(embedded&&!ride.practice)try{parent.postMessage({dpRide:'finish',letters:ride.letters,score:ride.score,time:ride.elapsed,branch:ride.branchChoice},'*')}catch(e){}const isRecord=!ride.practice&&ride.score>bestScore;if(!ride.practice){bestScore=Math.max(bestScore,ride.score);bestTime=bestTime===null?ride.elapsed:Math.min(bestTime,ride.elapsed);try{localStorage.setItem('dentphoto-record-v1',JSON.stringify({score:bestScore,time:bestTime}))}catch(e){}}
 show(ride.practice?'구간 주행을 마쳤어요.':isRecord?'새로운 최고 기록!':'마을에 도착했어요.',`${ride.score.toLocaleString()}점 · 최고 ${bestScore.toLocaleString()}점<br>편지 ${ride.letters}통 · 아슬아슬 회피 ${ride.nearMisses}회<br>${Math.floor(ride.elapsed/60)}분 ${Math.floor(ride.elapsed%60)}초 · 최단 ${Math.floor(bestTime/60)}분 ${Math.floor(bestTime%60)}초<br>${ride.branchChoice==='cliff'?'협곡 헤어핀':'뉴욕 시내 · 배달 '+ride.city.delivered+'/3'}로 달렸어요.`,'다시 여행하기');finishCard(isRecord)}
@@ -239,11 +239,11 @@ addEventListener('keydown',e=>{if(e.target.closest?.('.course-progress')&&['Ente
 // 네 모서리 카드와 아래 버튼은 숨기고(CSS .touch-mode), 가운데 안내 문구만 남긴다.
 let touchMode=matchMedia('(pointer:coarse)').matches&&('ontouchstart' in window||navigator.maxTouchPoints>0);
 document.body.classList.toggle('touch-mode',touchMode);
-const steerTouches=new Map();
+const steerTouches=new Map();let tapE=0;   // 터치: 화면을 누르는 순간을 E(물결 점프 · 착지 타이밍)로도 쓴다
 function steerFromTouches(){keys.delete('arrowleft');keys.delete('arrowright');const xs=[...steerTouches.values()];if(!xs.length)return;const x=xs[xs.length-1];keys.add(x<innerWidth/2?'arrowleft':'arrowright')}
 {const ignore=t=>t.closest&&t.closest('button,a,#overlay,.fork-choice,header');
  // 감지가 빗나가도 첫 손가락 터치에서 터치 모드로 바꾼다
- addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&!touchMode){touchMode=true;document.body.classList.add('touch-mode');$('game').style.touchAction='none'}if(!touchMode||e.pointerType==='mouse'||ignore(e.target)||ride.mode!=='playing')return;steerTouches.set(e.pointerId,e.clientX);steerFromTouches()});
+ addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&!touchMode){touchMode=true;document.body.classList.add('touch-mode');$('game').style.touchAction='none'}if(!touchMode||e.pointerType==='mouse'||ignore(e.target)||ride.mode!=='playing')return;steerTouches.set(e.pointerId,e.clientX);steerFromTouches();keys.add('e');clearTimeout(tapE);tapE=setTimeout(()=>keys.delete('e'),160)});
  addEventListener('pointermove',e=>{if(!steerTouches.has(e.pointerId))return;steerTouches.set(e.pointerId,e.clientX);steerFromTouches()});
  for(const ev of ['pointerup','pointercancel'])addEventListener(ev,e=>{if(steerTouches.delete(e.pointerId))steerFromTouches()});
  if(touchMode)$('game').style.touchAction='none'}
@@ -339,7 +339,8 @@ const forkActive=r.mode==='playing'&&r.pos>=ADVENTURE.fork.chooseFrom&&r.pos<ADV
 $('safe-route').classList.toggle('selected',r.branchChoice==='safe');$('cliff-route').classList.toggle('selected',r.branchChoice==='cliff');
 const upcoming=ROAD_PATH.turns.find(t=>t.end>r.pos),hint=$('drive-hint');
 if(r.crashing)hint.textContent='도로 복귀 중…';
-else if(r.jumping)hint.textContent=touchMode?'두둥실 · 공중 비행 중':r.airV<0&&r.airY<4?'지금 E! · PERFECT 착지':'착지 직전 E · 타이밍 보너스';
+else if(r.jumping)hint.textContent=touchMode?(r.airV<0&&r.airY<4?'지금 톡! · PERFECT 착지':'착지 직전 화면 톡 · 타이밍 보너스'):r.airV<0&&r.airY<4?'지금 E! · PERFECT 착지':'착지 직전 E · 타이밍 보너스';
+else if(r.waveNear>.15)hint.textContent=r.waveNear>.55?(touchMode?'지금 톡! · 물결 점프':'지금 E! · 물결 점프'):'물결이 밀려와요 · 마루 직전 '+(touchMode?'화면 톡':'E');
 else if(r.drifting)hint.textContent='DRIFT '+Math.min(100,Math.round(r.driftCharge/1.1*100))+'% · 부스트 충전';
 else if(r.branchChoice==='safe'&&r.pos>F.start-1500&&r.pos<F.end)hint.textContent=cityHint(r);
 else if(upcoming&&upcoming.start-r.pos<650)hint.textContent=(upcoming.side>0?'↱':'↰')+' 170° '+Math.max(0,Math.round((upcoming.start-r.pos)/5))+'m · 자동 드리프트';
@@ -377,6 +378,10 @@ if(event.type==='quakeIn'){sound.impact(1);notify('⚠ 지진! 땅이 갈라져 
 if(event.type==='quakeRamp'){sound.impact(1);notify('⚠ 땅이 기울며 솟아올라요! 끝까지 달려 뛰어내려요 · 착지 직전 E')}
 if(event.type==='quakeBlock'){sound.impact(.55);if(!quakeBlockTold){quakeBlockTold=true;notify('⚠ 땅덩이가 솟아올라 길을 막아요 · 틈으로 피하세요')}}
 if(event.type==='quakeLaunch')sound.impact(.4);
+if(event.type==='waveIn'){sound.impact(.7);if(!waveTold){waveTold=true;notify(touchMode?'⚠ 땅이 물결쳐요! 마루 바로 앞에서 화면을 톡 누르면 높이 점프':'⚠ 땅이 물결쳐요! 마루 바로 앞에서 E 를 누르면 높이 점프')}}
+if(event.type==='waveJump'){soundTone(990);notify('물결 점프! +'+event.points+' · COMBO ×'+event.combo)}
+if(event.type==='waveHop')sound.impact(.3);
+if(event.type==='rockSlide'&&!slideTold){slideTold=true;notify('⚠ 떨어진 바위가 비탈을 따라 굴러 내려와요 · 옆으로 피하세요')}
 if(event.type==='boulder'){sound.impact(.35);notify(event.side>0?'⚠ 오른쪽 산비탈에서 바위가 굴러와요!':'⚠ 왼쪽 산비탈에서 바위가 굴러와요!')}
 if(event.type==='quakeOut')notify('지진이 잦아들었어요. 갈림길이 다가와요.');
 if(event.type==='rockfall')notify('⚠ 앞쪽 낙석! 큰 바위를 피하세요.');
@@ -399,7 +404,7 @@ if(event.type==='camOk')notify('📷 단속 카메라 통과 · '+event.kmh+' km
 if(event.type==='cityOut')notify('시내를 빠져나왔어요 — 다시 바닷가 길로!');
 if(event.type==='landmark')notify('⌖ '+event.name+'에 도착했어요.');if(event.type==='finish')finish()}
 if(toastTime>0){toastTime-=dt;if(toastTime<=0)$('toast').style.opacity=0}syncCamera(false,dt);
-wheels.forEach(w=>w.rotation.x-=ride.mode==='playing'?ride.speed*1.35/20*dt/.5:0);bike.visible=true;updateDust(dt);quakeFx.update(dt,time);sound.rumble&&sound.rumble(ride.mode==='playing'?ride.quake:0);updateGroundFX(dt);updateSparkles(dt);mc.update(time,dt);
+wheels.forEach(w=>w.rotation.x-=ride.mode==='playing'?ride.speed*1.35/20*dt/.5:0);bike.visible=true;updateDust(dt);quakeFx.update(dt,time);sound.rumble&&sound.rumble(ride.mode==='playing'?Math.max(ride.quake,ride.waveNear*.7):0);updateGroundFX(dt);updateSparkles(dt);mc.update(time,dt);
 {const safe=ride.branchChoice==='safe';cityScene.group.visible=safe&&ride.pos>F.start-6000&&ride.pos<F.end+5000;canyonGroup.visible=!(safe&&ride.pos>F.start-3000&&ride.pos<F.end+3000);cenv=cityEnvNow();if(cityScene.group.visible){cityScene.setWinK(post&&post.on?1:.6);cityScene.update(time,dt,ride,cenv,bike.position)}
  sound.city&&sound.city(ride.mode==='playing'&&cityScene.group.visible&&CITY.inCity(ride.pos,ride.branchChoice),cenv?cenv.wet:0,ride.speed,cityScene.walk,dt)}
 const roadSpray=CITY_WET.trySplash(ride,cenv,dt,CITY);if(roadSpray)mud.splash(roadSpray.cover,roadSpray.side,'water');
@@ -407,11 +412,13 @@ const roadSpray=CITY_WET.trySplash(ride,cenv,dt,CITY);if(roadSpray)mud.splash(ro
 {const cx=ride.mode==='playing'&&ride.pos>CK.start-300&&ride.pos<CK.end+300?ADVENTURE.creekX(ride.pos):null;if(cx!==null&&ride.speed>60&&!ride.jumping&&!ride.crashing){const px=ride.player*9,near=Math.max(0,Math.min(1,1-(Math.abs(px-cx)-3)/10));mudT-=dt*(.35+near*1.5)*Math.min(1,ride.speed/300);if(mudT<=0){mudT=.7+Math.random()*.6;const side=Math.sign(cx-px)||1;mud.splash(.05+near*.12,side*.8);burst(drivePoint(ride.pos-6,px+side*2),8,.9,'mud')}}}
 if(ride.mode==='playing'||ride.mode==='finished')mud.update(dt);mud.draw();
 for(const {root,s} of worldObjects){root.visible=s>ride.pos-800&&s<ride.pos+4400;if(root.userData.balloon)root.position.y=root.userData.baseY+Math.sin(time*.7+s)*.8}
-for(const {item,root,baseY} of itemMeshes){root.position.copy(drivePoint(item.z,item.x*9));root.visible=!((item.type==='rock'||item.type==='letter')&&item.z>ADVENTURE.fork.start&&item.z<ADVENTURE.fork.end&&ride.branchChoice==='safe')&&item.z>ride.pos-120&&item.z<ride.pos+4200&&!ride.collected.has(item.id);if(item.type==='letter'){root.position.y=baseY+Math.sin(time*2+item.id)*.13;root.rotation.y=heading(item.z)+Math.sin(time*.7+item.id)*.2;
+for(const {item,root,baseY} of itemMeshes){const sl=item.type==='rock'&&ride.slides.get(item.id),iz=sl?item.z-sl.dz:item.z;root.position.copy(drivePoint(iz,(sl?RIDE_QUAKE.rockX(item,sl):item.x)*9));root.visible=!((item.type==='rock'||item.type==='letter')&&item.z>ADVENTURE.fork.start&&item.z<ADVENTURE.fork.end&&ride.branchChoice==='safe')&&iz>ride.pos-120&&iz<ride.pos+4200&&!ride.collected.has(item.id);if(item.type==='letter'){root.position.y=baseY+Math.sin(time*2+item.id)*.13;root.rotation.y=heading(item.z)+Math.sin(time*.7+item.id)*.2;
   // 먹은 편지: 0.7초 동안 빙글빙글 돌며 위로 솟았다가 반짝 커지고 사라진다
   const got=gotAt.get(item.id);if(got!==undefined&&ride.collected.has(item.id)){const a=time-got;if(a<.7){root.visible=true;root.position.y=baseY+a*7+Math.sin(a*Math.PI)*1.2;root.rotation.y=heading(item.z)+a*22;root.scale.setScalar((1+a*.7)*Math.max(0,1-(a/.7)**3))}else root.visible=false}else root.scale.setScalar(1)}else{
  const age=ride.falling.get(item.id);const drop=age===undefined?0:Math.max(0,24*(1-(age/.9)**2));root.position.y=baseY+drop;
- root.rotation.z=age!==undefined&&age<.9?Math.sin(age*7)*.16:0;
+ // 흘러내리는 낙석(5회차부터): 비탈을 따라 굴러 내려온 만큼 낮아지고, 통통 튀며 구른다
+ if(sl){root.position.y+=drivePoint(iz,0).y-drivePoint(item.z,0).y+Math.abs(Math.sin(sl.roll*1.3))*.35*Math.min(1,sl.v/150);root.userData.rock.rotation.x=.15-sl.roll;root.children.forEach(c=>{if(c!==root.userData.rock)c.visible=false})}else if(root.userData.rock&&!root.children[1].visible)root.children.forEach(c=>c.visible=true);
+ root.rotation.z=age!==undefined&&age<.9?Math.sin(age*7)*.16:0;if(sl)root.userData.warning.visible=false;
  root.visible=root.visible&&age!==undefined;root.userData.warning.position.y=.04-drop;root.userData.warning.visible=age!==undefined&&age<1.3;
  }}
 {const sa=Math.max(ADVENTURE.snowAmt(ride.pos),cenv?cenv.snow:0),fall=sa>.01;snowfall.visible=fall;
