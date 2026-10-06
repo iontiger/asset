@@ -540,6 +540,57 @@
   .inv-ch-foot a { font-size:.8rem; font-weight:700; color:var(--accent-deep); text-decoration:none; }
   .inv-ch-foot a:hover { text-decoration:underline; }
   .inv-empty { padding:40px 10px; text-align:center; font-size:.9rem; color:var(--muted); line-height:1.7; }
+
+  /* ── 포트폴리오 투자: 구성 · 최소 주식수 (왼쪽) + 원화 수익률 vs S&P500 차트 (오른쪽) ── */
+  #view-invest .pf-card { margin-top:18px; }
+  .pf-grid { display:grid; grid-template-columns:minmax(300px, 380px) minmax(0,1fr); gap:26px; align-items:start; }
+  .pf-card .card-head { margin-bottom:12px; }
+  .pf-h { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin:0 0 8px; font-size:.86rem; font-weight:800; }
+  .pf-sec + .pf-sec { margin-top:18px; }
+  .pf-bar { display:flex; height:12px; border-radius:99px; overflow:hidden; gap:2px; margin-bottom:10px; }
+  .pf-bar i { display:block; height:100%; }
+  .pf-tbl { width:100%; border-collapse:collapse; font-size:.84rem; font-variant-numeric:tabular-nums; }
+  .pf-tbl th { padding:0 4px 6px; font-size:.7rem; font-weight:600; color:var(--muted); text-align:left; }
+  .pf-tbl td { padding:7px 4px; border-top:1px solid var(--border); vertical-align:middle; }
+  .pf-tbl .num { text-align:right; white-space:nowrap; }
+  .pf-tk { display:flex; align-items:center; gap:7px; min-width:0; }
+  .pf-tk i { flex:none; width:9px; height:9px; border-radius:3px; }
+  .pf-tk b { font-weight:800; }
+  .pf-tk small { display:block; font-size:.68rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px; }
+  .pf-tbl small.d { display:block; font-size:.68rem; color:var(--muted); }
+  .pf-tbl tfoot td { font-weight:800; }
+  .pf-q { font-size:.95rem; font-weight:800; color:var(--accent-deep); }
+  .pf-seg { display:inline-flex; padding:2px; border-radius:99px; background:var(--bg); border:1px solid var(--border); }
+  .pf-seg button { border:0; background:none; color:var(--muted); font:inherit; font-size:.74rem; font-weight:700; padding:4px 10px; border-radius:99px; cursor:pointer; }
+  .pf-seg button.on { background:var(--surface); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.12); }
+  .pf-total { display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-top:10px; padding:10px 12px; border-radius:11px; background:var(--bg); border:1px solid var(--border); font-size:.8rem; color:var(--muted); }
+  .pf-total b { font-size:1.05rem; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .pf-note { margin:8px 0 0; font-size:.72rem; line-height:1.6; color:var(--muted); }
+  .pf-verdict { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; font-size:.95rem; font-weight:800; }
+  .pf-verdict .up { color:var(--kospi-up); }
+  .pf-verdict .down { color:var(--kospi-down); }
+  .pf-stats { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; margin-top:12px; }
+  .pf-stats > div { padding:10px 12px; border-radius:11px; background:var(--bg); border:1px solid var(--border); min-width:0; }
+  .pf-stats label { display:block; font-size:.7rem; color:var(--muted); font-weight:600; }
+  .pf-stats b { display:block; margin-top:3px; font-size:.95rem; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .pf-stats b.up { color:var(--kospi-up); }
+  .pf-stats b.down { color:var(--kospi-down); }
+  .pf-leg { display:flex; gap:14px; flex-wrap:wrap; align-items:center; margin:2px 0 4px; font-size:.74rem; color:var(--muted); }
+  .pf-leg span { display:inline-flex; align-items:center; gap:5px; }
+  .pf-leg i { display:inline-block; width:16px; border-top:2.5px solid var(--accent); }
+  .pf-leg i.spx { border-top:2px solid #e08a2c; }
+  .pf-ch { position:relative; touch-action:pan-y; }
+  .pf-ch svg { display:block; width:100%; }
+  .pf-ch text { font-family:inherit; font-variant-numeric:tabular-nums; }
+  .pf-ch .inv-tip { min-width:168px; }
+  .pf-ch .inv-tip .p { color:var(--accent); font-weight:800; }
+  .pf-ch .inv-tip .s { color:#e08a2c; font-weight:800; }
+  @media (max-width: 1180px) { .pf-grid { grid-template-columns:1fr; } }
+  @media (max-width: 760px) {
+    .pf-stats { grid-template-columns:1fr 1fr; }
+    .pf-tk small { max-width:110px; }
+    .pf-grid { gap:18px; }
+  }
   @media (max-width: 1180px) {
     .inv-brief { grid-template-columns:1fr; }
     .inv-main { grid-template-columns:1fr; }
@@ -2064,7 +2115,7 @@
      사이드바 대신 위에는 상단바(브랜드 · 알림 · 테마), 아래에는 탭(홈 · 자산 · ＋ · 투자 · 더보기).
      대시보드 위쪽은 인사말 · 순자산 · 자산 구성 · 이번 달 자산 변화 카드로 바꾸고, 그 아래로 차트 · 미래 예상 등이 이어진다.
      넓은 화면에서는 이 요소들을 모두 숨긴다. */
-  .m-bar, .m-hello, .m-home, .m-tabs, .m-news, .m-sig, .in-group .g-ic, .in-amt-m { display:none; }
+  .m-bar, .m-hello, .m-home, .m-tabs, .m-news, .m-sig, .m-pf, .in-group .g-ic, .in-amt-m { display:none; }
 
   /* 아래에서 올라오는 창 (＋ 기록하기 · 더보기 · 알림) — 휴대폰 메뉴에서만 열린다 */
   /* 창 밖(어두운 곳)을 끌어도 뒤 화면이 움직이지 않고, 창 안을 끝까지 넘겨도 뒤로 번지지 않게 */
@@ -2515,6 +2566,9 @@
     body[data-view="rebal"] .m-sig:not([hidden]) { display:block; }
     .m-sig { margin:-10px -16px 2px; }
     .m-sig .m-news-card { cursor:default; gap:10px; min-height:0; }
+    /* 신호 카드 아래 포트폴리오 투자 */
+    body[data-view="rebal"] .m-pf:not([hidden]) { display:block; margin:-6px 0 18px; }
+    .m-pf .pf-card { padding:16px 14px; border-radius:20px; }
     .m-sig .m-news-top { color:var(--muted); }
     .m-sig-tag { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:99px; font-size:.76rem; font-weight:800; }
     .m-sig-tag.buy  { background:color-mix(in srgb, var(--kospi-up) 13%, transparent); color:var(--kospi-up); }
@@ -2678,6 +2732,8 @@
     <div class="m-news-track" id="mSigTrack"></div>
     <div class="m-news-dots" id="mSigDots" aria-hidden="true"></div>
   </section>
+  <!-- 휴대폰 투자 탭 — 신호 카드 아래 포트폴리오 투자 (PC 투자 정보 화면의 #pfPc 와 같은 내용) -->
+  <section class="m-pf" id="pfMWrap" hidden><div class="card pf-card" id="pfM" aria-label="포트폴리오 투자"></div></section>
 
   <header class="topbar" id="topbar">
     <div>
@@ -3268,6 +3324,8 @@
       </div>
       <div class="card inv-chart" id="invChart"></div>
     </div>
+    <!-- 포트폴리오 투자 — 미국 ETF 다섯 종목(목표비중 PF), 최소 주식수, 원화 수익률 vs S&P500. 시세는 portfolio.json -->
+    <div class="card pf-card" id="pfPc" aria-label="포트폴리오 투자"></div>
   </section>
 
   <section class="view" id="view-input">
@@ -13682,6 +13740,215 @@ function mSigOnShow() {
 }
 if (mSig.data) mSigRender();
 
+/* ── 투자 탭: 포트폴리오 투자 ──
+   미국 ETF 다섯 종목을 목표비중(PF)대로 담는 포트폴리오. 휴대폰은 투자 탭의 신호 카드 아래(#pfM), PC 는 투자 정보 화면 아래(#pfPc).
+   ① 구성  ② 이 비중을 맞추는 최소 주식수 — 비중 오차를 ±1 · 2 · 3%p 안으로 맞추는 가장 적은 금액의 조합 (마지막 종가 기준)
+   ③ 원화로 투자했을 때의 수익률을 S&P500(SPY, 같은 환율로 원화 환산)과 겹쳐 그린 차트 — 시작일에 목표비중대로 사서 그대로 둔 경우,
+      배당 재투자 포함(수정종가), 수수료 · 세금 제외.
+   시세는 브라우저에서 바로 못 받아서 GitHub Actions 가 portfolio.json 으로 받아 둔다 (.github/scripts/portfolio.py).
+   rows: [날짜, 원/달러 환율, DYNF, IEMG, SCHF, BAI, IBB, SPY 수정종가] — 가장 늦게 상장한 BAI 의 첫 거래일부터 */
+var PF = [
+  { t: 'DYNF', w: 0.30, c: '#2a78d6', ko: '미국 팩터 로테이션 (액티브)' },
+  { t: 'IEMG', w: 0.30, c: '#1f9e89', ko: '신흥국 주식' },
+  { t: 'SCHF', w: 0.15, c: '#e08a2c', ko: '미국 외 선진국 주식' },
+  { t: 'BAI',  w: 0.15, c: '#8e5bd8', ko: 'AI 혁신 · 기술 (액티브)' },
+  { t: 'IBB',  w: 0.10, c: '#d0498a', ko: '바이오테크' }
+];
+var PF_KEY = 'asset_pc_pf', PF_UI_KEY = 'asset_pc_pf_ui';
+var PF_PERIODS = [['1m', '1개월', 1], ['3m', '3개월', 3], ['6m', '6개월', 6], ['1y', '1년', 12], ['all', '전체', 0]];
+var pf = { data: null, at: 0, busy: false, period: 'all', tol: 2 };
+function pfOk(d) { return !!d && Array.isArray(d.rows) && d.rows.length > 20 && Array.isArray(d.tickers) && d.close && d.fx > 0; }
+try { var pfSaved = JSON.parse(lsGet(PF_KEY) || 'null'); if (pfOk(pfSaved)) pf.data = pfSaved; } catch (e) {}
+try { var pfUi = JSON.parse(lsGet(PF_UI_KEY) || 'null'); if (pfUi) { if (PF_PERIODS.some(function (p) { return p[0] === pfUi.period; })) pf.period = pfUi.period; if ([1, 2, 3].indexOf(pfUi.tol) >= 0) pf.tol = pfUi.tol; } } catch (e) {}
+function pfUsd(v) { return '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function pfWon(v) { return Math.round(v).toLocaleString('ko-KR') + '원'; }
+function pfPct(v, d) { var t = Math.abs(v).toFixed(d == null ? 1 : d); return (+t === 0 ? '' : v > 0 ? '+' : '−') + t + '%'; }
+function pfYmd(d) { return d.slice(0, 4) + '.' + d.slice(4, 6) + '.' + d.slice(6, 8); }
+function pfCol(t) { return pf.data.tickers.indexOf(t) + 2; }
+
+// 최소 주식수 — 총액 B 를 조금씩 늘려 가며 종목마다 round(비중 × B ÷ 가격)주(최소 1주)를 사 보고,
+// 실제 비중이 모두 목표 ± tol%p 안에 드는 첫(가장 적은 금액의) 조합. 못 찾으면 오차가 가장 작은 것
+function pfShares(tol) {
+  var px = PF.map(function (p) { return pf.data.close[p.t]; });
+  var b0 = Math.max.apply(null, PF.map(function (p, i) { return px[i] / p.w; })) * 0.5, step = b0 / 400, best = null;
+  for (var k = 0; k < 40000; k++) {
+    var B = b0 + step * k, q = PF.map(function (p, i) { return Math.max(1, Math.round(p.w * B / px[i])); });
+    var tot = q.reduce(function (a, n, i) { return a + n * px[i]; }, 0);
+    var dev = Math.max.apply(null, PF.map(function (p, i) { return Math.abs(q[i] * px[i] / tot - p.w); }));
+    if (!best || dev < best.dev - 1e-9) best = { q: q, tot: tot, dev: dev };
+    if (dev <= tol / 100) return { q: q, tot: tot, dev: dev, px: px };
+  }
+  best.px = px;
+  return best;
+}
+
+// 기간 안의 원화 수익률 — 시작일에 목표비중대로 사서 그대로 둔 값 (환율 변화 포함)
+function pfSeries() {
+  var rows = pf.data.rows, per = PF_PERIODS.filter(function (p) { return p[0] === pf.period; })[0], s = 0;
+  if (per[2]) {
+    var e = rows[rows.length - 1][0], d = new Date(+e.slice(0, 4), +e.slice(4, 6) - 1 - per[2], +e.slice(6, 8));
+    var from = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+    while (s < rows.length - 2 && rows[s][0] < from) s++;
+  }
+  var r0 = rows[s], cols = PF.map(function (p) { return pfCol(p.t); }), sc = pfCol('SPY');
+  return rows.slice(s).map(function (r) {
+    var fx = r[1] / r0[1], usd = 0;
+    cols.forEach(function (c, i) { usd += PF[i].w * r[c] / r0[c]; });
+    return { d: r[0], fx: r[1], p: (usd * fx - 1) * 100, s: (r[sc] / r0[sc] * fx - 1) * 100, pu: (usd - 1) * 100 };
+  });
+}
+function pfMdd(arr, key) {
+  var peak = -Infinity, mdd = 0;
+  arr.forEach(function (x) { var v = 1 + x[key] / 100; peak = Math.max(peak, v); mdd = Math.min(mdd, v / peak - 1); });
+  return mdd * 100;
+}
+
+function pfRender() {
+  var mob = $('pfMWrap');
+  if (mob) mob.hidden = location.protocol === 'file:' || !pf.data;
+  ['pfPc', 'pfM'].forEach(function (id) { var box = $(id); if (box) pfRenderInto(box); });
+}
+function pfRenderInto(box) {
+  var d = pf.data;
+  var head = '<div class="card-head"><div><div class="card-title">포트폴리오 투자<span class="qm" tabindex="0" data-tip-t="포트폴리오 투자" data-tip="DYNF 30% · IEMG 30% · SCHF 15% · BAI 15% · IBB 10% 로 담는 미국 ETF 포트폴리오입니다.\n최소 주식수는 마지막 종가로, 수익률은 원/달러 환율 변화까지 넣은 원화 기준으로 계산합니다. 투자 판단의 참고용이에요.">?</span></div>' +
+    '<div class="card-sub">' + (d ? '미국 ' + (+d.basisDate.slice(5, 7)) + '월 ' + (+d.basisDate.slice(8, 10)) + '일 종가 · 환율 ' + d.fx.toLocaleString('ko-KR', { maximumFractionDigits: 2 }) + '원/달러' : '미국 ETF 다섯 종목 · 원화 수익률') + '</div></div></div>';
+  if (!d) {
+    box.innerHTML = head + '<div class="inv-empty">' + (location.protocol === 'file:' ? '파일로 연 화면에서는 볼 수 없어요' : pf.busy || !pf.at ? '포트폴리오 시세를 불러오는 중…' : '포트폴리오 시세를 불러오지 못했어요') + '</div>';
+    return;
+  }
+  // ① 구성 + ② 최소 주식수
+  var sh = pfShares(pf.tol);
+  var left = '<div class="pf-sec"><div class="pf-bar" aria-hidden="true">' + PF.map(function (p) { return '<i style="flex:' + p.w + ';background:' + p.c + '"></i>'; }).join('') + '</div>' +
+    '<div class="pf-h"><span>최소 주식수</span><span class="pf-seg" role="radiogroup" aria-label="비중 오차">' +
+      [1, 2, 3].map(function (t) { return '<button type="button" data-pf-tol="' + t + '" class="' + (t === pf.tol ? 'on' : '') + '" aria-pressed="' + (t === pf.tol) + '">±' + t + '%p</button>'; }).join('') + '</span></div>' +
+    '<table class="pf-tbl"><thead><tr><th>종목 · 목표</th><th class="num">종가</th><th class="num">주식수</th><th class="num">실제 비중</th></tr></thead><tbody>' +
+    PF.map(function (p, i) {
+      var amt = sh.q[i] * sh.px[i];
+      return '<tr><td><div class="pf-tk"><i style="background:' + p.c + '"></i><div><b>' + p.t + '</b> <span class="muted">' + Math.round(p.w * 100) + '%</span><small>' + rbEsc(p.ko) + '</small></div></div></td>' +
+        '<td class="num">' + pfUsd(sh.px[i]) + '</td>' +
+        '<td class="num"><span class="pf-q">' + sh.q[i] + '주</span><small class="d">' + pfUsd(amt) + '</small></td>' +
+        '<td class="num">' + (amt / sh.tot * 100).toFixed(1) + '%<small class="d">' + pfPct((amt / sh.tot - p.w) * 100) + 'p</small></td></tr>';
+    }).join('') + '</tbody></table>' +
+    '<div class="pf-total"><span>합계 ' + sh.q.reduce(function (a, n) { return a + n; }, 0) + '주 · ' + pfUsd(sh.tot) + '</span><b>약 ' + pfWon(sh.tot * d.fx) + '</b></div>' +
+    '<p class="pf-note">' + (sh.dev <= pf.tol / 100 ? '각 종목 비중이 목표에서 ±' + pf.tol + '%p 안에 드는 가장 적은 금액의 조합이에요.' : '±' + pf.tol + '%p 안에 드는 조합을 못 찾아 오차가 가장 작은 조합을 보여 줘요.') +
+      ' 이 수량의 배수로 사면 같은 비중이 유지돼요. 원화 금액은 환전 수수료 전, 마지막 종가 기준이라 주문 때 조금 달라질 수 있어요.</p></div>';
+  // ③ 원화 수익률 vs S&P500
+  var ser = pfSeries(), last = ser[ser.length - 1], gap = last.p - last.s;
+  var right = '<div class="pf-sec">' +
+    '<div class="pf-h"><span>원화 수익률 · S&amp;P500 비교</span><span class="pf-seg" role="radiogroup" aria-label="기간">' +
+      PF_PERIODS.map(function (p) { return '<button type="button" data-pf-per="' + p[0] + '" class="' + (p[0] === pf.period ? 'on' : '') + '" aria-pressed="' + (p[0] === pf.period) + '">' + p[1] + '</button>'; }).join('') + '</span></div>' +
+    '<div class="pf-verdict">' + (Math.abs(gap) < 0.05 ? 'S&amp;P500 과 비슷해요' :
+      'S&amp;P500 보다 <span class="' + (gap > 0 ? 'up' : 'down') + '">' + Math.abs(gap).toFixed(1) + '%p ' + (gap > 0 ? '더 나아요 ▲' : '못해요 ▼') + '</span>') +
+      '<small class="muted" style="font-size:.74rem;font-weight:600">' + pfYmd(ser[0].d) + ' ~ ' + pfYmd(last.d) + ' · ' + ser.length + '거래일</small></div>' +
+    '<div class="pf-leg"><span><i></i>포트폴리오 (원화)</span><span><i class="spx"></i>S&amp;P500 · SPY (원화)</span></div>' +
+    '<div class="pf-ch"><div class="inv-tip" hidden></div></div>' +
+    '<div class="pf-stats"><div><label>포트폴리오 (원화)</label><b class="' + (last.p > 0 ? 'up' : last.p < 0 ? 'down' : '') + '">' + pfPct(last.p) + '</b></div>' +
+      '<div><label>S&amp;P500 (원화)</label><b class="' + (last.s > 0 ? 'up' : last.s < 0 ? 'down' : '') + '">' + pfPct(last.s) + '</b></div>' +
+      '<div><label>환율 ' + Math.round(ser[0].fx).toLocaleString('ko-KR') + ' → ' + Math.round(last.fx).toLocaleString('ko-KR') + '</label><b>' + pfPct((last.fx / ser[0].fx - 1) * 100) + '</b></div>' +
+      '<div><label>최대 낙폭 (포트 / S&amp;P)</label><b>' + pfMdd(ser, 'p').toFixed(1) + ' / ' + pfMdd(ser, 's').toFixed(1) + '%</b></div></div>' +
+    '<p class="pf-note">시작일에 목표비중대로 사서 그대로 둔 경우의 원화 평가액 변화예요. 배당 재투자 포함, 수수료 · 세금 · 환전 비용 제외. 달러 기준 포트폴리오 수익률은 ' + pfPct(last.pu) + '.' +
+      (pf.period === 'all' ? ' 전체 기간은 가장 늦게 상장한 BAI 의 첫 거래일부터예요.' : '') + '</p></div>';
+  box.innerHTML = head + '<div class="pf-grid"><div>' + left + '</div><div>' + right + '</div></div>';
+  pfDraw(box, ser);
+}
+function pfDraw(box, ser) {
+  var ch = box.querySelector('.pf-ch');
+  if (!ch || !ser) return;
+  var W = Math.round(ch.clientWidth);
+  if (!W) return;   // 숨겨진 쪽(PC 의 휴대폰 카드 등)은 보일 때 그린다
+  var mob = W < 520, L = 6, R = mob ? 46 : 56, T = 14, B = 24, H = mob ? 220 : 300, PH = H - T - B, n = ser.length;
+  var lo = 0, hi = 0;
+  ser.forEach(function (x) { lo = Math.min(lo, x.p, x.s); hi = Math.max(hi, x.p, x.s); });
+  var pad = (hi - lo) * 0.08 || 1; hi += pad; lo -= pad;
+  var X = function (i) { return L + (W - L - R) * (n < 2 ? 0.5 : i / (n - 1)); };
+  var Y = function (v) { return T + (hi - v) / (hi - lo) * PH; };
+  var out = [], stepV = [1, 2, 5, 10, 20, 25, 50, 100].filter(function (s) { return (hi - lo) / s <= 6; })[0] || 200;
+  for (var v = Math.ceil(lo / stepV) * stepV; v <= hi; v += stepV) {
+    var yy = Y(v).toFixed(1);
+    out.push('<line x1="' + L + '" x2="' + (W - R) + '" y1="' + yy + '" y2="' + yy + '" stroke="' + (v === 0 ? 'var(--muted)' : 'var(--grid)') + '"' + (v === 0 ? ' stroke-opacity=".6"' : ' stroke-dasharray="3 4"') + '/>' +
+      '<text x="' + (W - R + 6) + '" y="' + (+yy + 4) + '" font-size="11" fill="var(--muted)">' + (v > 0 ? '+' : '') + v + '%</text>');
+  }
+  // 아래 날짜 눈금 — 4~6개
+  var ticks = mob ? 4 : 6;
+  for (var t = 0; t < ticks; t++) {
+    var i = Math.round((n - 1) * t / (ticks - 1)), d = ser[i].d, lbl = (+d.slice(2, 4)) + '.' + d.slice(4, 6);
+    out.push('<text x="' + X(i).toFixed(1) + '" y="' + (H - 6) + '" font-size="11" fill="var(--muted)" text-anchor="' + (t === 0 ? 'start' : t === ticks - 1 ? 'end' : 'middle') + '">' + lbl + '</text>');
+  }
+  var path = function (k) { return ser.map(function (x, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(x[k]).toFixed(1); }).join(''); };
+  var lastI = n - 1, area = path('p') + 'L' + X(lastI).toFixed(1) + ' ' + Y(0).toFixed(1) + 'L' + X(0).toFixed(1) + ' ' + Y(0).toFixed(1) + 'Z';
+  out.push('<path d="' + area + '" fill="var(--accent)" fill-opacity=".08"/>');
+  out.push('<path d="' + path('s') + '" fill="none" stroke="#e08a2c" stroke-width="2" stroke-linejoin="round"/>');
+  out.push('<path d="' + path('p') + '" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>');
+  out.push('<circle cx="' + X(lastI).toFixed(1) + '" cy="' + Y(ser[lastI].s).toFixed(1) + '" r="3.5" fill="#e08a2c"/>');
+  out.push('<circle cx="' + X(lastI).toFixed(1) + '" cy="' + Y(ser[lastI].p).toFixed(1) + '" r="4" fill="var(--accent)"/>');
+  out.push('<g class="pf-hov" style="display:none"><line y1="' + T + '" y2="' + (T + PH) + '" stroke="var(--muted)" stroke-dasharray="3 3"/>' +
+    '<circle r="4" fill="#e08a2c"/><circle r="4.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="1.5"/></g>');
+  out.push('<rect class="pf-hit" x="' + L + '" y="0" width="' + (W - L - R) + '" height="' + H + '" fill="transparent"/>');
+  var old = ch.querySelector('svg');
+  if (old) old.remove();
+  ch.insertAdjacentHTML('beforeend', '<svg viewBox="0 0 ' + W + ' ' + H + '" height="' + H + '" role="img" aria-label="포트폴리오와 S&amp;P500 원화 수익률 차트">' + out.join('') + '</svg>');
+  var svg = ch.querySelector('svg'), hov = svg.querySelector('.pf-hov'), tip = ch.querySelector('.inv-tip'), cs = hov.querySelectorAll('circle');
+  function show(e) {
+    var rc = svg.getBoundingClientRect(), x = (e.clientX - rc.left) * W / rc.width;
+    var i = Math.max(0, Math.min(n - 1, Math.round((x - L) / (W - L - R) * (n - 1)))), s = ser[i], xi = X(i);
+    hov.style.display = '';
+    hov.querySelector('line').setAttribute('x1', xi); hov.querySelector('line').setAttribute('x2', xi);
+    cs[0].setAttribute('cx', xi); cs[0].setAttribute('cy', Y(s.s));
+    cs[1].setAttribute('cx', xi); cs[1].setAttribute('cy', Y(s.p));
+    tip.innerHTML = '<b>' + pfYmd(s.d) + '</b><div><span>포트폴리오</span><em class="p">' + pfPct(s.p, 2) + '</em></div>' +
+      '<div><span>S&amp;P500</span><em class="s">' + pfPct(s.s, 2) + '</em></div><div><span>차이</span>' + pfPct(s.p - s.s, 2) + 'p</div>' +
+      '<div><span>환율</span>' + s.fx.toLocaleString('ko-KR', { maximumFractionDigits: 1 }) + '원</div>';
+    tip.querySelectorAll('em').forEach(function (m) { m.style.fontStyle = 'normal'; });
+    tip.hidden = false;
+    var sx = xi * rc.width / W, tw = tip.offsetWidth;
+    tip.style.left = (sx + 14 + tw > rc.width ? Math.max(0, sx - 14 - tw) : sx + 14) + 'px';
+  }
+  function hide() { hov.style.display = 'none'; tip.hidden = true; }
+  var hit = svg.querySelector('.pf-hit');
+  hit.addEventListener('pointermove', show);
+  hit.addEventListener('pointerdown', show);
+  hit.addEventListener('pointerleave', hide);
+  hit.addEventListener('pointercancel', hide);
+}
+['pfPc', 'pfM'].forEach(function (id) {
+  var box = $(id);
+  if (!box) return;
+  box.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-pf-tol], button[data-pf-per]');
+    if (!b) return;
+    if (b.dataset.pfTol) pf.tol = +b.dataset.pfTol; else pf.period = b.dataset.pfPer;
+    lsSet(PF_UI_KEY, JSON.stringify({ period: pf.period, tol: pf.tol }));
+    pfRender();
+  });
+});
+function pfLoad() {
+  if (location.protocol === 'file:' || pf.busy) return;
+  pf.busy = true;
+  pf.at = Date.now();
+  fetch('portfolio.json?t=' + Date.now(), { cache: 'no-store' })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (d) {
+      if (!pfOk(d)) return;
+      var same = pf.data && JSON.stringify([pf.data.rows[pf.data.rows.length - 1], pf.data.close, pf.data.fx]) === JSON.stringify([d.rows[d.rows.length - 1], d.close, d.fx]);
+      pf.data = d;
+      lsSet(PF_KEY, JSON.stringify(d));
+      if (!same) pfRender();
+    })
+    .catch(function () {})
+    .then(function () { pf.busy = false; if (!pf.data) pfRender(); });
+}
+function pfOnShow() {
+  if (!mInvShown()) return;
+  if (!pf.at || Date.now() - pf.at > 30 * 60e3) pfLoad();
+  pfRender();   // 숨겨져 있던 동안 못 그린 차트를 지금 폭에 맞게
+}
+var pfResizeT = 0;
+window.addEventListener('resize', function () {
+  clearTimeout(pfResizeT);
+  pfResizeT = setTimeout(function () { if (pf.data && mInvShown()) pfRender(); }, 150);
+});
+pfRender();
+
 /* ═══════════ 투자 정보 (PC) ═══════════
    휴대폰 투자 탭의 두 카드(AI 시황 브리핑 · 스토캐스틱 신호)를 PC 폭에 맞게 — 위는 브리핑 한 장, 아래 왼쪽은 신호 종목 목록,
    오른쪽은 고른 종목의 일봉 차트. 차트 일봉은 stoch.json 에 종목마다 함께 담겨 온다(bars: [날짜, 시가, 고가, 저가, 종가, 거래량]).
@@ -13985,6 +14252,7 @@ window.addEventListener('resize', function () {
 // 투자 탭을 열 때 · 앱으로 돌아올 때 — 5분이 지났거나 시가 바뀌었으면 다시 읽는다
 function mNewsOnShow() {
   mSigOnShow();
+  pfOnShow();
   if (!mNews || !mInvShown()) return;
   var due = !mNews.at || Date.now() - mNews.at > 5 * 60e3 || new Date(mNews.at).getUTCHours() !== new Date().getUTCHours();
   if (due) mNewsLoad(); else mNewsPlan();
