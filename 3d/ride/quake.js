@@ -3,7 +3,9 @@
      윗면 · 양옆 단면(흙 · 돌 지층) · 앞쪽 절벽을 그린다. 끝에서 바이크가 뛰어내린다.
    - 솟는 땅덩이(BLOCKS): 다가가면 먼저 바닥에 금이 가고, 순식간에 솟아올라(살짝 튀었다 자리 잡음) 길 일부를 막는다.
    - 바위(BOULDERS): 산비탈에서 출발해 중력으로 빨라지며 굴러 내려와 길을 가로지른다.
-   game.js: QUAKE_FX.build({...}) → update(dt,time). ride.quakeOn 이 꺼져 있으면 아무것도 보이지 않는다. */
+   - 땅 물결(WAVES · 4회차부터 ride.waveOn): 목표봉 고갯길부터 길과 양옆 풀밭이 파도처럼 솟았다 가라앉으며 바이크 쪽으로 밀려온다.
+   - 흘러내리는 낙석(5회차부터 ride.slideOn): 목표봉 오르막에서 바위가 굴러 내려오면 뒤로 잔돌이 통통 튀며 따라 흘러내린다(바위 자체는 game.js).
+   game.js: QUAKE_FX.build({...}) → update(dt,time). ride.quakeOn · waveOn · slideOn 이 꺼져 있으면 그 부분은 보이지 않는다. */
 (function(root){
 function build({T,scene,ride,drivePoint,groundAt}){
  const Q=root.RIDE_QUAKE,group=new T.Group();group.visible=false;scene.add(group);
@@ -59,8 +61,29 @@ function build({T,scene,ride,drivePoint,groundAt}){
   const rays=[0,1,2].map(j=>{const r=new T.Mesh(crackGeo(k.i*1.3+j,3+j,.5,.6-j*.6),crackMat);r.position.set(cx+(j-1)*w*.45,0,(j%2?1:-1)*(l/2+2));r.rotation.y=(j-1)*.7;g.add(r);return r});
   return {k,g,m,hole,rays}});
  const boulders=Q.BOULDERS.map(b=>{const fw=drivePoint(b.z+20,0,'cliff').sub(drivePoint(b.z,0,'cliff')).normalize(),m=new T.Mesh(new T.DodecahedronGeometry(b.radius,1),rockMat);m.scale.set(1,.88,1.05);m.castShadow=true;group.add(m);return {b,m,fw}});
+ // ── 땅 물결: 물결마다 길을 따라가는 띠(가운데는 길 흙빛, 양옆은 풀빛). 솟은 만큼만 보이고(투명도) 평평한 곳은 원래 땅이 보인다
+ const WLAT=[-40,-30,-22,-16,-12,-10,-9,-5,0,5,9,10,12,16,22,30,40],WROWS=46,ROADC=C('#c4a578'),EDGEC=C('#8f7650'),GRASSC=C('#86a660'),CRESTC=C('#d8bf93');
+ const waveMat=new T.MeshStandardMaterial({vertexColors:true,transparent:true,roughness:.95,flatShading:true,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-4,side:T.DoubleSide});
+ const waveFall=x=>{const a=Math.abs(x);return a<=11?1:Math.max(0,1-(a-11)/29)**1.5};
+ const wavePool=[0,1,2].map(()=>{const n=(WROWS+1)*WLAT.length,g=new T.BufferGeometry(),idx=[];g.setAttribute('position',new T.BufferAttribute(new Float32Array(n*3),3));g.setAttribute('color',new T.BufferAttribute(new Float32Array(n*4),4));
+  for(let i=0;i<WROWS;i++)for(let c=0;c<WLAT.length-1;c++){const a=i*WLAT.length+c,b=a+1,d=a+WLAT.length,e=d+1;idx.push(a,d,b,b,d,e)}g.setIndex(idx);
+  const m=new T.Mesh(g,waveMat);m.frustumCulled=false;m.receiveShadow=true;m.visible=false;scene.add(m);return m});
+ function shapeWave(m,st){const W=Q.WAVE,s0=st.sc-W.w-80,s1=st.sc+W.gap+W.w+80,P=m.geometry.attributes.position.array,Cc=m.geometry.attributes.color.array;let v=0;
+  for(let i=0;i<=WROWS;i++){const s=s0+(s1-s0)*i/WROWS,l=Q.waveLift(st,s);
+   for(const x of WLAT){const b=Math.abs(x)<=10?drivePoint(s,x,'cliff'):groundAt(s,x),f=waveFall(x),y=l*f,a=Math.abs(x);
+    P[v*3]=b.x;P[v*3+1]=b.y+.06+y;P[v*3+2]=b.z;
+    const c=a<9?(l>st.h*.8?CRESTC:ROADC):a<=10?EDGEC:GRASSC;Cc[v*4]=c.r;Cc[v*4+1]=c.g;Cc[v*4+2]=c.b;Cc[v*4+3]=Math.min(1,y/.45);v++}}
+  m.geometry.attributes.position.needsUpdate=true;m.geometry.attributes.color.needsUpdate=true;m.geometry.computeVertexNormals()}
+ function updateWaves(){let k=0;if(ride.waveOn)for(const st of ride.waves.values()){if(st.done||k>=wavePool.length)continue;if(Math.abs(st.sc-ride.pos)>3600)continue;const m=wavePool[k++];m.visible=true;shapeWave(m,st)}
+  for(;k<wavePool.length;k++)wavePool[k].visible=false}
+ // ── 흘러내리는 잔돌: 굴러 내려오는 바위 뒤로 6개씩
+ const PEB=6,MAXP=9*PEB,pebbles=new T.InstancedMesh(new T.DodecahedronGeometry(.42,0),rockMat,MAXP);pebbles.frustumCulled=false;pebbles.castShadow=true;scene.add(pebbles);const pd=new T.Object3D();
+ function updatePebbles(time){let n=0;if(ride.slideOn)for(const o of ride.items){const sl=ride.slides.get(o.id);if(!sl||n>=MAXP)continue;const oz=o.z-sl.dz;if(oz<ride.pos-150||oz>ride.pos+4000)continue;const run=Math.min(1,sl.dz/120),ox=Q.rockX(o,sl)*9;
+   for(let j=0;j<PEB&&n<MAXP;j++,n++){const ps=oz+(o.radius*20)*.9+j*22+Math.sin(j*2.3+o.id)*8,px=ox+Math.sin(j*1.7+o.id)*(1.2+j*.35),p=drivePoint(ps,px,'cliff');
+    pd.position.set(p.x,p.y+.3+Math.abs(Math.sin(time*(7+j)+j*1.3))*(.25+j*.1)*Math.min(1,sl.v/120),p.z);pd.rotation.set(time*(3+j)+j,j,time*2);pd.scale.setScalar((.6+(j%3)*.35)*run);pd.updateMatrix();pebbles.setMatrixAt(n,pd.matrix)}}
+  pebbles.count=Math.max(0,n);pebbles.visible=n>0;pebbles.instanceMatrix.needsUpdate=true}
  const back=x=>{const c=2.2;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};   // 살짝 넘쳤다가 자리 잡는다
- function update(dt,time){const on=!!ride.quakeOn;group.visible=on;if(!on)return;const pos=ride.pos;
+ function update(dt,time){updateWaves();updatePebbles(time);const on=!!ride.quakeOn;group.visible=on;if(!on)return;const pos=ride.pos;
   for(const P of ramps){const R=P.R,near=pos>R.z0-3200&&pos<R.z0+R.len+900;P.g.visible=near;if(!near)continue;
    const key=Math.round(pos);if(key!==P.last){P.last=key;shapeRamp(P,pos)}}
   for(const B of blocks){const k=B.k,d=k.z-pos,near=d<3000&&d>-600;B.g.visible=near;if(!near)continue;
@@ -72,6 +95,6 @@ function build({T,scene,ride,drivePoint,groundAt}){
    const v=st?st.v:0,hop=st?Math.abs(Math.sin(st.t*5.5))*.5*Math.min(1,v/1.2):0;
    B.m.position.set(road.x,gy+b.radius*.86+hop,road.z);B.m.quaternion.setFromAxisAngle(B.fw,st?-st.roll*b.side:0)}}
  function reset(){for(const P of ramps)P.last=-1}
- return {update,reset,group,ramps,blocks,boulders}}
+ return {update,reset,group,ramps,blocks,boulders,wavePool,pebbles}}
 root.QUAKE_FX={build};if(typeof module!=='undefined')module.exports={build};
 })(typeof window!=='undefined'?window:globalThis);
