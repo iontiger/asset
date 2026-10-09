@@ -2943,6 +2943,20 @@
     .m-sig-nm { flex:1; min-width:0; font-size:.95rem; font-weight:700; letter-spacing:-.01em; }
     .m-sig-nm b { display:block; font-weight:inherit; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .m-sig-px { flex:none; text-align:right; font-size:.9rem; font-weight:700; font-variant-numeric:tabular-nums; }
+    .m-sig-tag.low  { background:color-mix(in srgb, #d9652a 14%, transparent); color:#c2531c; }
+    .m-sig-tag.high { background:color-mix(in srgb, #178a5a 14%, transparent); color:#178a5a; }
+    .m-hold-list li + li .m-hold-row { border-top:1px solid var(--border); }
+    .m-hold-row {
+      width:100%; display:flex; align-items:center; gap:10px; padding:8px 8px; margin:0 -8px; width:calc(100% + 16px);
+      border:0; border-radius:10px; background:none; color:inherit; font:inherit; text-align:left; cursor:pointer;
+    }
+    .m-hold-row:active { opacity:.6; }
+    .m-hold-row.warn { background:linear-gradient(90deg, rgba(217,57,58,.20), rgba(217,57,58,.04) 75%); border-top-color:transparent !important; }
+    .m-hold-row.warn .m-sig-no { color:#c23435; }
+    .m-hold-warn { display:block; margin-top:1px; font-size:.7rem; font-weight:800; color:#c23435; }
+    .m-hold-sc { flex:none; min-width:40px; padding:4px 8px; border-radius:9px; color:#fff; text-align:center; font-size:.92rem; font-weight:800; font-variant-numeric:tabular-nums; }
+    .m-hold-sc:not([class*="kr-g-"]) { background:var(--grid); color:var(--muted); }
+    .m-hold-sc small { margin-left:3px; font-size:.68rem; opacity:.9; }
     .m-sig-none { margin:auto 0; font-size:.95rem; font-weight:600; color:var(--muted); text-align:center; }
 
     /* 금액 가리기 (눈 아이콘) — 새 카드들의 금액만 흐리게 */
@@ -14233,9 +14247,58 @@ function mSigOk(d) {
   return !!d && /^\d{4}-\d{2}-\d{2}$/.test(d.basisDate || '') && Array.isArray(d.buy) && Array.isArray(d.sell);
 }
 try { var mSigSaved = JSON.parse(lsGet(M_SIG_KEY) || 'null'); if (mSigOk(mSigSaved)) mSig.data = mSigSaved; } catch (e) {}
+// 국내주식 보유 종목이 있으면 신호 카드 대신 보유 종목 매력도 카드 두 장 — 왼쪽은 낮은 순, 오른쪽은 높은 순.
+// 매도 주의(D · E 등급, 데드크로스)는 빨간 그라데이션, 줄을 누르면 국내주식 상세 창
+function mSigHoldRows() {
+  if (typeof kr === 'undefined' || !kr || !kr.hold || !kr.hold.length || !kr.idx) return null;
+  return kr.hold.map(function (h) { return { h: h, r: kr.map[h.c] }; });
+}
+function mSigHoldRender(rows) {
+  var track = $('mSigTrack'), b = kr.idx.basis, when = +b.slice(5, 7) + '월 ' + +b.slice(8, 10) + '일 종가';
+  $('mSig').hidden = false;
+  track.innerHTML = '';
+  var sc = function (x) { return x.r ? x.r[6] : -1; };
+  [['low', '보유 종목 · 매력도 낮은 순', function (a, b) { return sc(a) - sc(b); }],
+   ['high', '보유 종목 · 매력도 높은 순', function (a, b) { return sc(b) - sc(a); }]].forEach(function (s, n) {
+    var c = el('article', 'm-news-card m-hold-card');
+    c.innerHTML = '<div class="m-news-top"><span class="m-sig-tag ' + s[0] + '"></span><time></time></div>';
+    c.querySelector('.m-sig-tag').textContent = s[1];
+    c.querySelector('time').textContent = when;
+    var body = el('ol', 'm-sig-list m-hold-list');
+    rows.slice().sort(s[2]).forEach(function (x, i) {
+      var r = x.r, wn = krWarn(r), a = el('button', 'm-hold-row' + (wn ? ' warn' : ''));
+      a.type = 'button';
+      a.dataset.krOpen = x.h.c;
+      a.appendChild(el('span', 'm-sig-no', String(i + 1)));
+      var nm = el('span', 'm-sig-nm');
+      nm.appendChild(el('b', null, r ? r[1] : x.h.n || x.h.c));
+      if (wn) nm.appendChild(el('small', 'm-hold-warn', '매도 주의 · ' + wn));
+      a.appendChild(nm);
+      var g = el('span', 'm-hold-sc' + (r ? ' kr-g-' + r[8] : ''), r ? String(r[6]) : '–');
+      if (r) g.appendChild(el('small', null, r[8]));
+      a.appendChild(g);
+      var li = el('li');
+      li.appendChild(a);
+      body.appendChild(li);
+    });
+    c.appendChild(body);
+    c.setAttribute('aria-label', s[1] + ', ' + when + ' (' + (n + 1) + ' / 2)');
+    track.appendChild(c);
+  });
+  track.scrollLeft = 0;
+  mSigDots();
+}
+$('mSigTrack').addEventListener('click', function (e) {
+  var b = e.target.closest('[data-kr-open]');
+  if (b && typeof krOpen === 'function') krOpen(b.dataset.krOpen);
+});
 function mSigRender() {
   invSigRender();
+  mSigTrackRender();
+}
+function mSigTrackRender() {
   var d = mSig.data, track = $('mSigTrack');
+  if (location.protocol !== 'file:') { var hr = mSigHoldRows(); if (hr) { mSigHoldRender(hr); return; } }
   $('mSig').hidden = !d || location.protocol === 'file:';
   if (!d) return;
   track.innerHTML = '';
@@ -14746,6 +14809,7 @@ function krRenderInto(box) {
   }).join('');
 }
 function krRender() {
+  if (typeof mSigTrackRender === 'function') mSigTrackRender();
   var mob = $('krMWrap');
   if (mob) mob.hidden = location.protocol === 'file:';
   ['krPc', 'krM'].forEach(function (id) { var b = $(id); if (b) krRenderInto(b); });
