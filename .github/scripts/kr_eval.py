@@ -36,7 +36,7 @@ FCHART = "https://fchart.stock.naver.com/sise.nhn?symbol={}&timeframe=day&count=
 INTEG = "https://m.stock.naver.com/api/stock/{}/integration"
 ANNUAL = "https://m.stock.naver.com/api/stock/{}/finance/annual"
 ETFAN = "https://m.stock.naver.com/api/stock/{}/etfAnalysis"
-UPJONG = "https://m.stock.naver.com/api/stocks/industry?page=1&pageSize=200"
+UPJONG = "https://m.stock.naver.com/api/stocks/industry?page={}&pageSize=20"
 HIST = 60    # 상세 파일에 남기는 점수 기록 수
 KST = dt.timezone(dt.timedelta(hours=9))
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"}
@@ -396,7 +396,15 @@ def etf_theme(name, base):
 def upjong_names():
     """네이버 업종 번호 → 이름 (integration 의 industryCode 와 같은 번호). 못 받으면 빈 사전"""
     try:
-        return {str(g["no"]): g["name"] for g in json.loads(get(UPJONG)).get("groups") or [] if g.get("no") is not None and g.get("name")}
+        out, page = {}, 1
+        while page <= 20:
+            d = json.loads(get(UPJONG.format(page)))
+            gs = d.get("groups") or []
+            out.update({str(g["no"]): g["name"] for g in gs if g.get("no") is not None and g.get("name")})
+            if not gs or len(out) >= (d.get("totalCount") or 0):
+                break
+            page += 1
+        return out
     except Exception as e:
         print(f"업종 이름을 못 받음 — {e}")
         return {}
