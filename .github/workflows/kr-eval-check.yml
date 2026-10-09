@@ -17,19 +17,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: 네이버 응답 모양 보기
+      - name: 전 종목 평가해 보기
         run: |
-          python3 - <<'PY'
-          import json, urllib.request
-          UA = {"User-Agent": "Mozilla/5.0"}
-          for u in ["https://m.stock.naver.com/api/stock/005930/integration",
-                    "https://m.stock.naver.com/api/stock/005930/finance/annual",
-                    "https://m.stock.naver.com/api/stock/005930/basic",
-                    "https://m.stock.naver.com/api/stock/005930/trend?pageSize=5",
-                    "https://m.stock.naver.com/api/stock/247540/integration"]:
-              try:
-                  b = urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=20).read().decode()
-                  print("=====", u, len(b)); print(b[:6000])
-              except Exception as e:
-                  print("=====", u, "ERR", e)
-          PY
+          python3 .github/scripts/kr_eval.py out
+          ls out/s | wc -l
+          du -sh out
+          python3 -c "import json; d=json.load(open('out/s/005930.json')); d.pop('bars'); print(json.dumps(d, ensure_ascii=False)[:5000])"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kr-eval
+          path: out/index.json
+          retention-days: 7
