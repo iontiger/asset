@@ -102,8 +102,8 @@ jobs:
         id: rb1030
         run: python3 .github/scripts/etf_1030.py _site/rb1030 "${{ steps.pages.outputs.base_url }}"
 
-      # 투자 탭 국내주식 카드 — 코스피 · 코스닥 전 종목 매력도 100점 평가 → _site/kr/index.json (검색 · 목록) + kr/s/{code}.json (상세).
-      # 2,000여 종목 × 3번씩 받아서 하루 두 번(16시 KST 장 마감 뒤 · 그 전)만 새로 평가하고, 그 사이에는 Actions 캐시를 그대로 쓴다
+      # 투자 탭 국내주식 카드 — 코스피 · 코스닥 전 종목과 ETF 매력도 100점 평가 → _site/kr/index.json (검색 · 목록) + kr/s/{code}.json (상세).
+      # 주식 2,600여 · ETF 1,100여 종목 × 3번씩 받아서 하루 두 번(16시 KST 장 마감 뒤 · 그 전)만 새로 평가하고, 그 사이에는 Actions 캐시를 그대로 쓴다
       - name: 국내주식 평가 캐시 키
         id: krkey
         run: echo "key=kreval-$(TZ=Asia/Seoul date +%Y%m%d)-$([ "$(TZ=Asia/Seoul date +%H)" -ge 16 ] && echo pm || echo am)" >> "$GITHUB_OUTPUT"

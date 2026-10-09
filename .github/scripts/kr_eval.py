@@ -12,6 +12,14 @@
      수급 10  : 최근 5거래일 외국인 순매수 5 · 기관 순매수 5 (금액 ÷ 시가총액)
      타이밍 10: 슬로우 스토캐스틱(10,5,5) %K · %D 위치와 교차
      감점     : 부채비율 200% 넘음 −3 · 60일 변동성 상위 10% −2
+ - ETF (NH Plug 마스터의 ETF, ETN 은 뺌): 재무 대신 ETF 끼리 비교 — 네이버 integration 의 etfKeyIndicator + etfAnalysis
+     추세 25        : 6개월 수익률 10 · 이동평균 정배열 8 · 52주 고점 근접 7
+     위험 대비 성과 15: 1년 수익률 ÷ 1년 변동성
+     비용 · 추적 20 : 총보수 10 · 추적오차 5 · 괴리율 5 (낮을수록)
+     규모 · 유동성 15: 순자산 8 · 20일 평균 거래대금 7
+     자금 흐름 15   : 최근 1개월 순유입 ÷ 순자산 8 · 외국인+기관 5일 순매수 ÷ 시총 7
+     타이밍 10      : 주식과 같은 스토캐스틱
+     감점           : 레버리지 · 인버스 −5 (오래 들고 있으면 기초지수와 어긋나기 쉬움)
  - 등급: 70↑ A 매우 매력 · 60↑ B 매력 · 45↑ C 보통 · 35↑ D 주의 · 그 아래 E 약함
  - 오늘 봉은 16시(KST) 전이면 빼서 장이 끝난 종가로만 평가한다. 직전 평가와 기준일이 달라지면 그 점수를 prev 로 남겨 하루 변화를 보여 준다
  - 못 받은 종목은 폴더에 이미 있던 파일(이전 캐시)을 그대로 둔다. 어떤 경우에도 실패 코드로 끝내지 않는다 (배포를 막지 않게)
@@ -25,10 +33,12 @@ from stoch_screen import FIELDS, RECORD, MST_URL, MARKET, N as SN, KS as SKS, DS
 FCHART = "https://fchart.stock.naver.com/sise.nhn?symbol={}&timeframe=day&count=260&requestType=0"
 INTEG = "https://m.stock.naver.com/api/stock/{}/integration"
 ANNUAL = "https://m.stock.naver.com/api/stock/{}/finance/annual"
+ETFAN = "https://m.stock.naver.com/api/stock/{}/etfAnalysis"
 KST = dt.timezone(dt.timedelta(hours=9))
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"}
 KEEP = 130   # 상세 화면 차트용으로 담는 일봉 수
 CATS = [("가치", 25), ("수익성", 20), ("성장성", 15), ("추세", 20), ("수급", 10), ("타이밍", 10)]
+ECATS = [("추세", 25), ("위험대비", 15), ("비용", 20), ("규모", 15), ("자금흐름", 15), ("타이밍", 10)]
 # 백분위로 매기는 상대 평가라 가운데가 50점 안팎 — 2026-10-08 전 종목 기준 A 약 3% · B 약 15% · C · D 가 대부분
 GRADES = [(70, "A", "매우 매력"), (60, "B", "매력"), (45, "C", "보통"), (35, "D", "주의"), (0, "E", "약함")]
 
@@ -62,14 +72,15 @@ def universe():
         for name, n in FIELDS:
             r[name] = rec[off:off + n].decode("cp949", "replace").strip()
             off += n
-        if r["sMarket"] not in MARKET or r["gVenture"] in ("8", "E") or r["eStop"] == "Y":
+        etf = r["sMarket"] == "1" and r["gVenture"] == "8"
+        if r["sMarket"] not in MARKET or (r["gVenture"] in ("8", "E", "F") and not etf) or r["eStop"] == "Y":
             continue
         try:
             cap = int(r["prdy_avls"])
         except ValueError:
             continue
         if cap > 0:
-            out.append({"code": r["sCode"], "name": r["sKorName"].lstrip(" *#"), "market": MARKET[r["sMarket"]], "cap": cap})
+            out.append({"code": r["sCode"], "name": r["sKorName"].lstrip(" *#"), "market": "ETF" if etf else MARKET[r["sMarket"]], "cap": cap, "etf": etf})
     return sorted(out, key=lambda s: -s["cap"])
 
 
@@ -94,7 +105,7 @@ def fetch(s, cutoff):
     except Exception:
         pass
     try:
-        fin = json.loads(get(ANNUAL.format(code)))
+        fin = json.loads(get((ETFAN if s.get("etf") else ANNUAL).format(code)))
     except Exception:
         pass
     return {**s, "bars": bars, "integ": integ, "fin": fin}
@@ -333,6 +344,142 @@ def score_all(items):
     return out
 
 
+# ── ETF ──
+def eok(s):
+    """'1조 7,416억' · '-669억' → 억원 (float), 없으면 None"""
+    if s is None:
+        return None
+    t = str(s).replace(",", "").replace(" ", "")
+    neg = t.startswith("-")
+    t = t.lstrip("+-")
+    m = re.match(r"^(?:(\d+(?:\.\d+)?)조)?(?:(\d+(?:\.\d+)?)억)?$", t)
+    if not m or not (m.group(1) or m.group(2)):
+        return None
+    v = float(m.group(1) or 0) * 10000 + float(m.group(2) or 0)
+    return -v if neg else v
+
+
+LEV = re.compile(r"레버리지|인버스|2X|곱버스", re.I)
+
+
+def metrics_etf(it):
+    bars, integ, an = it["bars"], it["integ"] or {}, it["fin"] or {}
+    key = integ.get("etfKeyIndicator") or {}
+    closes = [b[4] for b in bars]
+    c = closes[-1]
+    m = {"close": c, "chg": (c / closes[-2] - 1) * 100 if len(closes) > 1 and closes[-2] else 0.0}
+    m["r6"] = c / closes[-121] - 1 if len(closes) > 120 and closes[-121] else None
+    m["r1y"] = c / closes[-250] - 1 if len(closes) >= 250 and closes[-250] else (key.get("returnRate1y") / 100 if key.get("returnRate1y") is not None else None)
+    m["ma"] = [sma(closes, n) for n in (20, 60, 120)]
+    m["hi52"], m["lo52"] = max(b[2] for b in bars[-250:]), min(b[3] for b in bars[-250:])
+    m["fromHi"] = c / m["hi52"] - 1 if m["hi52"] else None
+    rets = [closes[i] / closes[i - 1] - 1 for i in range(max(1, len(closes) - 250), len(closes)) if closes[i - 1]]
+    m["vol"] = (sum(r * r for r in rets) / len(rets)) ** 0.5 * math.sqrt(250) if len(rets) >= 60 else None
+    m["sharpe"] = m["r1y"] / m["vol"] if m["r1y"] is not None and m["vol"] else None
+    m["fee"] = key.get("totalFee") if key.get("totalFee") is not None else num(next((x.get("value") for x in integ.get("totalInfos") or [] if x.get("code") == "fundPay"), None))
+    m["track"] = an.get("chaseErrorRate")
+    m["dev"] = abs(key["deviationRate"]) if key.get("deviationRate") is not None else None
+    m["nav"] = eok(key.get("totalNav") or an.get("totalNav")) or float(it["cap"])
+    m["tv20"] = sum(b[4] * b[5] for b in bars[-20:]) / min(20, len(bars)) / 1e8
+    inflow = eok(((an.get("cumulativeNetInflowList") or {}).get("cumulativeNetInflow1m")))
+    m["inflow1m"] = inflow
+    m["inflowR"] = inflow / m["nav"] if inflow is not None and m["nav"] else None
+    deals = integ.get("dealTrendInfos") or []
+    fo = sum(((num(d.get("foreignerPureBuyQuant")) or 0) + (num(d.get("organPureBuyQuant")) or 0)) * (num(d.get("closePrice")) or 0) for d in deals)
+    m["flow"] = fo / 1e8 if deals else None
+    m["flowR"] = fo / (it["cap"] * 1e8) if deals and it["cap"] else None
+    m["deals"] = [[d.get("bizdate"), num(d.get("foreignerPureBuyQuant")), num(d.get("organPureBuyQuant")),
+                   num(d.get("individualPureBuyQuant")), num(d.get("closePrice"))] for d in deals]
+    st = stoch(bars)
+    m["k"], m["d"] = (st[0], st[1]) if st else (None, None)
+    m["lev"] = bool(LEV.search(it["name"]))
+    desc = integ.get("description") or an.get("etfSummary") or ""
+    m["summary"] = [x.strip() for x in re.split(r"<br\s*/?>|\n", desc) if x.strip()][:3]
+    perf = {x.get("periodTypeCode"): x.get("value") for x in an.get("returnPerformanceList") or []}
+    m["etf"] = {"base": an.get("etfBaseIndex") or "", "issuer": an.get("issuerName") or key.get("issuerName") or "",
+                "listed": an.get("listedDate") or "", "fee": m["fee"], "track": m["track"], "dev": key.get("deviationRate"),
+                "devSign": key.get("deviationSign") or "", "nav": m["nav"], "div": key.get("dividendYieldTtm"), "tv20": round(m["tv20"], 1),
+                "inflow1m": inflow, "inflow1y": eok(((an.get("cumulativeNetInflowList") or {}).get("cumulativeNetInflow1y"))),
+                "perf": [[k, perf[k]] for k in ("M1", "M3", "M6", "YTD", "Y1", "Y3", "Y5") if perf.get(k) is not None],
+                "top": [[x.get("itemName"), x.get("etfWeight")] for x in (an.get("etfTop10MajorConstituentAssets") or [])[:10]],
+                "sector": [[x.get("detailTypeCode"), x.get("weight")] for x in (an.get("sectorPortfolioList") or []) if (x.get("weight") or 0) >= 1][:6]}
+    return m
+
+
+def stoch_item(m):
+    if m["k"] is None:
+        return {"n": f"스토캐스틱 ({SN},{SKS},{SDS})", "max": 10, "s": 4.0, "v": "자료 없음", "note": "자료가 없어 낮게 잡았어요"}
+    (k0, k1), (d0, d1) = m["k"], m["d"]
+    if k0 <= d0 and k1 > d1:
+        s, why = (10 if k1 < 30 else 9 if k1 < 60 else 7), "골든크로스 — 매수 신호" + (" (낮은 자리)" if k1 < 30 else "")
+    elif k0 >= d0 and k1 < d1:
+        s, why = 1, "데드크로스 — 매도 신호"
+    elif k1 > d1:
+        s, why = (7, "%K 가 %D 위 — 오르는 흐름") if k1 < 80 else (5, "%K 가 %D 위지만 80 넘어 과열")
+    else:
+        s, why = (4, "%K 가 %D 아래지만 20 아래 과매도 — 반등 대기") if k1 <= 20 else (2, "%K 가 %D 아래 — 내리는 흐름")
+    return {"n": f"스토캐스틱 ({SN},{SKS},{SDS})", "max": 10, "s": s, "v": f"%K {k1:.0f} / %D {d1:.0f}", "note": why}
+
+
+def mk_item(name, mx, p, val, note=None, miss=0.4):
+    if p is None:
+        return {"n": name, "max": mx, "s": round(mx * miss, 1), "v": val or "자료 없음", "note": note or "자료가 없어 낮게 잡았어요"}
+    return {"n": name, "max": mx, "s": round(mx * p, 1), "v": val, "note": note or pct_s(p)}
+
+
+def finish(m, cats, flags, catdef):
+    cs = [round(sum(x["s"] for x in g), 1) for g in cats]
+    total = max(0, min(100, round(sum(cs) + sum(f["s"] for f in flags))))
+    grade = next((g, t) for lim, g, t in GRADES if total >= lim)
+    ratio = sorted(((cs[i] / mx, nm) for i, (nm, mx) in enumerate(catdef)), reverse=True)
+    tag = f"{ratio[0][1]}↑ {ratio[-1][1]}↓"
+    if m["k"] is not None:
+        (k0, k1), (d0, d1) = m["k"], m["d"]
+        if k0 <= d0 and k1 > d1:
+            tag += " · 골든크로스"
+        elif k0 >= d0 and k1 < d1:
+            tag += " · 데드크로스"
+    return {"score": total, "grade": grade[0], "gradeT": grade[1], "tag": tag, "cats": cs,
+            "detail": [{"k": nm, "max": mx, "s": cs[i], "items": cats[i]} for i, (nm, mx) in enumerate(catdef)], "flags": flags}
+
+
+def score_etf(items):
+    """ETF 끼리 백분위로"""
+    ms = {it["code"]: it["m"] for it in items}
+    R = {k: Rank([m[k] for m in ms.values()]) for k in ("r6", "fromHi", "sharpe", "fee", "track", "dev", "nav", "tv20", "inflowR", "flowR")}
+    low = lambda r, v: (1 - r(v)) if v is not None and r(v) is not None else None
+    out = {}
+    for code, m in ms.items():
+        ma, c = m["ma"], m["close"]
+        chain = [ma[0] is not None and c > ma[0], ma[0] is not None and ma[1] is not None and ma[0] > ma[1],
+                 ma[1] is not None and ma[2] is not None and ma[1] > ma[2]]
+        cats = [
+            [mk_item("6개월 수익률", 10, R["r6"](m["r6"]), f"{m['r6'] * 100:+.1f}%" if m["r6"] is not None else None),
+             {"n": "이동평균 정배열", "max": 8, "s": round(8 / 3 * sum(chain), 1), "v": f"{sum(chain)}/3",
+              "note": " · ".join(t + ("○" if ok else "✕") for t, ok in zip(("종가>20일", "20일>60일", "60일>120일"), chain))},
+             mk_item("52주 고점 대비", 7, R["fromHi"](m["fromHi"]), f"{m['fromHi'] * 100:+.1f}%" if m["fromHi"] is not None else None,
+                     f"고점 {m['hi52']:,}원 · 가까운 쪽 {pct_s(R['fromHi'](m['fromHi']))}" if m["fromHi"] is not None else None)],
+            [mk_item("1년 수익률 ÷ 변동성", 15, R["sharpe"](m["sharpe"]), f"{m['sharpe']:.2f}" if m["sharpe"] is not None else None,
+                     (f"1년 {m['r1y'] * 100:+.1f}% · 변동성 연 {m['vol'] * 100:.0f}% · " + pct_s(R["sharpe"](m["sharpe"]))) if m["sharpe"] is not None else None)],
+            [mk_item("총보수", 10, low(R["fee"], m["fee"]), f"연 {m['fee']:.3f}%" if m["fee"] is not None else None,
+                     f"싼 쪽 {pct_s(low(R['fee'], m['fee']))}" if m["fee"] is not None else None),
+             mk_item("추적오차", 5, low(R["track"], m["track"]), f"{m['track']:.2f}%" if m["track"] is not None else None,
+                     f"작은 쪽 {pct_s(low(R['track'], m['track']))}" if m["track"] is not None else None),
+             mk_item("괴리율", 5, low(R["dev"], m["dev"]), f"{m['dev']:.2f}%" if m["dev"] is not None else None,
+                     f"작은 쪽 {pct_s(low(R['dev'], m['dev']))}" if m["dev"] is not None else None)],
+            [mk_item("순자산", 8, R["nav"](m["nav"]), f"{m['nav']:,.0f}억" if m["nav"] else None),
+             mk_item("20일 평균 거래대금", 7, R["tv20"](m["tv20"]), f"{m['tv20']:,.1f}억")],
+            [mk_item("1개월 순유입", 8, R["inflowR"](m["inflowR"]), f"{m['inflow1m']:+,.0f}억" if m["inflow1m"] is not None else None,
+                     (f"순자산 대비 {m['inflowR'] * 100:+.1f}% · " + pct_s(R["inflowR"](m["inflowR"]))) if m["inflowR"] is not None else None),
+             mk_item("외국인+기관 5일 순매수", 7, R["flowR"](m["flowR"]), f"{m['flow']:+,.1f}억" if m["flow"] is not None else None,
+                     (f"시총 대비 {m['flowR'] * 100:+.2f}% · " + pct_s(R["flowR"](m["flowR"]))) if m["flowR"] is not None else None)],
+            [stoch_item(m)],
+        ]
+        flags = [{"n": "레버리지 · 인버스", "s": -5, "v": "장기 보유 주의"}] if m["lev"] else []
+        out[code] = finish(m, cats, flags, ECATS)
+    return out
+
+
 def main():
     args = sys.argv[1:]
     limit = None
@@ -370,11 +517,11 @@ def main():
         if it["bars"][-1][0] < basis:   # 거래정지 등으로 최근 봉이 없는 종목은 빼고 이전 파일을 둔다
             continue
         try:
-            it["m"] = metrics(it)
+            it["m"] = metrics_etf(it) if it["etf"] else metrics(it)
             items.append(it)
         except Exception as e:
             print(f"skip {it['code']}: {e}", file=sys.stderr)
-    sc = score_all(items)
+    sc = {**score_all([it for it in items if not it["etf"]]), **score_etf([it for it in items if it["etf"]])}
     old_rows = {r[0]: r for r in old.get("s", [])}
     old_basis = old.get("basis")
     rows = []
@@ -384,15 +531,19 @@ def main():
         o = old_rows.get(code)
         # prev = 직전 기준일의 점수 (같은 기준일로 다시 돌면 그 전 값을 그대로)
         prev = (o[6] if old_basis != b else o[7]) if o else None
-        mk = "P" if it["market"] == "코스피" else "Q"
+        mk = "E" if it["etf"] else "P" if it["market"] == "코스피" else "Q"
         rows.append([code, it["name"], mk, it["cap"], m["close"], round(m["chg"], 2), s["score"], prev, s["grade"], s["tag"]])
         detail = {"code": code, "name": it["name"], "market": it["market"], "cap": it["cap"], "basis": b, "runAt": now.isoformat(timespec="seconds"),
                   "close": m["close"], "chg": round(m["chg"], 2), "score": s["score"], "prev": prev, "grade": s["grade"], "gradeT": s["gradeT"],
                   "tag": s["tag"], "cats": s["detail"], "flags": s["flags"], "params": [SN, SKS, SDS],
-                  "info": {"per": m["per"], "perDesc": m["perDesc"], "cper": m["cper"], "pbr": m["pbr"], "div": m["div"], "frgn": m["frgn"],
-                           "hi52": m["hi52"], "lo52": m["lo52"], "r1": m["r1"], "r6": m["r6"], "industry": m["industry"]},
-                  "fin": m["fin"], "deals": m["deals"], "summary": m["summary"], "research": m["research"],
-                  "bars": it["bars"][-KEEP:]}
+                  "deals": m["deals"], "summary": m["summary"]}
+        if it["etf"]:
+            detail.update({"etf": m["etf"], "info": {"hi52": m["hi52"], "lo52": m["lo52"], "r6": m["r6"], "r1y": m["r1y"], "vol": m["vol"]}})
+        else:
+            detail.update({"info": {"per": m["per"], "perDesc": m["perDesc"], "cper": m["cper"], "pbr": m["pbr"], "div": m["div"], "frgn": m["frgn"],
+                                    "hi52": m["hi52"], "lo52": m["lo52"], "r1": m["r1"], "r6": m["r6"], "industry": m["industry"]},
+                           "fin": m["fin"], "research": m["research"]})
+        detail["bars"] = it["bars"][-KEEP:]
         with open(os.path.join(out, "s", code + ".json"), "w", encoding="utf-8") as f:
             json.dump(detail, f, ensure_ascii=False, separators=(",", ":"))
     # 이번에 못 받은 종목은 이전 줄을 그대로 둔다 (자동완성에서 빠지지 않게)
@@ -400,7 +551,7 @@ def main():
     rows += [r for c, r in old_rows.items() if c not in have and any(s["code"] == c for s in stocks)]
     rows.sort(key=lambda r: -r[3])
     idx = {"basis": b, "runAt": now.isoformat(timespec="seconds"), "params": [SN, SKS, SDS],
-           "cats": [[n, mx] for n, mx in CATS], "grades": [[lim, g, t] for lim, g, t in GRADES], "s": rows}
+           "cats": [[n, mx] for n, mx in CATS], "ecats": [[n, mx] for n, mx in ECATS], "grades": [[lim, g, t] for lim, g, t in GRADES], "s": rows}
     with open(os.path.join(out, "index.json"), "w", encoding="utf-8") as f:
         json.dump(idx, f, ensure_ascii=False, separators=(",", ":"))
     dist = {g: sum(1 for r in rows if r[8] == g) for _, g, _ in GRADES}
@@ -409,6 +560,12 @@ def main():
     print("점수 분포 (5·25·50·75·95·99%):", [sc_sorted[int(len(sc_sorted) * q)] for q in (0.05, 0.25, 0.5, 0.75, 0.95, 0.99)])
     for r in sorted(rows, key=lambda r: -r[6])[:5]:
         print(f"  최고 {r[1]} {r[6]}점 · {r[9]}")
+    er = sorted(r[6] for r in rows if r[2] == "E")
+    if er:
+        print(f"ETF {len(er)}개 점수 분포 (5·25·50·75·95%):", [er[int(len(er) * q)] for q in (0.05, 0.25, 0.5, 0.75, 0.95)],
+              {g: sum(1 for r in rows if r[2] == "E" and r[8] == g) for _, g, _ in GRADES})
+        for r in sorted((r for r in rows if r[2] == "E"), key=lambda r: -r[3])[:6]:
+            print(f"  ETF {r[1]} ({r[0]}) {r[6]}점 {r[8]} · {r[9]}")
     for r in rows[:10]:
         print(f"  {r[1]} ({r[0]}) {r[6]}점 {r[8]} · {r[9]} · 전일 {r[7]}")
 
