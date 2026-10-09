@@ -5,6 +5,8 @@
  - 일봉(고가·저가·종가): 네이버 fchart
  - 매수 = %K 가 %D 를 위로 돌파(골든크로스), 매도 = 아래로 돌파(데드크로스). 마지막 완성 봉(오늘 봉 제외) 기준.
  - 신호 종목마다 최근 일봉(BARS개, [날짜, 시가, 고가, 저가, 종가, 거래량])을 함께 담는다 — PC 투자 정보 화면의 차트용
+ - 보유 종목 점검: 저장소 Secrets 에 SB_URL · SB_KEY(앱 설정의 Supabase 주소 · anon 키)가 있으면 앱 국내주식 카드의 보유 종목(app_state krhold)을 읽어
+   사이트의 매력도(kr/index.json)와 스토캐스틱으로 점검한 줄을 결과 끝에 붙인다 — D · E 등급이나 데드크로스면 ⚠️
 사용: python3 .github/scripts/stoch_screen.py [출력폴더]   → result.json, result.md
      python3 .github/scripts/stoch_screen.py _site --site <사이트 주소>   → _site/stoch.json (Pages 배포용, 휴대폰 투자 탭 카드)
 """
@@ -140,6 +142,59 @@ def to_md(res):
     return "\n".join(lines)
 
 
+def holdings_md(today, site="https://iontiger.github.io/asset"):
+    """보유 종목 점검 (Secrets 가 없거나 보유 종목이 없으면 빈 문자열)"""
+    url, key = os.environ.get("SB_URL", "").strip().rstrip("/"), os.environ.get("SB_KEY", "").strip()
+    if not url or not key:
+        return ""
+    try:
+        req = urllib.request.Request(f"{url}/rest/v1/app_state?select=value&key=eq.krhold",
+                                     headers={**UA, "apikey": key, "Authorization": f"Bearer {key}"})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            got = json.loads(r.read().decode("utf-8"))
+        hold = (got[0]["value"] or {}).get("list") or [] if got else []
+    except Exception as e:
+        return f"\n**보유 종목 점검**\n- 보유 종목을 읽지 못했어요 ({type(e).__name__})"
+    if not hold:
+        return ""
+    idx = {}
+    try:
+        idx = {r[0]: r for r in json.loads(get(f"{site}/kr/index.json?t={int(dt.datetime.now().timestamp())}", 30).decode("utf-8"))["s"]}
+    except Exception as e:
+        print(f"매력도 목록을 못 읽음 — {e}")
+    grade = lambda v: next(g for lim, g in ((70, "A"), (60, "B"), (45, "C"), (35, "D"), (0, "E")) if v >= lim)
+    lines, warn = [], 0
+    for h in hold:
+        code, r = h.get("c"), idx.get(h.get("c"))
+        name = r[1] if r else h.get("n") or code
+        bits, bad = [], False
+        if r:
+            bits.append(f"{r[6]}점 {r[8]}등급")
+            if r[7] is not None and grade(r[7]) != r[8]:
+                bits[-1] += f" (전일 {r[7]}점 {grade(r[7])})"
+            bad = r[8] in ("D", "E")
+        try:
+            rows = [x for x in bars(code) if x[0] < today]
+            if len(rows) >= N + KS + DS + 1:
+                k, d = slow_stoch(rows)
+                sig = signal(rows)
+                if sig and sig[0] == "sell":
+                    bits.append(f"데드크로스 (%K {k[-1]:.0f} / %D {d[-1]:.0f})")
+                    bad = True
+                elif sig:
+                    bits.append(f"골든크로스 (%K {k[-1]:.0f} / %D {d[-1]:.0f})")
+                else:
+                    bits.append(f"%K {k[-1]:.0f} {'>' if k[-1] > d[-1] else '<'} %D {d[-1]:.0f}")
+                if h.get("p") and h.get("q"):
+                    c = rows[-1][3]
+                    bits.append(f"평가손익 {(c / float(h['p']) - 1) * 100:+.1f}%")
+        except Exception:
+            pass
+        warn += bad
+        lines.append(f"- {'⚠️ ' if bad else ''}{name}: " + ", ".join(bits or ["평가 없음"]) + (" — 매도 주의" if bad else ""))
+    return f"\n**보유 종목 점검** ({len(hold)}종목, 주의 {warn}개)\n" + "\n".join(lines)
+
+
 def slot(run_at):
     """같은 날 08시(KST) 전/후로 한 번씩만 새로 뽑는다 — 기준(전 영업일 종가)은 자정에만 바뀐다"""
     d = dt.datetime.fromisoformat(run_at)
@@ -186,6 +241,12 @@ def main():
     outdir = args[0] if args else "."
     res = screen()
     md = to_md(res)
+    try:
+        hm = holdings_md(dt.datetime.now(KST).strftime("%Y%m%d"))
+    except Exception as e:
+        hm = f"\n**보유 종목 점검**\n- 점검 중 오류 ({type(e).__name__})"
+    if hm:
+        md += "\n" + hm
     os.makedirs(outdir, exist_ok=True)
     json.dump(res, open(os.path.join(outdir, "result.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     open(os.path.join(outdir, "result.md"), "w", encoding="utf-8").write(md + "\n")

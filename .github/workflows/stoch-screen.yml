@@ -21,6 +21,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: 스크린 실행
+        env:
+          # 있으면 앱 국내주식 카드의 보유 종목도 점검해 결과 끝에 붙인다 (앱 설정의 Supabase 주소 · anon 키)
+          SB_URL: ${{ secrets.SB_URL }}
+          SB_KEY: ${{ secrets.SB_KEY }}
         run: |
           python3 .github/scripts/stoch_screen.py out
           cat out/result.md >> "$GITHUB_STEP_SUMMARY"

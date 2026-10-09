@@ -20,6 +20,8 @@
      자금 흐름 15   : 최근 1개월 순유입 ÷ 순자산 8 · 외국인+기관 5일 순매수 ÷ 시총 7
      타이밍 10      : 주식과 같은 스토캐스틱
      감점           : 레버리지 · 인버스 −5 (오래 들고 있으면 기초지수와 어긋나기 쉬움)
+ - 묶음(순위 탐색용): 주식은 네이버 업종 이름, ETF 는 이름 · 기초지수로 나눈 테마 (미국 · 채권 · 반도체 …)
+ - 점수 기록: 상세 파일에 기준일마다 [날짜, 점수] 를 최근 60개까지 이어 붙인다 (폴더에 있던 이전 파일에서 이어 받음)
  - 등급: 70↑ A 매우 매력 · 60↑ B 매력 · 45↑ C 보통 · 35↑ D 주의 · 그 아래 E 약함
  - 오늘 봉은 16시(KST) 전이면 빼서 장이 끝난 종가로만 평가한다. 직전 평가와 기준일이 달라지면 그 점수를 prev 로 남겨 하루 변화를 보여 준다
  - 못 받은 종목은 폴더에 이미 있던 파일(이전 캐시)을 그대로 둔다. 어떤 경우에도 실패 코드로 끝내지 않는다 (배포를 막지 않게)
@@ -34,6 +36,8 @@ FCHART = "https://fchart.stock.naver.com/sise.nhn?symbol={}&timeframe=day&count=
 INTEG = "https://m.stock.naver.com/api/stock/{}/integration"
 ANNUAL = "https://m.stock.naver.com/api/stock/{}/finance/annual"
 ETFAN = "https://m.stock.naver.com/api/stock/{}/etfAnalysis"
+UPJONG = "https://m.stock.naver.com/api/stocks/industry?page={}&pageSize=20"
+HIST = 60    # 상세 파일에 남기는 점수 기록 수
 KST = dt.timezone(dt.timedelta(hours=9))
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"}
 KEEP = 130   # 상세 화면 차트용으로 담는 일봉 수
@@ -360,6 +364,50 @@ def eok(s):
 
 
 LEV = re.compile(r"레버리지|인버스|2X|곱버스", re.I)
+# ETF 테마 — 위에서부터 처음 맞는 것 (이름 + 기초지수). 업종 테마가 지역보다 먼저: '미국반도체' → 반도체 · AI
+THEMES = [
+    ("레버리지 · 인버스", LEV),
+    ("머니마켓 · 금리", r"CD금리|KOFR|머니마켓|MMF|초단기|단기채|단기통안|SOFR|금리액티브|발행어음"),
+    ("채권", r"국고채|국채|채권|회사채|크레딧|Treasury|TIPS|국공채|특수채|은행채|통안채|금융채|채 ?액티브|미국채|장기채|중기채"),
+    ("금 · 원자재", r"골드|금선물|금현물|KRX금|은선물|실버|원유|WTI|구리|원자재|농산물|천연가스|팔라듐|금광"),
+    ("리츠 · 인프라", r"리츠|REITs?|부동산"),
+    ("배당 · 커버드콜", r"배당|커버드콜|인컴|프리미엄|타겟위클리|위클리"),
+    ("반도체 · AI", r"반도체|(?-i:(?<![A-Za-z])(?:AI|IT)(?![A-Za-z]))|인공지능|필라델피아|빅테크|테크|소프트웨어|클라우드|로봇|양자"),
+    ("2차전지 · 전기차", r"2차전지|이차전지|배터리|리튬|전기차|자율주행|수소"),
+    ("헬스케어 · 바이오", r"헬스케어|바이오|제약|의료|비만"),
+    ("조선 · 방산 · 원전", r"조선|방산|방위|원자력|원전|우주|항공|기계|전력|에너지|건설|인프라|소재|철강|화학"),
+    ("금융", r"은행|증권|보험|금융|지주"),
+    ("소비 · 미디어", r"소비|여행|화장품|미디어|엔터|게임|K-?컬처|음식|자동차|운송|유통"),
+    ("미국", r"미국|S&P|나스닥|NASDAQ|다우|(?-i:(?<![A-Za-z])US(?![A-Za-z]))"),
+    ("중국 · 홍콩", r"중국|차이나|항셍|홍콩|CSI|China"),
+    ("일본", r"일본|니케이|TOPIX|Japan"),
+    ("인도 · 신흥국", r"인도|베트남|신흥|이머징|브라질|인도네시아|멕시코|아시아"),
+    ("글로벌 · 선진국", r"글로벌|선진|World|유로|유럽|독일|MSCI"),
+    ("국내 대표지수", r"200|코스피|코스닥|KRX|TOP ?10|대형|중소형|밸류업|KOSPI|KOSDAQ|MSCI ?Korea"),
+]
+THEMES = [(t, re.compile(r, re.I) if isinstance(r, str) else r) for t, r in THEMES]
+
+
+def etf_theme(name, base):
+    txt = f"{name} {base or ''}"
+    return next((t for t, rx in THEMES if rx.search(txt)), "기타 테마")
+
+
+def upjong_names():
+    """네이버 업종 번호 → 이름 (integration 의 industryCode 와 같은 번호). 못 받으면 빈 사전"""
+    try:
+        out, page = {}, 1
+        while page <= 20:
+            d = json.loads(get(UPJONG.format(page)))
+            gs = d.get("groups") or []
+            out.update({str(g["no"]): g["name"] for g in gs if g.get("no") is not None and g.get("name")})
+            if not gs or len(out) >= (d.get("totalCount") or 0):
+                break
+            page += 1
+        return out
+    except Exception as e:
+        print(f"업종 이름을 못 받음 — {e}")
+        return {}
 
 
 def metrics_etf(it):
@@ -522,6 +570,8 @@ def main():
             items.append(it)
         except Exception as e:
             print(f"skip {it['code']}: {e}", file=sys.stderr)
+    ups = upjong_names()
+    print(f"업종 이름 {len(ups)}개")
     sc = {**score_all([it for it in items if not it["etf"]]), **score_etf([it for it in items if it["etf"]])}
     old_rows = {r[0]: r for r in old.get("s", [])}
     old_basis = old.get("basis")
@@ -533,11 +583,25 @@ def main():
         # prev = 직전 기준일의 점수 (같은 기준일로 다시 돌면 그 전 값을 그대로)
         prev = (o[6] if old_basis != b else o[7]) if o else None
         mk = "E" if it["etf"] else "P" if it["market"] == "코스피" else "Q"
-        rows.append([code, it["name"], mk, it["cap"], m["close"], round(m["chg"], 2), s["score"], prev, s["grade"], s["tag"]])
+        grp = etf_theme(it["name"], m["etf"].get("base")) if it["etf"] else ups.get(str(m["industry"]), "")
+        sig = ""
+        if m["k"] is not None:
+            (k0, k1), (d0, d1) = m["k"], m["d"]
+            sig = "G" if k0 <= d0 and k1 > d1 else "D" if k0 >= d0 and k1 < d1 else ""
+        rows.append([code, it["name"], mk, it["cap"], m["close"], round(m["chg"], 2), s["score"], prev, s["grade"], s["tag"], grp, sig])
+        # 점수 기록 — 이전 상세 파일에서 이어 받는다
+        path = os.path.join(out, "s", code + ".json")
+        hist = []
+        try:
+            od = json.load(open(path, encoding="utf-8"))
+            hist = od.get("hist") or ([[od["basis"], od["score"]]] if od.get("basis") and od.get("score") is not None else [])
+        except Exception:
+            pass
+        hist = [h for h in hist if h[0] != b][-(HIST - 1):] + [[b, s["score"]]]
         detail = {"code": code, "name": it["name"], "market": it["market"], "cap": it["cap"], "basis": b, "runAt": now.isoformat(timespec="seconds"),
                   "close": m["close"], "chg": round(m["chg"], 2), "score": s["score"], "prev": prev, "grade": s["grade"], "gradeT": s["gradeT"],
                   "tag": s["tag"], "cats": s["detail"], "flags": s["flags"], "params": [SN, SKS, SDS],
-                  "deals": m["deals"], "summary": m["summary"]}
+                  "deals": m["deals"], "summary": m["summary"], "grp": grp, "sig": sig, "hist": hist}
         if it["etf"]:
             detail.update({"etf": m["etf"], "info": {"hi52": m["hi52"], "lo52": m["lo52"], "r6": m["r6"], "r1y": m["r1y"], "vol": m["vol"]}})
         else:
@@ -545,7 +609,7 @@ def main():
                                     "hi52": m["hi52"], "lo52": m["lo52"], "r1": m["r1"], "r6": m["r6"], "industry": m["industry"]},
                            "fin": m["fin"], "research": m["research"]})
         detail["bars"] = it["bars"][-KEEP:]
-        with open(os.path.join(out, "s", code + ".json"), "w", encoding="utf-8") as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(detail, f, ensure_ascii=False, separators=(",", ":"))
     # 이번에 못 받은 종목은 이전 줄을 그대로 둔다 (자동완성에서 빠지지 않게)
     have = {r[0] for r in rows}
@@ -568,7 +632,14 @@ def main():
         for r in sorted((r for r in rows if r[2] == "E"), key=lambda r: -r[3])[:6]:
             print(f"  ETF {r[1]} ({r[0]}) {r[6]}점 {r[8]} · {r[9]}")
     for r in rows[:10]:
-        print(f"  {r[1]} ({r[0]}) {r[6]}점 {r[8]} · {r[9]} · 전일 {r[7]}")
+        print(f"  {r[1]} ({r[0]}) {r[6]}점 {r[8]} · {r[9]} · 전일 {r[7]} · {r[10] if len(r) > 10 else ''}")
+    grps = {}
+    for r in rows:
+        if len(r) > 10:
+            grps.setdefault((r[2] == "E", r[10]), []).append(r)
+    for etf in (False, True):
+        g = sorted(((k[1], len(v)) for k, v in grps.items() if k[0] == etf), key=lambda x: -x[1])
+        print(("ETF 테마" if etf else "업종"), len(g), "개:", ", ".join(f"{n or '(없음)'} {c}" for n, c in g[:40]))
 
 
 if __name__ == "__main__":
