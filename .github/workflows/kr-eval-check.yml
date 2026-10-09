@@ -1,0 +1,30 @@
+# 국내주식 평가 스크립트(.github/scripts/kr_eval.py)를 고친 PR 에서 실제로 받아 보고 요약을 찍는다.
+# 이 컨테이너 밖(GitHub 러너)에서 돌리는 이유: 네이버 · NH Plug 를 받을 수 있어서.
+name: KR stock eval check
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/scripts/kr_eval.py
+      - .github/workflows/kr-eval-check.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 전 종목 평가해 보기
+        run: |
+          python3 .github/scripts/kr_eval.py out
+          ls out/s | wc -l
+          du -sh out
+          python3 -c "import json; d=json.load(open('out/s/005930.json')); d.pop('bars'); print(json.dumps(d, ensure_ascii=False)[:5000])"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kr-eval
+          path: out/index.json
+          retention-days: 7

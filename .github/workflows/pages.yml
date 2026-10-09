@@ -3,6 +3,7 @@
 # 연금 정기투자 기록용 ETF 10:30 가격은 rb1030/ 으로 (.github/scripts/etf_1030.py).
 # 스토캐스틱 매수/매도 신호 종목은 stoch.json 으로 (휴대폰 투자 탭 신호 카드 · PC 투자 정보 화면과 차트용 일봉, .github/scripts/stoch_screen.py).
 # 포트폴리오 투자 카드용 미국 ETF 종가 · 원/달러 환율은 portfolio.json 으로 (.github/scripts/portfolio.py).
+# 국내주식 카드용 코스피 · 코스닥 전 종목 매력도 평가는 kr/ 로 (.github/scripts/kr_eval.py).
 # → https://iontiger.github.io/asset/
 # 처음 한 번: 저장소 Settings → Pages → Source 를 "GitHub Actions" 로 바꿔야 한다.
 name: Deploy to GitHub Pages
@@ -32,7 +33,7 @@ jobs:
     if: github.event_name == 'schedule' || github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
     outputs:
-      deploy: ${{ steps.briefing.outputs.deploy == 'true' || steps.stoch.outputs.changed == 'true' || steps.rbcache.outputs.cache-hit != 'true' || steps.rb1030.outputs.changed == 'true' || steps.portfolio.outputs.changed == 'true' }}
+      deploy: ${{ steps.briefing.outputs.deploy == 'true' || steps.stoch.outputs.changed == 'true' || steps.rbcache.outputs.cache-hit != 'true' || steps.rb1030.outputs.changed == 'true' || steps.portfolio.outputs.changed == 'true' || steps.krcache.outputs.cache-hit != 'true' }}
     steps:
       - uses: actions/checkout@v4
       - id: pages
@@ -101,12 +102,30 @@ jobs:
         id: rb1030
         run: python3 .github/scripts/etf_1030.py _site/rb1030 "${{ steps.pages.outputs.base_url }}"
 
+      # 투자 탭 국내주식 카드 — 코스피 · 코스닥 전 종목 매력도 100점 평가 → _site/kr/index.json (검색 · 목록) + kr/s/{code}.json (상세).
+      # 2,000여 종목 × 3번씩 받아서 하루 두 번(16시 KST 장 마감 뒤 · 그 전)만 새로 평가하고, 그 사이에는 Actions 캐시를 그대로 쓴다
+      - name: 국내주식 평가 캐시 키
+        id: krkey
+        run: echo "key=kreval-$(TZ=Asia/Seoul date +%Y%m%d)-$([ "$(TZ=Asia/Seoul date +%H)" -ge 16 ] && echo pm || echo am)" >> "$GITHUB_OUTPUT"
+      - name: 국내주식 평가 캐시
+        id: krcache
+        uses: actions/cache@v4
+        with:
+          path: kr
+          key: ${{ steps.krkey.outputs.key }}
+          restore-keys: kreval-
+      - name: 국내주식 평가
+        if: steps.krcache.outputs.cache-hit != 'true'
+        run: python3 .github/scripts/kr_eval.py kr
+      - name: 국내주식 평가 사이트에 넣기
+        run: mkdir -p kr/s && cp -r kr _site/kr && ls _site/kr/s | wc -l
+
       # 투자 탭 포트폴리오 투자 카드 — 미국 ETF 일별 종가(배당 포함 수정종가) · 원/달러 환율. 6시간마다 새로 받고, 못 받으면 사이트 것을 그대로 쓴다
       - name: 포트폴리오 시세 받기
         id: portfolio
         run: python3 .github/scripts/portfolio.py _site --site "${{ steps.pages.outputs.base_url }}"
 
-      - if: steps.briefing.outputs.deploy == 'true' || steps.stoch.outputs.changed == 'true' || steps.rbcache.outputs.cache-hit != 'true' || steps.rb1030.outputs.changed == 'true' || steps.portfolio.outputs.changed == 'true'
+      - if: steps.briefing.outputs.deploy == 'true' || steps.stoch.outputs.changed == 'true' || steps.rbcache.outputs.cache-hit != 'true' || steps.rb1030.outputs.changed == 'true' || steps.portfolio.outputs.changed == 'true' || steps.krcache.outputs.cache-hit != 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
