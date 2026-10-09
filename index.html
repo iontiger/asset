@@ -14248,7 +14248,7 @@ function mSigOk(d) {
 }
 try { var mSigSaved = JSON.parse(lsGet(M_SIG_KEY) || 'null'); if (mSigOk(mSigSaved)) mSig.data = mSigSaved; } catch (e) {}
 // 국내주식 보유 종목이 있으면 신호 카드 대신 보유 종목 매력도 카드 두 장 — 왼쪽은 낮은 순, 오른쪽은 높은 순.
-// 매도 주의(D · E 등급, 데드크로스)는 빨간 그라데이션, 줄을 누르면 국내주식 상세 창
+// 카드마다 5개까지. 매도 주의(D · E 등급, 데드크로스)는 빨간 그라데이션, 줄을 누르면 국내주식 상세 창
 function mSigHoldRows() {
   if (typeof kr === 'undefined' || !kr || !kr.hold || !kr.hold.length || !kr.idx) return null;
   return kr.hold.map(function (h) { return { h: h, r: kr.map[h.c] }; });
@@ -14265,7 +14265,7 @@ function mSigHoldRender(rows) {
     c.querySelector('.m-sig-tag').textContent = s[1];
     c.querySelector('time').textContent = when;
     var body = el('ol', 'm-sig-list m-hold-list');
-    rows.slice().sort(s[2]).forEach(function (x, i) {
+    rows.slice().sort(s[2]).slice(0, 5).forEach(function (x, i) {
       var r = x.r, wn = krWarn(r), a = el('button', 'm-hold-row' + (wn ? ' warn' : ''));
       a.type = 'button';
       a.dataset.krOpen = x.h.c;
