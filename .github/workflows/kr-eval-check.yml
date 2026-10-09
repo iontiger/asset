@@ -23,6 +23,7 @@ jobs:
           ls out/s | wc -l
           du -sh out
           python3 -c "import json; [print(json.dumps({k: v for k, v in json.load(open(f'out/s/{c}.json')).items() if k != 'bars'}, ensure_ascii=False)[:3000]) for c in ('005930', '069500', '122630')]"
+          python3 -c "import json; [print(c, {k: json.load(open(f'out/s/{c}.json')).get(k) for k in ('grp', 'sig', 'hist')}) for c in ('005930', '000660', '035420', '069500', '360750', '153130', '122630')]"
       - uses: actions/upload-artifact@v4
         with:
           name: kr-eval
