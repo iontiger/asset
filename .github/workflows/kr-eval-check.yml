@@ -17,6 +17,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: ETF 응답 모양 보기
+        run: |
+          python3 - <<'PY'
+          import urllib.request
+          UA = {"User-Agent": "Mozilla/5.0"}
+          for u in ["https://m.stock.naver.com/api/stock/069500/integration",
+                    "https://m.stock.naver.com/api/stock/360750/integration",
+                    "https://m.stock.naver.com/api/stock/069500/basic",
+                    "https://m.stock.naver.com/api/stock/069500/etfAnalysis",
+                    "https://m.stock.naver.com/api/stock/069500/finance/annual"]:
+              try:
+                  b = urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=20).read().decode()
+                  print("=====", u, len(b)); print(b[:4000])
+              except Exception as e:
+                  print("=====", u, "ERR", e)
+          import sys; sys.path.insert(0, ".github/scripts")
+          from stoch_screen import FIELDS, RECORD, MST_URL, get
+          buf = get(MST_URL, 60); seen = {}
+          for i in range(0, len(buf) - len(buf) % RECORD, RECORD):
+              rec, off, r = buf[i:i + RECORD], 0, {}
+              for name, n in FIELDS:
+                  r[name] = rec[off:off + n].decode("cp949", "replace").strip(); off += n
+              k = (r["sMarket"], r["gVenture"])
+              seen.setdefault(k, []).append(r["sCode"] + " " + r["sKorName"])
+          for k, v in sorted(seen.items()): print(k, len(v), v[:4])
+          PY
       - name: 전 종목 평가해 보기
         run: |
           python3 .github/scripts/kr_eval.py out
