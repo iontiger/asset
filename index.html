@@ -541,6 +541,110 @@
   .inv-ch-foot a:hover { text-decoration:underline; }
   .inv-empty { padding:40px 10px; text-align:center; font-size:.9rem; color:var(--muted); line-height:1.7; }
 
+  /* ── 국내주식: 검색(자동완성) + 최근 찾아본 5종목의 매력도 · 상세 창 (포트폴리오 투자 위) ── */
+  #view-invest .kr-card { margin-top:18px; }
+  .kr-card .card-head { margin-bottom:12px; }
+  .kr-search { position:relative; }
+  .kr-search input {
+    width:100%; height:44px; padding:0 14px 0 40px; border:1px solid var(--border); border-radius:12px;
+    background:var(--bg); color:var(--ink); font:inherit; font-size:.95rem; outline:none;
+  }
+  .kr-search input:focus { border-color:var(--accent); background:var(--surface); box-shadow:0 0 0 3px var(--accent-wash); }
+  .kr-search > svg { position:absolute; left:13px; top:13px; color:var(--muted); pointer-events:none; }
+  .kr-ac {
+    position:absolute; left:0; right:0; top:calc(100% + 6px); z-index:6; list-style:none; margin:0; padding:5px;
+    background:var(--surface); border:1px solid var(--border); border-radius:13px; box-shadow:0 16px 36px -12px rgba(0,0,0,.32);
+    max-height:340px; overflow-y:auto;
+  }
+  .kr-ac[hidden] { display:none; }
+  .kr-ac button {
+    width:100%; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:10px;
+    padding:9px 10px; border:0; border-radius:9px; background:none; color:inherit; font:inherit; text-align:left; cursor:pointer;
+  }
+  .kr-ac li.on button, .kr-ac button:hover { background:var(--hover); }
+  .kr-ac b { display:block; font-size:.92rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .kr-ac b mark { background:none; color:var(--accent-deep); }
+  .kr-ac small { display:block; font-size:.72rem; color:var(--muted); }
+  .kr-ac .kr-none { padding:12px 10px; font-size:.86rem; color:var(--muted); }
+  .kr-h { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin:16px 0 6px; font-size:.86rem; font-weight:800; }
+  .kr-h small { font-size:.72rem; font-weight:600; color:var(--muted); }
+  .kr-list { list-style:none; margin:0; padding:0; display:grid; gap:2px; }
+  .kr-row { position:relative; }
+  .kr-row > button.kr-open {
+    width:100%; display:grid; grid-template-columns:52px minmax(0,1fr) auto; align-items:center; gap:12px;
+    padding:10px 34px 10px 8px; border:0; border-radius:12px; background:none; color:inherit; font:inherit; text-align:left; cursor:pointer;
+  }
+  .kr-row > button.kr-open:hover { background:var(--hover); }
+  .kr-row + .kr-row { border-top:1px solid var(--border); }
+  .kr-x {
+    position:absolute; right:4px; top:50%; transform:translateY(-50%); width:26px; height:26px; border:0; border-radius:50%;
+    background:none; color:var(--muted); font-size:.9rem; cursor:pointer; opacity:.55;
+  }
+  .kr-x:hover { opacity:1; background:var(--hover); }
+  .kr-badge { display:grid; place-items:center; width:52px; height:46px; border-radius:12px; color:#fff; line-height:1.05; }
+  .kr-badge b { font-size:1.15rem; font-weight:800; font-variant-numeric:tabular-nums; }
+  .kr-badge small { font-size:.66rem; font-weight:700; opacity:.92; }
+  .kr-g-A { background:#178a5a; } .kr-g-B { background:#3c9a3f; } .kr-g-C { background:#c58a12; } .kr-g-D { background:#d9652a; } .kr-g-E { background:#b9393a; }
+  .kr-g-none { background:var(--grid); color:var(--muted); }
+  .kr-nm { min-width:0; }
+  .kr-nm b { display:block; font-size:.95rem; font-weight:800; letter-spacing:-.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .kr-nm small { display:block; margin-top:2px; font-size:.74rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .kr-nm small em { font-style:normal; font-weight:700; color:var(--ink-2); }
+  .kr-px { text-align:right; font-size:.9rem; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .kr-px small { display:block; margin-top:2px; font-size:.72rem; font-weight:700; }
+  .kr-up { color:var(--kospi-up); } .kr-down { color:var(--kospi-down); } .kr-flat { color:var(--muted); }
+  .kr-empty { padding:18px 8px 6px; font-size:.86rem; color:var(--muted); line-height:1.7; text-align:center; }
+  .kr-note { margin-top:10px; font-size:.72rem; color:var(--muted); line-height:1.6; }
+
+  /* 상세 창 */
+  #krSheet .sheet { max-width:820px; }
+  .kr-d-top { display:grid; grid-template-columns:auto minmax(0,1fr); gap:18px; align-items:center; }
+  .kr-d-score { display:grid; place-items:center; width:104px; height:104px; border-radius:24px; color:#fff; text-align:center; line-height:1.1; }
+  .kr-d-score b { font-size:2.3rem; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-.03em; }
+  .kr-d-score small { display:block; font-size:.74rem; font-weight:700; opacity:.92; margin-top:2px; }
+  .kr-d-px { font-size:1.5rem; font-weight:800; font-variant-numeric:tabular-nums; }
+  .kr-d-px small { margin-left:8px; font-size:.86rem; }
+  .kr-d-meta { margin-top:4px; font-size:.78rem; color:var(--muted); line-height:1.6; }
+  .kr-d-meta b { color:var(--ink-2); }
+  .kr-d-tag { display:inline-block; margin-top:8px; padding:4px 10px; border-radius:99px; background:var(--bg); font-size:.78rem; font-weight:700; }
+  .kr-bars { display:grid; gap:7px; margin:18px 0 6px; }
+  .kr-bar { display:grid; grid-template-columns:54px minmax(0,1fr) 64px; align-items:center; gap:10px; font-size:.82rem; }
+  .kr-bar label { font-weight:700; }
+  .kr-bar i { display:block; height:10px; border-radius:99px; background:var(--bg); overflow:hidden; }
+  .kr-bar i span { display:block; height:100%; border-radius:99px; background:var(--accent); }
+  .kr-bar em { font-style:normal; text-align:right; font-weight:700; font-variant-numeric:tabular-nums; color:var(--ink-2); }
+  .kr-bar em small { color:var(--muted); font-weight:600; }
+  .kr-sec { margin-top:20px; }
+  .kr-sec h3 { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin:0 0 8px; font-size:.95rem; font-weight:800; }
+  .kr-sec h3 small { font-size:.74rem; font-weight:600; color:var(--muted); }
+  .kr-tbl { width:100%; border-collapse:collapse; font-size:.82rem; font-variant-numeric:tabular-nums; }
+  .kr-tbl th { padding:0 6px 6px; font-size:.7rem; font-weight:600; color:var(--muted); text-align:left; white-space:nowrap; }
+  .kr-tbl td { padding:7px 6px; border-top:1px solid var(--border); vertical-align:top; }
+  .kr-tbl .num { text-align:right; white-space:nowrap; }
+  .kr-tbl tr.kr-cat td { padding-top:12px; font-weight:800; border-top:2px solid var(--border); }
+  .kr-tbl td small { display:block; font-size:.7rem; color:var(--muted); line-height:1.45; }
+  .kr-tbl td small.kr-m-note { display:none; }
+  .kr-tbl .pts { font-weight:800; }
+  .kr-tbl td.pts small { display:inline; margin-left:2px; font-weight:600; }
+  .kr-tbl .minus { color:var(--kospi-up); }
+  .kr-scroll { overflow-x:auto; }
+  .kr-sum { margin:0; padding-left:18px; font-size:.84rem; line-height:1.7; color:var(--ink-2); }
+  .kr-res { list-style:none; margin:0; padding:0; font-size:.84rem; }
+  .kr-res li { padding:6px 0; border-top:1px solid var(--border); }
+  .kr-res li:first-child { border-top:0; }
+  .kr-res small { color:var(--muted); margin-left:6px; }
+  .kr-foot { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-top:18px; padding-top:12px; border-top:1px solid var(--border); font-size:.74rem; color:var(--muted); line-height:1.6; }
+  .kr-foot a { font-size:.8rem; font-weight:700; color:var(--accent-deep); text-decoration:none; white-space:nowrap; }
+  @media (max-width:760px) {
+    #krSheet { padding:10px; }
+    #krSheet .sheet { padding:18px 16px; max-height:calc(100% - 20px); border-radius:18px; }
+    .kr-d-score { width:84px; height:84px; border-radius:20px; }
+    .kr-d-score b { font-size:1.9rem; }
+    .kr-d-px { font-size:1.25rem; }
+    .kr-tbl .kr-note-col { display:none; }
+    .kr-tbl td small.kr-m-note { display:block; }
+  }
+
   /* ── 포트폴리오 투자: 구성 · 최소 주식수 (왼쪽) + 원화 수익률 vs S&P500 차트 (오른쪽) ── */
   #view-invest .pf-card { margin-top:18px; }
   .pf-grid { display:grid; grid-template-columns:minmax(300px, 380px) minmax(0,1fr); gap:26px; align-items:start; }
@@ -2226,7 +2330,7 @@
      사이드바 대신 위에는 상단바(브랜드 · 알림 · 테마), 아래에는 탭(홈 · 자산 · ＋ · 투자 · 더보기).
      대시보드 위쪽은 인사말 · 순자산 · 자산 구성 · 이번 달 자산 변화 카드로 바꾸고, 그 아래로 차트 · 미래 예상 등이 이어진다.
      넓은 화면에서는 이 요소들을 모두 숨긴다. */
-  .m-bar, .m-hello, .m-home, .m-tabs, .m-news, .m-sig, .m-pf, .in-group .g-ic, .in-amt-m { display:none; }
+  .m-bar, .m-hello, .m-home, .m-tabs, .m-news, .m-sig, .m-kr, .m-pf, .in-group .g-ic, .in-amt-m { display:none; }
 
   /* 아래에서 올라오는 창 (＋ 기록하기 · 더보기 · 알림) — 휴대폰 메뉴에서만 열린다 */
   /* 창 밖(어두운 곳)을 끌어도 뒤 화면이 움직이지 않고, 창 안을 끝까지 넘겨도 뒤로 번지지 않게 */
@@ -2677,6 +2781,15 @@
     body[data-view="rebal"] .m-sig:not([hidden]) { display:block; }
     .m-sig { margin:-10px -16px 2px; }
     .m-sig .m-news-card { cursor:default; gap:10px; min-height:0; }
+    /* 포트폴리오 투자 위 국내주식 */
+    body[data-view="rebal"] .m-kr:not([hidden]) { display:block; margin:-6px 0 18px; }
+    .m-kr .kr-card {
+      padding:18px 16px 14px; border-radius:20px; border:0; min-width:0;
+      box-shadow:0 16px 28px -12px rgba(16,24,40,.4), 0 4px 10px rgba(16,24,40,.1);
+    }
+    .m-kr .kr-row > button.kr-open { grid-template-columns:48px minmax(0,1fr) auto; gap:10px; padding:9px 30px 9px 2px; }
+    .m-kr .kr-badge { width:48px; height:44px; }
+    .m-kr .kr-x { opacity:.45; right:0; }
     /* 신호 카드 아래 포트폴리오 투자 */
     body[data-view="rebal"] .m-pf:not([hidden]) { display:block; margin:-6px 0 18px; }
     .m-pf .pf-card {
@@ -2890,6 +3003,8 @@
     <div class="m-news-track" id="mSigTrack"></div>
     <div class="m-news-dots" id="mSigDots" aria-hidden="true"></div>
   </section>
+  <!-- 휴대폰 투자 탭 — 포트폴리오 투자 위 국내주식 (PC 투자 정보 화면의 #krPc 와 같은 내용). 평가는 kr/index.json · kr/s/{code}.json -->
+  <section class="m-kr" id="krMWrap" hidden><div class="card kr-card" id="krM" aria-label="국내주식"></div></section>
   <!-- 휴대폰 투자 탭 — 신호 카드 아래 포트폴리오 투자 (PC 투자 정보 화면의 #pfPc 와 같은 내용) -->
   <section class="m-pf" id="pfMWrap" hidden><div class="card pf-card" id="pfM" aria-label="포트폴리오 투자"></div></section>
 
@@ -3482,6 +3597,8 @@
       </div>
       <div class="card inv-chart" id="invChart"></div>
     </div>
+    <!-- 국내주식 — 종목 검색(자동완성) · 최근 찾아본 5종목의 매력도. 평가는 GitHub Actions 가 매일 만드는 kr/index.json (.github/scripts/kr_eval.py) -->
+    <div class="card kr-card" id="krPc" aria-label="국내주식"></div>
     <!-- 포트폴리오 투자 — 미국 ETF 다섯 종목(목표비중 PF), 최소 주식수, 원화 수익률 vs S&P500. 시세는 portfolio.json -->
     <div class="card pf-card" id="pfPc" aria-label="포트폴리오 투자"></div>
   </section>
@@ -3686,6 +3803,17 @@
       <button type="button" class="icon-btn" data-close="rbChartSheet" aria-label="닫기">✕</button>
     </div>
     <div id="rbChartBody"></div>
+  </div>
+</div>
+
+<!-- 국내주식 상세 평가 -->
+<div class="sheet-back" id="krSheet">
+  <div class="sheet wide" role="dialog" aria-labelledby="krSheetTitle">
+    <div class="sheet-head">
+      <h2 id="krSheetTitle">종목 평가</h2>
+      <button type="button" class="icon-btn" data-close="krSheet" aria-label="닫기">✕</button>
+    </div>
+    <div id="krSheetBody"></div>
   </div>
 </div>
 
@@ -12256,6 +12384,7 @@ async function sbLoad(cfg) {
                group: pickVal(a.asset_group, a.group) || '', owner: pickVal(a.owner_id, a.owner) || '', logo: a.logo || '' };
     }),
     settings: st.settings || null, badges: st.badges || null, pension: st.pension || null,
+    krwatch: st.krwatch || null,
     updatedAt: noState ? null : (st.meta && st.meta.updatedAt) || null,
     count: r[1].length
   };
@@ -12401,6 +12530,7 @@ function applyCloudDb(db) {
   var myGoal = Number(lsGet(GOAL_LOCAL_KEY));
   if (myGoal > 0) goalAmount = Math.round(myGoal);
   else if (!db.noState) goalAmount = GOAL_DEFAULT;   // app_state 가 없으면 이미 이 브라우저 값(asset_pc_sb_state)이다
+  if (db.krwatch && typeof kr !== 'undefined' && kr) krWatchFromCloud(db.krwatch);   // 국내주식 최근 찾아본 종목
   syncMarks();
   cloud.noState = !!db.noState;
   cloud.migrate = !!db.migrate;
@@ -14332,6 +14462,326 @@ window.addEventListener('resize', function () {
 });
 pfRender();
 
+/* ── 투자 탭: 국내주식 ──
+   포트폴리오 투자 위. 휴대폰은 투자 탭(#krM), PC 는 투자 정보 화면(#krPc).
+   ① 종목 검색 — 이름 · 초성(ㅅㅅㅈㅈ) · 코드로 찾고 자동완성 목록에서 고른다
+   ② 고른 종목은 '최근 찾아본 종목' 맨 위에 올라가고(5개까지), 이름 옆에 매력도 점수 · 등급 · 한 줄 요약 · 전일 대비 점수 변화
+   ③ 줄을 누르면 상세 창(#krSheet) — 항목별 점수 · 근거, 일봉 · 스토캐스틱 차트, 실적, 외국인 · 기관 순매수, 회사 개요
+   평가는 브라우저에서 못 받아서 GitHub Actions 가 코스피 · 코스닥 전 종목을 하루 두 번(장 마감 뒤 16시 · 아침) 평가해 둔다
+   (.github/scripts/kr_eval.py → kr/index.json, kr/s/{code}.json).
+   index.json s: [코드, 이름, 시장 P|Q, 시가총액(억), 종가, 등락률, 점수, 전일 점수, 등급, 한 줄 요약]
+   찾아본 목록은 이 기기(localStorage)에 두고, Supabase 에 app_state 표가 있으면 krwatch 로도 올려 다른 기기와 맞춘다. */
+var KR_KEY = 'asset_kr_idx', KR_WATCH_KEY = 'asset_kr_watch', KR_MAX = 5;
+var KR_GRADE_T = { A: '매우 매력', B: '매력', C: '보통', D: '주의', E: '약함' };
+var kr = { idx: null, at: 0, busy: false, map: {}, watch: [], wat: null, det: {}, open: null };
+function krOk(d) { return !!d && Array.isArray(d.s) && d.s.length > 100 && d.basis; }
+function krSetIdx(d) {
+  kr.idx = d;
+  kr.map = {};
+  d.s.forEach(function (r) { kr.map[r[0]] = r; });
+}
+try { var krSaved = JSON.parse(lsGet(KR_KEY) || 'null'); if (krOk(krSaved)) krSetIdx(krSaved); } catch (e) {}
+try { var krW = JSON.parse(lsGet(KR_WATCH_KEY) || 'null'); if (krW && Array.isArray(krW.list)) { kr.watch = krW.list.slice(0, KR_MAX); kr.wat = krW.at || null; } } catch (e) {}
+
+// 초성 검색용 — '삼성전자' → 'ㅅㅅㅈㅈ'
+var KR_CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+function krCho(s) {
+  var o = '';
+  for (var i = 0; i < s.length; i++) {
+    var c = s.charCodeAt(i) - 0xAC00;
+    o += c >= 0 && c < 11172 ? KR_CHO[Math.floor(c / 588)] : s[i];
+  }
+  return o;
+}
+function krNorm(s) { return String(s).toLowerCase().replace(/\s+/g, ''); }
+function krSearch(q) {
+  q = krNorm(q);
+  if (!q || !kr.idx) return [];
+  var choOnly = /^[ㄱ-ㅎ]+$/.test(q), out = [];
+  kr.idx.s.forEach(function (r) {
+    var nm = krNorm(r[1]), rank = -1;
+    if (r[0] === q) rank = 0;
+    else if (nm.indexOf(q) === 0) rank = 1;
+    else if (r[0].indexOf(q) === 0) rank = 2;
+    else if (nm.indexOf(q) > 0) rank = 3;
+    else if (choOnly) { var ch = krCho(nm); rank = ch.indexOf(q) === 0 ? 4 : ch.indexOf(q) > 0 ? 5 : -1; }
+    if (rank >= 0) out.push([rank, r]);
+  });
+  // 정확도 → 시가총액 순 (index.json 은 이미 시가총액 순)
+  out.sort(function (a, b) { return a[0] - b[0] || b[1][3] - a[1][3]; });
+  return out.slice(0, 8).map(function (x) { return x[1]; });
+}
+function krMk(m) { return m === 'P' ? '코스피' : '코스닥'; }
+function krChg(v) {
+  var cls = v > 0 ? 'kr-up' : v < 0 ? 'kr-down' : 'kr-flat';
+  return '<small class="' + cls + '">' + (v > 0 ? '▲ ' : v < 0 ? '▼ ' : '') + Math.abs(v).toFixed(2) + '%</small>';
+}
+function krDelta(s, p) {
+  if (p == null || s == null) return '';
+  var d = s - p;
+  return d ? '<em class="' + (d > 0 ? 'kr-up' : 'kr-down') + '">' + (d > 0 ? '▲' : '▼') + Math.abs(d) + '</em>' : '<em class="kr-flat">－</em>';
+}
+function krBadge(r) {
+  return r ? '<span class="kr-badge kr-g-' + r[8] + '"><b>' + r[6] + '</b><small>' + r[8] + ' ' + KR_GRADE_T[r[8]] + '</small></span>'
+    : '<span class="kr-badge kr-g-none"><b>–</b></span>';
+}
+
+// 카드 뼈대 — 검색창은 한 번만 그리고(입력 중 포커스 유지), 목록만 다시 그린다
+function krBuild(box) {
+  if (box.dataset.ready) return;
+  box.dataset.ready = '1';
+  box.innerHTML =
+    '<div class="card-head"><div><div class="card-title">국내주식<span class="qm" tabindex="0" data-tip-t="국내주식 매력도" data-tip="코스피 · 코스닥 전 종목을 매일 장 마감 뒤 100점으로 평가합니다.\n가치 25 · 수익성 20 · 성장성 15 · 추세 20 · 수급 10 · 타이밍(스토캐스틱) 10, 부채비율 · 변동성 감점.\n종목을 누르면 항목별 근거를 볼 수 있어요. 투자 판단의 참고용이에요.">?</span></div>' +
+      '<div class="card-sub kr-sub"></div></div></div>' +
+    '<div class="kr-search"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>' +
+      '<input type="search" class="kr-q" placeholder="종목 이름 · 초성 · 코드로 찾기" autocomplete="off" spellcheck="false" enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-label="국내주식 검색">' +
+      '<ul class="kr-ac" role="listbox" hidden></ul></div>' +
+    '<div class="kr-h"><span>최근 찾아본 종목</span><small class="kr-hs"></small></div>' +
+    '<ul class="kr-list"></ul>' +
+    '<p class="kr-note">점수는 전 종목 · 같은 업종과 비교한 상대 평가예요. 줄을 누르면 항목별 평가를 볼 수 있어요. 투자 판단의 참고용이에요.</p>';
+  var q = box.querySelector('.kr-q'), ac = box.querySelector('.kr-ac');
+  var acSel = -1, acRows = [];
+  function acShow() {
+    var v = q.value.trim();
+    acRows = krSearch(v);
+    acSel = acRows.length ? 0 : -1;
+    if (!v) { ac.hidden = true; q.setAttribute('aria-expanded', 'false'); return; }
+    if (!kr.idx) {
+      ac.innerHTML = '<li class="kr-none">' + (location.protocol === 'file:' ? '파일로 연 화면에서는 검색할 수 없어요' : '종목 목록을 불러오는 중이에요…') + '</li>';
+    } else if (!acRows.length) {
+      ac.innerHTML = '<li class="kr-none">"' + rbEsc(v) + '" 에 맞는 종목이 없어요</li>';
+    } else {
+      var nv = krNorm(v);
+      ac.innerHTML = acRows.map(function (r, i) {
+        var nm = rbEsc(r[1]), at = krNorm(r[1]).indexOf(nv) === 0 && r[1].indexOf(' ') < 0 ? nv.length : 0;
+        if (at) nm = '<mark>' + rbEsc(r[1].slice(0, at)) + '</mark>' + rbEsc(r[1].slice(at));
+        return '<li role="option" class="' + (i === acSel ? 'on' : '') + '" aria-selected="' + (i === acSel) + '"><button type="button" data-kr-pick="' + r[0] + '">' +
+          '<div><b>' + nm + '</b><small>' + r[0] + ' · ' + krMk(r[2]) + ' · 시총 ' + invCap(r[3]) + '</small></div>' +
+          '<span class="kr-px">' + r[6] + '점 <small class="kr-flat">' + r[8] + ' ' + KR_GRADE_T[r[8]] + '</small></span></button></li>';
+      }).join('');
+    }
+    ac.hidden = false;
+    q.setAttribute('aria-expanded', 'true');
+  }
+  function acMove(d) {
+    if (!acRows.length) return;
+    acSel = (acSel + d + acRows.length) % acRows.length;
+    ac.querySelectorAll('li').forEach(function (li, i) { li.classList.toggle('on', i === acSel); li.setAttribute('aria-selected', i === acSel); });
+    var on = ac.querySelector('li.on');
+    if (on) on.scrollIntoView({ block: 'nearest' });
+  }
+  function pick(code) {
+    q.value = '';
+    ac.hidden = true;
+    q.setAttribute('aria-expanded', 'false');
+    q.blur();
+    krAdd(code);
+    krOpen(code);
+  }
+  q.addEventListener('input', acShow);
+  q.addEventListener('focus', function () { if (!kr.idx) krLoad(); if (q.value.trim()) acShow(); });
+  q.addEventListener('keydown', function (e) {
+    if (e.isComposing) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); if (ac.hidden) acShow(); else acMove(1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); acMove(-1); }
+    else if (e.key === 'Enter') { e.preventDefault(); if (acSel >= 0 && acRows[acSel]) pick(acRows[acSel][0]); }
+    else if (e.key === 'Escape') { if (!ac.hidden) { e.stopPropagation(); ac.hidden = true; q.setAttribute('aria-expanded', 'false'); } else if (q.value) q.value = ''; }
+  });
+  q.addEventListener('blur', function () { setTimeout(function () { ac.hidden = true; q.setAttribute('aria-expanded', 'false'); }, 160); });
+  // 목록을 누를 때 입력창의 blur 보다 먼저 고르게 (mousedown 에서 막아 둠)
+  ac.addEventListener('mousedown', function (e) { e.preventDefault(); });
+  ac.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-kr-pick]');
+    if (b) pick(b.dataset.krPick);
+  });
+  box.querySelector('.kr-list').addEventListener('click', function (e) {
+    var x = e.target.closest('[data-kr-del]');
+    if (x) { krDel(x.dataset.krDel); return; }
+    var b = e.target.closest('[data-kr-open]');
+    if (b) krOpen(b.dataset.krOpen);
+  });
+}
+function krRenderInto(box) {
+  krBuild(box);
+  var d = kr.idx;
+  box.querySelector('.kr-sub').textContent = d ? (+d.basis.slice(5, 7)) + '월 ' + (+d.basis.slice(8, 10)) + '일 종가 기준 매력도 · ' + d.s.length.toLocaleString('ko-KR') + '종목' : '종목을 찾아 매력도와 평가를 봐요';
+  box.querySelector('.kr-hs').textContent = kr.watch.length ? '점수 옆 ▲▼ 는 전일 대비' : '';
+  var list = box.querySelector('.kr-list');
+  if (!kr.watch.length) {
+    list.innerHTML = '<li class="kr-empty">위에서 종목을 찾아 고르면 여기에 쌓여요.<br>최근 찾아본 5종목의 평가가 매일 장 마감 뒤 새로 바뀌어요.</li>';
+    return;
+  }
+  list.innerHTML = kr.watch.map(function (w) {
+    var r = kr.map[w.c];
+    return '<li class="kr-row"><button type="button" class="kr-open" data-kr-open="' + w.c + '">' + krBadge(r) +
+      '<div class="kr-nm"><b>' + rbEsc(r ? r[1] : w.n || w.c) + '</b><small>' +
+        (r ? krDelta(r[6], r[7]) + (r[7] != null ? ' ' : '') + rbEsc(r[9]) : (d ? '오늘 평가에서 빠진 종목이에요' : '평가를 불러오는 중…')) + '</small></div>' +
+      '<div class="kr-px">' + (r ? invNum(r[4]) + '원' + krChg(r[5]) : '') + '</div></button>' +
+      '<button type="button" class="kr-x" data-kr-del="' + w.c + '" aria-label="' + rbEsc(r ? r[1] : w.c) + ' 목록에서 빼기">✕</button></li>';
+  }).join('');
+}
+function krRender() {
+  var mob = $('krMWrap');
+  if (mob) mob.hidden = location.protocol === 'file:';
+  ['krPc', 'krM'].forEach(function (id) { var b = $(id); if (b) krRenderInto(b); });
+}
+function krSaveWatch(push) {
+  kr.wat = new Date().toISOString();
+  lsSet(KR_WATCH_KEY, JSON.stringify({ list: kr.watch, at: kr.wat }));
+  krRender();
+  if (push) krPushWatch();
+}
+function krAdd(code) {
+  var r = kr.map[code];
+  kr.watch = [{ c: code, n: r ? r[1] : code }].concat(kr.watch.filter(function (w) { return w.c !== code; })).slice(0, KR_MAX);
+  krSaveWatch(true);
+}
+function krDel(code) {
+  kr.watch = kr.watch.filter(function (w) { return w.c !== code; });
+  krSaveWatch(true);
+}
+// Supabase(app_state 표가 있을 때)에 찾아본 목록을 올린다 — 자산 저장과 따로, 실패해도 이 기기 목록은 그대로
+function krPushWatch() {
+  if (typeof store === 'undefined' || store.mode !== 'supabase' || !store.cloud || cloud.noState) return;
+  var now = new Date().toISOString();
+  sbReq(store.cloud, 'POST', 'app_state?on_conflict=key', [{ key: 'krwatch', value: { list: kr.watch, at: kr.wat }, updated_at: now }],
+    'resolution=merge-duplicates,return=minimal').catch(function () {});
+}
+// 클라우드에서 불러온 목록 — 더 나중에 바뀐 쪽을 쓴다
+function krWatchFromCloud(v) {
+  if (!v || !Array.isArray(v.list)) return;
+  if (kr.wat && v.at && v.at <= kr.wat) { if (v.at < kr.wat) krPushWatch(); return; }
+  kr.watch = v.list.slice(0, KR_MAX);
+  kr.wat = v.at || null;
+  lsSet(KR_WATCH_KEY, JSON.stringify({ list: kr.watch, at: kr.wat }));
+  krRender();
+}
+function krLoad() {
+  if (location.protocol === 'file:' || kr.busy) return;
+  kr.busy = true;
+  kr.at = Date.now();
+  fetch('kr/index.json?t=' + Date.now(), { cache: 'no-store' })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (d) {
+      if (!krOk(d)) return;
+      var same = kr.idx && kr.idx.runAt === d.runAt;
+      if (!same) kr.det = {};   // 새 평가가 나왔으면 상세도 다시 받는다
+      krSetIdx(d);
+      lsSet(KR_KEY, JSON.stringify(d));
+      if (!same) { krRender(); if (kr.open) krOpen(kr.open, true); }
+    })
+    .catch(function () {})
+    .then(function () { kr.busy = false; krRender(); });
+}
+function krOnShow() {
+  if (!mInvShown()) return;
+  if (!kr.at || Date.now() - kr.at > 30 * 60e3) krLoad();
+  krRender();
+}
+
+// ── 상세 창
+function krOpen(code, refresh) {
+  kr.open = code;
+  var r = kr.map[code], body = $('krSheetBody');
+  $('krSheetTitle').textContent = r ? r[1] : code;
+  if (!refresh) openSheet('krSheet');
+  var d = kr.det[code];
+  if (d) { krDetail(d); return; }
+  body.innerHTML = '<div class="inv-empty">' + (r ? '평가 내용을 불러오는 중…' : '이 종목의 평가가 아직 없어요') + '</div>';
+  if (!r) return;
+  fetch('kr/s/' + code + '.json?t=' + encodeURIComponent(kr.idx.runAt), { cache: 'no-store' })
+    .then(function (x) { if (!x.ok) throw new Error('HTTP ' + x.status); return x.json(); })
+    .then(function (j) { kr.det[code] = j; if (kr.open === code) krDetail(j); })
+    .catch(function () { if (kr.open === code) body.innerHTML = '<div class="inv-empty">평가 내용을 불러오지 못했어요. 잠시 뒤 다시 열어 주세요.</div>'; });
+}
+function krFmtEok(v) { return v == null ? '-' : Math.round(v).toLocaleString('ko-KR'); }
+function krDetail(d) {
+  var body = $('krSheetBody');
+  $('krSheetTitle').textContent = d.name;
+  var naver = 'https://m.stock.naver.com/domestic/stock/' + encodeURIComponent(d.code) + '/total';
+  var dd = d.prev != null ? d.score - d.prev : null, info = d.info || {};
+  var h = '<div class="kr-d-top"><div class="kr-d-score kr-g-' + d.grade + '"><div><b>' + d.score + '</b><small>' + d.grade + ' · ' + rbEsc(d.gradeT) + '</small></div></div>' +
+    '<div><div class="kr-d-px">' + invNum(d.close) + '원' + krChg(d.chg) + '</div>' +
+      '<div class="kr-d-meta">' + d.code + ' · ' + rbEsc(d.market) + ' · 시총 ' + invCap(d.cap) + ' · ' + (+d.basis.slice(5, 7)) + '월 ' + (+d.basis.slice(8, 10)) + '일 종가<br>' +
+        (dd == null ? '' : '전일 평가 ' + d.prev + '점 → <b>' + d.score + '점</b> (' + (dd > 0 ? '▲' + dd : dd < 0 ? '▼' + (-dd) : '변화 없음') + ')') + '</div>' +
+      '<span class="kr-d-tag">' + rbEsc(d.tag) + '</span></div></div>';
+  // 항목별 막대
+  h += '<div class="kr-bars">' + d.cats.map(function (c) {
+    var p = Math.max(0, Math.min(1, c.s / c.max));
+    return '<div class="kr-bar"><label>' + rbEsc(c.k) + '</label><i><span style="width:' + (p * 100).toFixed(0) + '%;background:' +
+      (p >= 0.7 ? '#178a5a' : p >= 0.45 ? '#c58a12' : '#d9652a') + '"></span></i><em>' + c.s + ' <small>/ ' + c.max + '</small></em></div>';
+  }).join('') + (d.flags.length ? '<div class="kr-bar"><label>감점</label><i></i><em class="kr-up">' + d.flags.reduce(function (a, f) { return a + f.s; }, 0) + '</em></div>' : '') + '</div>';
+  // 항목별 근거
+  h += '<div class="kr-sec"><h3>항목별 평가<small>백분위는 전 종목(PER · PBR 은 같은 업종) 기준</small></h3><div class="kr-scroll"><table class="kr-tbl"><thead><tr><th>항목</th><th class="num">값</th><th class="kr-note-col">근거</th><th class="num">점수</th></tr></thead><tbody>' +
+    d.cats.map(function (c) {
+      return '<tr class="kr-cat"><td colspan="3">' + rbEsc(c.k) + '</td><td class="num">' + c.s + ' / ' + c.max + '</td></tr>' +
+        c.items.map(function (it) {
+          return '<tr><td>' + rbEsc(it.n) + '<small class="kr-m-note">' + rbEsc(it.note || '') + '</small></td><td class="num">' + rbEsc(it.v) + '</td>' +
+            '<td class="kr-note-col"><small>' + rbEsc(it.note || '') + '</small></td><td class="num pts">' + it.s + '<small>/ ' + it.max + '</small></td></tr>';
+        }).join('');
+    }).join('') +
+    (d.flags.length ? '<tr class="kr-cat"><td colspan="4">감점</td></tr>' + d.flags.map(function (f) {
+      return '<tr><td>' + rbEsc(f.n) + '</td><td class="num">' + rbEsc(f.v) + '</td><td class="kr-note-col"></td><td class="num pts minus">' + f.s + '</td></tr>';
+    }).join('') : '') +
+    '</tbody></table></div></div>';
+  // 차트
+  var bars = d.bars || [], st = bars.length >= 25 ? invStoch(bars) : null, lc = st ? st.cross[bars.length - 1] : null;
+  if (st) {
+    h += '<div class="kr-sec"><h3>일봉 · 스토캐스틱<small>' + (lc ? (lc === 'buy' ? '▲ 마지막 날 골든크로스' : '▼ 마지막 날 데드크로스') : '최근 ' + Math.min(90, bars.length - 17) + '거래일') + '</small></h3>' +
+      '<div class="inv-ch-leg"><span><b class="a-buy">▲</b>골든크로스</span><span><b class="a-sell">▼</b>데드크로스</span><span><i></i>%K</span><span><i class="d"></i>%D</span></div>' +
+      '<div class="inv-ch-box" id="krChBox"><div class="inv-tip" id="krTip" hidden></div></div></div>';
+  }
+  // 실적
+  var f = d.fin || {}, fk = f.keys || [];
+  if (fk.length && f.rows) {
+    var unit = { '매출액': '억', '영업이익': '억', '당기순이익': '억', '영업이익률': '%', 'ROE': '%', '부채비율': '%', 'EPS': '원', 'PER': '배', 'PBR': '배', '주당배당금': '원' };
+    h += '<div class="kr-sec"><h3>실적<small>연간 · 마지막 열은 증권사 컨센서스(예상)</small></h3><div class="kr-scroll"><table class="kr-tbl"><thead><tr><th></th>' +
+      fk.map(function (k) { return '<th class="num">' + k.slice(0, 4) + (k === f.cons ? ' (E)' : '') + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      Object.keys(f.rows).map(function (t) {
+        return '<tr><td>' + rbEsc(t) + ' <small style="display:inline">' + (unit[t] || '') + '</small></td>' + f.rows[t].map(function (v) {
+          return '<td class="num">' + (v == null ? '-' : unit[t] === '%' || unit[t] === '배' ? v.toFixed(2) : Math.round(v).toLocaleString('ko-KR')) + '</td>';
+        }).join('') + '</tr>';
+      }).join('') + '</tbody></table></div></div>';
+  }
+  // 수급
+  if ((d.deals || []).length) {
+    h += '<div class="kr-sec"><h3>투자자별 순매수<small>주 · 최근 5거래일</small></h3><div class="kr-scroll"><table class="kr-tbl"><thead><tr><th>날짜</th><th class="num">외국인</th><th class="num">기관</th><th class="num">개인</th><th class="num">종가</th></tr></thead><tbody>' +
+      d.deals.map(function (x) {
+        var c = function (v) { return v == null ? '-' : '<span class="' + (v > 0 ? 'kr-up' : v < 0 ? 'kr-down' : '') + '">' + (v > 0 ? '+' : '') + Math.round(v).toLocaleString('ko-KR') + '</span>'; };
+        return '<tr><td>' + (x[0] ? (+x[0].slice(4, 6)) + '/' + (+x[0].slice(6, 8)) : '') + '</td><td class="num">' + c(x[1]) + '</td><td class="num">' + c(x[2]) + '</td><td class="num">' + c(x[3]) + '</td><td class="num">' + (x[4] ? invNum(x[4]) : '-') + '</td></tr>';
+      }).join('') + '</tbody></table></div></div>';
+  }
+  // 참고 지표 · 회사 개요 · 리포트
+  h += '<div class="kr-sec"><h3>참고 지표</h3><div class="inv-ch-stats">' +
+    '<div><label>PER' + (info.perDesc ? ' (' + rbEsc(info.perDesc) + ')' : '') + '</label><b>' + (info.per != null ? info.per.toFixed(2) + '배' : '-') + '</b></div>' +
+    '<div><label>추정 PER</label><b>' + (info.cper != null ? info.cper.toFixed(2) + '배' : '-') + '</b></div>' +
+    '<div><label>52주 최고 / 최저</label><b>' + (info.hi52 ? invNum(info.hi52) + ' / ' + invNum(info.lo52) : '-') + '</b></div>' +
+    '<div><label>외국인 소진율</label><b>' + (info.frgn != null ? info.frgn.toFixed(2) + '%' : '-') + '</b></div></div></div>';
+  if ((d.summary || []).length) h += '<div class="kr-sec"><h3>회사 개요</h3><ul class="kr-sum">' + d.summary.map(function (s) { return '<li>' + rbEsc(s) + '</li>'; }).join('') + '</ul></div>';
+  if ((d.research || []).length) {
+    h += '<div class="kr-sec"><h3>최근 증권사 리포트</h3><ul class="kr-res">' + d.research.map(function (x) {
+      return '<li>' + rbEsc(x.t) + '<small>' + rbEsc(x.b || '') + (x.d ? ' · ' + x.d.slice(0, 4) + '.' + x.d.slice(4, 6) + '.' + x.d.slice(6, 8) : '') + '</small></li>';
+    }).join('') + '</ul></div>';
+  }
+  h += '<div class="kr-foot"><span>가치 25 · 수익성 20 · 성장성 15 · 추세 20 · 수급 10 · 타이밍 10 (스토캐스틱 ' + (d.params || INV_STO).join(',') + '), 부채비율 200% 넘음 −3 · 변동성 상위 10% −2.<br>' +
+    'A 80↑ · B 65↑ · C 50↑ · D 35↑ · E. 네이버 증권 자료로 매일 장 마감 뒤 다시 매겨요. 투자 판단의 참고용이에요.</span>' +
+    '<a href="' + naver + '" target="_blank" rel="noopener noreferrer">네이버 증권 ↗</a></div>';
+  body.innerHTML = h;
+  if (st) requestAnimationFrame(function () { krDrawChart(d); });
+}
+function krDrawChart(d) {
+  var box = $('krChBox');
+  if (!box || !$('krSheet').classList.contains('open')) return;
+  var bars = d.bars, st = invStoch(bars), last = bars.length - 1, lc = st.cross[last] || null;
+  csDraw({ box: box, tip: $('krTip'), all: bars, name: d.name, side: lc, emph: lc ? last : -1 });
+}
+var krResizeT = 0;
+window.addEventListener('resize', function () {
+  clearTimeout(krResizeT);
+  krResizeT = setTimeout(function () { if (kr.open && kr.det[kr.open]) krDrawChart(kr.det[kr.open]); }, 150);
+});
+krRender();
+
 /* ═══════════ 투자 정보 (PC) ═══════════
    휴대폰 투자 탭의 두 카드(AI 시황 브리핑 · 스토캐스틱 신호)를 PC 폭에 맞게 — 위는 브리핑 한 장, 아래 왼쪽은 신호 종목 목록,
    오른쪽은 고른 종목의 일봉 차트. 차트 일봉은 stoch.json 에 종목마다 함께 담겨 온다(bars: [날짜, 시가, 고가, 저가, 종가, 거래량]).
@@ -14635,6 +15085,7 @@ window.addEventListener('resize', function () {
 // 투자 탭을 열 때 · 앱으로 돌아올 때 — 5분이 지났거나 시가 바뀌었으면 다시 읽는다
 function mNewsOnShow() {
   mSigOnShow();
+  krOnShow();
   pfOnShow();
   if (!mNews || !mInvShown()) return;
   var due = !mNews.at || Date.now() - mNews.at > 5 * 60e3 || new Date(mNews.at).getUTCHours() !== new Date().getUTCHours();
