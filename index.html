@@ -14511,7 +14511,7 @@ function krSearch(q) {
   out.sort(function (a, b) { return a[0] - b[0] || b[1][3] - a[1][3]; });
   return out.slice(0, 8).map(function (x) { return x[1]; });
 }
-function krMk(m) { return m === 'P' ? '코스피' : '코스닥'; }
+function krMk(m) { return m === 'P' ? '코스피' : m === 'E' ? 'ETF' : '코스닥'; }
 function krChg(v) {
   var cls = v > 0 ? 'kr-up' : v < 0 ? 'kr-down' : 'kr-flat';
   return '<small class="' + cls + '">' + (v > 0 ? '▲ ' : v < 0 ? '▼ ' : '') + Math.abs(v).toFixed(2) + '%</small>';
@@ -14531,14 +14531,14 @@ function krBuild(box) {
   if (box.dataset.ready) return;
   box.dataset.ready = '1';
   box.innerHTML =
-    '<div class="card-head"><div><div class="card-title">국내주식<span class="qm" tabindex="0" data-tip-t="국내주식 매력도" data-tip="코스피 · 코스닥 전 종목을 매일 장 마감 뒤 100점으로 평가합니다.\n가치 25 · 수익성 20 · 성장성 15 · 추세 20 · 수급 10 · 타이밍(스토캐스틱) 10, 부채비율 · 변동성 감점.\n종목을 누르면 항목별 근거를 볼 수 있어요. 투자 판단의 참고용이에요.">?</span></div>' +
+    '<div class="card-head"><div><div class="card-title">국내주식<span class="qm" tabindex="0" data-tip-t="국내주식 매력도" data-tip="코스피 · 코스닥 전 종목과 ETF 를 매일 장 마감 뒤 100점으로 평가합니다.\n주식: 가치 25 · 수익성 20 · 성장성 15 · 추세 20 · 수급 10 · 타이밍(스토캐스틱) 10, 부채비율 · 변동성 감점.\nETF: 추세 25 · 위험 대비 성과 15 · 비용 20 · 규모 15 · 자금 흐름 15 · 타이밍 10, 레버리지 · 인버스 감점.\n종목을 누르면 항목별 근거를 볼 수 있어요. 투자 판단의 참고용이에요.">?</span></div>' +
       '<div class="card-sub kr-sub"></div></div></div>' +
     '<div class="kr-search"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>' +
-      '<input type="search" class="kr-q" placeholder="종목 이름 · 초성 · 코드로 찾기" autocomplete="off" spellcheck="false" enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-label="국내주식 검색">' +
+      '<input type="search" class="kr-q" placeholder="종목 · ETF 이름 · 초성 · 코드로 찾기" autocomplete="off" spellcheck="false" enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-label="국내주식 검색">' +
       '<ul class="kr-ac" role="listbox" hidden></ul></div>' +
     '<div class="kr-h"><span>최근 찾아본 종목</span><small class="kr-hs"></small></div>' +
     '<ul class="kr-list"></ul>' +
-    '<p class="kr-note">점수는 전 종목 · 같은 업종과 비교한 상대 평가예요. 줄을 누르면 항목별 평가를 볼 수 있어요. 투자 판단의 참고용이에요.</p>';
+    '<p class="kr-note">점수는 주식은 전 종목 · 같은 업종과, ETF 는 ETF 끼리 비교한 상대 평가예요. 줄을 누르면 항목별 평가를 볼 수 있어요. 투자 판단의 참고용이에요.</p>';
   var q = box.querySelector('.kr-q'), ac = box.querySelector('.kr-ac');
   var acSel = -1, acRows = [];
   function acShow() {
@@ -14604,7 +14604,7 @@ function krBuild(box) {
 function krRenderInto(box) {
   krBuild(box);
   var d = kr.idx;
-  box.querySelector('.kr-sub').textContent = d ? (+d.basis.slice(5, 7)) + '월 ' + (+d.basis.slice(8, 10)) + '일 종가 기준 매력도 · ' + d.s.length.toLocaleString('ko-KR') + '종목' : '종목을 찾아 매력도와 평가를 봐요';
+  box.querySelector('.kr-sub').textContent = d ? (+d.basis.slice(5, 7)) + '월 ' + (+d.basis.slice(8, 10)) + '일 종가 기준 매력도 · 주식 · ETF ' + d.s.length.toLocaleString('ko-KR') + '개' : '종목을 찾아 매력도와 평가를 봐요';
   box.querySelector('.kr-hs').textContent = kr.watch.length ? '점수 옆 ▲▼ 는 전일 대비' : '';
   var list = box.querySelector('.kr-list');
   if (!kr.watch.length) {
@@ -14712,7 +14712,7 @@ function krDetail(d) {
       (p >= 0.7 ? '#178a5a' : p >= 0.45 ? '#c58a12' : '#d9652a') + '"></span></i><em>' + c.s + ' <small>/ ' + c.max + '</small></em></div>';
   }).join('') + (d.flags.length ? '<div class="kr-bar"><label>감점</label><i></i><em class="kr-up">' + d.flags.reduce(function (a, f) { return a + f.s; }, 0) + '</em></div>' : '') + '</div>';
   // 항목별 근거
-  h += '<div class="kr-sec"><h3>항목별 평가<small>백분위는 전 종목(PER · PBR 은 같은 업종) 기준</small></h3><div class="kr-scroll"><table class="kr-tbl"><thead><tr><th>항목</th><th class="num">값</th><th class="kr-note-col">근거</th><th class="num">점수</th></tr></thead><tbody>' +
+  h += '<div class="kr-sec"><h3>항목별 평가<small>' + (d.etf ? '백분위는 ETF 끼리 비교' : '백분위는 전 종목(PER · PBR 은 같은 업종) 기준') + '</small></h3><div class="kr-scroll"><table class="kr-tbl"><thead><tr><th>항목</th><th class="num">값</th><th class="kr-note-col">근거</th><th class="num">점수</th></tr></thead><tbody>' +
     d.cats.map(function (c) {
       return '<tr class="kr-cat"><td colspan="3">' + rbEsc(c.k) + '</td><td class="num">' + c.s + ' / ' + c.max + '</td></tr>' +
         c.items.map(function (it) {
@@ -14730,6 +14730,31 @@ function krDetail(d) {
     h += '<div class="kr-sec"><h3>일봉 · 스토캐스틱<small>' + (lc ? (lc === 'buy' ? '▲ 마지막 날 골든크로스' : '▼ 마지막 날 데드크로스') : '최근 ' + Math.min(90, bars.length - 17) + '거래일') + '</small></h3>' +
       '<div class="inv-ch-leg"><span><b class="a-buy">▲</b>골든크로스</span><span><b class="a-sell">▼</b>데드크로스</span><span><i></i>%K</span><span><i class="d"></i>%D</span></div>' +
       '<div class="inv-ch-box" id="krChBox"><div class="inv-tip" id="krTip" hidden></div></div></div>';
+  }
+  // ETF 정보
+  var e = d.etf;
+  if (e) {
+    var pct = function (v, dg) { return v == null ? '-' : (v > 0 ? '+' : '') + Number(v).toFixed(dg == null ? 2 : dg) + '%'; };
+    h += '<div class="kr-sec"><h3>ETF 정보<small>' + rbEsc(e.issuer) + (e.listed ? ' · ' + e.listed.slice(0, 4) + '.' + e.listed.slice(4, 6) + '.' + e.listed.slice(6, 8) + ' 상장' : '') + '</small></h3><div class="inv-ch-stats">' +
+      '<div><label>기초지수</label><b>' + rbEsc(e.base || '-') + '</b></div>' +
+      '<div><label>총보수</label><b>' + (e.fee != null ? '연 ' + Number(e.fee).toFixed(3) + '%' : '-') + '</b></div>' +
+      '<div><label>순자산</label><b>' + (e.nav ? invCap(Math.round(e.nav)) : '-') + '</b></div>' +
+      '<div><label>분배율 (1년)</label><b>' + (e.div != null ? Number(e.div).toFixed(2) + '%' : '-') + '</b></div>' +
+      '<div><label>괴리율 · 추적오차</label><b>' + (e.dev != null ? (e.devSign === '-' ? '−' : '+') + Number(e.dev).toFixed(2) + '%' : '-') + ' · ' + (e.track != null ? Number(e.track).toFixed(2) + '%' : '-') + '</b></div>' +
+      '<div><label>20일 평균 거래대금</label><b>' + (e.tv20 != null ? Number(e.tv20).toLocaleString('ko-KR') + '억' : '-') + '</b></div>' +
+      '<div><label>순유입 1개월 · 1년</label><b>' + (e.inflow1m != null ? (e.inflow1m > 0 ? '+' : '') + Math.round(e.inflow1m).toLocaleString('ko-KR') + '억' : '-') + ' · ' + (e.inflow1y != null ? (e.inflow1y > 0 ? '+' : '') + Math.round(e.inflow1y).toLocaleString('ko-KR') + '억' : '-') + '</b></div>' +
+      '<div><label>52주 최고 / 최저</label><b>' + (info.hi52 ? invNum(info.hi52) + ' / ' + invNum(info.lo52) : '-') + '</b></div></div></div>';
+    var PERF = { M1: '1개월', M3: '3개월', M6: '6개월', YTD: '올해', Y1: '1년', Y3: '3년', Y5: '5년' };
+    if ((e.perf || []).length) {
+      h += '<div class="kr-sec"><h3>기간 수익률<small>시장가 기준</small></h3><div class="kr-scroll"><table class="kr-tbl"><thead><tr>' + e.perf.map(function (x) { return '<th class="num">' + (PERF[x[0]] || x[0]) + '</th>'; }).join('') +
+        '</tr></thead><tbody><tr>' + e.perf.map(function (x) { return '<td class="num ' + (x[1] > 0 ? 'kr-up' : x[1] < 0 ? 'kr-down' : '') + '">' + pct(x[1]) + '</td>'; }).join('') + '</tr></tbody></table></div></div>';
+    }
+    var SEC = { IT: 'IT', INDUSTRIALS: '산업재', FINANCIALS: '금융', CONSUMER_DISCRETIONARY: '경기소비재', COMMUNICATION: '커뮤니케이션', MATERIALS: '소재',
+      HEALTHCARE: '헬스케어', CONSUMER_STAPLES: '필수소비재', ENERGY: '에너지', UTILITIES: '유틸리티', REAL_ESTATE: '부동산', UNCLASSIFIED: '기타' };
+    if ((e.top || []).length) {
+      h += '<div class="kr-sec"><h3>상위 구성 종목<small>' + (e.sector || []).map(function (x) { return (SEC[x[0]] || x[0]) + ' ' + Math.round(x[1]) + '%'; }).join(' · ') + '</small></h3><div class="kr-scroll"><table class="kr-tbl"><tbody>' +
+        e.top.map(function (x, i) { return '<tr><td>' + (i + 1) + '. ' + rbEsc(x[0]) + '</td><td class="num">' + rbEsc(x[1] || '') + '</td></tr>'; }).join('') + '</tbody></table></div></div>';
+    }
   }
   // 실적
   var f = d.fin || {}, fk = f.keys || [];
@@ -14752,18 +14777,20 @@ function krDetail(d) {
       }).join('') + '</tbody></table></div></div>';
   }
   // 참고 지표 · 회사 개요 · 리포트
-  h += '<div class="kr-sec"><h3>참고 지표</h3><div class="inv-ch-stats">' +
+  if (!e) h += '<div class="kr-sec"><h3>참고 지표</h3><div class="inv-ch-stats">' +
     '<div><label>PER' + (info.perDesc ? ' (' + rbEsc(info.perDesc) + ')' : '') + '</label><b>' + (info.per != null ? info.per.toFixed(2) + '배' : '-') + '</b></div>' +
     '<div><label>추정 PER</label><b>' + (info.cper != null ? info.cper.toFixed(2) + '배' : '-') + '</b></div>' +
     '<div><label>52주 최고 / 최저</label><b>' + (info.hi52 ? invNum(info.hi52) + ' / ' + invNum(info.lo52) : '-') + '</b></div>' +
     '<div><label>외국인 소진율</label><b>' + (info.frgn != null ? info.frgn.toFixed(2) + '%' : '-') + '</b></div></div></div>';
-  if ((d.summary || []).length) h += '<div class="kr-sec"><h3>회사 개요</h3><ul class="kr-sum">' + d.summary.map(function (s) { return '<li>' + rbEsc(s) + '</li>'; }).join('') + '</ul></div>';
+  if ((d.summary || []).length) h += '<div class="kr-sec"><h3>' + (e ? 'ETF 개요' : '회사 개요') + '</h3><ul class="kr-sum">' + d.summary.map(function (s) { return '<li>' + rbEsc(s) + '</li>'; }).join('') + '</ul></div>';
   if ((d.research || []).length) {
     h += '<div class="kr-sec"><h3>최근 증권사 리포트</h3><ul class="kr-res">' + d.research.map(function (x) {
       return '<li>' + rbEsc(x.t) + '<small>' + rbEsc(x.b || '') + (x.d ? ' · ' + x.d.slice(0, 4) + '.' + x.d.slice(4, 6) + '.' + x.d.slice(6, 8) : '') + '</small></li>';
     }).join('') + '</ul></div>';
   }
-  h += '<div class="kr-foot"><span>가치 25 · 수익성 20 · 성장성 15 · 추세 20 · 수급 10 · 타이밍 10 (스토캐스틱 ' + (d.params || INV_STO).join(',') + '), 부채비율 200% 넘음 −3 · 변동성 상위 10% −2.<br>' +
+  h += '<div class="kr-foot"><span>' + (e
+      ? 'ETF 끼리 비교: 추세 25 · 위험 대비 성과 15 · 비용(총보수 · 추적오차 · 괴리율) 20 · 규모 · 유동성 15 · 자금 흐름 15 · 타이밍 10 (스토캐스틱 ' + (d.params || INV_STO).join(',') + '), 레버리지 · 인버스 −5.<br>'
+      : '가치 25 · 수익성 20 · 성장성 15 · 추세 20 · 수급 10 · 타이밍 10 (스토캐스틱 ' + (d.params || INV_STO).join(',') + '), 부채비율 200% 넘음 −3 · 변동성 상위 10% −2.<br>') +
     ((kr.idx && kr.idx.grades) || [[70, 'A'], [60, 'B'], [45, 'C'], [35, 'D'], [0, 'E']]).map(function (g) { return g[1] + (g[0] ? ' ' + g[0] + '↑' : ''); }).join(' · ') + '. 네이버 증권 자료로 매일 장 마감 뒤 다시 매겨요. 투자 판단의 참고용이에요.</span>' +
     '<a href="' + naver + '" target="_blank" rel="noopener noreferrer">네이버 증권 ↗</a></div>';
   body.innerHTML = h;

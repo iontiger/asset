@@ -22,7 +22,7 @@ jobs:
           python3 .github/scripts/kr_eval.py out
           ls out/s | wc -l
           du -sh out
-          python3 -c "import json; d=json.load(open('out/s/005930.json')); d.pop('bars'); print(json.dumps(d, ensure_ascii=False)[:5000])"
+          python3 -c "import json; [print(json.dumps({k: v for k, v in json.load(open(f'out/s/{c}.json')).items() if k != 'bars'}, ensure_ascii=False)[:3000]) for c in ('005930', '069500', '122630')]"
       - uses: actions/upload-artifact@v4
         with:
           name: kr-eval
