@@ -36,7 +36,7 @@ FCHART = "https://fchart.stock.naver.com/sise.nhn?symbol={}&timeframe=day&count=
 INTEG = "https://m.stock.naver.com/api/stock/{}/integration"
 ANNUAL = "https://m.stock.naver.com/api/stock/{}/finance/annual"
 ETFAN = "https://m.stock.naver.com/api/stock/{}/etfAnalysis"
-UPJONG = "https://finance.naver.com/sise/sise_group.naver?type=upjong"
+UPJONG = "https://m.stock.naver.com/api/stocks/industry?page=1&pageSize=200"
 HIST = 60    # 상세 파일에 남기는 점수 기록 수
 KST = dt.timezone(dt.timedelta(hours=9))
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"}
@@ -396,8 +396,7 @@ def etf_theme(name, base):
 def upjong_names():
     """네이버 업종 번호 → 이름 (integration 의 industryCode 와 같은 번호). 못 받으면 빈 사전"""
     try:
-        html = get(UPJONG).decode("euc-kr", "replace")
-        return {no: re.sub(r"\s+", " ", nm).strip() for no, nm in re.findall(r"type=upjong&(?:amp;)?no=(\d+)\"[^>]*>([^<]+)</a>", html)}
+        return {str(g["no"]): g["name"] for g in json.loads(get(UPJONG)).get("groups") or [] if g.get("no") is not None and g.get("name")}
     except Exception as e:
         print(f"업종 이름을 못 받음 — {e}")
         return {}

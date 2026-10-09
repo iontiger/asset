@@ -13,32 +13,6 @@ permissions:
   contents: read
 
 jobs:
-  upjong:
-    runs-on: ubuntu-latest
-    steps:
-      - name: 업종 자료 모양 보기
-        run: |
-          python3 - <<'PY'
-          import urllib.request, re, json
-          UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"}
-          def get(u):
-              with urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=20) as r:
-                  return r.status, r.read()
-          for u in ["https://finance.naver.com/sise/sise_group.naver?type=upjong",
-                    "https://m.stock.naver.com/api/stocks/industry?page=1&pageSize=5",
-                    "https://m.stock.naver.com/api/stocks/industry/278?page=1&pageSize=2",
-                    "https://m.stock.naver.com/api/stock/005930/integration"]:
-              try:
-                  st, b = get(u)
-                  t = b.decode("euc-kr" if "finance.naver" in u else "utf-8", "replace")
-                  print("==", u, st, len(t))
-                  i = t.find("upjong")
-                  print(t[max(0, i - 300):i + 600] if "finance.naver" in u else t[:1500])
-                  if "integration" in u:
-                      d = json.loads(t); print({k: (v if not isinstance(v, (list, dict)) else type(v).__name__) for k, v in d.items()})
-              except Exception as e:
-                  print("==", u, "ERR", e)
-          PY
   probe:
     runs-on: ubuntu-latest
     steps:
