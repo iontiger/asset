@@ -1,0 +1,35 @@
+# 국내주식 평가 스크립트(.github/scripts/kr_eval.py)를 고친 PR 에서 실제로 받아 보고 요약을 찍는다.
+# 이 컨테이너 밖(GitHub 러너)에서 돌리는 이유: 네이버 · NH Plug 를 받을 수 있어서.
+name: KR stock eval check
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/scripts/kr_eval.py
+      - .github/workflows/kr-eval-check.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 네이버 응답 모양 보기
+        run: |
+          python3 - <<'PY'
+          import json, urllib.request
+          UA = {"User-Agent": "Mozilla/5.0"}
+          for u in ["https://m.stock.naver.com/api/stock/005930/integration",
+                    "https://m.stock.naver.com/api/stock/005930/finance/annual",
+                    "https://m.stock.naver.com/api/stock/005930/basic",
+                    "https://m.stock.naver.com/api/stock/005930/trend?pageSize=5",
+                    "https://m.stock.naver.com/api/stock/247540/integration"]:
+              try:
+                  b = urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=20).read().decode()
+                  print("=====", u, len(b)); print(b[:6000])
+              except Exception as e:
+                  print("=====", u, "ERR", e)
+          PY
