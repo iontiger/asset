@@ -112,7 +112,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: kr
-          key: ${{ steps.krkey.outputs.key }}
+          # 스크립트가 바뀌면 같은 반나절 안이라도 새로 평가한다
+          key: ${{ steps.krkey.outputs.key }}-${{ hashFiles('.github/scripts/kr_eval.py') }}
           restore-keys: kreval-
       - name: 국내주식 평가
         if: steps.krcache.outputs.cache-hit != 'true'
