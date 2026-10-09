@@ -2162,6 +2162,34 @@
   #listBody .a-item > :nth-child(4) { grid-area:date; }
   #listBody .a-item > :nth-child(5) { grid-area:delta; text-align:left; }
   #listBody .a-item > :nth-child(6) { grid-area:amt; }
+  /* 끌어서 순서 바꾸기 — 오른쪽 손잡이(8번째 칸), 끄는 칸은 떠오르고 나머지는 자리를 비켜 준다 */
+  #listBody .a-item {
+    grid-template-columns:max-content max-content minmax(0,1fr) max-content 22px;
+    grid-template-areas:"name name name amt grip" "owner date delta amt grip";
+    padding-right:6px; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+  }
+  #listBody .a-item > .a-grip {
+    grid-area:grip; align-self:stretch; display:grid; place-items:center; cursor:grab; touch-action:none;
+    color:var(--baseline); opacity:.55; transition:opacity .12s;
+  }
+  #listBody .a-item > .a-grip::before {
+    content:""; width:8px; height:14px;
+    background:radial-gradient(circle, currentColor 1.4px, transparent 1.6px) 0 0 / 4px 4.67px;
+  }
+  #listBody .a-item:hover > .a-grip { opacity:1; }
+  #listBody .a-gblock.sorting .a-item:not(.dragging) { transition:background-color .12s; }
+  #listBody .a-item.dragging {
+    position:relative; z-index:5; cursor:grabbing; background:var(--surface);
+    box-shadow:0 10px 26px -8px rgba(16,24,40,.35), 0 0 0 1px var(--accent); border-radius:12px;
+  }
+  #listBody .a-item.dragging + .a-item, #listBody .a-item + .a-item.dragging { border-top-color:transparent; }
+  #listBody .a-gblock.sorting { overflow:visible; }
+  #listBody.drag-on, #listBody.drag-on * { cursor:grabbing !important; }
+  .order-reset {
+    margin-left:8px; padding:2px 9px; border:1px solid var(--border); border-radius:999px;
+    background:var(--surface); color:var(--ink-2); font-size:.74rem; font-weight:600; cursor:pointer;
+  }
+  .order-reset:hover { background:var(--hover); }
 
   /* 입력 표 — 좁으면 변동을 금액 칸 아래로, 더 좁으면 마지막 기록을 이름 아래로 */
   @container intable (max-width: 760px) {
@@ -4356,7 +4384,8 @@ function serializeDb() {
     app: 'asset-pc',
     version: 1,
     updatedAt: new Date().toISOString(),
-    settings: { goal: goalAmount, fcMonthly: fcMonthly, fcRate: fcRate, marks: marks || undefined },
+    settings: { goal: goalAmount, fcMonthly: fcMonthly, fcRate: fcRate, marks: marks || undefined,
+                order: assetOrder.length ? assetOrder : undefined },
     owners: OWNERS.map(function (o) { return { id: o.id, name: o.name }; })
   }, null, 2);
   var sorted = rows.slice().sort(function (a, b) {
@@ -4389,6 +4418,7 @@ function applyDb(obj) {
   fcRate = !oldDefault && isFinite(st.fcRate) ? Math.round(st.fcRate * 10) / 10 : FC_DEFAULT_RATE;
   // 축하 기준선 — 없으면(처음 쓰는 파일) 지금 값을 기준으로 삼고 지난 기록은 축하하지 않는다
   marks = st.marks && typeof st.marks === 'object' ? Object.assign({}, st.marks) : null;
+  assetOrder = cleanOrder(st.order);
   syncMarks();
   // 뱃지 기록 — 없으면(처음) 지난 기록에서 넘어선 마일스톤을 찾아 채운다
   badges = Array.isArray(obj.badges) ? normalizeBadges(obj.badges) : backfillBadges();
@@ -4892,6 +4922,7 @@ function importParsed(parts) {
         if (isFinite(inSettings.goal) && inSettings.goal > 0) goalAmount = Math.round(inSettings.goal);
         if (isFinite(inSettings.fcMonthly)) fcMonthly = Math.round(inSettings.fcMonthly);
         if (isFinite(inSettings.fcRate)) fcRate = Math.round(inSettings.fcRate * 10) / 10;
+        if (Array.isArray(inSettings.order)) assetOrder = cleanOrder(inSettings.order);
       }
       syncMarks(true);
       var auto = backfillBadges();
@@ -5121,6 +5152,28 @@ var fcMode = 'month';
 var GOAL_DEFAULT = 2000000000;                // 기본 목표: 20억
 var goalAmount = GOAL_DEFAULT;                // (데이터 파일에 저장)
 var fcRate = FC_DEFAULT_RATE;                 // 연 수익률(%) — 월 복리로 계산 (데이터 파일에 저장)
+var assetOrder = [];                          // 자산 탭에서 끌어 놓은 순서 (자산 이름, 데이터 파일에 저장) — 비면 금액 큰 순
+function cleanOrder(list) {
+  var seen = {};
+  return (Array.isArray(list) ? list : []).filter(function (n) {
+    if (typeof n !== 'string' || !n || seen[n]) return false;
+    return (seen[n] = true);
+  });
+}
+// 그룹 안 정렬 — 금액 큰 순(자산 먼저, 부채는 아래)에, 끌어 놓은 순서가 있으면 그 순서가 우선.
+// 순서에 없는 새 자산은 그룹 맨 아래로
+function sortAssets(items) {
+  items.sort(function (a, b) { return signedAmount(b) - signedAmount(a); });
+  if (!assetOrder.length) return items;
+  var idx = {};
+  assetOrder.forEach(function (n, i) { idx[n] = i; });
+  var pos = new Map(items.map(function (a, i) { return [a, i]; }));
+  return items.sort(function (a, b) {
+    var ia = a.name in idx ? idx[a.name] : 1e9 + pos.get(a);
+    var ib = b.name in idx ? idx[b.name] : 1e9 + pos.get(b);
+    return ia - ib;
+  });
+}
 var FC_RATE_STEP = 0.5;
 
 // base 에서 months 개월 뒤의 예상 금액 — 매달 (수익률/12) 만큼 불어나고 적립액이 더해진다.
@@ -5743,6 +5796,13 @@ function renderListTable() {
       (listOwner !== 'all' ? ownerName(listOwner) + ' · ' : '') + (q ? '검색 결과 ' : '') +
       assets.length + '개 · 합계 '));
     summary.appendChild(el('b', '', (sum < 0 ? '−' : '') + comma(Math.abs(sum)) + '원'));
+    if (assetOrder.length) {
+      var reset = el('button', 'order-reset', '금액순으로');
+      reset.type = 'button';
+      reset.title = '끌어 놓은 순서를 지우고 금액 큰 순으로 되돌립니다';
+      reset.addEventListener('click', function () { saveAssetOrder([], '금액 큰 순으로 되돌렸습니다'); });
+      summary.appendChild(reset);
+    }
   }
 
   if (!assets.length) {
@@ -5773,8 +5833,8 @@ function renderListTable() {
       return g === '기타' ? GROUPS.indexOf(assetGroupOf(a)) === -1 : assetGroupOf(a) === g;
     });
     if (!items.length) return;
-    // 자산 먼저, 부채는 아래로 — 각각 금액 큰 순
-    items.sort(function (a, b) { return signedAmount(b) - signedAmount(a); });
+    // 자산 먼저, 부채는 아래로 — 각각 금액 큰 순 (끌어 놓은 순서가 있으면 그 순서)
+    sortAssets(items);
     var subtotal = items.reduce(function (s, a) { return s + signedAmount(a); }, 0);
 
     // 그룹 묶음 — PC 에서는 표 안의 한 구역, 휴대폰에서는 그룹마다 카드 (CSS)
@@ -5828,6 +5888,10 @@ function renderListTable() {
       row.appendChild(de);
       row.appendChild(el('div', 'a-amt' + (isDebt ? ' debt' : ''), (isDebt ? '−' : '') + comma(a.amount) + '원'));
       row.appendChild(el('span', 'chev', '›'));
+      var grip = el('span', 'a-grip');   // 끌어서 순서 바꾸기 손잡이 (8번째 칸 — 위 칸 순서는 CSS nth-child 가 쓴다)
+      grip.title = '끌어서 순서 바꾸기';
+      grip.setAttribute('aria-hidden', 'true');
+      row.appendChild(grip);
       block.appendChild(row);
     });
   });
@@ -6048,6 +6112,11 @@ function saveEdit() {
     });
     rows = normalizeRows(others.concat(mine));   // 합칠 때 같은 날짜는 뒤(이 자산)가 이긴다
     selectedName = newName;
+    // 끌어 놓은 순서도 새 이름으로 (합치면 남는 쪽 자리를 쓴다)
+    if (newName !== oldName) {
+      assetOrder = cleanOrder(assetOrder.map(function (n) { return n === oldName && !merging ? newName : n; })
+        .filter(function (n) { return n !== oldName; }));
+    }
   }, merging ? '두 자산을 합쳤습니다' : '수정 완료');
 }
 
@@ -6099,7 +6168,7 @@ function renderInput() {
       return g === '기타' ? GROUPS.indexOf(assetGroupOf(a)) === -1 : assetGroupOf(a) === g;
     });
     if (!items.length) return;
-    items.sort(function (a, b) { return signedAmount(b) - signedAmount(a); });
+    sortAssets(items);
 
     // 그룹 묶음 — PC 에서는 표 안의 한 구역, 휴대폰에서는 그룹마다 카드 (CSS)
     var block = el('div', 'in-gblock');
@@ -9045,9 +9114,140 @@ $('listSearch').addEventListener('input', function () {
   if (renderListTable()) renderDetail();
 });
 $('listBody').addEventListener('click', function (e) {
+  if (Date.now() < dragEatClick) { e.preventDefault(); e.stopPropagation(); return; }
   var row = e.target.closest('.a-item');
   if (row) selectAsset(row.dataset.name);
 });
+
+/* ═══════════ 자산 탭: 끌어서 순서 바꾸기 ═══════════
+   같은 그룹 안에서만 옮긴다. PC 는 항목을 마우스로 끌고, 휴대폰은 꾹 누른 뒤 끈다
+   (오른쪽 손잡이 ⋮⋮ 는 바로 끌림). 순서는 데이터 파일 settings.order 에 저장되어
+   Supabase · 구글 시트로 다른 기기와도 같이 맞춰진다. */
+var dragEatClick = 0;
+function saveAssetOrder(next, msg) {
+  var prev = assetOrder;
+  assetOrder = cleanOrder(next);
+  renderListTable();
+  if (currentView === 'input') renderInput();
+  if (store.mode === 'demo') { if (msg) showToast(msg + ' (데모 — 새로고침하면 사라짐)'); return; }
+  persist().then(function () { if (msg) showToast(msg); }, function (err) {
+    assetOrder = prev;
+    renderListTable();
+    showToast('저장 실패: ' + err.message);
+  });
+}
+// 지금 보이는 순서(전체 자산, 필터 없이)에서 name 을 이웃 자리로 옮긴 새 순서
+function movedOrder(name, before, after) {
+  var all = Object.values(latestByName()), full = [];
+  GROUPS.concat(['기타']).forEach(function (g) {
+    sortAssets(all.filter(function (a) {
+      return g === '기타' ? GROUPS.indexOf(assetGroupOf(a)) === -1 : assetGroupOf(a) === g;
+    })).forEach(function (a) { full.push(a.name); });
+  });
+  full = full.filter(function (n) { return n !== name; });
+  var i = before ? full.indexOf(before) : -1;
+  if (i < 0 && after) { i = full.indexOf(after); if (i >= 0) i++; }
+  if (i < 0) return null;
+  full.splice(i, 0, name);
+  return full;
+}
+function scrollParentOf(node) {
+  for (var n = node.parentElement; n && n !== document.body; n = n.parentElement) {
+    var oy = getComputedStyle(n).overflowY;
+    if ((oy === 'auto' || oy === 'scroll') && n.scrollHeight > n.clientHeight) return n;
+  }
+  return document.scrollingElement || document.documentElement;
+}
+(function () {
+  var body = $('listBody');
+  var d = null;   // 누르고 있는 중의 상태
+  function scrollTop() { return d.scroller.scrollTop; }
+  function begin() {
+    d.on = true;
+    d.startTop = d.row.offsetTop;
+    d.startScroll = scrollTop();
+    d.row.classList.remove('row-in');   // 옮겨 끼울 때마다 나타나기 애니메이션이 다시 돌지 않게
+    d.row.classList.add('dragging');
+    d.block.classList.add('sorting');
+    body.classList.add('drag-on');
+    if (navigator.vibrate && d.touch) try { navigator.vibrate(12); } catch (e) {}
+    try { d.row.setPointerCapture(d.id); } catch (e) {}
+    autoScroll();
+  }
+  function place() {
+    // 손가락 · 마우스 위치를 지나친 이웃과 자리를 바꾼다
+    var rows = Array.prototype.filter.call(d.block.children, function (r) { return r.classList.contains('a-item'); });
+    var i = rows.indexOf(d.row), shift = d.y - d.y0 + scrollTop() - d.startScroll;
+    var mid = d.startTop + shift + d.row.offsetHeight / 2;   // 끌고 있는 칸의 가운데 (블록 기준)
+    var prev = rows[i - 1], next = rows[i + 1];
+    if (prev && mid < prev.offsetTop + prev.offsetHeight / 2) d.block.insertBefore(d.row, prev);
+    else if (next && mid > next.offsetTop + next.offsetHeight / 2) d.block.insertBefore(d.row, next.nextSibling);
+    // 블록 밖으로는 못 나가게
+    var first = rows[0] === d.row ? rows[1] : rows[0], last = rows[rows.length - 1] === d.row ? rows[rows.length - 2] : rows[rows.length - 1];
+    var lo = Math.min(d.row.offsetTop, first ? first.offsetTop : d.row.offsetTop) - d.startTop;
+    var hi = Math.max(d.row.offsetTop, last ? last.offsetTop : d.row.offsetTop) - d.startTop;
+    var y = Math.max(lo, Math.min(hi, shift));
+    d.row.style.transform = 'translateY(' + (y - (d.row.offsetTop - d.startTop)) + 'px)';
+  }
+  function autoScroll() {
+    if (!d || !d.on) return;
+    var sc = d.scroller, box = sc === document.scrollingElement || sc === document.documentElement
+      ? { top: 0, bottom: window.innerHeight } : sc.getBoundingClientRect();
+    var edge = 56, v = 0;
+    if (d.y < box.top + edge) v = -Math.ceil((box.top + edge - d.y) / 6);
+    else if (d.y > box.bottom - edge) v = Math.ceil((d.y - box.bottom + edge) / 6);
+    if (v) { sc.scrollTop += v; place(); }
+    d.raf = requestAnimationFrame(autoScroll);
+  }
+  function end(commitIt) {
+    if (!d) return;
+    clearTimeout(d.timer);
+    cancelAnimationFrame(d.raf);
+    var st = d;
+    d = null;
+    if (!st.on) return;
+    dragEatClick = Date.now() + 400;
+    st.row.classList.remove('dragging');
+    st.row.style.transform = '';
+    st.block.classList.remove('sorting');
+    body.classList.remove('drag-on');
+    var rows = Array.prototype.filter.call(st.block.children, function (r) { return r.classList.contains('a-item'); });
+    var i = rows.indexOf(st.row);
+    if (!commitIt || i === st.index) { if (!commitIt) renderListTable(); return; }
+    var next = movedOrder(st.name, rows[i + 1] && rows[i + 1].dataset.name, rows[i - 1] && rows[i - 1].dataset.name);
+    if (next) saveAssetOrder(next, '순서를 바꿨습니다');
+  }
+  body.addEventListener('pointerdown', function (e) {
+    if (d || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    var row = e.target.closest('.a-item');
+    if (!row || e.target.closest('a, button, input')) return;
+    var block = row.parentNode;
+    var siblings = Array.prototype.filter.call(block.children, function (r) { return r.classList.contains('a-item'); });
+    if (siblings.length < 2) return;
+    d = { row: row, block: block, name: row.dataset.name, index: siblings.indexOf(row), id: e.pointerId,
+          x0: e.clientX, y0: e.clientY, y: e.clientY, on: false, touch: e.pointerType !== 'mouse',
+          grip: !!e.target.closest('.a-grip'), scroller: scrollParentOf(body) };
+    if (d.touch && !d.grip) d.timer = setTimeout(function () { if (d && !d.on) begin(); }, 380);   // 꾹 누르기
+  });
+  body.addEventListener('pointermove', function (e) {
+    if (!d || e.pointerId !== d.id) return;
+    d.y = e.clientY;
+    if (!d.on) {
+      var moved = Math.abs(e.clientX - d.x0) + Math.abs(e.clientY - d.y0);
+      if (d.touch && !d.grip) { if (moved > 8) end(false); return; }   // 꾹 누르기 전에 움직이면 스크롤
+      if (moved < 5) return;
+      begin();
+    }
+    e.preventDefault();
+    place();
+  });
+  body.addEventListener('pointerup', function (e) { if (d && e.pointerId === d.id) end(true); });
+  body.addEventListener('pointercancel', function (e) { if (d && e.pointerId === d.id) end(true); });
+  // 끄는 동안 화면이 같이 스크롤되거나 길게 누르기 메뉴가 뜨지 않게
+  body.addEventListener('touchmove', function (e) { if (d && d.on) e.preventDefault(); }, { passive: false });
+  body.addEventListener('contextmenu', function (e) { if (d || Date.now() < dragEatClick) e.preventDefault(); });
+  window.addEventListener('blur', function () { end(false); });
+})();
 
 // 목표 금액 수정: 값을 누르면 억 단위 숫자 입력으로 전환
 /* ═══════════ 목표 자산 설정 창 ═══════════
