@@ -12,7 +12,7 @@
      수급 10  : 최근 5거래일 외국인 순매수 5 · 기관 순매수 5 (금액 ÷ 시가총액)
      타이밍 10: 슬로우 스토캐스틱(10,5,5) %K · %D 위치와 교차
      감점     : 부채비율 200% 넘음 −3 · 60일 변동성 상위 10% −2
- - 등급: 80↑ A 매우 매력 · 65↑ B 매력 · 50↑ C 보통 · 35↑ D 주의 · 그 아래 E 약함
+ - 등급: 70↑ A 매우 매력 · 60↑ B 매력 · 45↑ C 보통 · 35↑ D 주의 · 그 아래 E 약함
  - 오늘 봉은 16시(KST) 전이면 빼서 장이 끝난 종가로만 평가한다. 직전 평가와 기준일이 달라지면 그 점수를 prev 로 남겨 하루 변화를 보여 준다
  - 못 받은 종목은 폴더에 이미 있던 파일(이전 캐시)을 그대로 둔다. 어떤 경우에도 실패 코드로 끝내지 않는다 (배포를 막지 않게)
 사용: python3 .github/scripts/kr_eval.py <출력폴더> [--limit N]
@@ -29,7 +29,8 @@ KST = dt.timezone(dt.timedelta(hours=9))
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"}
 KEEP = 130   # 상세 화면 차트용으로 담는 일봉 수
 CATS = [("가치", 25), ("수익성", 20), ("성장성", 15), ("추세", 20), ("수급", 10), ("타이밍", 10)]
-GRADES = [(80, "A", "매우 매력"), (65, "B", "매력"), (50, "C", "보통"), (35, "D", "주의"), (0, "E", "약함")]
+# 백분위로 매기는 상대 평가라 가운데가 50점 안팎 — 2026-10-08 전 종목 기준 A 약 3% · B 약 15% · C · D 가 대부분
+GRADES = [(70, "A", "매우 매력"), (60, "B", "매력"), (45, "C", "보통"), (35, "D", "주의"), (0, "E", "약함")]
 
 
 def get(url, timeout=20):
@@ -404,6 +405,10 @@ def main():
         json.dump(idx, f, ensure_ascii=False, separators=(",", ":"))
     dist = {g: sum(1 for r in rows if r[8] == g) for _, g, _ in GRADES}
     print(f"국내주식 평가: 기준일 {b} · {len(items)}종목 평가 · 등급 {dist} ({time.time() - t0:.0f}초)")
+    sc_sorted = sorted(r[6] for r in rows)
+    print("점수 분포 (5·25·50·75·95·99%):", [sc_sorted[int(len(sc_sorted) * q)] for q in (0.05, 0.25, 0.5, 0.75, 0.95, 0.99)])
+    for r in sorted(rows, key=lambda r: -r[6])[:5]:
+        print(f"  최고 {r[1]} {r[6]}점 · {r[9]}")
     for r in rows[:10]:
         print(f"  {r[1]} ({r[0]}) {r[6]}점 {r[8]} · {r[9]} · 전일 {r[7]}")
 

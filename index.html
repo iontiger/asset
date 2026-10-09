@@ -14764,7 +14764,7 @@ function krDetail(d) {
     }).join('') + '</ul></div>';
   }
   h += '<div class="kr-foot"><span>가치 25 · 수익성 20 · 성장성 15 · 추세 20 · 수급 10 · 타이밍 10 (스토캐스틱 ' + (d.params || INV_STO).join(',') + '), 부채비율 200% 넘음 −3 · 변동성 상위 10% −2.<br>' +
-    'A 80↑ · B 65↑ · C 50↑ · D 35↑ · E. 네이버 증권 자료로 매일 장 마감 뒤 다시 매겨요. 투자 판단의 참고용이에요.</span>' +
+    ((kr.idx && kr.idx.grades) || [[70, 'A'], [60, 'B'], [45, 'C'], [35, 'D'], [0, 'E']]).map(function (g) { return g[1] + (g[0] ? ' ' + g[0] + '↑' : ''); }).join(' · ') + '. 네이버 증권 자료로 매일 장 마감 뒤 다시 매겨요. 투자 판단의 참고용이에요.</span>' +
     '<a href="' + naver + '" target="_blank" rel="noopener noreferrer">네이버 증권 ↗</a></div>';
   body.innerHTML = h;
   if (st) requestAnimationFrame(function () { krDrawChart(d); });
