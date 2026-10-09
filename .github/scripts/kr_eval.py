@@ -14,7 +14,7 @@
      감점     : 부채비율 200% 넘음 −3 · 60일 변동성 상위 10% −2
  - ETF (NH Plug 마스터의 ETF, ETN 은 뺌): 재무 대신 ETF 끼리 비교 — 네이버 integration 의 etfKeyIndicator + etfAnalysis
      추세 25        : 6개월 수익률 10 · 이동평균 정배열 8 · 52주 고점 근접 7
-     위험 대비 성과 15: 1년 수익률 ÷ 1년 변동성
+     위험 대비 성과 15: 1년 수익률 ÷ 1년 변동성 (변동성은 10% 를 바닥으로)
      비용 · 추적 20 : 총보수 10 · 추적오차 5 · 괴리율 5 (낮을수록)
      규모 · 유동성 15: 순자산 8 · 20일 평균 거래대금 7
      자금 흐름 15   : 최근 1개월 순유입 ÷ 순자산 8 · 외국인+기관 5일 순매수 ÷ 시총 7
@@ -375,7 +375,8 @@ def metrics_etf(it):
     m["fromHi"] = c / m["hi52"] - 1 if m["hi52"] else None
     rets = [closes[i] / closes[i - 1] - 1 for i in range(max(1, len(closes) - 250), len(closes)) if closes[i - 1]]
     m["vol"] = (sum(r * r for r in rets) / len(rets)) ** 0.5 * math.sqrt(250) if len(rets) >= 60 else None
-    m["sharpe"] = m["r1y"] / m["vol"] if m["r1y"] is not None and m["vol"] else None
+    # 변동성은 연 10% 를 바닥으로 — 머니마켓 · 채권처럼 거의 안 움직이는 ETF 가 이 항목을 휩쓸지 않게
+    m["sharpe"] = m["r1y"] / max(m["vol"], 0.10) if m["r1y"] is not None and m["vol"] else None
     m["fee"] = key.get("totalFee") if key.get("totalFee") is not None else num(next((x.get("value") for x in integ.get("totalInfos") or [] if x.get("code") == "fundPay"), None))
     m["track"] = an.get("chaseErrorRate")
     m["dev"] = abs(key["deviationRate"]) if key.get("deviationRate") is not None else None
