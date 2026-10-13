@@ -590,6 +590,7 @@
   .kr-nm b { display:block; font-size:.95rem; font-weight:800; letter-spacing:-.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .kr-nm small { display:block; margin-top:2px; font-size:.74rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .kr-nm small em { font-style:normal; font-weight:700; color:var(--ink-2); }
+  .kr-sup, .kr-nm small em.kr-sup { color:#178a5a; } .kr-sdown, .kr-nm small em.kr-sdown { color:#d9393a; }
   .kr-px { text-align:right; font-size:.9rem; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
   .kr-px small { display:block; margin-top:2px; font-size:.72rem; font-weight:700; }
   .kr-up { color:var(--kospi-up); } .kr-down { color:var(--kospi-down); } .kr-flat { color:var(--muted); }
@@ -725,6 +726,7 @@
     .kr-hsum > div { padding:7px 8px; }
     .kr-hsum b { font-size:.88rem; }
     .kr-hsum b small { display:block; margin:1px 0 0; }
+    .kr-hsum b small.kr-g-t { display:inline-block; margin:0 0 0 5px; }
     .kr-hsum label small { display:none; }
     .kr-hform input { width:120px; }
     .kr-sel { max-width:none; }
@@ -14695,7 +14697,8 @@ function krChg(v) {
 function krDelta(s, p) {
   if (p == null || s == null) return '';
   var d = s - p;
-  return d ? '<em class="' + (d > 0 ? 'kr-up' : 'kr-down') + '">' + (d > 0 ? '▲' : '▼') + Math.abs(d) + '</em>' : '<em class="kr-flat">－</em>';
+  // 점수 변화는 주가와 달리 오르면 초록 · 내리면 빨강
+  return d ? '<em class="' + (d > 0 ? 'kr-sup' : 'kr-sdown') + '">' + (d > 0 ? '▲' : '▼') + Math.abs(d) + '</em>' : '<em class="kr-flat">－</em>';
 }
 function krBadge(r) {
   return r ? '<span class="kr-badge kr-g-' + r[8] + '"><b>' + r[6] + '</b><small>' + r[8] + ' ' + KR_GRADE_T[r[8]] + '</small></span>'
@@ -14871,7 +14874,7 @@ function krRenderHold(box) {
     var h = x.h, c = x.c, r = c && c.r, wn = krWarn(r);
     return '<li class="kr-row' + (wn ? ' kr-warnrow' : '') + '"><button type="button" class="kr-open" data-kr-open="' + h.c + '">' + krBadge(r) +
       '<div class="kr-nm"><b>' + rbEsc(r ? r[1] : h.n || h.c) + krSigPill(r) + '</b><small>' +
-        (wn ? '<span class="kr-warn">⚠ 매도 주의 · ' + wn + '</span> ' : r ? krDelta(r[6], r[7]) + ' ' : '') +
+        (r ? krDelta(r[6], r[7]) + ' ' : '') + (wn ? '<span class="kr-warn">⚠ 매도 주의 · ' + wn + '</span> ' : '') +
         (+h.q || 0).toLocaleString('ko-KR') + '주' + (+h.p ? ' · 평균 ' + invNum(+h.p) + '원' : '') + '</small></div>' +
       '<div class="kr-px">' + (c ? krWon(c.val) + (c.hasP ? '<small class="' + (c.pl > 0 ? 'kr-up' : c.pl < 0 ? 'kr-down' : 'kr-flat') + '">' + (c.pct > 0 ? '+' : '') + c.pct.toFixed(1) + '%</small>' : krChg(r[5])) : '') + '</div></button></li>';
   }).join('');
