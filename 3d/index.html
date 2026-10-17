@@ -6242,7 +6242,7 @@ for(const s of [-1,1])for(const z of [-.5,.5])beam(gate,[s*3,7.9,z],[s*7,.4,z+s*
 // 초록 지하철 등(밤엔 빛남)
 const globes=[];for(const s of [-1,1]){cyl(gate,s*4.6,1.4,2,.08,.11,2.8,'#2f4d3a',8);const g=new THREE.Mesh(new THREE.SphereGeometry(.32,14,10),new THREE.MeshStandardMaterial({color:'#7fdc8f',emissive:'#3fbf5a',emissiveIntensity:.5}));g.position.set(s*4.6,3,2);gate.add(g);globes.push(g)}
 sign(gate,'🗽 NEW YORK · 뉴욕 거리 산책',0,6,.95,5.8,'#fffbed','#2f3a44');
-sign(gate,'걸어서 브루클린 브릿지 · 덤보 →',0,.95,2.4,4.2,'#2f3a44','#f2c14e');
+sign(gate,'걷고 자전거 타며 브루클린 브릿지 · 덤보 →',0,.95,2.4,4.6,'#2f3a44','#f2c14e');
 // 작은 청동 황소 · 작은 여신상
 {const b=new THREE.Group();b.position.set(-3.6,.3,3.2);b.rotation.y=.5;b.scale.setScalar(.42);gate.add(b);const br='#6a4728';
  sphere(b,0,2.25,1.1,1.4,br).scale.set(1,1.05,1.2);sphere(b,0,2.5,-1.3,1.3,br).scale.set(.95,1,1.2);sphere(b,0,1.75,3,.8,br).scale.set(.9,.95,1.35);
@@ -6267,7 +6267,7 @@ const blocker=document.createElement('i');blocker.className='game-modal';blocker
 const NG={on:false,fxLock:false,frame:null};
 function open(){if(NG.on)return;try{if(PLAY.mode)endPlay();if(riding)toggleBike(false)}catch{}route=[];target=null;try{drawRoute()}catch{}keys={};
   NG.on=true;NG.fxLock=FX.locked;FX.locked=true;document.body.classList.add('nyc-on');blocker.classList.add('on');
-  const f=document.createElement('iframe');f.src=NYC_URL;f.title='뉴욕 거리 산책';f.allow='autoplay; fullscreen';
+  const f=document.createElement('iframe');f.src=NYC_URL+'?hero='+(window.dpHero==='wife'?'wife':'me');f.title='뉴욕 거리 산책';f.allow='autoplay; fullscreen';
   f.addEventListener('load',()=>{try{f.contentWindow.focus()}catch{}});root.appendChild(f);NG.frame=f;root.classList.add('on');
   beep(392,0,.14);beep(523,.14,.14);beep(659,.28,.22)}
 function close(){if(!NG.on)return;NG.on=false;try{NG.frame.src='about:blank'}catch{}NG.frame&&NG.frame.remove();NG.frame=null;root.classList.remove('on');
@@ -6280,7 +6280,7 @@ const _rs=renderScene;renderScene=function(){if(NG.on)return;return _rs.apply(th
 let armed=true;
 const _fp=findPlay;findPlay=function(){if(!NG.on&&nearDoor()){PLAY_TXT.nyc='🗽 뉴욕 거리 산책 — 아치 문으로 들어가기';return {kind:'nyc'}}return _fp()};
 const _da=doAction;doAction=function(){if(!inputBusy()&&!PLAY.mode&&walkish()&&nearDoor()){open();return}return _da()};
-$('#ghTip').insertAdjacentHTML('beforebegin','<div class="gh-row" id="ghNycRow"><span><b>🗽 뉴욕 거리 산책</b><small id="ghNyc">황소 · 브루클린 브릿지 · 덤보를 걸어서</small></span><button class="gh-btn" id="ghNycBtn">아치 문으로</button></div>');
+$('#ghTip').insertAdjacentHTML('beforebegin','<div class="gh-row" id="ghNycRow"><span><b>🗽 뉴욕 거리 산책</b><small id="ghNyc">황소 · 브루클린 브릿지 · 덤보 · 불꽃놀이</small></span><button class="gh-btn" id="ghNycBtn">아치 문으로</button></div>');
 $('#ghNycBtn').onclick=()=>{if(nearDoor(7))return open();if(PLAY.mode)endPlay();armed=true;beginWalk(true);travelTo(DOOR,null)};
 function rowHud(){const b=$('#ghNycBtn');if(b)b.textContent=nearDoor(7)?'입장':'아치 문으로'}
 let rowT=0,ft=0;
