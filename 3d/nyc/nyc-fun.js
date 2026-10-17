@@ -152,7 +152,7 @@ function build({T,scene,YC=3.8,sound,L,TS}){
   {id:'york',name:'요크 스트리트 역',en:'York St',sub:'덤보 · 워싱턴 스트리트',lines:[['F','#ff6319']],R:852.7,F:452,face:-1},
   {id:'ts',name:'타임스스퀘어-42가 역',en:'Times Sq-42 St',sub:'전광판 · 빨간 계단',lines:[['N','#fccc0a',1],['Q','#fccc0a',1],['R','#fccc0a',1],['1','#ee352e'],['2','#ee352e'],['3','#ee352e'],['7','#b933ad']],R:TS.TX+7.7,F:TS.TF-92,face:1}];
  const bullet=(x,cx,cy,r,t,c,dark)=>{x.fillStyle=c;x.beginPath();x.arc(cx,cy,r,0,7);x.fill();x.fillStyle=dark?'#111':'#fff';x.font=`800 ${Math.round(r*1.3)}px Outfit,Arial,sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText(t,cx,cy+r*.06)};
- for(const s of STATIONS){const sg=new T.Group();sg.position.copy(W(s.R,s.F,YC+.24));sg.rotation.y=s.face>0?0:Math.PI;g.add(sg);s.g=sg;   // 지역 +z = 남쪽(F-) · 열린 쪽은 지역 -z
+ for(const s of STATIONS){const sg=new T.Group();sg.position.copy(W(s.R,s.F,YC+.24));sg.rotation.y=s.face>0?0:Math.PI;(s.id==='ts'?TS.group:g).add(sg);s.g=sg;   // 지역 +z = 남쪽(F-) · 열린 쪽은 지역 -z · 타임스스퀘어 역은 TS 묶음에 넣어야 TS 안에서 보인다
   const iron=SM('#2f4d3a',{metalness:.55,roughness:.45}),Wd=2.6,Ld=5.6;
   add(new T.PlaneGeometry(Wd-.2,Ld-.2).rotateX(-Math.PI/2),new T.MeshBasicMaterial({color:'#0b0e10'}),0,.03,0,sg,false);
   for(let k=0;k<9;k++){const z=-Ld/2+.5+k*.55,c=Math.max(.06,.5-k*.055);add(new T.BoxGeometry(Wd-.3,.04,.12),new T.MeshBasicMaterial({color:new T.Color(c,c,c*1.05)}),0,.06,z,sg,false)}
