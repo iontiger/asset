@@ -4,6 +4,14 @@
    K: 마을 크기에 곱하는 배율(뉴욕 1u ≈ 0.8m 에 맞춤). */
 'use strict';
 (function(root){
+// NY 모자: 남색 야구 모자 · 앞챙 · 흰 NYC 글씨 (마을 단위, 머리 hat 묶음 위 y .1)
+function NY_CAP(T){const g=new T.Group(),navy=new T.MeshStandardMaterial({color:'#1f2f55',roughness:.8});
+ const crown=new T.Mesh(new T.SphereGeometry(.585,24,12,0,Math.PI*2,0,Math.PI*.5),navy);crown.scale.set(1,.84,1);crown.castShadow=true;g.add(crown);
+ const brim=new T.Mesh(new T.CylinderGeometry(.5,.5,.05,24,1,false,-Math.PI/2,Math.PI),navy);brim.scale.set(1,1,.95);brim.position.set(0,.02,.3);brim.rotation.x=.08;brim.castShadow=true;g.add(brim);
+ const bt=new T.Mesh(new T.SphereGeometry(.06,8,6),navy);bt.position.y=.49;g.add(bt);
+ const cv=document.createElement('canvas');cv.width=128;cv.height=64;const x=cv.getContext('2d');x.fillStyle='#fff';x.font='900 46px Outfit,Arial,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('NYC',64,34);
+ const t=new T.CanvasTexture(cv);t.colorSpace=T.SRGBColorSpace;const logo=new T.Mesh(new T.PlaneGeometry(.38,.19),new T.MeshStandardMaterial({map:t,transparent:true,roughness:.8}));logo.position.set(0,.28,.5);logo.rotation.x=-.5;g.add(logo);
+ g.visible=false;return g}
 function make({T,scene,owner='me',K=.78}){
  const mc=new Map(),mat=c=>{if(c&&c.isMaterial)return c;if(!mc.has(c))mc.set(c,new T.MeshStandardMaterial({color:c,roughness:.85}));return mc.get(c)};
  const mesh=(geo,c,p)=>{const m=new T.Mesh(geo,mat(c));m.castShadow=true;m.receiveShadow=true;p.add(m);return m};
@@ -44,13 +52,14 @@ function make({T,scene,owner='me',K=.78}){
  P.explorer=grp(hat);P.explorer.position.y=.3;cyl(P.explorer,0,-.02,0,.68,.68,.04,'#c9a36b',26);cyl(P.explorer,0,.16,0,.36,.42,.34,'#d8b884',20);cyl(P.explorer,0,.06,0,.43,.43,.08,'#6b5a45',20);
  P.crownF=grp(hat);P.crownF.position.y=.34;{const r=mesh(new T.TorusGeometry(.44,.04,6,28),'#7fae6b',P.crownF);r.rotation.x=Math.PI/2}for(let k=0;k<9;k++){const a=k/9*Math.PI*2;sphere(P.crownF,Math.cos(a)*.44,.03,Math.sin(a)*.44,.075,['#f7b6c8','#fbf6e8','#f6d77a','#c9a6e4'][k%4],1)}
  P.crownD=grp(hat);P.crownD.position.y=.52;cyl(P.crownD,0,0,0,.3,.3,.14,'#e9c46a',20);for(let k=0;k<5;k++){const a=k/5*Math.PI*2,sp=mesh(new T.ConeGeometry(.07,.2,6),'#e9c46a',P.crownD);sp.position.set(Math.cos(a)*.27,.15,Math.sin(a)*.27);const g=new T.Mesh(gemGeo,gemMat);g.scale.setScalar(.14);g.position.set(Math.cos(a)*.27,.3,Math.sin(a)*.27);P.crownD.add(g)}{const g=new T.Mesh(gemGeo,gemMat);g.scale.setScalar(.2);g.position.set(0,.04,.31);P.crownD.add(g)}
+ P.nycap=NY_CAP(T);P.nycap.position.y=.1;hat.add(P.nycap);   // 심부름 8개 보상 NY 모자 (마을 3d/src/nyc.js 에도 같은 모양)
  P.scarf=grp(neck);{const s=mesh(new T.TorusGeometry(.24,.085,8,20),C.scarf,P.scarf);s.rotation.x=Math.PI/2}box(P.scarf,.12,-.16,.25,.12,.28,.06,C.scarf);
  P.umb=grp(spine);const umbSide=f?'R':'L';P.umb.position.set((f?1:-1)*.42,1.05,.12);{const can=new T.Mesh(new T.ConeGeometry(1,.45,10,1,true),new T.MeshStandardMaterial({color:C.umb,side:T.DoubleSide,roughness:.6}));can.position.y=.95;can.castShadow=true;P.umb.add(can)}cyl(P.umb,0,.4,0,.02,.02,1.3,'#6b5a45',6);sphere(P.umb,0,1.22,0,.04,'#6b5a45',1);
  const handSide=umbSide==='R'?'L':'R';   // 간식은 우산 반대 손에
  const st={look:0,lookT:1,target:0,wave:0,jump:0,blink:1+Math.random()*3,idle:0,hold:false};
- function dress({season,wet,riding,gems=0,wear={}}){const on=n=>gems>=n&&wear['wear'+n]!==false;
-  const hk=on(10)?'crownD':on(3)?(f?'crownF':'explorer'):season==='summer'?'straw':season==='winter'?'beanie':season==='autumn'?'beret':null;
-  ['straw','beanie','beret','explorer','crownF','crownD'].forEach(k=>{P[k].visible=k===hk});P.flower.visible=season==='spring'&&!hk;P.scarf.visible=season==='winter';P.umb.visible=!!wet&&!riding;
+ function dress({season,wet,riding,gems=0,wear={},nycap=false}){const on=n=>gems>=n&&wear['wear'+n]!==false;
+  const hk=nycap?'nycap':on(10)?'crownD':on(3)?(f?'crownF':'explorer'):season==='summer'?'straw':season==='winter'?'beanie':season==='autumn'?'beret':null;
+  ['straw','beanie','beret','explorer','crownF','crownD','nycap'].forEach(k=>{P[k].visible=k===hk});P.flower.visible=season==='spring'&&!hk;P.scarf.visible=season==='winter';P.umb.visible=!!wet&&!riding;
   const hide=!!hk&&hk!=='crownF';top.forEach(t=>{t.visible=!hide});dog.g.visible=on(6)}
 
  /* ── 걷기 — 짧은 팔다리를 크게 흔드는 종종걸음, 통통 튀고 갸우뚱. 가만히 있으면 숨 쉬고 두리번거린다 */
@@ -94,5 +103,5 @@ function make({T,scene,owner='me',K=.78}){
 
  return {root:rootG,J,st,props:P,shadow,bike,dog,female:f,owner,K,handSide,dress,walk,ride,updateDog,
   jump(){st.jump=.75;dog.hop=.5},wave(){st.wave=1.6},hand(){return J['hand'+handSide]}}}
-root.NYC_HERO={make};
+root.NY_CAP=NY_CAP;root.NYC_HERO={make};
 })(window);

@@ -334,10 +334,10 @@ float wm=0.,lw=0.;if(abs(vWN.y)<.5){float a=abs(vWN.x)>.5?vWP.z:vWP.x;vec2 c=vec
   const bp=[];for(let i=0;i<40;i++){const a=i/40*Math.PI*2;bp.push(new T.Vector3(Math.cos(a)*7.4,6.05,Math.sin(a)*7.4))}const bg=new T.BufferGeometry().setFromPoints(bp);
   bulbs=new T.Points(bg,new T.PointsMaterial({map:glowTex,color:'#ffe08a',size:.9,transparent:true,opacity:.6,depthWrite:false,blending:T.AdditiveBlending}));rideG.add(bulbs)}
 
- // ── 스태튼 아일랜드 페리(주황 배)가 항구를 천천히 돈다 · 작은 유람선
+ // ── 유람선 두 척이 항구를 천천히 돈다(스태튼 아일랜드 페리는 nyc-fun.js 에서 직접 탄다)
  const boats=[];
  {const mk=(col,len,wid,decks)=>{const b=new T.Group();g.add(b);add(new T.BoxGeometry(wid,2.6,len),SM(col,{roughness:.6},.5),0,1.6,0,b);for(let i=0;i<decks;i++)add(new T.BoxGeometry(wid*.86-i*.6,2.2,len*.8-i*4),SM(i%2?col:'#f3efe6',{roughness:.6},.5),0,4+i*2.2,0,b);add(new T.CylinderGeometry(.5,.6,3,8),SM('#2b2b2b',{},.5),0,4+decks*2.2+1,0,b);return b};
-  boats.push({o:mk('#f08a24',34,10,3),cx:70,cz:420,rx:190,rz:250,w:.012,ph:0},{o:mk('#ffffff',18,5,2),cx:470,cz:-100,rx:70,rz:330,w:.02,ph:2})}
+  boats.push({o:mk('#2f5f8a',30,9,2),cx:-560,cz:420,rx:130,rz:230,w:.012,ph:0},{o:mk('#ffffff',18,5,2),cx:470,cz:-100,rx:70,rz:330,w:.02,ph:2})}
 
  // ── 걸을 수 있는 곳 · 막힌 곳(동상 · 분수 · 탑 기둥 · 유리 집 · 요새)
  const ovals=[[0,-4,10.3,13.3],[0,30,2.4,4.6],[-120,-80,18.2,18.2],[70,150,.9,.9]];
