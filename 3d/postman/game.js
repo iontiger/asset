@@ -118,7 +118,7 @@ const RES=[
  {name:'산타우찬이',shop:'🎁 우찬이 선물가게',sub:'GIFTS',lines:['호호호! 선물은 언제나 좋아요.','배달이라면 나도 좀 하죠~']}];
 const POSTMASTER='까미유데물랭님',BENCH='조만간은퇴님';
 const NPCS=[];
-function placeNpc(n,x,z,ry){n.x=n.hx=x;n.z=n.hz=z;n.ry=n.hry=ry;n.y=town.groundY(x,z);n.g.position.set(x,n.y,z);n.g.rotation.y=ry}
+function placeNpc(n,x,z,ry){n.x=n.hx=x;n.z=n.hz=z;n.ry=n.hry=ry;n.y=town.footY(x,z,.15);n.g.position.set(x,n.y,z);n.g.rotation.y=ry}
 const post=town.post;
 {const n=makeNpc(POSTMASTER);n.isPost=true;n.role='골목 우체국장';const d=post.door;placeNpc(n,d.x+d.nx*.95,d.z+d.nz*.95,Math.atan2(d.nx,d.nz));n.lines=['엽서도 편지도 마음을 싣고 가요.','골목은 지도보다 발이 더 잘 알아요.'];NPCS.push(n)}
 RES.forEach((r,k)=>{const h=town.homes[k];if(!h)return;const n=makeNpc(r.name);Object.assign(n,r);n.home=h;n.idx=k+1;const d=h.door;placeNpc(n,d.x+d.nx*.95,d.z+d.nz*.95,Math.atan2(d.nx,d.nz));setSignFor(h,r);NPCS.push(n)});
@@ -212,6 +212,7 @@ function resolve(px,pz,r){let x=px,z=pz;for(let it=0;it<3;it++){const i0=ci(x),j
   for(const c of town.colliders){if(c.box){const [x0,z0,x1,z1]=c.box;if(x<x0-r||x>x1+r||z<z0-r||z>z1+r)continue;const qx=clamp(x,x0,x1),qz=clamp(z,z0,z1);let dx=x-qx,dz=z-qz,d=Math.hypot(dx,dz);if(d<r){if(d<1e-6){const o=[[x-x0,-1,0],[x1-x,1,0],[z-z0,0,-1],[z1-z,0,1]].sort((p,q)=>p[0]-q[0])[0];x+=o[1]*(o[0]+r);z+=o[2]*(o[0]+r)}else{x+=dx/d*(r-d);z+=dz/d*(r-d)}}continue}if(!c.r)continue;const dx=x-c.x,dz=z-c.z,d=Math.hypot(dx,dz),rr=c.r+r;if(d<rr&&d>1e-6){x+=dx/d*(rr-d);z+=dz/d*(rr-d)}}
   for(const n of NPCS){const dx=x-n.x,dz=z-n.z,d=Math.hypot(dx,dz),rr=.36+r;if(d<rr&&d>1e-6){x+=dx/d*(rr-d);z+=dz/d*(rr-d)}}
   [x,z]=town.walkFix(x,z,r)}return [x,z]}
+const PR=.42;   // 주인공 몸 반지름(팔 · 가방까지) — 벽에 겹쳐 보이지 않게
 function jump(){if(P.onGround&&!talkLock()){P.vy=4.6;P.onGround=false;HERO.jump();tone(520,0,.12,'sine',.03);tone(780,.05,.12,'sine',.025)}}
 let lastStep=0;
 function movePlayer(dt){let ix=0,iz=0;if(keys.KeyW||keys.ArrowUp)iz+=1;if(keys.KeyS||keys.ArrowDown)iz-=1;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;
@@ -219,26 +220,35 @@ function movePlayer(dt){let ix=0,iz=0;if(keys.KeyW||keys.ArrowUp)iz+=1;if(keys.K
  const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=Math.cos(cam.yaw),rz=-Math.sin(cam.yaw);
  const run=keys.ShiftLeft||keys.ShiftRight||(joy.on&&m>.92),sp=run?5.6:3.1;const tvx=(fx*iz+rx*ix)*sp,tvz=(fz*iz+rz*ix)*sp;const acc=m>.05?9:12;
  P.vx+=(tvx-P.vx)*Math.min(1,dt*acc);P.vz+=(tvz-P.vz)*Math.min(1,dt*acc);const v=Math.hypot(P.vx,P.vz);
- const n=Math.max(1,Math.ceil(v*dt/.12));let ox=P.x,oz=P.z;for(let k=0;k<n;k++){const [x,z]=resolve(P.x+P.vx*dt/n,P.z+P.vz*dt/n,.3);P.x=x;P.z=z}
+ const n=Math.max(1,Math.ceil(v*dt/.12));let ox=P.x,oz=P.z;for(let k=0;k<n;k++){const [x,z]=resolve(P.x+P.vx*dt/n,P.z+P.vz*dt/n,PR);P.x=x;P.z=z}
  const moved=Math.hypot(P.x-ox,P.z-oz);S.dist+=moved;
  if(v>.25){const th=Math.atan2(P.vx,P.vz);P.h+=wrapA(th-P.h)*Math.min(1,dt*10)}
- {const gy=town.groundY(P.x,P.z);P.gy=P.gy===null?gy:P.gy+(gy-P.gy)*Math.min(1,dt*18);P.vy-=13*dt;P.air+=P.vy*dt;if(P.air<=0){P.air=0;P.vy=0;P.onGround=true}P.y=P.gy+P.air}
+ {const gy=town.footY(P.x,P.z,.2);P.gy=P.gy===null?gy:Math.max(gy-.04,P.gy+(gy-P.gy)*Math.min(1,dt*18));P.vy-=13*dt;P.air+=P.vy*dt;if(P.air<=0){P.air=0;P.vy=0;P.onGround=true}P.y=P.gy+P.air}
  const amt=clamp(moved/dt/3.1,0,1.4);P.walk+=(Math.min(1,amt)-P.walk)*Math.min(1,dt*8);P.phase+=dt*(5+amt*4.2)*P.walk;
  if(P.onGround&&P.walk>.3){const s=Math.floor(P.phase/Math.PI);if(s!==lastStep){lastStep=s;stepSnd()}}
  HERO.root.position.set(P.x,P.y+.02,P.z);HERO.root.rotation.y=P.h;HERO.walk(P.phase,P.walk,clock.t,dt);HERO.shadow.position.set(P.x,P.gy+.04,P.z);HERO.shadow.scale.setScalar(1-Math.min(.5,P.air*.3));
  return {v:moved/dt,m}}
 const _t=new T.Vector3(),_d=new T.Vector3(),_d2=new T.Vector3(),_p=new T.Vector3();
-function reach(yaw,pitch,want){const cp=Math.cos(pitch);_d2.set(Math.sin(yaw)*cp,Math.sin(pitch),Math.cos(yaw)*cp);for(let s=.35;s<=want+.3;s+=.1){_p.copy(_t).addScaledVector(_d2,s);if(town.camBlock(_p.x,_p.y,_p.z)||_p.y<.35)return Math.max(.7,s-.32)}return want}
-function updateCam(dt,mv){const t=clock.t;if(mv.m>.1&&t-cam.user>1.4&&!talkLock()){const want=P.h+Math.PI,rate=1.1+Math.min(2,mv.v*.35);cam.yaw+=wrapA(want-cam.yaw)*Math.min(1,dt*rate*.9)}
- if(talk.npc){const n=talk.npc,mid=Math.atan2(P.x-n.x,P.z-n.z)+.9;cam.yaw+=wrapA(mid-cam.yaw)*Math.min(1,dt*2.2)}
- _t.set(P.x,P.gy+P.air*.6+1.15,P.z);const cp=Math.cos(cam.pitch);_d.set(Math.sin(cam.yaw)*cp,Math.sin(cam.pitch),Math.cos(cam.yaw)*cp);
- const want=talk.npc?Math.min(cam.dist,3.4):cam.dist;let d=reach(cam.yaw,cam.pitch,want);
- // 좁은 골목: 뒤가 막히면 골목 방향으로 살짝 돌리거나 위로 들어 올린다(끌고 있을 때는 그대로)
- if(d<want*.8&&t-cam.user>.8){let best=null,bs=d;for(const off of [-.45,.45,-.9,.9,-1.35,1.35,-1.8,1.8])for(const lift of [0,.32]){const dd=reach(cam.yaw+off,cam.pitch+lift,want),sc=dd-Math.abs(off)*.5-lift*.9;if(sc>bs+.25){bs=sc;best=[off,lift]}}
-  if(best){cam.yaw+=best[0]*Math.min(1,dt*2.4);cam.lift=lerp(cam.lift||0,best[1],Math.min(1,dt*2))}else cam.lift=lerp(cam.lift||0,0,Math.min(1,dt))}else cam.lift=lerp(cam.lift||0,0,Math.min(1,dt));
- {const cp2=Math.cos(cam.pitch+cam.lift);_d.set(Math.sin(cam.yaw)*cp2,Math.sin(cam.pitch+cam.lift),Math.cos(cam.yaw)*cp2);d=reach(cam.yaw,cam.pitch+cam.lift,want)}
- cam.cur=d<cam.cur?Math.max(d,cam.cur-dt*14):cam.cur+(d-cam.cur)*Math.min(1,dt*2.2);
- camera.position.copy(_t).addScaledVector(_d,cam.cur);camera.lookAt(_t.x,_t.y+.45,_t.z);
+function reach(yaw,pitch,want){const cp=Math.cos(pitch);_d2.set(Math.sin(yaw)*cp,Math.sin(pitch),Math.cos(yaw)*cp);for(let s=.35;s<=want+.3;s+=.1){_p.copy(_t).addScaledVector(_d2,s);if(town.camBlock(_p.x,_p.y,_p.z))return Math.max(.7,s-.32)}return want}
+// 뒤가 막히면(막다른 골목 · 내리막 · 벽 앞) 먼저 위로 들어 올리고 조금 멀리, 그래도 안 되면 살짝만 돌린다.
+// 한 번 고른 보정은 0.45초 동안 지켜서 카메라가 이리저리 튀지 않게 한다.
+const camFix={off:0,lift:0,toff:0,tlift:0,t:-9,k:0};
+function pickFix(yaw,pitch,want,allowYaw,ahead=0){let best=[0,0],bs=-1e9;
+ for(const lift of [0,.15,.3,.45,.6,.8,1,1.2]){if(pitch+lift>1.35)break;const w=want*(1+lift*.25);for(const off of allowYaw?[0,-.3,.3,-.6,.6]:[0]){
+  const r=Math.min(reach(yaw+off,pitch+lift,w),ahead?reach(yaw+ahead+off,pitch+lift,w)*.5+w*.5:w),sc=Math.min(1,r/w)*2-lift*.3-Math.abs(off)*.7+(Math.abs(off-camFix.toff)<.01&&Math.abs(lift-camFix.tlift)<.01?.06:0);if(sc>bs){bs=sc;best=[off,lift]}}}
+ return best}
+function updateCam(dt,mv){const t=clock.t,drag=t-cam.user<.8;if(mv.m>.1&&t-cam.user>1.4&&!talkLock()){const want=P.h+Math.PI,rate=1.1+Math.min(2,mv.v*.35);cam.yaw+=wrapA(want-cam.yaw)*Math.min(1,dt*rate*.9)}
+ _t.set(P.x,P.gy+P.air*.6+1.15,P.z);
+ // 말 걸 때: 주인공과 상대가 함께 보이는 방향 중 벽에 안 막히는 쪽을 한 번만 골라 천천히 돈다
+ if(talk.npc){if(talk.camFor!==talk.npc){talk.camFor=talk.npc;const n=talk.npc,a=Math.atan2(P.x-n.x,P.z-n.z);let bs=-1e9;talk.camYaw=cam.yaw;
+   for(const y of [a+.9,a-.9,a+.5,a-.5,a+1.4,a-1.4,cam.yaw]){const sc=reach(y,cam.pitch+.15,3.4)-Math.abs(wrapA(y-cam.yaw))*.15;if(sc>bs+.01){bs=sc;talk.camYaw=y}}}
+  cam.yaw+=wrapA(talk.camYaw-cam.yaw)*Math.min(1,dt*2)}else talk.camFor=null;
+ camFix.k+=((talk.npc?1:0)-camFix.k)*Math.min(1,dt*2.5);const want=cam.dist+(Math.min(cam.dist,3.4)-cam.dist)*camFix.k,pitch=cam.pitch+.12*camFix.k;
+ {const w=want*(1+camFix.tlift*.25),blocked=reach(cam.yaw+camFix.toff,pitch+camFix.tlift,w)<w*.7;if(t-camFix.t>.45||(blocked&&t-camFix.t>.06)){camFix.t=t;[camFix.toff,camFix.tlift]=pickFix(cam.yaw,pitch,want,!drag,mv.m>.1&&!drag?Math.max(-.8,Math.min(.8,wrapA(P.h+Math.PI-cam.yaw))):0)}}
+ camFix.off+=(camFix.toff-camFix.off)*Math.min(1,dt*2.2);camFix.lift+=(camFix.tlift-camFix.lift)*Math.min(1,dt*(camFix.tlift>camFix.lift?6:1.3));
+ const yawF=cam.yaw+camFix.off,pF=Math.min(1.38,pitch+camFix.lift),wantF=want*(1+camFix.lift*.25),cp=Math.cos(pF);_d.set(Math.sin(yawF)*cp,Math.sin(pF),Math.cos(yawF)*cp);
+ const d=reach(yawF,pF,wantF);cam.cur=d<cam.cur-.01&&d<wantF-.05?Math.max(d,cam.cur-dt*(d<cam.cur*.75?16:10)):cam.cur+(d-cam.cur)*Math.min(1,dt*2.2);
+ camera.position.copy(_t).addScaledVector(_d,cam.cur);camera.lookAt(_t.x,_t.y+.45-camFix.lift*.25,_t.z);
  HERO.root.visible=cam.cur>.8}
 
 /* ═══ 10. 이야기 · 배달 ═══ */
@@ -337,7 +347,7 @@ const clock={t:0,last:performance.now()};let started=false;
 function updateNpcs(dt,t){for(const n of NPCS){
  if(n.goto){const dg=Math.hypot(n.goto.x-P.x,n.goto.z-P.z),dn=Math.hypot(n.x-P.x,n.z-P.z);if(fest||(dg>11&&dn>11)){n.x=n.goto.x;n.z=n.goto.z;n.goto=null;n.hry=Math.atan2(-n.x,-n.z);n.hx=n.x;n.hz=n.z}}
  const dp=Math.hypot(n.x-P.x,n.z-P.z);let face=n.goto?n.ry:n.hry;if(dp<5.5&&!n.goto)face=Math.atan2(P.x-n.x,P.z-n.z);if(!n.bench)n.ry+=wrapA(face-n.ry)*Math.min(1,dt*5);
- n.y=town.groundY(n.x,n.z);n.g.position.set(n.x,n.y,n.z);n.g.rotation.y=n.ry;const br=Math.sin(t*2.2+n.x);n.body.position.y=(n.bench?-.15:0)+br*.012;n.head.rotation.z=Math.sin(t*.8+n.z)*.06;n.head.rotation.x=dp<5?-.08:0;
+ n.y=town.footY(n.x,n.z,.15);n.g.position.set(n.x,n.y,n.z);n.g.rotation.y=n.ry;const br=Math.sin(t*2.2+n.x);n.body.position.y=(n.bench?-.15:0)+br*.012;n.head.rotation.z=Math.sin(t*.8+n.z)*.06;n.head.rotation.x=dp<5?-.08:0;
  if(n.hop>0){n.hop-=dt;n.body.position.y+=Math.sin(Math.PI*Math.max(0,n.hop)/.6)*.3}
  const sw=0;if(!n.bench){n.legs[0].rotation.x=sw;n.legs[1].rotation.x=-sw}
  if(n.wave>0){n.wave-=dt;n.arms[1].rotation.set(0,0,2.6+Math.sin(t*14)*.3)}else{n.arms[1].rotation.set(-sw*.7,0,.2+br*.03);}n.arms[0].rotation.set(sw*.7,0,-.2-br*.03);
@@ -353,7 +363,7 @@ function updateLife(dt,t){for(const c of CATS){c.tail.rotation.z=Math.sin(t*(c.t
 let paused=Q.has('pause');
 function frame(now){const dt=Math.min(.05,(now-clock.last)/1000||0);clock.last=now;if(!paused)step(dt);requestAnimationFrame(frame)}
 function step(dt,noRender){clock.t+=dt;const t=clock.t;if(started&&$('finale').hidden)S.time+=dt;
- const mv=started?movePlayer(dt):{v:0,m:0};if(!started){P.gy=P.y=town.groundY(P.x,P.z);HERO.root.position.set(P.x,P.y,P.z);HERO.shadow.position.set(P.x,P.y+.04,P.z);HERO.root.rotation.y=P.h;HERO.walk(P.phase,0,t,dt);cam.yaw+=dt*.08}
+ const mv=started?movePlayer(dt):{v:0,m:0};if(!started){P.gy=P.y=town.footY(P.x,P.z,.2);HERO.root.position.set(P.x,P.y,P.z);HERO.shadow.position.set(P.x,P.y+.04,P.z);HERO.root.rotation.y=P.h;HERO.walk(P.phase,0,t,dt);cam.yaw+=dt*.08}
  ENV.tod+=(ENV.want-ENV.tod)*Math.min(1,dt*.35);applySky();
  CURVE.uCC.value.set(P.x,P.z);updateCam(dt,mv);updateNpcs(dt,t);updateLife(dt,t);town.update(t,dt,P.x,P.z,ENV.night);updateFx(dt,t);music(dt);
  if(eve&&!fest&&Math.hypot(P.x,P.z)<6.5)startFest();
@@ -384,7 +394,7 @@ if(TOUCH)document.body.classList.add('touch');
 spawn();applySky();renderBag();
 $('start').disabled=false;
 requestAnimationFrame(frame);
-window.pmDebug={T,scene,camera,renderer,town,HERO,NPCS,P,cam,keys,get S(){return S},JOBS,ENV,get started(){return started},begin,act,emote,jump,step:(n=1,dt=1/30)=>{for(let k=0;k<n;k++)step(dt,k<n-1)},tick:(n=1)=>{for(let k=0;k<n;k++)step(1/30,true)},pause:v=>{paused=v},
+window.pmDebug={T,scene,camera,renderer,town,HERO,NPCS,P,cam,keys,get S(){return S},JOBS,ENV,get started(){return started},begin,act,emote,jump,step:(n=1,dt=1/30)=>{for(let k=0;k<n;k++)step(dt,k<n-1)},get camFix(){return camFix},closeTalk,tick:(n=1)=>{for(let k=0;k<n;k++)step(1/30,true)},pause:v=>{paused=v},
  tp(name){const n=npcBy(name);if(!n)return;P.x=n.x+Math.sin(n.ry)*1.1;P.z=n.z+Math.cos(n.ry)*1.1;P.h=n.ry+Math.PI;cam.yaw=P.h+Math.PI+.4;cam.cur=cam.dist},
  deliverAll(){S.done=JOBS.map(j=>j.id);S.bag=[];S.round=4;ENV.want=.84;save();renderBag()},startEve,startFest,setTod(v){ENV.tod=ENV.want=v},toggleMap};
 })();

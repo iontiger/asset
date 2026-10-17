@@ -54,7 +54,7 @@ function rawF(x,z){return 4+x*.055-z*.05+Math.sin(x*.07+1)*1.7+Math.cos(z*.065-.
 function groundH(x,z){const f=rawF(x,z),q=f/TER,k=Math.floor(q),fr=q-k,h=(k+(fr<.6?0:sm((fr-.6)/.4)))*TER;
  const r=Math.max(Math.abs(x),Math.abs(z)),w=sm((r-9.5)/5);let y=PLAZA_H+(h-PLAZA_H)*w;
  const out=Math.max(Math.abs(x),Math.abs(z))-HW;if(out>0){y+=(f-y)*sm(out/14);y+=Math.min(1,out/24)*(Math.sin(x*.06)*Math.cos(z*.05)*5+Math.sin(x*.021+z*.027)*7+5);if(OUTER)y=OUTER.mod(x,z,y)}return y}
-let OUTER=null;   // 마을 바깥 길 · 빈터 · 개울(outer.js) — 마을 격자를 다 짠 뒤 정한다
+let OUTER=null;const GSEG=230;   // 바깥 풀밭 메시 칸 수   // 마을 바깥 길 · 빈터 · 개울(outer.js) — 마을 격자를 다 짠 뒤 정한다
 
 const WALLS=[['#efe6d2','크림색'],['#e3b9a1','살구색'],['#e8c8c4','분홍색'],['#bcd3bf','민트색'],['#b9cfd8','하늘색'],['#ecd89a','노란색'],['#cfc2dc','연보라색'],['#c9a68c','벽돌색'],['#f3f0e8','하얀색'],['#c8cfb1','연두색'],['#c5c3b8','회색']];
 const ROOFS=['#b5654a','#9c5a4a','#5f8380','#6b6a86','#c4875c','#4f6a7c','#8a5050','#77806f'];
@@ -221,7 +221,7 @@ function build({scene,seed=20261017}){
  const ground=new T.Mesh(gg,toon({color:'#ffffff',map:gtex,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1}));ground.position.y=.01;ground.receiveShadow=true;ground.frustumCulled=false;scene.add(ground);
  const grassT=canvasTex(256,256,(c,w,h)=>{c.fillStyle='#ffffff';c.fillRect(0,0,w,h);const r2=rng(9);for(let k=0;k<900;k++){c.fillStyle=r2()<.5?'#e9efe2':'#f7faf2';c.fillRect(r2()*w,r2()*h,2,5)}for(let k=0;k<26;k++){c.fillStyle=r2()<.5?'#fffdf6':'#ffe2ea';c.beginPath();c.arc(r2()*w,r2()*h,2.2,0,7);c.fill()}});grassT.wrapS=grassT.wrapT=T.RepeatWrapping;grassT.repeat.set(80,80);
  // 바깥 풀밭 — 풀빛 얼룩 · 깎인 비탈은 모래빛 · 숲속 흙길은 흙빛(정점 색)
- const og=new T.PlaneGeometry(420,420,230,230).rotateX(-Math.PI/2);{const p=og.attributes.position,cols=new Float32Array(p.count*3),cG1=new T.Color('#8fbf73'),cG2=new T.Color('#a7cf88'),cS=new T.Color('#dccb9f'),cD=new T.Color('#bca47e'),cY=new T.Color('#b3d796'),c=new T.Color();
+ const og=new T.PlaneGeometry(420,420,GSEG,GSEG).rotateX(-Math.PI/2);{const p=og.attributes.position,cols=new Float32Array(p.count*3),cG1=new T.Color('#8fbf73'),cG2=new T.Color('#a7cf88'),cS=new T.Color('#dccb9f'),cD=new T.Color('#bca47e'),cY=new T.Color('#b3d796'),c=new T.Color();
   for(let k=0;k<p.count;k++){const x=p.getX(k),z=p.getZ(k);p.setY(k,groundH(x,z)-(Math.max(Math.abs(x),Math.abs(z))<HW?.15:(OUTER?OUTER.sink(x,z):0)))}og.computeVertexNormals();const nm=og.attributes.normal;
   for(let k=0;k<p.count;k++){const x=p.getX(k),z=p.getZ(k),n=Math.sin(x*.21+Math.cos(z*.17)*2)*.5+Math.sin(z*.13-x*.07)*.5;c.copy(cG1).lerp(cG2,.5+n*.5);
    const steep=sm((.9-nm.getY(k))/.1)*(n>-.6?1:.4);if(steep>0)c.lerp(cS,steep);
@@ -269,12 +269,17 @@ function build({scene,seed=20261017}){
  /* ── 판정 ── */
  function blockedCell(i,j){const v=at(i,j);return !(v===1||v===2||v===7)}
  function camBlock(x,y,z){if(y<groundY(x,z)+.3)return true;const i=ci(x),j=ci(z);if(i<0||j<0||i>=N||j>=N)return OUTER?OUTER.camBlock(x,y,z):false;const v=G[j*N+i];if(v===0||v===4)return y<CH[j*N+i]+.9;return false}
+ // 눈에 보이는 땅(삼각형 메시)의 실제 높이 — 메시가 groundH 보다 볼록한 곳에서 발이 묻히지 않게 둘 중 높은 쪽을 밟는다
+ function meshH(x,z,size,segs,f){const s=size/segs,u0=(x+size/2)/s,v0=(z+size/2)/s,ix=Math.floor(u0),iz=Math.floor(v0),u=u0-ix,v=v0-iz,X=-size/2+ix*s,Z=-size/2+iz*s;
+  const ha=f(X,Z),hb=f(X,Z+s),hc=f(X+s,Z+s),hd=f(X+s,Z);return u+v<=1?ha+(hd-ha)*u+(hb-ha)*v:hc+(hb-hc)*(1-u)+(hd-hc)*(1-v)}
+ function visH(x,z){if(Math.abs(x)<=HW&&Math.abs(z)<=HW)return meshH(x,z,N*CS,N*4,(a,b)=>groundH(a,b)+.01);if(OUTER&&OUTER.sink(x,z)>.05)return groundH(x,z)+.04;return meshH(x,z,420,GSEG,(a,b)=>groundH(a,b)-(OUTER?OUTER.sink(a,b):0))}
+ function footY(x,z,r=0){let y=Math.max(groundY(x,z),visH(x,z));if(r>0)for(const [dx,dz] of [[r,0],[-r,0],[0,r],[0,-r]])y=Math.max(y,visH(x+dx,z+dz));return y}
  const plaza={x:0,z:0,r:7,y:PLAZA_H};
  const _o=new T.Object3D();
  function update(t,dt,px,pz,night){for(let k=0;k<cloth.length;k++){const c=cloth[k];if((Math.abs(c.x-px)>30||Math.abs(c.z-pz)>30)&&t>1)continue;_o.position.set(c.x,c.y,c.z);_o.rotation.set(Math.sin(t*2.2+c.ph)*.22,c.ry+Math.sin(t*1.3+c.ph)*.12,0);_o.scale.set(c.w,c.h,1);_o.updateMatrix();clothM.setMatrixAt(k,_o.matrix)}clothM.instanceMatrix.needsUpdate=true;
   OUTER&&OUTER.update(t,dt);litMat.emissiveIntensity=night*1.05;darkMat.emissiveIntensity=night*.25;bulbMat.color.setRGB(.55+night*.6,.5+night*.5,.35+night*.4)}
  update(0,0,0,0,0);
- return {G,CH,HID,N,CS,HW,cx,ci,at,houses,yards,post,homes,plaza,fountain,tower:TW,colliders,poles,stairs:STAIR,blockedCell,camBlock,groundY,groundH,district,districtKey,cats,CURVE,curve,toon,outline,signMesh,setSign,update,walk,mats:{litMat,darkMat},outer:OUTER,
+ return {G,CH,HID,N,CS,HW,cx,ci,at,houses,yards,post,homes,plaza,fountain,tower:TW,colliders,poles,stairs:STAIR,blockedCell,camBlock,groundY,groundH,footY,district,districtKey,cats,CURVE,curve,toon,outline,signMesh,setSign,update,walk,mats:{litMat,darkMat},outer:OUTER,
   walkFix:(x,z,r)=>OUTER?OUTER.walkFix(x,z,r):[Math.max(-HW+r,Math.min(HW-r,x)),Math.max(-HW+r,Math.min(HW-r,z))]}}
 root.PM_TOWN={build,curve,toon,outline,CURVE,rng,GRAD};
 })(window);
