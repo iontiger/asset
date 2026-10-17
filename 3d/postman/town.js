@@ -53,7 +53,8 @@ const TER=2.4,PLAZA_H=(()=>{const f=rawF(0,0),q=f/TER,k=Math.floor(q),fr=q-k;ret
 function rawF(x,z){return 4+x*.055-z*.05+Math.sin(x*.07+1)*1.7+Math.cos(z*.065-.5)*1.5+Math.sin((x+z)*.04)*1.9+Math.cos((x-z)*.09)*.6}
 function groundH(x,z){const f=rawF(x,z),q=f/TER,k=Math.floor(q),fr=q-k,h=(k+(fr<.6?0:sm((fr-.6)/.4)))*TER;
  const r=Math.max(Math.abs(x),Math.abs(z)),w=sm((r-9.5)/5);let y=PLAZA_H+(h-PLAZA_H)*w;
- const out=Math.max(Math.abs(x),Math.abs(z))-HW;if(out>0)y+=Math.min(1,out/24)*(Math.sin(x*.06)*Math.cos(z*.05)*5+Math.sin(x*.021+z*.027)*7+5);return y}
+ const out=Math.max(Math.abs(x),Math.abs(z))-HW;if(out>0){y+=(f-y)*sm(out/14);y+=Math.min(1,out/24)*(Math.sin(x*.06)*Math.cos(z*.05)*5+Math.sin(x*.021+z*.027)*7+5);if(OUTER)y=OUTER.mod(x,z,y)}return y}
+let OUTER=null;   // 마을 바깥 길 · 빈터 · 개울(outer.js) — 마을 격자를 다 짠 뒤 정한다
 
 const WALLS=[['#efe6d2','크림색'],['#e3b9a1','살구색'],['#e8c8c4','분홍색'],['#bcd3bf','민트색'],['#b9cfd8','하늘색'],['#ecd89a','노란색'],['#cfc2dc','연보라색'],['#c9a68c','벽돌색'],['#f3f0e8','하얀색'],['#c8cfb1','연두색'],['#c5c3b8','회색']];
 const ROOFS=['#b5654a','#9c5a4a','#5f8380','#6b6a86','#c4875c','#4f6a7c','#8a5050','#77806f'];
@@ -109,11 +110,14 @@ function build({scene,seed=20261017}){
   if(!best)break;homes.push(best)}
  const usedWall=new Set();homes.forEach((h,k)=>{h.door.col=DOORS[k%DOORS.length];let tries=0;while(usedWall.has(h.wall+districtKey(h.x,h.z))&&tries++<8){const w=pick(WALLS);h.wall=w[0];h.wallName=w[1]}usedWall.add(h.wall+districtKey(h.x,h.z));h.isHome=true});
 
+ // 마을 바깥 세 곳(큰길 상가 · 언덕길 · 숲속 개울) — 출구 골목에 길을 잇고, 이제부터 바깥 땅 높이는 길을 따라 고른다
+ OUTER=root.PM_OUTER?root.PM_OUTER.plan({N,HW,cx,at,road,baseH:groundH,rng}):null;
+
  /* ═══ 3. 계단 — 가파른 골목 칸 ═══ */
  const STAIR=new Map();   // k → {ax:'x'|'z',n,e0}
  for(let j=0;j<N;j++)for(let i=0;i<N;i++){const v=at(i,j);if(v!==1&&v!==2)continue;const x=cx(i),z=cx(j),dx=groundH(x+CS/2,z)-groundH(x-CS/2,z),dz=groundH(x,z+CS/2)-groundH(x,z-CS/2);
   const wx=road(at(i-1,j))&&road(at(i+1,j)),wz=road(at(i,j-1))&&road(at(i,j+1)),ax=wx&&!wz?'x':wz&&!wx?'z':Math.abs(dx)>=Math.abs(dz)?'x':'z',d=Math.abs(ax==='x'?dx:dz);if(d<.55)continue;STAIR.set(j*N+i,{ax,n:Math.max(3,Math.round(d/.3)),d})}
- function groundY(x,z){const i=ci(x),j=ci(z),s=STAIR.get(j*N+i);if(!s)return groundH(x,z);
+ function groundY(x,z){if(OUTER&&(Math.abs(x)>HW||Math.abs(z)>HW))return OUTER.groundY(x,z,groundH(x,z));const i=ci(x),j=ci(z),s=STAIR.get(j*N+i);if(!s)return groundH(x,z);
   const e0=(s.ax==='x'?cx(i):cx(j))-CS/2,p=s.ax==='x'?x:z,t=Math.max(0,Math.min(.9999,(p-e0)/CS)),k=Math.floor(t*s.n);
   const a=e0+k/s.n*CS,b=e0+(k+1)/s.n*CS;return s.ax==='x'?Math.max(groundH(a,z),groundH(b,z)):Math.max(groundH(x,a),groundH(x,b))}
 
@@ -215,13 +219,20 @@ function build({scene,seed=20261017}){
    else{c.fillStyle='#a8a090';c.fillRect(x,y,PX,PX)}}});
  const gg=new T.PlaneGeometry(N*CS,N*CS,N*4,N*4).rotateX(-Math.PI/2);{const p=gg.attributes.position;for(let k=0;k<p.count;k++)p.setY(k,groundH(p.getX(k),p.getZ(k)));gg.computeVertexNormals()}
  const ground=new T.Mesh(gg,toon({color:'#ffffff',map:gtex,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1}));ground.position.y=.01;ground.receiveShadow=true;ground.frustumCulled=false;scene.add(ground);
- const grassT=canvasTex(256,256,(c,w,h)=>{c.fillStyle='#a3c58c';c.fillRect(0,0,w,h);const r2=rng(9);for(let k=0;k<900;k++){c.fillStyle=r2()<.5?'#97bb80':'#b0d19a';c.fillRect(r2()*w,r2()*h,2,5)}for(let k=0;k<26;k++){c.fillStyle=r2()<.5?'#fbf6ea':'#f2c6d2';c.beginPath();c.arc(r2()*w,r2()*h,2.2,0,7);c.fill()}});grassT.wrapS=grassT.wrapT=T.RepeatWrapping;grassT.repeat.set(80,80);
- const og=new T.PlaneGeometry(420,420,150,150).rotateX(-Math.PI/2);{const p=og.attributes.position;for(let k=0;k<p.count;k++){const x=p.getX(k),z=p.getZ(k);p.setY(k,groundH(x,z)-(Math.max(Math.abs(x),Math.abs(z))<HW?.15:0))}og.computeVertexNormals()}
- const grass=new T.Mesh(og,toon({color:'#ffffff',map:grassT}));grass.receiveShadow=true;grass.frustumCulled=false;scene.add(grass);
+ const grassT=canvasTex(256,256,(c,w,h)=>{c.fillStyle='#ffffff';c.fillRect(0,0,w,h);const r2=rng(9);for(let k=0;k<900;k++){c.fillStyle=r2()<.5?'#e9efe2':'#f7faf2';c.fillRect(r2()*w,r2()*h,2,5)}for(let k=0;k<26;k++){c.fillStyle=r2()<.5?'#fffdf6':'#ffe2ea';c.beginPath();c.arc(r2()*w,r2()*h,2.2,0,7);c.fill()}});grassT.wrapS=grassT.wrapT=T.RepeatWrapping;grassT.repeat.set(80,80);
+ // 바깥 풀밭 — 풀빛 얼룩 · 깎인 비탈은 모래빛 · 숲속 흙길은 흙빛(정점 색)
+ const og=new T.PlaneGeometry(420,420,230,230).rotateX(-Math.PI/2);{const p=og.attributes.position,cols=new Float32Array(p.count*3),cG1=new T.Color('#8fbf73'),cG2=new T.Color('#a7cf88'),cS=new T.Color('#dccb9f'),cD=new T.Color('#bca47e'),cY=new T.Color('#b3d796'),c=new T.Color();
+  for(let k=0;k<p.count;k++){const x=p.getX(k),z=p.getZ(k);p.setY(k,groundH(x,z)-(Math.max(Math.abs(x),Math.abs(z))<HW?.15:(OUTER?OUTER.sink(x,z):0)))}og.computeVertexNormals();const nm=og.attributes.normal;
+  for(let k=0;k<p.count;k++){const x=p.getX(k),z=p.getZ(k),n=Math.sin(x*.21+Math.cos(z*.17)*2)*.5+Math.sin(z*.13-x*.07)*.5;c.copy(cG1).lerp(cG2,.5+n*.5);
+   const steep=sm((.9-nm.getY(k))/.1)*(n>-.6?1:.4);if(steep>0)c.lerp(cS,steep);
+   const pt=OUTER&&OUTER.paint(x,z);if(pt){if(pt.yard)c.lerp(cY,pt.yard*.8);if(pt.dirt)c.lerp(cD,pt.dirt*(.75+.25*Math.sin(x*1.3+z*.9)))}
+   cols[k*3]=c.r;cols[k*3+1]=c.g;cols[k*3+2]=c.b}og.setAttribute('color',new T.BufferAttribute(cols,3))}
+ const grass=new T.Mesh(og,toon({color:'#ffffff',map:grassT,vertexColors:true}));grass.receiveShadow=true;grass.frustumCulled=false;scene.add(grass);
  // 마을 둘레 — 나무 숲 · 비탈 밭
- {const r2=rng(77);for(let k=0;k<90;k++){const a=r2()*Math.PI*2,d=HW+6+r2()*70,x=Math.cos(a)*d,z=Math.sin(a)*d;if(Math.max(Math.abs(x),Math.abs(z))<HW+4)continue;const y=groundH(x,z),s=1.2+r2()*1.4;
+ {const r2=rng(77);for(let k=0;k<90;k++){const a=r2()*Math.PI*2,d=HW+6+r2()*70,x=Math.cos(a)*d,z=Math.sin(a)*d;if(Math.max(Math.abs(x),Math.abs(z))<HW+4||(OUTER&&!OUTER.free(x,z,3)))continue;const y=groundH(x,z),s=1.2+r2()*1.4;
   if(r2()<.5){BR.add(CYL,M(x,y+1*s,z,0,.3*s,2*s,.3*s),'#7d6249');BR.add(new T.ConeGeometry(1.3*s,3.4*s,7),M(x,y+3.4*s,z),pick(['#5d8f68','#6a9f6a','#4f845f']))}else{BR.add(CYL,M(x,y+1*s,z,0,.3*s,2*s,.3*s),'#7d6249');BR.add(BLOB,M(x,y+2.8*s,z,0,1.5*s,1.3*s,1.5*s),pick(['#78ad6d','#86b878','#94c384']))}}}
 
+ OUTER&&OUTER.build({T,scene,B,BR,WIRE,Builder,M,BOX,CYL,CYL6,BLOB,CONE4,prism,canvasTex,toon,curve,outline,signMesh,sag,colliders,frames,glassLit,glassDark,doorsI,lampsI,groundH});
  const VC=toon({color:'#ffffff',vertexColors:true}),walls=B.mesh(VC),small=BR.mesh(VC);scene.add(walls);small&&scene.add(small);
  const edgeMat=curve(new T.LineBasicMaterial({color:'#2f302c',transparent:true,opacity:.7}));const ed=B.lines(edgeMat);ed&&scene.add(ed);
  const wireMat=curve(new T.LineBasicMaterial({color:'#2f302c',transparent:true,opacity:.85}));const wl=WIRE.lines(wireMat);wl&&scene.add(wl);
@@ -257,12 +268,13 @@ function build({scene,seed=20261017}){
 
  /* ── 판정 ── */
  function blockedCell(i,j){const v=at(i,j);return !(v===1||v===2||v===7)}
- function camBlock(x,y,z){if(y<groundY(x,z)+.3)return true;const i=ci(x),j=ci(z);if(i<0||j<0||i>=N||j>=N)return false;const v=G[j*N+i];if(v===0||v===4)return y<CH[j*N+i]+.9;return false}
+ function camBlock(x,y,z){if(y<groundY(x,z)+.3)return true;const i=ci(x),j=ci(z);if(i<0||j<0||i>=N||j>=N)return OUTER?OUTER.camBlock(x,y,z):false;const v=G[j*N+i];if(v===0||v===4)return y<CH[j*N+i]+.9;return false}
  const plaza={x:0,z:0,r:7,y:PLAZA_H};
  const _o=new T.Object3D();
  function update(t,dt,px,pz,night){for(let k=0;k<cloth.length;k++){const c=cloth[k];if((Math.abs(c.x-px)>30||Math.abs(c.z-pz)>30)&&t>1)continue;_o.position.set(c.x,c.y,c.z);_o.rotation.set(Math.sin(t*2.2+c.ph)*.22,c.ry+Math.sin(t*1.3+c.ph)*.12,0);_o.scale.set(c.w,c.h,1);_o.updateMatrix();clothM.setMatrixAt(k,_o.matrix)}clothM.instanceMatrix.needsUpdate=true;
-  litMat.emissiveIntensity=night*1.05;darkMat.emissiveIntensity=night*.25;bulbMat.color.setRGB(.55+night*.6,.5+night*.5,.35+night*.4)}
+  OUTER&&OUTER.update(t,dt);litMat.emissiveIntensity=night*1.05;darkMat.emissiveIntensity=night*.25;bulbMat.color.setRGB(.55+night*.6,.5+night*.5,.35+night*.4)}
  update(0,0,0,0,0);
- return {G,CH,HID,N,CS,HW,cx,ci,at,houses,yards,post,homes,plaza,fountain,tower:TW,colliders,poles,stairs:STAIR,blockedCell,camBlock,groundY,groundH,district,districtKey,cats,CURVE,curve,toon,outline,signMesh,setSign,update,walk,mats:{litMat,darkMat}}}
+ return {G,CH,HID,N,CS,HW,cx,ci,at,houses,yards,post,homes,plaza,fountain,tower:TW,colliders,poles,stairs:STAIR,blockedCell,camBlock,groundY,groundH,district,districtKey,cats,CURVE,curve,toon,outline,signMesh,setSign,update,walk,mats:{litMat,darkMat},outer:OUTER,
+  walkFix:(x,z,r)=>OUTER?OUTER.walkFix(x,z,r):[Math.max(-HW+r,Math.min(HW-r,x)),Math.max(-HW+r,Math.min(HW-r,z))]}}
 root.PM_TOWN={build,curve,toon,outline,CURVE,rng,GRAD};
 })(window);
