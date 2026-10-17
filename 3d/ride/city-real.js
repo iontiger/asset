@@ -9,12 +9,13 @@ function styleOf(b){return b.glass?'glass':b.h>90?'deco':BRICK.includes(b.col)?'
 function apply(X,A){
  const {T,g,WV,P,dirW,rotOf,YC,WALK,dmy,at}=X,K=A.kits;
  // ── 하늘 반사 · 조명용 환경맵: 실제 도시 거리 HDRI(city_1k.hdr). 못 받으면 위는 하늘, 아래는 길 색인 작은 장면을 굽는다
- let env=null;const hdr=A.hdr&&A.hdr();
- if(X.renderer&&hdr){const pm=new T.PMREMGenerator(X.renderer);env=pm.fromEquirectangular(hdr).texture;pm.dispose();hdr.dispose()}
+ let env=A._env||null;const hdr=env?null:A.hdr&&A.hdr();
+ if(env){}else if(X.renderer&&hdr){const pm=new T.PMREMGenerator(X.renderer);env=pm.fromEquirectangular(hdr).texture;pm.dispose();hdr.dispose()}
  else if(X.renderer){const es=new T.Scene(),sg=new T.SphereGeometry(10,32,16),col=[],c=new T.Color(),sky=new T.Color('#a9c8e6'),hor=new T.Color('#e4e6e4'),grd=new T.Color('#4c5054');
   const pa=sg.attributes.position;for(let i=0;i<pa.count;i++){const y=pa.getY(i)/10;c.copy(y>0?hor.clone().lerp(sky,Math.pow(y,.6)):hor.clone().lerp(grd,Math.min(1,-y*4)));col.push(c.r,c.g,c.b)}
   sg.setAttribute('color',new T.Float32BufferAttribute(col,3));es.add(new T.Mesh(sg,new T.MeshBasicMaterial({vertexColors:true,side:T.BackSide})));
   const pm=new T.PMREMGenerator(X.renderer);env=pm.fromScene(es,0).texture;pm.dispose();sg.dispose()}
+ A._env=env;   // 장면이 둘(걷기: 맨해튼 · 브루클린)이면 같은 환경맵을 함께 쓴다
  const envMats=[];const withEnv=(m,k)=>{if(env){m.envMap=env;m.envMapIntensity=k;m.userData.envK=k;envMats.push(m)}return m};
  // ── 건물 앞면 재질: 아틀라스 색 + 거칠기/금속 + 밤 창문 불빛 (모듈마다 · 평판은 칸마다 켜지고 꺼짐)
  const facadeMat=(st,flat)=>{const ttag=flat?'f':'',m=withEnv(new T.MeshStandardMaterial({map:A.tex(st+'_'+ttag+'c'),roughnessMap:A.tex(st+'_'+ttag+'m'),metalnessMap:A.tex(st+'_'+ttag+'m'),normalMap:A.tex(st+'_'+ttag+'n'),roughness:1,metalness:1,vertexColors:!!flat}),.85);

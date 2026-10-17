@@ -49,10 +49,12 @@ jobs:
           cp -r 3d/assets _site/3d/
           # 우체국에서 여는 우편배달 게임 '바람을 따라' (Three.js, 따로 된 페이지) → /asset/3d/ride/
           mkdir -p _site/3d/ride && cp 3d/ride/*.html 3d/ride/*.js 3d/ride/*.css 3d/ride/*.mp3 3d/ride/*.jpg _site/3d/ride/ && cp -r 3d/ride/vendor 3d/ride/nyc _site/3d/ride/
+          # 마을 '뉴욕 아치 문'에서 여는 걷는 뉴욕 (3d/ride 의 도시 · 사람 · 계절 모듈을 같이 씀) → /asset/3d/nyc/
+          mkdir -p _site/3d/nyc && cp 3d/nyc/*.html 3d/nyc/*.js 3d/nyc/*.css _site/3d/nyc/
           # 마을 '문명 전당'에서 여는 턴제 문명 게임 '덴포토 문명' (3d/ride 의 three.min.js · 마을 모델을 같이 씀) → /asset/civil/
           mkdir -p _site/civil && cp civil/*.html civil/*.js civil/*.css _site/civil/ && rm -f _site/civil/*.cjs
           # 게임 페이지의 js · css 주소에 커밋 번호를 붙여, 브라우저가 옛 파일(예: 옛 game.js)과 새 index.html 을 섞어 쓰지 않게 한다
-          for f in _site/3d/ride/index.html _site/civil/index.html; do sed -i -E "s#(src|href)=\"([A-Za-z0-9_-]+\.(js|css))\"#\1=\"\2?v=${GITHUB_SHA::7}\"#g" "$f"; grep -oE '(src|href)="[^"]+\?v=[^"]+"' "$f" | head -3; done
+          for f in _site/3d/ride/index.html _site/civil/index.html _site/3d/nyc/index.html; do sed -i -E "s#(src|href)=\"((\.\./ride/)?[A-Za-z0-9_-]+\.(js|css))\"#\1=\"\2?v=${GITHUB_SHA::7}\"#g" "$f"; grep -oE '(src|href)="[^"]+\?v=[^"]+"' "$f" | head -3; done
           # 버전 표시 · 새 버전 알림용 — 커밋 번호와 커밋 시각(한국 시간).
           # 브리핑만 바꿔 다시 올려도 같은 커밋이면 값이 같아서 "새 버전" 알림이 뜨지 않는다
           BUILD="${GITHUB_SHA::7} $(TZ=Asia/Seoul git log -1 --format=%cd --date=format-local:'%Y-%m-%d %H:%M')"

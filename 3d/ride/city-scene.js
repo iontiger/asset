@@ -26,12 +26,13 @@ function build({T,scene,C}){
   if(along(a,p)>=a.lo-.5&&along(a,p)<=a.hi+.5&&along(b,p)>=b.lo-.5&&along(b,p)<=b.hi+.5&&!X.some(q=>Math.hypot(q[0]-p[0],q[1]-p[1])<1))X.push(p)}
  const crossOn=s=>X.filter(p=>Math.abs(perp(s,p)-s.c)<.5&&along(s,p)>=s.lo-.5&&along(s,p)<=s.hi+.5).map(p=>along(s,p)).sort((a,b)=>a-b);
  // 오르막 · 내리막(입구 · 출구)은 경로 리본이 덮고, 평지 길만 직사각형으로
- const flat=s=>{let lo=s.lo,hi=s.hi;if(s.main&&s.k===0)lo=Math.max(lo,30);if(s.main&&s.k===C.segs.length-1)hi=Math.min(hi,C.V[C.V.length-1][1]-45);return [lo,hi]};
+ const flat=s=>{let lo=s.lo,hi=s.hi;if(C.walk)return [lo,hi];if(s.main&&s.k===0)lo=Math.max(lo,30);if(s.main&&s.k===C.segs.length-1)hi=Math.min(hi,C.V[C.V.length-1][1]-45);return [lo,hi]};
  const intervals=s=>{const [lo,hi]=flat(s);let out=[[lo,hi]];for(const x of crossOn(s)){const n=[];for(const [a,b] of out){if(x+WALK<=a||x-WALK>=b){n.push([a,b]);continue}if(x-WALK>a)n.push([a,x-WALK]);if(x+WALK<b)n.push([x+WALK,b])}out=n}return out.filter(([a,b])=>b-a>.5)};
 
  // ── 지면 판(시내 바닥): 원래 길 · 협곡 바닥 위로 깔리는 콘크리트 판
- const BB={r0:-185,r1:285,f0:-330,f1:225};
- const EXCL=[[-36,36,-1e9,-3],[198,1e9,-168,1e9],[-12,12,-1e9,32],[C.V[9][0]-12,C.V[9][0]+12,C.V[9][1]-47,1e9]];
+ // 걷기(3d/nyc · C.walk)는 배치마다 땅 범위(BB) · 빈 땅(EXCL) · 빌딩만 비우는 곳(NOB)을 따로 준다
+ const BB=C.BB||{r0:-185,r1:285,f0:-330,f1:225};
+ const EXCL=C.EXCL||[[-36,36,-1e9,-3],[198,1e9,-168,1e9],[-12,12,-1e9,32],[C.V[9][0]-12,C.V[9][0]+12,C.V[9][1]-47,1e9]];
  const inEx=(r0,r1,f0,f1)=>EXCL.some(e=>r1>e[0]&&r0<e[1]&&f1>e[2]&&f0<e[3]);
  {const list=[];for(let R=BB.r0;R<BB.r1;R+=10)for(let F=BB.f0;F<BB.f1;F+=10)if(!inEx(R,R+10,F,F+10))list.push([R+5,F+5]);
   const m=new T.InstancedMesh(new T.BoxGeometry(10,16,10).translate(0,-8,0),SM('#8e908d',{roughness:.95}),list.length),d=new T.Object3D();
@@ -49,7 +50,7 @@ function build({T,scene,C}){
    const ux=pos[3*n+3]-pos[3*n],uz=pos[3*n+5]-pos[3*n+2],vx=pos[3*n+6]-pos[3*n],vz=pos[3*n+8]-pos[3*n+2];if(uz*vx-ux*vz>0)idx.push(n,n+1,n+2,n,n+2,n+3);else idx.push(n,n+2,n+1,n,n+3,n+2)};
   for(const s of S){const [lo,hi]=flat(s);if(hi-lo<.1)continue;const a=P(s,lo,-HALF),b=P(s,hi,-HALF),c=P(s,hi,HALF),d=P(s,lo,HALF);quad(a,b,c,d,YC+.02)}
   // 입구 오르막 · 출구 내리막: 경로를 따라가는 리본 (흙길 반폭 9 → 시내 4.95)
-  for(const [u0,u1] of [[0,33],[C.Lc-48,C.Lc]]){const n0=pos.length/3,steps=Math.ceil((u1-u0)/1.5);for(let i=0;i<=steps;i++){const u=u0+(u1-u0)*i/steps,p=C.localAt(u),nn=C.pathNormal(u),wd=HALF+(9-HALF)*(1-Math.min(1,C.latScale(u)<1?(1-C.latScale(u))/.45:0)),y=C.y(u)+.03;
+  for(const [u0,u1] of C.walk?[]:[[0,33],[C.Lc-48,C.Lc]]){const n0=pos.length/3,steps=Math.ceil((u1-u0)/1.5);for(let i=0;i<=steps;i++){const u=u0+(u1-u0)*i/steps,p=C.localAt(u),nn=C.pathNormal(u),wd=HALF+(9-HALF)*(1-Math.min(1,C.latScale(u)<1?(1-C.latScale(u))/.45:0)),y=C.y(u)+.03;
     for(const sd of [-1,1]){const w=C.world(p[0]+nn[0]*wd*sd,p[1]+nn[1]*wd*sd);pos.push(w.x,y,w.z);uv.push(w.x/14,w.z/14)}if(i<steps){const a=n0+i*2;idx.push(a,a+1,a+2,a+1,a+3,a+2)}}}
   const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(pos,3));geo.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geo.setIndex(idx);geo.computeVertexNormals();
   const m=new T.Mesh(geo,asMat);m.receiveShadow=true;g.add(m)}
@@ -59,7 +60,7 @@ function build({T,scene,C}){
  const rect=(s,t0,t1,l0,l1,y0,y1,col)=>{const a=P(s,t0,l0),b=P(s,t1,l1);boxes.push([Math.min(a[0],b[0]),Math.max(a[0],b[0]),Math.min(a[1],b[1]),Math.max(a[1],b[1]),y0,y1,col])};
  const walkCol='#b7b3aa',paint=[],walkMat=new T.MeshStandardMaterial({vertexColors:true,roughness:.9}),paintMat=new T.MeshStandardMaterial({vertexColors:true,roughness:.7,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
  for(const s of S){for(const [a,b] of intervals(s)){for(const sd of [-1,1])rect(s,a,b,sd*HALF,sd*WALK,YC,YC+.24,walkCol);
-   paint.push([s,a,b,-.3,-.08,'#e9c03a'],[s,a,b,.08,.3,'#e9c03a'])}
+   if(!C.noCenter)paint.push([s,a,b,-.3,-.08,'#e9c03a'],[s,a,b,.08,.3,'#e9c03a'])}
   const [lo,hi]=flat(s);
   for(const x of crossOn(s))for(const side of [-1,1]){const e0=x+side*WALK,e1=x+side*HALF;if(Math.min(e0,e1)<lo-.1||Math.max(e0,e1)>hi+.1)continue;
    for(let l=-HALF+.45;l<HALF-.3;l+=1.15)paint.push([s,Math.min(e0,e1)+.35,Math.max(e0,e1)-.35,l,l+.6,'#f1f0ea'])}}
@@ -75,11 +76,13 @@ function build({T,scene,C}){
 
  // ── 빌딩 숲
  const blds=[];
- const free=(r0,r1,f0,f1)=>{if(r0<BB.r0||r1>BB.r1||f0<BB.f0||f1>BB.f1||inEx(r0,r1,f0,f1))return false;const m=WALK+.8;
+ const NOB=C.NOB||[];
+ const free=(r0,r1,f0,f1)=>{if(r0<BB.r0||r1>BB.r1||f0<BB.f0||f1>BB.f1||inEx(r0,r1,f0,f1)||NOB.some(e=>r1>e[0]&&r0<e[1]&&f1>e[2]&&f0<e[3]))return false;const m=WALK+.8;
   for(const s of S){if(s.axis==='F'){if(r1>s.c-m&&r0<s.c+m&&f1>s.lo-m&&f0<s.hi+m)return false}else if(f1>s.c-m&&f0<s.c+m&&r1>s.lo-m&&r0<s.hi+m)return false}
   for(const b of blds)if(r1>b.r0-.7&&r0<b.r1+.7&&f1>b.f0-.7&&f0<b.f1+.7)return false;return true};
  const MASON=['#c8b79c','#b9a184','#a8604a','#8f4e3d','#d6cfc1','#9c9a94','#b8b2a6','#7f6f62','#c9c2b4','#a2765a'],GLASS=['#4f6b85','#5d7e9a','#3e5468','#6f8ea6','#7a8f9f','#2f4558','#557089'];
- const addB=(r0,r1,f0,f1,h,front)=>{const glass=rnd()<(h>95?.72:.22);blds.push({r0,r1,f0,f1,h,glass,col:glass?GLASS[Math.floor(rnd()*GLASS.length)]:MASON[Math.floor(rnd()*MASON.length)],front})};
+ const BRICKC=['#a8604a','#8f4e3d','#a2765a','#7f6f62'];
+ const addB=(r0,r1,f0,f1,h,front)=>{if(C.brick){h=Math.min(h,15+rnd()*(C.brick===true?30:C.brick));blds.push({r0,r1,f0,f1,h,glass:false,col:BRICKC[Math.floor(rnd()*BRICKC.length)],front});return}const glass=rnd()<(h>95?.72:.22);blds.push({r0,r1,f0,f1,h,glass,col:glass?GLASS[Math.floor(rnd()*GLASS.length)]:MASON[Math.floor(rnd()*MASON.length)],front})};
  for(const s of S)for(const side of [-1,1]){let t=s.lo-WALK;while(t<s.hi+WALK){const w=12+rnd()*13,dd=14+rnd()*18,l0=side*(WALK+.9),l1=side*(WALK+.9+dd),a=P(s,t,l0),b=P(s,t+w,l1);
    const r0=Math.min(a[0],b[0]),r1=Math.max(a[0],b[0]),f0=Math.min(a[1],b[1]),f1=Math.max(a[1],b[1]);
    if(free(r0,r1,f0,f1)){const tall=rnd()<(s.main?.13:.08);addB(r0,r1,f0,f1,tall?150+rnd()*115:(s.main?26:22)+Math.pow(rnd(),1.6)*(s.main?120:95),{s,side,t0:t,t1:t+w});t+=w+.9}else t+=3}}
@@ -144,7 +147,7 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
   (x,w,h)=>{for(let i=0;i<16;i++)for(let j=0;j<10;j++){x.fillStyle=(i+j)%2?'#111':'#f6c90e';x.fillRect(i*w/16,j*h/10,w/16,h/10)}x.fillStyle='#f6c90e';x.fillRect(40,70,w-80,h-140);x.fillStyle='#111';x.textAlign='center';x.font=`900 80px ${FONT}`;x.fillText('TAXI 212',w/2,h*.6)},
   (x,w,h)=>{x.fillStyle='#023e8a';x.fillRect(0,0,w,h);x.fillStyle='#90e0ef';x.textAlign='center';x.font=`800 64px ${FONT}`;x.fillText('NEW YORK',w/2,h*.42);x.fillText('DENTAL',w/2,h*.42+72);x.fillStyle='#fff';x.font=`600 30px ${FONT}`;x.fillText('SMILE · 웃어요',w/2,h*.42+124)}];
  const adMats=ADS.map(d=>new T.MeshBasicMaterial({map:tex(512,320,d),toneMapped:false,side:T.DoubleSide}));
- {const V1=C.V[1];let n=0;fronts.forEach((b,i)=>{const f=b.front,t=(f.t0+f.t1)/2,p=P(f.s,t,0),nearTS=Math.hypot(p[0]-V1[0],p[1]-V1[1])<70;if(nearTS&&root.CITY_TS)return;if(b.h<16||!(nearTS||i%4===1)||n>34)return;n++;
+ {const V1=C.V[1];let n=0;fronts.forEach((b,i)=>{const f=b.front,t=(f.t0+f.t1)/2,p=P(f.s,t,0),nearTS=!C.walk&&Math.hypot(p[0]-V1[0],p[1]-V1[1])<70;if(nearTS&&root.CITY_TS)return;if(b.h<16||!(nearTS||i%4===1)||n>34)return;n++;
    const big=nearTS?1.5:1,nrm=f.s.axis==='F'?[-f.side,0]:[0,-f.side],q=P(f.s,t,f.side*(WALK+.3)),y=YC+8+rnd()*Math.min(14,b.h-12)*.8;
    const m=new T.Mesh(new T.PlaneGeometry(8.6*big,5.4*big),adMats[(i*5+n)%adMats.length]);m.position.copy(WV(q[0],q[1],y+2.7*big));m.rotation.y=Math.atan2(dirW(...nrm).x,dirW(...nrm).z);g.add(m)})}
  // 타임스스퀘어 (city-ts.js): BROADWAY · W 42 ST 모서리 빌딩을 움직이는 전광판으로 덮는다
@@ -171,7 +174,7 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
  // 사람 그리기(city-people.js): 보도 사람 · 횡단보도 사람을 한꺼번에. 블렌더 사람 키트가 오면 실제 사람 모양으로 바뀐다.
  const crowd=root.CITY_PEOPLE.make({T,g,max:170});peds.forEach(q=>{q.look=root.CITY_PEOPLE.look(rnd);q.look.top=q.c;q.wp=q.ph});
  // 이름표를 단 마을 친구 18명 (city-npc.js)
- const npc=root.CITY_NPC?root.CITY_NPC.build({T,g,paths:pedPaths,P,WV,YC,HALF,C}):null;
+ const npc=root.CITY_NPC&&C.npc!==false?root.CITY_NPC.build({T,g,paths:pedPaths,P,WV,YC,HALF,C}):null;
 
  // ── 표지판 · 입구 현수막 · 신호등 · 단속 카메라
  const signTex={};const signMat=(key,w,h,draw)=>{if(!signTex[key]){const t=tex(w,h,draw);t.anisotropy=8;signTex[key]=new T.MeshStandardMaterial({map:t,emissiveMap:t,emissive:'#ffffff',emissiveIntensity:.32,roughness:.6})}return signTex[key]};
@@ -183,7 +186,7 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
  const limitMat=signMat('limit',256,320,(x,w,h)=>{x.fillStyle='#fff';x.fillRect(0,0,w,h);x.strokeStyle='#111';x.lineWidth=12;x.strokeRect(14,14,w-28,h-28);x.fillStyle='#111';x.textAlign='center';x.font=`800 44px ${FONT}`;x.fillText('SPEED',w/2,78);x.fillText('LIMIT',w/2,126);x.font=`900 130px ${FONT}`;x.fillText(String(C.LIMIT),w/2,262)});
  const camWarnMat=signMat('camwarn',384,256,(x,w,h)=>{x.fillStyle='#ffcc00';x.fillRect(0,0,w,h);x.strokeStyle='#111';x.lineWidth=10;x.strokeRect(10,10,w-20,h-20);x.fillStyle='#111';x.textAlign='center';x.font=`900 46px ${FONT}`;x.fillText('과속 단속 카메라',w/2,74);x.font=`800 34px ${FONT}`;x.fillText('SPEED CAMERA AHEAD',w/2,124);x.beginPath();x.arc(w/2,188,46,0,7);x.fillStyle='#fff';x.fill();x.lineWidth=11;x.strokeStyle='#d62828';x.stroke();x.fillStyle='#111';x.font=`900 46px ${FONT}`;x.fillText(String(C.LIMIT),w/2,205)});
  const warnD=c=>Math.max(C.segs[c.k].dS0+3,c.d-38);
- C.segs.forEach((s,k)=>{let d=k===0?27:s.dS0+12;for(const c of C.cameras)if(c.k===k&&Math.abs(warnD(c)-d)<12)d=warnD(c)+14;   // 단속 예고판과 겹치지 않게
+ if(!C.walk)C.segs.forEach((s,k)=>{let d=k===0?27:s.dS0+12;for(const c of C.cameras)if(c.k===k&&Math.abs(warnD(c)-d)<12)d=warnD(c)+14;   // 단속 예고판과 겹치지 않게
   if(d>s.len-20)return;const p=SP(k,d,HALF+1.1);pole(p[0],p[1],3.9);panel(p[0],p[1],YC+3.55,1.5,1.9,limitMat,[-s.dir[0],-s.dir[1]])});
  for(const c of C.cameras){const s=C.segs[c.k];const w=SP(c.k,warnD(c),HALF+1.1);pole(w[0],w[1],3.8);panel(w[0],w[1],YC+3.5,2.1,1.4,camWarnMat,[-s.dir[0],-s.dir[1]])}
  // Mission mailboxes and lane markers remain available without the downloaded model kit.
@@ -200,7 +203,7 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
   return {d,mat,marker};
  });
  // 입구 현수막
- {const s=C.segs[0],a=SP(0,14,-(WALK-.8)),b=SP(0,14,WALK-.8);pole(a[0],a[1],12.6,'#2b3033',.2);pole(b[0],b[1],12.6,'#2b3033',.2);
+ if(!C.walk){const s=C.segs[0],a=SP(0,14,-(WALK-.8)),b=SP(0,14,WALK-.8);pole(a[0],a[1],12.6,'#2b3033',.2);pole(b[0],b[1],12.6,'#2b3033',.2);
   const ban=signMat('banner',1024,200,(x,w,h)=>{const gr=x.createLinearGradient(0,0,w,0);gr.addColorStop(0,'#0b2545');gr.addColorStop(1,'#13315c');x.fillStyle=gr;x.fillRect(0,0,w,h);x.fillStyle='#f4d35e';x.textAlign='center';x.font=`900 74px ${FONT}`;x.fillText('NEW YORK CITY',w/2,96);x.fillStyle='#fff';x.font=`700 40px ${FONT}`;x.fillText('뉴욕 시내 · 신호 준수 · 제한속도 '+C.LIMIT+' km/h',w/2,160)});
   const m=new T.Mesh(new T.PlaneGeometry(2*(WALK-.8),3.2),ban);const p=SP(0,14,0);m.position.copy(WV(p[0],p[1],C.y(14)+11.2));const d=dirW(-s.dir[0],-s.dir[1]);m.rotation.y=Math.atan2(d.x,d.z);g.add(m)}
  // 모서리마다 다음 길 이름(초록 표지) — 좌회전 ↰ / 우회전 ↱
@@ -253,7 +256,7 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
   for(const x of crossers){const s=C.segs[x.k],p=SP(x.k,x.d+x.dir*-LANE,x.p);put(p[0],p[1],rotOf(s.right[0]*x.dir,s.right[1]*x.dir),CARC[1+x.col],x.taxi)}
   if(carKit)carKit.end();else for(const m of carMeshes){m.count=n;m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true}cgGeo.setDrawRange(0,n*4);cgGeo.attributes.position.needsUpdate=true}
  // 맨홀 김
- const vents=[[2,30],[3,60],[6,140],[6,260],[4,40]].map(([k,d])=>SP(k,d,-1.4)),VN=16,ventPos=new Float32Array(vents.length*VN*3),ventGeo=new T.BufferGeometry();ventGeo.setAttribute('position',new T.BufferAttribute(ventPos,3));
+ const vents=(C.vents||[[2,30],[3,60],[6,140],[6,260],[4,40]]).map(([k,d])=>SP(k,d,-1.4)),VN=16,ventPos=new Float32Array(vents.length*VN*3),ventGeo=new T.BufferGeometry();ventGeo.setAttribute('position',new T.BufferAttribute(ventPos,3));
  const steam=new T.Points(ventGeo,new T.PointsMaterial({map:glowTex,color:'#f2f2f2',size:3.2,transparent:true,opacity:.42,depthWrite:false}));steam.frustumCulled=false;g.add(steam);
  // 횡단보도 사람들 · 비둘기 · 증기 굴뚝 (city-life.js)
  const life=root.CITY_LIFE?root.CITY_LIFE.build({T,g,C,SP,WV,YC,HALF,WALK,rotOf,glowTex,rnd,crowd}):null;let lifeOut={walk:false};
@@ -303,8 +306,8 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
  // 블렌더 뉴욕 키트(nyc/)가 내려오면 빌딩 앞면 · 차 · 가로 소품을 사실적인 모델로 바꾼다. 못 받으면 지금 모습 그대로.
  let real=null;
  function upgrade(A,renderer){if(real||!root.CITY_REAL)return null;
-  if(root.NYC_ASSETS&&root.NYC_ASSETS.loadPeople)root.NYC_ASSETS.loadPeople(T).then(geo=>{crowd.useKit(geo);if(npc&&npc.useKit)npc.useKit(geo)}).catch(e=>console.warn('NYC people kit',e));
+  if(root.NYC_ASSETS&&root.NYC_ASSETS.loadPeople)root.NYC_ASSETS.loadPeople(T,C.kitBase).then(geo=>{crowd.useKit(geo);if(npc&&npc.useKit)npc.useKit(geo)}).catch(e=>console.warn('NYC people kit',e));
   real=root.CITY_REAL.apply({T,g,C,WV,P,dirW,rotOf,YC,HALF,WALK,blds,boxAt,BOXTEX,asMat,walkMat,setAsBase:v=>{asBase=v},ax,af,o0,lamps,hyd,bins,mail,old,bulbMat,NIGHT,dmy,at,MAXC,carMeshes,setCarKit:k=>{carKit=k},renderer},A);return real}
- return {group:g,update,flash,upgrade,get real(){return real},buildings:blds.length,lampPos:lamps.map(l=>l.bulb),npc,life,ts,wet,crowd,setWinK:k=>{winK=k},get crossers(){return crossers},get walk(){return lifeOut.walk}}}
+ return {group:g,update,flash,upgrade,asMat,walkMat,blds,get real(){return real},buildings:blds.length,lampPos:lamps.map(l=>l.bulb),npc,life,ts,wet,crowd,setWinK:k=>{winK=k},get crossers(){return crossers},get walk(){return lifeOut.walk}}}
 root.CITY_SCENE={build};
 })(typeof window!=='undefined'?window:globalThis);

@@ -23,7 +23,7 @@ function build({T,g,C,SP,WV,YC,HALF,WALK,rotOf,glowTex,rnd,crowd}){
  const wL=new T.Matrix4(),wR=new T.Matrix4();
  // ── 콘에드 증기 굴뚝(주황 · 흰 줄무늬): 길 가운데 두 곳에서 김이 뭉게뭉게
  const stripe=(()=>{const cv=document.createElement('canvas');cv.width=64;cv.height=256;const x=cv.getContext('2d');for(let i=0;i<8;i++){x.fillStyle=i%2?'#f4f1ea':'#ee6a1f';x.fillRect(0,i*32,64,32)}const t=new T.CanvasTexture(cv);t.colorSpace=T.SRGBColorSpace;return t})();
- const stacks=[[3,40],[6,195]].map(([k,d])=>{const p=SP(k,d,-1.2),m=new T.Mesh(new T.CylinderGeometry(.42,.48,2.6,16,1,true),SM('#ffffff',{map:stripe,roughness:.6,side:T.DoubleSide}));m.position.copy(WV(p[0],p[1],YC+1.3));m.castShadow=true;g.add(m);
+ const stacks=(C.stacks||[[3,40],[6,195]]).map(([k,d])=>{const p=SP(k,d,-1.2),m=new T.Mesh(new T.CylinderGeometry(.42,.48,2.6,16,1,true),SM('#ffffff',{map:stripe,roughness:.6,side:T.DoubleSide}));m.position.copy(WV(p[0],p[1],YC+1.3));m.castShadow=true;g.add(m);
   const cap=new T.Mesh(new T.TorusGeometry(.45,.06,6,16).rotateX(Math.PI/2),SM('#2f3336',{metalness:.5}));cap.position.copy(WV(p[0],p[1],YC+2.6));g.add(cap);const w=C.world(p[0],p[1]);return {x:w.x,z:w.z}});
  const SN=26,stPos=new Float32Array(stacks.length*SN*3),stGeo=new T.BufferGeometry();stGeo.setAttribute('position',new T.BufferAttribute(stPos,3));
  const stSteam=new T.Points(stGeo,new T.PointsMaterial({map:glowTex,color:'#f4f4f2',size:5.5,transparent:true,opacity:.5,depthWrite:false}));stSteam.frustumCulled=false;g.add(stSteam);
