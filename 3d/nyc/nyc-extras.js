@@ -2,7 +2,7 @@
    - 이스트강 불꽃놀이: 여름 끝 ~ 가을 맑은 밤, 두 다리 사이 강 위로 터진다(브루클린 브릿지 · 브루클린 브릿지 파크에서 잘 보인다)
    - 증권거래소 크리스마스 트리: 겨울이면 Broad St 에 큰 트리 · 반짝이는 전구 · 꼭대기 별
    - 간식 카트 3대: 배터리 파크 핫도그 · 볼링 그린 프레첼 · 브루클린 브릿지 파크 아이스크림(가을 · 겨울엔 꿀땅콩). 가까이 가서 F
-   build({T,scene,YC,sound}) → {carts, blocked(R,F), update(time,dt,E), snack(kind), fireworks} */
+   build({T,scene,YC,sound}) → {carts, blocked(R,F), update(time,dt,E), updateCarts(time,E), addCart(c,parent), snack(kind), fireworks} */
 (function(root){
 function build({T,scene,YC=3.8,sound}){
  const g=new T.Group();g.name='nyc-extras';scene.add(g);
@@ -54,9 +54,9 @@ function build({T,scene,YC=3.8,sound}){
  const CARTS=[{id:'hotdog',R:30,F:-46,ry:.3,kinds:['hotdog'],sign:['HOT DOGS','#c8463c','#fff6d8'],umb:['#c8463c','#fff6d8'],steam:true},
   {id:'pretzel',R:24,F:5,ry:-1.2,kinds:['pretzel'],sign:['PRETZELS','#2f6db5','#ffe08a'],umb:['#2f6db5','#ffe08a'],steam:true},
   {id:'treats',R:735,F:505,ry:2.2,kinds:['icecream','nuts'],sign:['ICE CREAM','#f19ab5','#ffffff'],sign2:['NUTS 4 NUTS','#7a4a2a','#ffe08a'],umb:['#f19ab5','#ffffff'],steam:false}];
- const NAMES={hotdog:['🌭','뉴욕 핫도그','머스터드 듬뿍! 한 입 크게 먹어요'],pretzel:['🥨','소금 프레첼','따끈하고 쫄깃한 뉴욕 길거리 프레첼'],icecream:['🍦','소프트 아이스크림','강바람 맞으며 먹는 딸기 아이스크림'],nuts:['🥜','꿀땅콩','달콤한 냄새가 거리를 가득 채워요']};
+ const NAMES={halal:['🍗','치킨 오버 라이스','노란 밥 위에 치킨 · 하얀 소스 듬뿍, 빨간 소스는 살짝!'],hotdog:['🌭','뉴욕 핫도그','머스터드 듬뿍! 한 입 크게 먹어요'],pretzel:['🥨','소금 프레첼','따끈하고 쫄깃한 뉴욕 길거리 프레첼'],icecream:['🍦','소프트 아이스크림','강바람 맞으며 먹는 딸기 아이스크림'],nuts:['🥜','꿀땅콩','달콤한 냄새가 거리를 가득 채워요']};
  const steamTex=glow;
- for(const c of CARTS){const cg=new T.Group();cg.position.copy(W(c.R,c.F,YC+.2));cg.rotation.y=c.ry;g.add(cg);c.g=cg;
+ function mkCart(c,par){const cg=new T.Group();cg.position.copy(W(c.R,c.F,YC+.2));cg.rotation.y=c.ry;par.add(cg);c.g=cg;
   add(new T.BoxGeometry(2.6,1.1,1.25),steel,0,1.05,0,cg);add(new T.BoxGeometry(2.7,.08,1.35),SM('#9aa1a7',{metalness:.7,roughness:.3}),0,1.64,0,cg);
   c.signMat=new T.MeshBasicMaterial({map:sign(...c.sign)});c.signMat2=c.sign2?new T.MeshBasicMaterial({map:sign(...c.sign2)}):null;
   for(const s of [-1,1]){const p=add(new T.PlaneGeometry(2.3,.55),c.signMat,0,1.15,s*.63,cg,false);if(s<0)p.rotation.y=Math.PI;(c.signs||(c.signs=[])).push(p)}
@@ -65,6 +65,9 @@ function build({T,scene,YC=3.8,sound}){
   const um=add(new T.ConeGeometry(1.95,.75,16,1,true),new T.MeshStandardMaterial({map:stripe(...c.umb),side:T.DoubleSide,roughness:.8}),.2,4.15,0,cg);um.castShadow=true;
   for(let k=0;k<3;k++)add(new T.CylinderGeometry(.18,.18,.22,12),SM(['#e7d3a8','#d9a066','#f4f0e6'][k],{roughness:.6}),-.7+k*.45,1.8,.15,cg);
   if(c.steam){const N=24,pos=new Float32Array(N*3),geo=new T.BufferGeometry();geo.setAttribute('position',new T.BufferAttribute(pos,3));const pts=new T.Points(geo,new T.PointsMaterial({map:steamTex,size:.9,color:'#ffffff',transparent:true,opacity:.28,depthWrite:false}));pts.frustumCulled=false;cg.add(pts);c.steamPts={pts,pos,N}}}
+ for(const c of CARTS)mkCart(c,g);
+ // 다른 동네(타임스스퀘어)에 놓는 카트: 그 동네 묶음(par)에 넣어 함께 숨고 보인다
+ function addCart(c,par){CARTS.push(c);mkCart(c,par);return c}
  function cartKind(c,E){if(c.id!=='treats')return c.kinds[0];return E&&E.seasonIndex>=2?'nuts':'icecream'}
  function updateCarts(time,E){for(const c of CARTS){if(c.signMat2){const nuts=cartKind(c,E)==='nuts';for(const p of c.signs)p.material=nuts?c.signMat2:c.signMat}
   if(c.steamPts){const s=c.steamPts;for(let i=0;i<s.N;i++){const f=((time*.35+i/s.N)%1);s.pos[i*3]=-.4+Math.sin(i*7.3+time)*.25*f;s.pos[i*3+1]=1.9+f*2.2;s.pos[i*3+2]=.1+Math.cos(i*3.1+time*.8)*.25*f}s.pts.geometry.attributes.position.needsUpdate=true;s.pts.material.opacity=.32*(E&&E.rain>.3?.4:1)}}}
@@ -73,10 +76,13 @@ function build({T,scene,YC=3.8,sound}){
   if(kind==='hotdog'){const bun=add(new T.CapsuleGeometry(.075,.32,4,10),M('#d9a066'),0,0,0,s,false);bun.rotation.z=Math.PI/2;const sau=add(new T.CapsuleGeometry(.05,.4,4,8),M('#a2412e'),0,.05,0,s,false);sau.rotation.z=Math.PI/2;const mu=add(new T.CylinderGeometry(.012,.012,.34,5),M('#f2c230'),0,.1,0,s,false);mu.rotation.z=Math.PI/2}
   else if(kind==='pretzel'){add(new T.TorusGeometry(.13,.04,8,18),M('#9a5a2b'),0,.05,0,s,false);const x=add(new T.BoxGeometry(.24,.05,.05),M('#9a5a2b'),0,.05,0,s,false);x.rotation.z=.6;for(let i=0;i<6;i++)add(new T.BoxGeometry(.02,.02,.02),M('#ffffff'),Math.cos(i)*.12,.05+Math.sin(i)*.12,.04,s,false)}
   else if(kind==='icecream'){const c=add(new T.ConeGeometry(.08,.24,10),M('#d9a066'),0,.0,0,s,false);c.rotation.x=Math.PI;add(new T.SphereGeometry(.1,12,10),M('#f6b3c8'),0,.15,0,s,false);add(new T.SphereGeometry(.03,6,6),M('#c8463c'),0,.26,0,s,false)}
+  else if(kind==='halal'){add(new T.BoxGeometry(.34,.07,.26),SM('#d6dade',{metalness:.85,roughness:.3}),0,0,0,s,false);add(new T.BoxGeometry(.3,.03,.22),M('#f2c74e'),0,.045,0,s,false);
+   for(let i=0;i<7;i++)add(new T.BoxGeometry(.06,.035,.05),M('#9b5a2e'),-.1+(i%4)*.065,.07,-.05+Math.floor(i/4)*.09,s,false);
+   for(let i=0;i<3;i++){const l=add(new T.BoxGeometry(.26,.012,.02),M('#fbfbf6'),0,.09,-.06+i*.06,s,false);l.rotation.y=.25*(i-1)}for(let i=0;i<4;i++)add(new T.SphereGeometry(.014,5,4),M('#d0302a'),-.09+i*.06,.095,.03*(i%2),s,false)}
   else{add(new T.CylinderGeometry(.09,.05,.2,10),M('#f4f0e6'),0,.02,0,s,false);for(let i=0;i<5;i++)add(new T.SphereGeometry(.035,6,6),M('#a8682f'),Math.cos(i*1.3)*.04,.13+(i%2)*.03,Math.sin(i*1.3)*.04,s,false)}
   return s}
  function blocked(R,F){for(const c of CARTS)if((R-c.R)**2+(F-c.F)**2<2.1**2)return true;if(tree.visible&&(R-TREE.R)**2+(F-TREE.F)**2<TREE.r**2)return true;return false}
  function update(time,dt,E,cam){FW.cam=cam;updateFw(dt,E);updateTree(dt,E,time);updateCarts(time,E)}
- return {group:g,carts:CARTS,NAMES,cartKind,blocked,update,snack,fireworks:FW,tree,TREE}}
+ return {group:g,carts:CARTS,NAMES,cartKind,blocked,update,updateCarts,addCart,snack,fireworks:FW,tree,TREE}}
 root.NYC_EXTRAS={build};
 })(window);

@@ -1,8 +1,8 @@
 /* 뉴욕 거리 산책(3d/nyc)의 여권 · 심부름 · 마을 보상.
-   - 뉴욕 여권: 명소 9곳에 가면 도장이 쾅 찍히고 그때의 계절 · 시각을 적는다. 9곳을 다 모으면 마을 집 앞에 자유의 여신상 미니어처(3d/src/nyc.js).
-   - 마을 친구 심부름: 맨해튼 보도를 걷는 마을 친구 8명이 부탁을 한다(머리 위 ❗). 간식은 사서 갖다 주고, 사진 · 동전 · 페리는 하면 바로 끝난다.
-     8개를 모두 끝내면 NY 모자(뉴욕에서도 마을에서도 쓴다, 여권에서 켜고 끈다).
-   - 기록: localStorage asset-nyc-passport-v1 (도장 · 심부름 · 모자 켜기), 마을이 읽는 보상 asset-village-3d-nyc {liberty, cap, capOn, stamps, errands}
+   - 뉴욕 여권: 명소 10곳(타임스스퀘어 포함)에 가면 도장이 쾅 찍히고 그때의 계절 · 시각을 적는다. 다 모으면 마을 집 앞에 자유의 여신상 미니어처(3d/src/nyc.js).
+   - 마을 친구 심부름: 맨해튼 보도를 걷는 마을 친구 9명이 부탁을 한다(머리 위 ❗). 간식은 사서 갖다 주고, 사진 · 동전 · 페리는 하면 바로 끝난다.
+     모두 끝내면 NY 모자(뉴욕에서도 마을에서도 쓴다, 여권에서 켜고 끈다).
+   - 기록: localStorage asset-nyc-passport-v1 (도장 · 심부름 · 모자 켜기), 마을이 읽는 보상 asset-village-3d-nyc {liberty, cap, capOn, stamps, errands, stampTotal, errandTotal}
    make({T,scene,pois,npcs,toast,sound,onTeleport,onFind,onCap,heldKind,takeHeld}) → {stamp, bought, photo, coin, liberty, talk, nearNpc, update, ...} */
 (function(root){
 const KEY='asset-nyc-passport-v1',VKEY='asset-village-3d-nyc',OLD='asset-nyc-walk-v1';
@@ -17,15 +17,16 @@ const ERRANDS=[
  {id:'dumbo',who:'우울라프님',ic:'🌉',todo:'덤보에서 맨해튼 브릿지 사진 찍기',ask:'덤보 워싱턴 스트리트에서 맨해튼 브릿지가 보이는 그 사진, 📷 찍어 와 줄래요?',thanks:'찰칵! 이 구도 정말 좋아요.',photo:'dumbo'},
  {id:'busker',who:'해의호흡님',ic:'🎷',todo:'덤보 색소폰 버스커에게 동전 넣기',ask:'덤보 색소폰 아저씨 연주를 들으면 시가 떠오를 것 같아요. 제 대신 동전 하나 넣어 줄래요?',thanks:'재즈 한 소절에 시 한 줄. 고마워요.',coin:true},
  {id:'liberty',who:'윈터드림',ic:'⛴',todo:'페리 타고 자유의 여신상 보기',ask:'겨울 동화에 자유의 여신상을 넣고 싶어요. 배터리 파크 선착장에서 페리 타고 가까이 보고 와 줄래요?',thanks:'횃불이 반짝이는 장면, 동화에 꼭 넣을게요!',liberty:true},
+ {id:'halal',who:'원조익평',ic:'🍗',todo:'타임스스퀘어 할랄 카트 치킨 오버 라이스 사다 주기',ask:'뉴욕 길거리 음식의 원조는 할랄 카트래요! 타임스스퀘어 7번가 노란 카트에서 치킨 오버 라이스 하나 사다 줄래요? 🚇 지하철 타고 가요.',thanks:'이 맛이 바로 원조! 하얀 소스가 신의 한 수예요.',buy:['halal']},
  {id:'ts',who:'포롱이',ic:'🎭',todo:'타임스스퀘어에서 사진 찍기',ask:'포롱! 타임스스퀘어 전광판 보고 싶어! 🚇 지하철 타고 가서 📷 사진 찍어 와 줘!',thanks:'포롱포롱! 반짝반짝 전광판이다!',photo:'ts'}];
 const CHAT=['뉴욕 정말 넓죠? 천천히 구경해요!','저도 마을에서 놀러 왔어요. 다리 건너 덤보 가 봤어요?','여기 핫도그 진짜 맛있어요.','밤이 되면 브루클린 브릿지에 불이 켜져요!','지하철 입구 초록 등 보이죠? 타임스스퀘어까지 금방이에요.','여름밤엔 강 위로 불꽃놀이가 터진대요.'];
-const SNACK={hotdog:'🌭 핫도그',pretzel:'🥨 프레첼',icecream:'🍦 아이스크림',nuts:'🥜 꿀땅콩'};
+const SNACK={hotdog:'🌭 핫도그',pretzel:'🥨 프레첼',icecream:'🍦 아이스크림',nuts:'🥜 꿀땅콩',halal:'🍗 치킨 오버 라이스'};
 function make({T,scene,pois,npcs,toast,sound,onTeleport,onFind,onCap,heldKind,takeHeld}){
  const $=id=>document.getElementById(id);
  let S={stamps:{},errands:{},capOn:true,cap:false,liberty:false};
  try{Object.assign(S,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
  try{for(const id of JSON.parse(localStorage.getItem(OLD)||'[]'))if(!S.stamps[id])S.stamps[id]={old:true}}catch(e){}
- const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}try{localStorage.setItem(VKEY,JSON.stringify({liberty:S.liberty,cap:S.cap,capOn:S.capOn,stamps:nStamp(),errands:nDone(),t:Date.now()}))}catch(e){}};
+ const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}try{localStorage.setItem(VKEY,JSON.stringify({liberty:S.liberty,cap:S.cap,capOn:S.capOn,stamps:nStamp(),errands:nDone(),stampTotal:pois.length,errandTotal:ERRANDS.length,t:Date.now()}))}catch(e){}};
  const nStamp=()=>pois.filter(p=>S.stamps[p.id]).length,nDone=()=>ERRANDS.filter(e=>S.errands[e.id]==='done').length;
  const chime=f=>{try{sound&&sound.chime&&sound.chime(f)}catch(e){}};
  function thump(){if(!sound||!sound.ctx||sound.muted)return;try{const a=sound.ctx,t=a.currentTime,o=a.createOscillator(),gn=a.createGain();o.type='sine';o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(48,t+.18);gn.gain.setValueAtTime(.5,t);gn.gain.exponentialRampToValueAtTime(.001,t+.25);o.connect(gn);gn.connect(sound.master);o.start(t);o.stop(t+.26)}catch(e){}}
@@ -42,7 +43,7 @@ function make({T,scene,pois,npcs,toast,sound,onTeleport,onFind,onCap,heldKind,ta
    if(st!=='done'){li.title=e.who+' 찾아가기';li.onclick=()=>onFind(e.who)}elist.appendChild(li)}
   $('er-count').textContent=`${nDone()}/${ERRANDS.length}`;drawReward()}
  function drawReward(){const r=$('pp-reward');if(!r)return;const a=nStamp()>=pois.length,b=nDone()>=ERRANDS.length;
-  r.innerHTML=`<span class="${a?'got':''}">🗽 ${a?'마을 집 앞에 여신상 미니어처가 생겼어요':'도장 9개 → 마을 집에 자유의 여신상'}</span><span class="${b?'got':''}">🧢 ${b?`NY 모자 <button type="button" id="cap-tg">${S.capOn?'쓰는 중':'벗음'}</button>`:'심부름 8개 → NY 모자'}</span>`;
+  r.innerHTML=`<span class="${a?'got':''}">🗽 ${a?'마을 집 앞에 여신상 미니어처가 생겼어요':`도장 ${pois.length}개 → 마을 집에 자유의 여신상`}</span><span class="${b?'got':''}">🧢 ${b?`NY 모자 <button type="button" id="cap-tg">${S.capOn?'쓰는 중':'벗음'}</button>`:`심부름 ${ERRANDS.length}개 → NY 모자`}</span>`;
   const tg=$('cap-tg');if(tg)tg.onclick=()=>{S.capOn=!S.capOn;save();drawReward();onCap(S.cap&&S.capOn)}}
  for(const b of document.querySelectorAll('.pp-tabs button'))b.onclick=()=>{for(const o of document.querySelectorAll('.pp-tabs button'))o.classList.toggle('on',o===b);const er=b.dataset.tab==='errands';grid.hidden=er;elist.hidden=!er};
 

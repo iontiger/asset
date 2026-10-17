@@ -2,13 +2,21 @@
    - ../ride/city-ts.js 의 움직이는 전광판(BROADWAY · W 42 ST 모서리)을 걷는 배치(walk-city.js, C.ts)로 다시 그린다. 차는 없다.
    - 다운타운 · 덤보와 멀리 떨어진 자리(TX, TF)에 따로 두고, 여기 있는 동안은 다른 동네를 숨긴다(walk.js 의 inTS).
    - 브로드웨이 한가운데 빨간 계단(TKTS)은 걸어 올라갈 수 있다 · 계단 위 관광객 · 둘레를 채우는 미드타운 빌딩 숲(안개 속으로 이어지는 길)
-   build({T,scene,YC}) → {C,S,group,TX,TF,inArea(R,F),walk(R,F),blocked(R,F),update(time,dt,E,me)} */
+   - 7번가 즐길 거리(nyc-ts-fun.js)의 자리 SP: 라이브 캠 빌딩 · 원 타임스스퀘어 탑 · W 44 ST 극장은 도시 빌딩을 비운 자리(NOB)에 직접 세운다
+   build({T,scene,YC}) → {C,S,group,TX,TF,SP,inArea(R,F),walk(R,F),blocked(R,F),update(time,dt,E,me),cheer} */
 (function(root){
 function build({T,scene,YC=3.8}){
  const TX=-3000,TF=3000;
+ // 7번가(R=TX-130) 둘레 즐길 거리 자리. 빌딩 앞면은 길 가운데서 10.4 떨어진다(city-scene WALK+.9)
+ const SP={AV7:TX-130,
+  LIVE:{r0:TX-119.6,r1:TX-97,f0:TF+20,f1:TF+54,h:66,mark:[TX-131,TF+37]},          // 7번가 동쪽 · 서쪽을 보는 큰 전광판 + 길 가운데 동그라미
+  ONE:{r0:TX-141,r1:TX-119,f0:TF-34,f1:TF-10.6,h:84,act:[TX-130,TF+15]},          // W 42 ST 남쪽, 7번가 끝에서 보이는 원 타임스스퀘어 탑 · act: 7번가의 볼 드롭 안내대
+  THEATER:{r0:TX-166,r1:TX-141.2,f0:TF+82.4,f1:TF+104,h:27,door:[TX-153.6,TF+79.3]}, // W 44 ST 북쪽 브로드웨이 극장
+  TKTS:[TX,TF-66.4],HALAL:[TX-122.6,TF+56.5],
+  CHARS:[{id:'bear',R:TX-137.2,F:TF+27,face:-Math.PI/2},{id:'bunny',R:TX-122.8,F:TF+45,face:Math.PI/2},{id:'dino',R:TX+7.2,F:TF-30,face:Math.PI/2}]};
  const C=root.NYC_WALK_CITY.make({V:[[TX,TF-110],[TX,TF],[TX-130,TF],[TX-130,TF+120]],names:['BROADWAY','W 42 ST','7 AV'],
   lights:[{k:0,d:82},{k:2,d:60}],crossStreets:[{k:0,d:30,from:-60,to:60,name:'W 41 ST'},{k:2,d:72,from:-55,to:60,name:'W 44 ST'}],
-  BB:{r0:TX-215,r1:TX+80,f0:TF-128,f1:TF+138},EXCL:[],NOB:[[TX-8,TX+8,TF-128,TF-110]],vents:[[0,96],[1,70]],stacks:[[1,40],[2,90]],npc:false,ts:true});
+  BB:{r0:TX-215,r1:TX+80,f0:TF-128,f1:TF+138},EXCL:[],NOB:[[TX-8,TX+8,TF-128,TF-110],[TX-121,TX-94,TF+17,TF+58],[TX-146,TX-114,TF-42,TF-10.5],[TX-170,TX-140.9,TF+81.6,TF+108]],vents:[[0,96],[1,70]],stacks:[[1,40],[2,90]],npc:false,ts:true});
  C.kitBase='../ride/nyc/';
  const S=root.CITY_SCENE.build({T,scene,C});
  const g=new T.Group();g.name='nyc-ts';scene.add(g);
@@ -30,7 +38,9 @@ function build({T,scene,YC=3.8}){
  // 계단 밑 매표소(TKTS)
  add(new T.BoxGeometry(ST.R1-ST.R0,topY-YC,ST.F0-ST.booth),SM('#2b2f33',{metalness:.4,roughness:.4}),TX,(topY+YC)/2,-(ST.F0+ST.booth)/2,steps);
  {const t=tex(512,160,(x,w,h)=>{x.fillStyle='#d42a2a';x.fillRect(0,0,w,h);x.fillStyle='#fff';x.font='900 96px Outfit,Arial,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('tkts',w/2,h*.5)});
-  const m=add(new T.PlaneGeometry(7.6,2.4),new T.MeshBasicMaterial({map:t,toneMapped:false}),TX,YC+2.6,-(ST.booth-.02),steps,false);m.rotation.y=Math.PI}
+  const m=add(new T.PlaneGeometry(7.6,2.4),new T.MeshBasicMaterial({map:t,toneMapped:false}),TX,YC+2.6,-(ST.booth-.02),steps,false)}
+ {const t=tex(512,128,(x,w,h)=>{x.fillStyle='#111';x.fillRect(0,0,w,h);x.fillStyle='#ffd166';x.font='800 40px "Noto Sans KR",Outfit,Arial,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('🎟 오늘 공연 · 바람을 따라',w/2,h*.36);x.fillStyle='#fff';x.font='700 30px "Noto Sans KR",Outfit,Arial,sans-serif';x.fillText('W 44 ST · 반값 표 · 창구에서 F',w/2,h*.76)});
+  const m=add(new T.PlaneGeometry(6.4,1.6),new T.MeshBasicMaterial({map:t,toneMapped:false}),TX,YC+.95,-(ST.booth-.02),steps,false)}
 
  /* ═══ 2. 둘레 미드타운 빌딩 숲 (동네 바깥을 채운다) ═══ */
  const winTex=tex(128,256,(x,w,h)=>{x.fillStyle='#4c535b';x.fillRect(0,0,w,h);for(let j=0;j<32;j++)for(let i=0;i<8;i++){const on=((i*7+j*13)%9)>4;x.fillStyle=on?'#ffe2a8':'#26303a';x.fillRect(4+i*15.5,4+j*7.9,10,5)}});
@@ -52,8 +62,9 @@ function build({T,scene,YC=3.8}){
  const inArea=(R,F)=>R>TX-270&&R<TX+140&&F>TF-190&&F<TF+200;
  function walk(R,F){if(R>=ST.R0&&R<=ST.R1&&F>=ST.F0&&F<=ST.F1){const k=Math.min(ST.N-1,Math.max(0,Math.floor((ST.F1-F)/dep)));return YC+.02+(k+1)*ST.rise}return null}
  function blocked(R,F){return R>ST.R0-.1&&R<ST.R1+.1&&F>ST.booth-.1&&F<ST.F0}
- function update(time,dt,E,me){const d=E?E.dark:0;red.emissiveIntensity=.25+d*1.4;farMat.emissiveIntensity=d*.9;
-  if(people){people.begin();for(const p of folk)people.person(p.R,p.y,-p.F,p.ry,time*.6+p.R,0,p.q,p.wave?{wave:true,t:time+p.F}:p.armUp?{armUp:true}:null);people.end()}}
- return {C,S,group:g,TX,TF,ST,inArea,walk,blocked,update}}
+ // api.cheer > 0 이면(새해 볼 드롭) 모두 손을 들고 흔든다
+ function update(time,dt,E,me){const d=E?E.dark:0;red.emissiveIntensity=.25+d*1.4;farMat.emissiveIntensity=d*.9;if(api.cheer>0)api.cheer-=dt;const ch=api.cheer>0;
+  if(people){people.begin();for(const p of folk)people.person(p.R,p.y,-p.F,p.ry,time*.6+p.R,0,p.q,ch?(p.wave||p.F%2<1?{wave:true,t:time*1.6+p.F}:{armUp:true}):p.wave?{wave:true,t:time+p.F}:p.armUp?{armUp:true}:null);people.end()}}
+ const api={C,S,group:g,TX,TF,ST,SP,inArea,walk,blocked,update,cheer:0};return api}
 root.NYC_TS={build};
 })(window);

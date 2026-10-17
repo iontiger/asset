@@ -51,7 +51,7 @@ const X=NYC_EXTRAS.build({T,scene,YC,sound});
 const TS=NYC_TS.build({T,scene,YC});AREAS.push({C:TS.C,S:TS.S,ts:true,ride:{pos:0,speed:0,mode:'playing',player:0,branchChoice:'safe',city:TS.C.newState()}});
 const FUN=NYC_FUN.build({T,scene,YC,sound,L,TS}),SEA=NYC_SEASON.build({T,scene,YC,C1,C2,S1,S2});
 let inTS=false;
-function setTS(on){inTS=on;for(const o of [S1.group,S2.group,L.group,X.group,FUN.group,SEA.group])o.visible=!on;TS.group.visible=TS.S.group.visible=on;skySnap=true}
+function setTS(on){inTS=on;for(const o of [S1.group,S2.group,L.group,X.group,FUN.group,SEA.group])o.visible=!on;TS.group.visible=TS.S.group.visible=on;if(!on)TSF.leave();skySnap=true}
 // 덤보 워싱턴 스트리트: 옛 화물 철길이 박힌 화강암 돌길
 const cobble=(()=>{const cv=document.createElement('canvas');cv.width=cv.height=256;const x=cv.getContext('2d');x.fillStyle='#4a4644';x.fillRect(0,0,256,256);
  for(let j=0;j<8;j++)for(let i=0;i<6;i++){const o=(j%2)*21,c=88+((i*7+j*13)%5)*9;x.fillStyle=`rgb(${c},${c-4},${c-8})`;const px=i*43+o-4,py=j*32+2;x.beginPath();x.roundRect?x.roundRect(px+2,py+2,38,27,6):x.rect(px+2,py+2,38,27);x.fill();x.fillStyle='rgba(255,255,255,.06)';x.fillRect(px+6,py+5,22,4)}
@@ -66,7 +66,7 @@ const P={R:0,F:-104,y:YC+.1,yaw:Math.atan2(160,-616),v:0,phase:0,walk:0};   // y
 let riding=false;
 const SPD={walk:6.8,run:13.6,bike:18,bikeRun:26};
 function groundY(R,F){const C=TS.inArea(R,F)?TS.C:R<500?C1:C2,st=C.onStreet(R,F);if(st)return YC+(st.road?.02:.24);if(L.inArea(R,F))return YC+.12;return null}
-const isBlocked=(R,F)=>L.blocked(R,F)||X.blocked(R,F)||FUN.blocked(R,F)||SEA.blocked(R,F)||TS.blocked(R,F);
+const isBlocked=(R,F)=>L.blocked(R,F)||X.blocked(R,F)||FUN.blocked(R,F)||SEA.blocked(R,F)||TS.blocked(R,F)||TSF.blocked(R,F);
 // 땅 대신 서는 곳(페리 선착장 · 타임스스퀘어 빨간 계단): 그 자리에서는 이 높이만 쓴다
 const floorY=(R,F)=>{let y=FUN.walk(R,F);if(y===null)y=TS.walk(R,F);return y===null?groundY(R,F):y};
 function standAt(R,F,curY){
@@ -79,9 +79,13 @@ function standAt(R,F,curY){
 function standNear(R,F,yh){if(isBlocked(R,F))return null;const by=L.bridgeWalk(R,F),gy=floorY(R,F);if(by===null)return gy;if(gy===null)return by;return Math.abs(by-yh)<Math.abs(gy-yh)?by:gy}
 function nearestStand(R,F,yh){let y=standNear(R,F,yh);if(y!==null)return {R,F,y};for(let r=1;r<=14;r+=1)for(let i=0;i<20;i++){const a=i/20*Math.PI*2,nR=R+Math.cos(a)*r,nF=F+Math.sin(a)*r;y=standNear(nR,nF,yh);if(y!==null)return {R:nR,F:nF,y}}return null}
 
+// 타임스스퀘어 7번가 즐길 거리(라이브 캠 전광판 · 새해 볼 드롭 · 브로드웨이 극장 · 인형 탈 친구 · 할랄 카트)
+const TSF=NYC_TS_FUN.build({T,TS,X,YC,sound,toast:(h,s)=>toast(h,s),hero:{wave:()=>{if(!riding)HERO.wave()}},flash:()=>{const fl=$('flash');fl.classList.remove('go');void fl.offsetWidth;fl.classList.add('go')},heroFace:heroOwner==='wife'?'👧':'👦'});
+// 화면을 가리는 일(지하철 행선지 · 뮤지컬 무대) 중에는 걷기 · 누르기를 멈춘다
+const busy=()=>metroOn||TSF.stage.on;
 // ── 카메라가 빌딩 속으로 들어가지 않게: 빌딩 바닥 칸(20 u 격자)에 빌딩 · 명소 건물을 넣어 두고 사람 → 카메라 선을 따라 확인
 const GRID=new Map(),gkey=(i,j)=>i*100003+j;
-for(const b of [...S1.blds,...S2.blds,...TS.S.blds].map(b=>[b.r0,b.r1,b.f0,b.f1,YC+b.h*1.25+2]).concat(L.SOLID))for(let i=Math.floor(b[0]/20);i<=Math.floor(b[1]/20);i++)for(let j=Math.floor(b[2]/20);j<=Math.floor(b[3]/20);j++){const k=gkey(i,j);if(!GRID.has(k))GRID.set(k,[]);GRID.get(k).push(b)}
+for(const b of [...S1.blds,...S2.blds,...TS.S.blds].map(b=>[b.r0,b.r1,b.f0,b.f1,YC+b.h*1.25+2]).concat(L.SOLID,TSF.SOLID))for(let i=Math.floor(b[0]/20);i<=Math.floor(b[1]/20);i++)for(let j=Math.floor(b[2]/20);j<=Math.floor(b[3]/20);j++){const k=gkey(i,j);if(!GRID.has(k))GRID.set(k,[]);GRID.get(k).push(b)}
 function solid(R,F,y){const l=GRID.get(gkey(Math.floor(R/20),Math.floor(F/20)));if(!l)return false;for(const b of l)if(R>b[0]-.3&&R<b[1]+.3&&F>b[2]-.3&&F<b[3]+.3&&y<b[4])return true;return false}
 
 // ── 길 찾기(마을처럼 땅을 누르면 그곳까지 걸어간다): 1.6 u 칸 A* — 다리 위 · 아래는 높이 층으로 나눈다
@@ -128,7 +132,7 @@ canvas.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;ptrs.
  if(ptrs.size===2){const p=[...ptrs.values()],d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);cam.dist=Math.max(3.5,Math.min(34,cam.dist*(pinch/Math.max(20,d))));pinch=d;return}
  if(!down)return;if(Math.hypot(e.clientX-down.x,e.clientY-down.y)>6)down.moved=true;
  if(down.moved){cam.yaw+=(e.clientX-down.lx)*.006;cam.pitch=Math.max(-.12,Math.min(1.25,cam.pitch-(e.clientY-down.ly)*.004));cam.dragT=.6}down.lx=e.clientX;down.ly=e.clientY});
-canvas.addEventListener('pointerup',e=>{ptrs.delete(e.pointerId);if(down&&!down.moved&&started&&!photoOn&&!metroOn){const p=pickAt(e.clientX,e.clientY);if(p){if(onFerry){const l=FUN.ferry.toLocal(p.x,-p.z,p.y);if(FUN.ferry.free(l.x,l.z))deckGoal=l}else if(nearCart&&Math.hypot(p.x-nearCart.R,-p.z-nearCart.F)<2.6){buySnack();}else travelTo(p.x,-p.z,p.y)}}if(!ptrs.size)down=null});
+canvas.addEventListener('pointerup',e=>{ptrs.delete(e.pointerId);if(down&&!down.moved&&started&&!photoOn&&!busy()){const p=pickAt(e.clientX,e.clientY);if(p){if(onFerry){const l=FUN.ferry.toLocal(p.x,-p.z,p.y);if(FUN.ferry.free(l.x,l.z))deckGoal=l}else if(nearCart&&Math.hypot(p.x-nearCart.R,-p.z-nearCart.F)<2.6){buySnack();}else travelTo(p.x,-p.z,p.y)}}if(!ptrs.size)down=null});
 canvas.addEventListener('pointercancel',e=>{ptrs.delete(e.pointerId);down=null});
 canvas.addEventListener('wheel',e=>{cam.dist=Math.max(3.5,Math.min(34,cam.dist*(1+Math.sign(e.deltaY)*.1)));e.preventDefault()},{passive:false});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
@@ -138,6 +142,7 @@ const keys=new Set();
 addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase(),c=e.code;
  if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();
  if(!started)return;
+ if(TSF.stage.on){if(k==='escape')TSF.stage.close(false);return}
  if(k==='escape'){if(metroOn){if(!$('metro').classList.contains('ride'))closeMetro()}else if(quest.talking)quest.closeTalk();else if(photoOn)togglePhoto();else clearRoute();return}
  if(metroOn)return;
  if(c==='KeyP'||k==='p'){if(!e.repeat)togglePhoto();return}
@@ -199,9 +204,10 @@ function arriveStation(s){onFerry=false;P.R=s.exit.R;P.F=s.exit.F;const y=standA
 
 // ── 아래 가운데 단추: 지금 할 수 있는 일(마을 친구 · 간식 · 버스커 · 페리 · 지하철). F 와 같다
 let act=null;
-function findAct(){if(!started||photoOn||metroOn||onFerry)return null;
+function findAct(){if(!started||photoOn||busy()||onFerry)return null;
  const fr=nearFriend(3.8);if(fr)return {id:'npc:'+fr.name,label:`💬 ${fr.name}에게 말 걸기`,run:()=>quest.talk(fr)};
  if(nearCart){const k=X.cartKind(nearCart,E),[ic,nm]=X.NAMES[k];return {id:'cart:'+k,label:`${ic} ${nm} 사기`,run:buySnack}}
+ if(inTS)return TSF.findAct(P);
  if(FUN.busker.near<4.6)return {id:'busk',label:'🪙 버스커에게 동전 넣기',run:tossCoin};
  const b=FUN.ferry.BOARD;if(Math.hypot(P.R-b.R,P.F-b.F)<5)return FUN.ferry.canBoard()?{id:'ferry',label:'⛴ 스태튼 아일랜드 페리 타기',run:boardFerry}:{id:'ferry-wait',label:'⛴ 페리가 돌아오고 있어요',run:null};
  for(const s of FUN.stations)if(Math.hypot(P.R-s.act.R,P.F-s.act.F)<2.8)return {id:'st:'+s.id,label:`🚇 ${s.name} · 지하철 타기`,run:()=>openMetro(s)};
@@ -236,20 +242,23 @@ let chirpT=0;
 
 // ── 뉴욕 여권(도장) · 마을 친구 심부름 · 마을 보상 (nyc-quest.js)
 let toastT=0;function toast(html,sec=4){const t=$('toast');t.innerHTML=html;t.classList.add('show');toastT=sec}
-const quest=NYC_QUEST.make({T,scene,pois:L.pois,npcs:NPCS,toast,sound,onTeleport:id=>teleport(id),
+const TSPOI={id:'tsq',icon:'🌃',name:'타임스스퀘어',sub:'빨간 계단 · 전광판 · 7번가 라이브 캠',R:TS.TX,F:TS.TF-40,r:28,tp:[TS.TX+3,TS.TF-84],look:[TS.TX,TS.TF-40],ts:true};
+const POIS=L.pois.concat([TSPOI]);
+const quest=NYC_QUEST.make({T,scene,pois:POIS,npcs:NPCS,toast,sound,onTeleport:id=>teleport(id),
  onFind:name=>{const n=NPCS.find(q=>q.name===name);if(!n)return;if(inTS){toast('맨해튼(월스트리트 쪽)에 있어요 · 🚇 지하철로 돌아가요',3);return}if(onFerry){toast('배에서 내린 뒤에 찾아가요',2.4);return}const p=n.o.position;if(travelTo(p.x,-p.z,YC+.24))toast(`<b>${quest.FRIENDS[name][0]} ${name}</b>찾아가는 중 · 지도에 ❗ 표시`,2.6)},
  onCap:()=>dress(),heldKind:()=>held?held.userData.kind:null,takeHeld:()=>dropSnack()});
 $('spots-toggle').onclick=()=>{const c=$('spots').classList.toggle('closed');$('spots-toggle').setAttribute('aria-expanded',String(!c))};
 if(touch||innerWidth<700)$('spots').classList.add('closed');
-function teleport(id){const p=L.pois.find(q=>q.id===id);if(!p)return;clearRoute();onFerry=false;if(metroOn)return;
- const [R,F]=p.tp,y=standAt(R,F,null);P.R=R;P.F=F;P.y=P.ty=y===null?YC:y;P.v=0;const dx=p.look[0]-R,dz=-(p.look[1]-F);cam.yaw=P.yaw=Math.atan2(-dx,-dz);cam.pitch=.16;cam.dist=Math.max(cam.dist,10);skySnap=true;snapCam=true;here=null;HERO.dog.init=false;setTS(false)}
+function teleport(id){const p=POIS.find(q=>q.id===id);if(!p)return;if(busy())return;clearRoute();onFerry=false;
+ const [R,F]=p.tp,y=standAt(R,F,null);P.R=R;P.F=F;P.y=P.ty=y===null?YC:y;P.v=0;const dx=p.look[0]-R,dz=-(p.look[1]-F);cam.yaw=P.yaw=Math.atan2(-dx,-dz);cam.pitch=.16;cam.dist=Math.max(cam.dist,10);skySnap=true;snapCam=true;here=null;HERO.dog.init=false;setTS(!!p.ts)}
 let here=null;
-function checkPois(){let near=null;if(!inTS&&!onFerry)for(const p of L.pois)if(Math.hypot(P.R-p.R,P.F-p.F)<p.r){near=p;break}
+function checkPois(){let near=null;if(!onFerry)for(const p of POIS)if(!!p.ts===inTS&&Math.hypot(P.R-p.R,P.F-p.F)<p.r){near=p;break}
  if(near&&near!==here){const st=quest.stamp(near,E);toast(`<b>${near.icon} ${near.name}</b>${st?'🛂 여권에 도장 쾅! · ':''}${near.sub}`,4.5)}
  here=near;for(const li of $('spot-list').children)li.classList.toggle('here',!!near&&li.dataset.id===near.id)}
 function streetName(C,R,F){let best=null,bd=1e9;for(const s of C.segs){const t=Math.max(0,Math.min(s.len,(R-s.a[0])*s.dir[0]+(F-s.a[1])*s.dir[1])),x=s.a[0]+s.dir[0]*t,z=s.a[1]+s.dir[1]*t,d=Math.hypot(R-x,F-z);if(d<bd){bd=d;best=s.name}}
  for(const cs of C.crossStreets){const a=C.segPoint(cs.k,cs.d,cs.from),b=C.segPoint(cs.k,cs.d,cs.to),dx=b[0]-a[0],dz=b[1]-a[1],l=Math.hypot(dx,dz),t=Math.max(0,Math.min(l,((R-a[0])*dx+(F-a[1])*dz)/l)),d=Math.hypot(R-a[0]-dx/l*t,F-a[1]-dz/l*t);if(d<bd-2){bd=d;best=cs.name}}return best}
 function areaName(){const R=P.R,F=P.F;if(onFerry)return FUN.ferry.state==='sail'?'⛴ 스태튼 아일랜드 페리 · 뉴욕항':'⛴ 페리 · 곧 출발해요';
+ if(inTS){const a=TSF.areaName(R,F);if(a)return a}
  if(inTS)return TS.walk(R,F)!==null?'🎭 타임스스퀘어 · 빨간 계단':'🎭 타임스스퀘어 · '+streetName(TS.C,R,F);
  if(R>=FUN.ferry.PIER.R0&&R<=FUN.ferry.PIER.R1&&F<-119)return '⛴ 화이트홀 페리 선착장';
  if(L.bridgeWalk(R,F)!==null&&R>250&&R<800&&P.y>YC+1)return R<330?'🌉 브루클린 브릿지 · 맨해튼 쪽':R>700?'🌉 브루클린 브릿지 · 브루클린 쪽':'🌉 브루클린 브릿지 · 이스트강 위';
@@ -280,7 +289,7 @@ function drawMap(){const W=mm.width,H=mm.height,k=W/MMS,cx=W/2,cy=H/2,toX=R=>cx+
  mx.textAlign='center';mx.textBaseline='middle';
  if(inTS){mx.fillStyle='#8f918c';mx.fillRect(0,0,W,H);mx.fillStyle='#b9b7ae';const B=TS.C.BB;rect(B.r0,B.r1,B.f0,B.f1);
   mx.fillStyle='#ffffff';for(const s of TS.C.streets){if(s.axis==='F')rect(s.c-5,s.c+5,s.lo-5,s.hi+5);else rect(s.lo-5,s.hi+5,s.c-5,s.c+5)}
-  mx.fillStyle='#d42a2a';const St=TS.ST;rect(St.R0,St.R1,St.booth,St.F1);icon('🎭',TS.TX-20,TS.TF+18,22)}
+  mx.fillStyle='#d42a2a';const St=TS.ST;rect(St.R0,St.R1,St.booth,St.F1);icon(TSPOI.icon,TS.TX-20,TS.TF+18,22);for(const [t,R,F] of TSF.icons)icon(t,R,F,16);for(const c of X.carts)if(c.ts)icon(X.NAMES[X.cartKind(c,E)][0],c.R,c.F,15)}
  else{mx.fillStyle='#6f98ad';mx.fillRect(0,0,W,H);mx.fillStyle='#d9d5c9';
  rect(-430,330,-124,960);rect(-650,1450,950,2700);rect(690,1750,-420,612);rect(-1400,-880,-500,1100);
  mx.fillStyle='#9cc27e';rect(-200,330,-112,-22);rect(698,745,352,586);rect(-100,-50,146,196);
@@ -315,7 +324,7 @@ function step(dt){time+=dt;
  if(frame%15===0)dress();
  // 걷기 입력 — 마을처럼 W · S 앞뒤, A · D 는 방향을 돌리며(혼자 누르면 앞으로) 걷는다
  let turn=0,fw=0;
- if(started&&!photoOn&&!metroOn){turn=(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0);fw=(keys.has('w')||keys.has('arrowup')?1:0)-(keys.has('s')||keys.has('arrowdown')?1:0)}
+ if(started&&!photoOn&&!busy()){turn=(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0);fw=(keys.has('w')||keys.has('arrowup')?1:0)-(keys.has('s')||keys.has('arrowdown')?1:0)}
  if(turn&&!fw)fw=1;
  if(turn)cam.yaw-=turn*dt*2.35;
  const fast=keys.has('shift'),top=riding?(fast?SPD.bikeRun:SPD.bike):(fast?SPD.run:SPD.walk);
@@ -343,7 +352,7 @@ function step(dt){time+=dt;
  HERO.updateDog(dt,time,P.R,-P.F,ang,riding,onFerry?()=>P.y:(x,z,y)=>standAt(x,-z,y));
  if(held&&(heldT-=dt)<=0)dropSnack();
  // 간식 카트 가까이
- {let nc=null;if(!inTS&&!onFerry)for(const c of X.carts)if(Math.hypot(c.R-P.R,c.F-P.F)<4.2){nc=c;break}nearCart=nc;
+ {let nc=null;if(!onFerry)for(const c of X.carts)if(!!c.ts===inTS&&Math.hypot(c.R-P.R,c.F-P.F)<4.2){nc=c;break}nearCart=nc;
   if(frame%4===0){const a2=findAct(),id=a2?a2.id:'';if(id!==(act?act.id:'')){const el=$('act');if(a2){el.innerHTML=`<kbd>F</kbd> ${a2.label}`;el.hidden=false;el.disabled=!a2.run}else el.hidden=true}act=a2}
   if(quest.talking){const n=NPCS.find(q=>q.name===quest.talking);if(!n||Math.hypot(n.o.position.x-P.R,n.o.position.z+P.F)>7)quest.closeTalk()}}
  // 카메라
@@ -352,7 +361,9 @@ function step(dt){time+=dt;
  goal.y=Math.max(goal.y,P.y+.6);
  {const dx=goal.x-tgt.x,dy=goal.y-tgt.y,dz=goal.z-tgt.z,D=Math.hypot(dx,dy,dz);let hit=D;for(let t=.8;t<D;t+=.45){if(solid(tgt.x+dx*t/D,-(tgt.z+dz*t/D),tgt.y+dy*t/D)){hit=t;break}}
   const want=Math.max(1.4,hit-.7);cam.cd=cam.cd===undefined||snapCam?want:want<cam.cd?want:cam.cd+(want-cam.cd)*Math.min(1,dt*2.5);goal.set(tgt.x+dx*cam.cd/D,tgt.y+dy*cam.cd/D,tgt.z+dz*cam.cd/D)}
- const k=snapCam?1:1-Math.exp(-dt*8);snapCam=false;cam.pos.lerp(goal,k);cam.look.lerp(tgt,k);camera.position.copy(cam.pos);camera.lookAt(cam.look);
+ // 새해 볼 드롭 중엔 앞쪽 탑 꼭대기의 공 쪽으로 고개를 든다
+ let look=tgt;if(inTS){const f=TSF.focusFor(P);if(f&&(f.x-tgt.x)*(tgt.x-cam.pos.x)+(f.z-tgt.z)*(tgt.z-cam.pos.z)>0&&Math.hypot(f.x-tgt.x,f.z-tgt.z)<170)look=tgt.clone().lerp(f,.72)}
+ const k=snapCam?1:1-Math.exp(-dt*8);snapCam=false;cam.pos.lerp(goal,k);cam.look.lerp(look,k);camera.position.copy(cam.pos);camera.lookAt(cam.look);
  // 해 · 달 · 하늘 · 안개
  {let el=E.elev,a=E.az;if(el<0){el=-el;a+=Math.PI}el=Math.max(el,.2);const d=new T.Vector3(Math.cos(a)*Math.cos(el),Math.sin(el),Math.sin(a)*Math.cos(el));sun.position.copy(tgt).addScaledVector(d,200);sun.target.position.copy(tgt);sun.target.updateMatrixWorld();
   if(E.elev<0)moon.position.copy(camera.position).addScaledVector(d,2600)}
@@ -362,7 +373,7 @@ function step(dt){time+=dt;
  // 동네 장면(신호 · 사람 · 비둘기 · 마을 친구 · 날씨 재질) · 명소 · 즐길 거리
  const me=new T.Vector3(P.R,P.y,-P.F);
  for(const a of AREAS){if(!!a.ts!==inTS)continue;a.C.updateLights(a.ride.city,dt);a.ride.pos=a.C.nearestU(P.R,P.F);a.S.setWinK(post&&post.on?1:.6);a.S.update(time,dt,a.ride,E,me)}
- if(inTS)TS.update(time,dt,E,me);else{L.update(time,dt,E,camera,me);X.update(time,dt,E,camera.position);SEA.update(time,dt,E,me)}
+ if(inTS){TS.update(time,dt,E,me);TSF.update(time,dt,E,me,P,busy()||!started);X.updateCarts(time,E)}else{L.update(time,dt,E,camera,me);X.update(time,dt,E,camera.position);SEA.update(time,dt,E,me)}
  FUN.update(time,dt,E,me,started);quest.update(time,me,inTS||onFerry);
  ring.scale.setScalar(1+Math.sin(time*4)*.12);
  // 가로등 불빛(가까운 4개)
@@ -379,17 +390,17 @@ function step(dt){time+=dt;
  if(E.p<.02)noted.clear();
  // 보행 신호음
  if(started&&(S1.walk||S2.walk)&&(chirpT-=dt)<=0){chirpT=1;sound.chirp&&sound.chirp()}
- sound.musicSync&&sound.musicSync({mode:started?'playing':'paused'});
+ sound.musicSync&&sound.musicSync({mode:started&&!TSF.stage.on?'playing':'paused'});   // 뮤지컬 동안엔 배경 음악을 쉰다
  if(toastT>0){toastT-=dt;if(toastT<=0)$('toast').classList.remove('show')}
  if(started)checkPois();
  if(frame%6===0){$('area').textContent=areaName();$('clock').textContent=`${E.dark>.5?'🌙':E.dusk>.4?'🌅':E.icon} ${CITY_ENV.clock(E.hour)} · ${E.seasonName}${E.rain>.3?' · 소나기':E.snow>.3?' · 함박눈':''}${X.fireworks.on?' · 불꽃놀이':''}`}
  if(frame%3===0)drawMap();
  frame++}
-function render(dt){const S=inTS?TS.S:P.R>520?S2:S1;if(S.wet)S.wet.render(renderer,scene,camera,!!(post&&post.on));
+function render(dt){const S=inTS?TS.S:P.R>520?S2:S1;if(inTS)TSF.renderLive(renderer,scene);if(S.wet)S.wet.render(renderer,scene,camera,!!(post&&post.on));
  if(post&&post.on)post.render(dt,E);else renderer.render(scene,camera)}
 let paused=false;
 function tick(){const dt=Math.min(.05,clock.getDelta());if(!paused){step(dt);render(dt)}requestAnimationFrame(tick)}
 requestAnimationFrame(tick);
 addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();if(post)post.setSize()});
-window.nycDebug={TS,FUN,SEA,quest,openMetro,rideMetro,closeMetro,boardFerry,leaveFerry,tossCoin,doAct,setTS,deck,NPCS,get act(){return act},get inTS(){return inTS},get onFerry(){return onFerry},get metroOn(){return metroOn},P,cam,C1,C2,S1,S2,L,X,HERO,scene,camera,renderer,T,step,teleport,travelTo,findPath,toggleBike,buySnack,togglePhoto,savePhoto,get route(){return route},get riding(){return riding},get E(){return E},setP(p){envP=p;E=CITY_ENV.env(p);skySnap=true;dress()},get envP(){return envP},start:()=>startBtn.onclick(),snap(){snapCam=true;skySnap=true},standAt,get post(){return post},kit,get kitDone(){return kitDone},keys,pause(v){paused=v},frame(n=1,dt=.05){for(let i=0;i<n;i++)step(dt);render(dt)}};
+window.nycDebug={TS,TSF,FUN,SEA,quest,openMetro,rideMetro,closeMetro,boardFerry,leaveFerry,tossCoin,doAct,setTS,deck,NPCS,get act(){return act},get inTS(){return inTS},get onFerry(){return onFerry},get metroOn(){return metroOn},P,cam,C1,C2,S1,S2,L,X,HERO,scene,camera,renderer,T,step,teleport,travelTo,findPath,toggleBike,buySnack,togglePhoto,savePhoto,get route(){return route},get riding(){return riding},get E(){return E},setP(p){envP=p;E=CITY_ENV.env(p);skySnap=true;dress()},get envP(){return envP},start:()=>startBtn.onclick(),snap(){snapCam=true;skySnap=true},standAt,get post(){return post},kit,get kitDone(){return kitDone},keys,pause(v){paused=v},frame(n=1,dt=.05){for(let i=0;i<n;i++)step(dt);render(dt)}};
 })();
