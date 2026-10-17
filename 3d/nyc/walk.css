@@ -21,15 +21,19 @@ header.hud{position:fixed;left:0;right:0;top:0;display:flex;justify-content:spac
 .spots li .ic{font-size:16px;width:20px;text-align:center}.spots li .nm{flex:1;line-height:1.25}.spots li.done .nm:after{content:' ✓';color:#2f8a4f;font-weight:700}
 .spots li button{border:0;border-radius:12px;padding:4px 9px;font:600 11px 'Noto Sans KR',sans-serif;background:#2f3a44;color:#fff;cursor:pointer}
 .spots li.here{background:#2f3a4412}
-#minimap{position:fixed;right:18px;bottom:max(18px,env(safe-area-inset-bottom));width:150px;height:150px;border-radius:50%;box-shadow:0 6px 24px #1d2a3433;background:#7fa3b6;border:3px solid #fffbed}
+#minimap{cursor:pointer;position:fixed;right:18px;bottom:max(18px,env(safe-area-inset-bottom));width:150px;height:150px;border-radius:50%;box-shadow:0 6px 24px #1d2a3433;background:#7fa3b6;border:3px solid #fffbed}
 .toast{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);max-width:min(92vw,520px);padding:12px 20px;border-radius:26px;background:#22303be8;color:#fff8e6;font-size:14px;line-height:1.45;text-align:center;opacity:0;transition:opacity .4s;pointer-events:none}
 .toast b{display:block;font-size:16px;color:#ffd36b}.toast.show{opacity:1}
-.stick{position:fixed;left:max(22px,env(safe-area-inset-left));bottom:max(26px,env(safe-area-inset-bottom));width:124px;height:124px;border-radius:50%;background:#fffbed40;border:2px solid #fffbed99;display:none;touch-action:none}
-.stick i{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:#fffbedd9;box-shadow:0 3px 12px #0003}
-.run{position:fixed;right:186px;bottom:max(44px,env(safe-area-inset-bottom));width:64px;height:64px;border-radius:50%;border:2px solid #fffbed99;background:#fffbed66;font-size:28px;display:none}
-.run.on{background:#ffd36bdd}
-body.touch .stick,body.touch .run{display:block}
-body.touch .spots{top:auto;bottom:180px;max-height:40vh;width:200px}
+.ctrl{position:fixed;right:186px;bottom:max(18px,env(safe-area-inset-bottom));display:flex;gap:8px}
+.ctrl button{width:44px;height:44px;border-radius:14px;border:1px solid #fff9;background:#fffbede6;color:var(--ink);font:600 19px 'Outfit',sans-serif;cursor:pointer;box-shadow:0 4px 16px #1d2a3418;display:grid;place-items:center}
+.ctrl button.on{background:#2f3a44;color:#fff;border-color:#2f3a44}
+.act{position:fixed;left:50%;bottom:max(64px,calc(env(safe-area-inset-bottom) + 48px));transform:translateX(-50%);padding:11px 18px;border:0;border-radius:24px;background:#fffbedf2;color:var(--ink);font:700 14px 'Noto Sans KR',sans-serif;cursor:pointer;box-shadow:0 6px 22px #1d2a3433}
+.act[hidden]{display:none}.act kbd{margin-right:4px}body.touch .act kbd{display:none}
+.shutter{position:fixed;left:50%;bottom:max(28px,env(safe-area-inset-bottom));transform:translateX(-50%);display:none;padding:14px 24px;border:3px solid #fffbed;border-radius:30px;background:#c8463ce6;color:#fff;font:800 16px 'Noto Sans KR',sans-serif;cursor:pointer;box-shadow:0 8px 26px #0005}
+body.photo .shutter{display:block}
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none}#flash.go{animation:flash .45s ease-out}@keyframes flash{0%{opacity:.85}100%{opacity:0}}
+.hero-face{font-size:44px;line-height:1;margin:2px 0 8px}
+body.touch .spots{top:auto;bottom:90px;max-height:40vh;width:200px}
 body.photo .hud,body.photo .toast{opacity:0;pointer-events:none!important}body.photo .top-actions{opacity:1}body.photo header.hud{opacity:1}body.photo .place{opacity:0}
 .overlay{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(180deg,#0e1a2633,#0e1a2699);z-index:10}
 .overlay.hidden{display:none}
@@ -43,4 +47,4 @@ body.photo .hud,body.photo .toast{opacity:0;pointer-events:none!important}body.p
 kbd{display:inline-block;min-width:20px;padding:1px 5px;margin:0 1px;border-radius:5px;background:#2f3a44;color:#fff;font:600 11px 'Outfit',sans-serif}
 .howto .touch{display:none;margin:8px 0 0;font-size:12px}body.touch .howto .keys{display:none}body.touch .howto .touch{display:block}
 @media(max-width:700px){.place{min-width:0;padding:10px 13px}.place h1{font-size:16px;margin-bottom:3px}.place strong{font-size:12.5px}.top-actions{gap:5px}.top-actions button{width:36px;height:36px;font-size:15px}
- .spots{left:12px;width:190px}#minimap{width:118px;height:118px;right:12px}.run{right:146px}.welcome h2{font-size:22px}.welcome{padding:22px 20px 18px}.toast{bottom:170px;font-size:13px}}
+ .spots{left:12px;width:190px}#minimap{width:118px;height:118px;right:12px}.ctrl{right:12px;bottom:calc(max(18px,env(safe-area-inset-bottom)) + 128px);flex-direction:column;gap:6px}.ctrl button{width:40px;height:40px;font-size:17px}.welcome h2{font-size:22px}.welcome{padding:22px 20px 18px}.toast{bottom:170px;font-size:13px}}
