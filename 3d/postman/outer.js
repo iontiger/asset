@@ -99,7 +99,7 @@ function plan(C){
  function groundY(x,z,base){
   const bq=bridgeAt(x,z);if(bq){const br=bq.br;return br.h+br.rise*Math.sin(Math.PI*(bq.al+br.hl)/(2*br.hl))}
   for(const st of stairs){const q=seg(x,z,st.ax,st.az,st.bx,st.bz);if(q.d<=st.hw+.05&&q.t>0&&q.t<1){const k=Math.min(st.n-1,Math.floor(q.t*st.n));return st.h0+(st.h1-st.h0)*(k+1)/st.n}}
-  if(street&&x>=street.xa&&x<=street.xb){const dz=z-street.z0;if((dz>=3.5&&dz<=6.7)||(dz<=-3.5&&dz>=-4.7))return base+.15}
+  if(street&&x>=street.xa&&x<=street.xb){const dz=z-street.z0;if((dz>=3.5&&dz<=6.7)||(dz<=-3.5&&dz>=-4.7))return base+.19}
   return base}
  function inWalk(x,z,r){if(Math.abs(x)<=HW&&Math.abs(z)<=HW)return true;const b=bucket(x,z);if(!b)return false;
   for(const it of b){if(!it.walk)continue;if(it.t==='seg'){if(seg(x,z,it.ax,it.az,it.bx,it.bz).d<=it.hw-r)return true}else if(it.t==='pad'&&Math.hypot(x-it.x,z-it.z)<=it.r-r)return true}return false}
