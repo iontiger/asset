@@ -147,11 +147,11 @@ if(abs(nn.y)<.5){float a=abs(nn.x)>.5?vWP.z:vWP.x;float fy=(vWP.y-${YC.toFixed(2
   (x,w,h)=>{for(let i=0;i<16;i++)for(let j=0;j<10;j++){x.fillStyle=(i+j)%2?'#111':'#f6c90e';x.fillRect(i*w/16,j*h/10,w/16,h/10)}x.fillStyle='#f6c90e';x.fillRect(40,70,w-80,h-140);x.fillStyle='#111';x.textAlign='center';x.font=`900 80px ${FONT}`;x.fillText('TAXI 212',w/2,h*.6)},
   (x,w,h)=>{x.fillStyle='#023e8a';x.fillRect(0,0,w,h);x.fillStyle='#90e0ef';x.textAlign='center';x.font=`800 64px ${FONT}`;x.fillText('NEW YORK',w/2,h*.42);x.fillText('DENTAL',w/2,h*.42+72);x.fillStyle='#fff';x.font=`600 30px ${FONT}`;x.fillText('SMILE · 웃어요',w/2,h*.42+124)}];
  const adMats=ADS.map(d=>new T.MeshBasicMaterial({map:tex(512,320,d),toneMapped:false,side:T.DoubleSide}));
- {const V1=C.V[1];let n=0;fronts.forEach((b,i)=>{const f=b.front,t=(f.t0+f.t1)/2,p=P(f.s,t,0),nearTS=!C.walk&&Math.hypot(p[0]-V1[0],p[1]-V1[1])<70;if(nearTS&&root.CITY_TS)return;if(b.h<16||!(nearTS||i%4===1)||n>34)return;n++;
+ {const V1=C.V[1];let n=0;fronts.forEach((b,i)=>{const f=b.front,t=(f.t0+f.t1)/2,p=P(f.s,t,0),nearTS=(!C.walk||C.ts)&&Math.hypot(p[0]-V1[0],p[1]-V1[1])<70;if(nearTS&&root.CITY_TS)return;if(b.h<16||!(nearTS||i%4===1)||n>34)return;n++;
    const big=nearTS?1.5:1,nrm=f.s.axis==='F'?[-f.side,0]:[0,-f.side],q=P(f.s,t,f.side*(WALK+.3)),y=YC+8+rnd()*Math.min(14,b.h-12)*.8;
    const m=new T.Mesh(new T.PlaneGeometry(8.6*big,5.4*big),adMats[(i*5+n)%adMats.length]);m.position.copy(WV(q[0],q[1],y+2.7*big));m.rotation.y=Math.atan2(dirW(...nrm).x,dirW(...nrm).z);g.add(m)})}
- // 타임스스퀘어 (city-ts.js): BROADWAY · W 42 ST 모서리 빌딩을 움직이는 전광판으로 덮는다
- const ts=root.CITY_TS?root.CITY_TS.build({T,g,C,blds,P,WV,dirW,YC,WALK}):null;
+ // 타임스스퀘어 (city-ts.js): BROADWAY · W 42 ST 모서리 빌딩을 움직이는 전광판으로 덮는다 (걷기 3d/nyc 는 C.ts 인 동네만)
+ const ts=root.CITY_TS&&(!C.walk||C.ts)?root.CITY_TS.build({T,g,C,blds,P,WV,dirW,YC,WALK}):null;
 
  const mergeGeo=list=>{const pos=[],nor=[];for(const geo of list){const ng=geo.index?geo.toNonIndexed():geo;pos.push(...ng.attributes.position.array);nor.push(...ng.attributes.normal.array)}const out=new T.BufferGeometry();out.setAttribute('position',new T.Float32BufferAttribute(pos,3));out.setAttribute('normal',new T.Float32BufferAttribute(nor,3));return out};
  // ── 가로등 · 가로수 · 소화전 · 사람

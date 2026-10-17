@@ -1,7 +1,7 @@
 /* 뉴욕 거리 산책(3d/nyc) — 걸어 다니는 시내 배치. ../ride/city.js 와 같은 모양(C)을 만들어 ../ride/city-scene.js 가 그대로 그린다.
    - 차는 없다(cars: []) · 단속 카메라 · 배달 · 체증 없음. 신호등은 보행 신호처럼 빨강 ↔ 초록을 되풀이하고, 빨간불이면 횡단보도 사람들이 건넌다.
    - 좌표: R 동쪽 · F 북쪽 (월드 x = R, z = -F). 진행 값 s = 길 따라 잰 길이 u (걷는 사람에게 가장 가까운 길 위 점).
-   make(opt) → C. opt: V(꼭짓점) · names · lights[{k,d}] · crossStreets · BB · EXCL · NOB · vents · stacks · npc · brick */
+   make(opt) → C. opt: V(꼭짓점) · names · lights[{k,d}] · crossStreets · BB · EXCL · NOB · vents · stacks · npc · brick · ts(타임스스퀘어 전광판) */
 (function(root){
  function make(opt){
   const CR=9,LANE=2.5,HALF=4.95,WALK=9.5,YC=3.8,V=opt.V,NAMES=opt.names;
@@ -35,7 +35,7 @@
   function onStreet(R,F){let hit=null;for(const s of streets){const t=s.axis==='F'?F:R,q=s.axis==='F'?R-s.c:F-s.c;if(t<s.lo-WALK||t>s.hi+WALK||Math.abs(q)>WALK)continue;const road=Math.abs(q)<HALF&&t>=s.lo-HALF&&t<=s.hi+HALF;if(road)return {road:true};hit={road:false}}return hit}
   return {walk:true,P0:{x:0,z:0},yaw0:0,world,local,V,segs,marks,Lc,travelScale:1,uOf:s=>s,sOf:u=>u,y:()=>YC,YC,latScale:()=>1,laneShift:()=>0,latOf:(u,p)=>p,
    localAt,pathNormal,point,segPoint,onSeg,segOf,uAt,lights,cameras:[],crossStreets:opt.crossStreets||[],deliveries:[],jam:{k:-1},
-   CR,LANE,HALF,WALK,LIMIT:25,BB:opt.BB,EXCL:opt.EXCL,NOB:opt.NOB,vents:opt.vents,stacks:opt.stacks,npc:opt.npc,brick:opt.brick,noCenter:opt.noCenter,
+   CR,LANE,HALF,WALK,LIMIT:25,BB:opt.BB,EXCL:opt.EXCL,NOB:opt.NOB,vents:opt.vents,stacks:opt.stacks,npc:opt.npc,brick:opt.brick,noCenter:opt.noCenter,ts:opt.ts,
    streets,onStreet,nearestU,inCity:()=>true,toU:v=>v,toSim:v=>v,
    newState(){return {deliveries:[],delivered:0,lights:lights.map((l,i)=>({state:i%2?'red':'green',t:(i*3.7)%9,wait:0,done:false,ran:false})),cams:[],cars:[],inside:true,bumpT:0}},
    // 보행 신호: 초록 11초 → 노랑 2초 → 빨강 9초 (빨간불 = 차 신호가 멈춤이라 횡단보도로 사람들이 건넌다)
