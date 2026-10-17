@@ -6220,8 +6220,8 @@ window.dpCaf={open,close,DOOR,spot,inn,URL:CAF_URL,get on(){return CG.on},get fr
    우체국 남쪽 길가에 브루클린 브릿지 탑을 닮은 작은 돌 아치 문(초록 지하철 등 · 작은 황소 · 여신상)을 세운다.
    문 앞에 가면(또는 F · 미니게임판 버튼) 걷는 뉴욕 3d/nyc/ (배터리 파크 · 월스트리트 황소 · 브루클린 브릿지 · 덤보)를 전체 화면 iframe 으로 띄운다.
    - 산책 중에는 마을 renderScene 을 건너뛰고(그리기 쉼), 키 입력은 iframe 이 받는다. 산책 쪽 ✕ 가 postMessage {dpNyc:'close'} 를 보낸다.
-   - 산책 보상: 뉴욕 여권(3d/nyc/nyc-quest.js)이 남기는 localStorage asset-village-3d-nyc {liberty, cap, capOn, stamps, errands} 를 읽어
-     도장 9개 → 주인공 집 앞 작은 자유의 여신상, 심부름 8개 → NY 모자(여권에서 켜고 끔), 미니게임판 줄에 진행을 보인다.
+   - 산책 보상: 뉴욕 여권(3d/nyc/nyc-quest.js)이 남기는 localStorage asset-village-3d-nyc {liberty, cap, capOn, stamps, errands, stampTotal, errandTotal} 를 읽어
+     도장을 다 모으면(10곳) → 주인공 집 앞 작은 자유의 여신상, 심부름을 다 하면(9개) → NY 모자(여권에서 켜고 끔), 미니게임판 줄에 진행을 보인다.
    - 시험용 window.dpNyc (open · close · DOOR · spot · refresh · mini) */
 'use strict';
 (function(){
@@ -6316,14 +6316,14 @@ const mini=new THREE.Group();mini.visible=false;scene.add(mini);let torch,miniHo
  cyl(l,0,3.2,0,.35,.65,2.4,cp,10);sphere(l,0,4.65,0,.32,cp);
  for(let k=0;k<5;k++){const c=new THREE.Mesh(new THREE.ConeGeometry(.07,.45,5),new THREE.MeshStandardMaterial({color:cp}));const a=-1.1+k*.55;c.position.set(Math.sin(a)*.3,4.92,Math.cos(a)*.3);c.rotation.set(Math.cos(a)*.8,0,-Math.sin(a)*.8);l.add(c)}
  beam(l,[-.35,4.1,0],[-.5,5.5,0],.1,cp);torch=new THREE.Mesh(new THREE.ConeGeometry(.16,.4,8),new THREE.MeshStandardMaterial({color:'#ffcf5a',emissive:'#ffb020',emissiveIntensity:1}));torch.position.set(-.5,5.75,0);l.add(torch);box(l,.38,3.4,.15,.12,.8,.55,cp);
- sign(l,'🗽 NEW YORK 9/9',0,1.35,.81,1.5,'#fffbed','#22675e')}
+ sign(l,'🗽 NEW YORK PASSPORT',0,1.35,.81,1.5,'#fffbed','#22675e')}
 function placeMini(){const name=window.dpHero==='wife'?'단풍나무 집':'해바라기 집',h=R.liberty&&objects.find(o=>o.asset&&o.asset.name===name&&!o.alias);
   if(!h){mini.visible=false;if(miniObs&&obstacles.includes(miniObs))obstacles=obstacles.filter(o=>o!==miniObs);return}
   if(miniHouse!==h){miniHouse=h;const x=h.x+h.size.w*.5+1,z=h.z+h.size.d*.5+.7;mini.position.set(x,terrainHeight(x,z),z);mini.rotation.y=-.35;miniObs={x,z,w:1.2,d:1.2}}
   mini.visible=true;if(!obstacles.includes(miniObs))obstacles.push(miniObs)}
-function hubText(){const el=$('#ghNyc');if(!el)return;const n=R.stamps||0,e=R.errands||0;el.textContent=n||e?`🛂 도장 ${n}/9 · 📜 심부름 ${e}/8${R.liberty?' · 🗽':''}${R.cap?' · 🧢':''}`:'황소 · 브루클린 브릿지 · 덤보 · 불꽃놀이'}
+function hubText(){const el=$('#ghNyc');if(!el)return;const n=R.stamps||0,e=R.errands||0;el.textContent=n||e?`🛂 도장 ${n}/${R.stampTotal||10} · 📜 심부름 ${e}/${R.errandTotal||9}${R.liberty?' · 🗽':''}${R.cap?' · 🧢':''}`:'황소 · 브루클린 브릿지 · 덤보 · 불꽃놀이'}
 function rewardToast(){if(NG.on)return;const seen=readJ(SEEN),msgs=[];
-  if(R.liberty&&!seen.liberty){seen.liberty=true;msgs.push('🗽 뉴욕 여권 도장 9개! 우리 집 앞에 작은 자유의 여신상이 생겼어요')}
+  if(R.liberty&&!seen.liberty){seen.liberty=true;msgs.push('🗽 뉴욕 여권 도장을 다 모았어요! 우리 집 앞에 작은 자유의 여신상이 생겼어요')}
   if(R.cap&&!seen.cap){seen.cap=true;msgs.push('🧢 마을 친구 심부름을 다 했어요! NY 모자를 써요 (뉴욕 여권에서 켜고 끌 수 있어요)')}
   if(!msgs.length)return;try{localStorage.setItem(SEEN,JSON.stringify(seen))}catch{}msgs.forEach((m,i)=>setTimeout(()=>{try{toast(m,'gem');beep(659,0,.12);beep(988,.12,.2)}catch{}},400+i*4600))}
 function refresh(){R=readJ(RKEY);try{dressChibis()}catch{}placeMini();hubText();rewardToast()}
