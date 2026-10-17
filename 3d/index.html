@@ -6399,11 +6399,11 @@ const _rs=renderScene;renderScene=function(){if(PG.on)return;return _rs.apply(th
 let armed=true;
 const _fp=findPlay;findPlay=function(){if(!PG.on&&nearDoor()){PLAY_TXT.postman='✉ 골목 배달부 — 문으로 들어가기';return {kind:'postman'}}return _fp()};
 const _da=doAction;doAction=function(){if(!inputBusy()&&!PLAY.mode&&walkish()&&nearDoor()){open();return}return _da()};
-$('#ghTip').insertAdjacentHTML('beforebegin','<div class="gh-row" id="ghPmRow"><span><b>✉ 골목 배달부</b><small id="ghPm">언덕 위 골목 마을 · 배달 15건 · 등불 축제</small></span><button class="gh-btn" id="ghPmBtn">배달부 집으로</button></div>');
+$('#ghTip').insertAdjacentHTML('beforebegin','<div class="gh-row" id="ghPmRow"><span><b>✉ 골목 배달부</b><small id="ghPm">언덕 위 골목 마을 · 배달 18건 · 등불 축제</small></span><button class="gh-btn" id="ghPmBtn">배달부 집으로</button></div>');
 $('#ghPmBtn').onclick=()=>{if(nearDoor(7))return open();if(PLAY.mode)endPlay();armed=true;beginWalk(true);travelTo(DOOR,null)};
 function rowHud(){const b=$('#ghPmBtn');if(b)b.textContent=nearDoor(7)?'입장':'배달부 집으로'}
 const RKEY='asset-village-3d-postman';let R={};
-function refresh(){try{R=JSON.parse(localStorage.getItem(RKEY)||'{}')||{}}catch{R={}}const el=$('#ghPm');if(el)el.textContent=R.done?`✉ 배달 ${R.done}/${R.total||15}${R.cleared?' · 🏮 축제 끝':''}`:'언덕 위 골목 마을 · 배달 15건 · 등불 축제';garland.visible=!!R.cleared}
+function refresh(){try{R=JSON.parse(localStorage.getItem(RKEY)||'{}')||{}}catch{R={}}const el=$('#ghPm');if(el)el.textContent=R.done?`✉ 배달 ${R.done}/${R.total||18}${R.cleared?' · 🏮 축제 끝':''}`:'언덕 위 골목 마을 · 배달 18건 · 등불 축제';garland.visible=!!R.cleared}
 addEventListener('storage',e=>{if(e.key===RKEY)refresh()});
 let rowT=0,ft=0;
 const _ue=updateExtras;updateExtras=function(dt){_ue(dt);try{ft+=dt;
