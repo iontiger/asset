@@ -289,6 +289,7 @@ function movePlayer(dt){let ix=0,iz=0;if(keys.KeyW||keys.ArrowUp)iz+=1;if(keys.K
    const kicking=m>.05&&v<kickSp*.9&&P.onGround;if(kicking||Math.sin(b.kick)>.05){const was=Math.sin(b.kick);b.kick+=dt*7.5;if(was<.9&&Math.sin(b.kick)>=.9)stepSnd()}else b.kick=0;
    b.g.position.set(P.x,P.y,P.z);b.g.rotation.set(0,P.h,lean);HERO.root.position.set(P.x-sa*.06,P.y+.13,P.z-ca*.06);HERO.root.rotation.set(0,P.h,lean);scootPose(b.kick,clock.t,dt)}}
  else{HERO.root.position.set(P.x,P.y+.02,P.z);HERO.root.rotation.set(0,P.h,0);HERO.walk(P.phase,P.walk,clock.t,dt)}
+ if(!riding||pushing)stepFeet(dt);fitUmbrella(dt);
  HERO.shadow.position.set(P.x,P.gy+.04,P.z);HERO.shadow.scale.setScalar((riding&&!pushing?1.5:1)-Math.min(.5,P.air*.3));
  return {v:moved/dt,m}}
 const _t=new T.Vector3(),_d=new T.Vector3(),_d2=new T.Vector3(),_p=new T.Vector3();
@@ -451,6 +452,41 @@ const BIKE=KICK;
 const parkAt=(()=>{const d=post.door,sx=d.nz,sz=-d.nx;return {x:d.x+d.nx*1.5+sx*1.9,z:d.z+d.nz*1.5+sz*1.9,h:Math.atan2(sx,sz)}})();
 let riding=false,pushing=false,lean=0,kickSp=0;
 // 킥보드 위 자세: 앞발은 발판, 뒷발로 땅을 차고(달리는 중 · 오르막), 두 손은 손잡이
+// 계단·턱에서 발 맞추기: 두 발 밑 땅 높이를 따로 재서, 낮은 발이 땅에 닿도록 몸을 내리고 높은 쪽 다리는 무릎을 굽혀 디딤판 위에 올린다
+const _fv=new T.Vector3(),FT={shift:0,L:0,R:0};
+function legIK(side,lift){const J=HERO.J,th=J['thigh'+side],kn=J['knee'+side],a=.24,b=.33,t0=th.rotation.x,ph0=kn.rotation.x;
+ const ky=-a*Math.cos(t0),kz=-a*Math.sin(t0),g=t0+ph0,fy=ky-b*Math.cos(g)-.05*Math.sin(g),fz=kz-b*Math.sin(g)+.05*Math.cos(g);
+ const gy=.02-J.hips.position.y+lift,ty=Math.min(-.24,Math.max(fy,gy)),tz=fz;if(ty<=fy+.002)return;const D=clamp(Math.hypot(ty,tz),b-a+.02,a+b-.003),ph=Math.PI-Math.acos(clamp((a*a+b*b-D*D)/(2*a*b),-1,1));
+ th.rotation.x=Math.atan2(-tz,-ty)-Math.atan2(b*Math.sin(ph),a+b*Math.cos(ph));kn.rotation.x=ph}
+function stepFeet(dt){const sc=HERO.root.scale.y,pg=P.gy,on=P.onGround&&P.air<.02&&!(platTop(P.x,P.z,P.y)>town.footY(P.x,P.z,.2)+.05);
+ HERO.root.updateMatrixWorld(true);const gs={};
+ // 발마다 뒤꿈치·발끝 두 곳의 땅 높이 중 높은 쪽 (발끝이 계단 턱에 박히지 않게). 벽처럼 너무 높거나 낭떠러지처럼 너무 낮으면 몸 높이로 본다
+ for(const sd of ['L','R']){let g=-1e9;for(const oz of [-.1,.2]){HERO.J['knee'+sd].localToWorld(_fv.set(0,-.315,oz));g=Math.max(g,town.footY(_fv.x,_fv.z))}gs[sd]=g>pg+.7||g<pg-.6?pg:g}
+ // 몸은 낮은 발 쪽에 두되, 높은 발을 0.2 넘게 들어 올려야 하면 그만큼 몸을 올린다
+ const hi=Math.max(gs.L,gs.R),lo=Math.min(gs.L,gs.R),base=Math.max(lo,hi-.2),want=on?clamp(pg-base,-.4,.4):0;
+ FT.shift+=(want-FT.shift)*Math.min(1,dt*14);HERO.root.position.y-=FT.shift;
+ for(const sd of ['L','R']){const need=on?clamp(gs[sd]-(pg-FT.shift),0,.24):0;FT[sd]=need>FT[sd]?need:FT[sd]+(need-FT[sd])*Math.min(1,dt*12);if(FT[sd]>.004)legIK(sd,FT[sd]/sc)}}
+// 우산이 벽·기둥 속으로 들어가지 않게: 우산 둘레를 재서 막힌 쪽 반대로 기울이고, 그래도 좁으면 살짝 접는다
+const UMB={tx:0,tz:0,s:1,can:null},_uc=new T.Vector3(),_ub=new T.Vector3(),_ua=new T.Vector3(),_uq=new T.Quaternion(),_uw=new T.Quaternion(),_near=[];
+function umbSolid(x,y,z){if(y<town.groundY(x,z)+.05)return true;const i=town.ci(x),j=town.ci(z);
+ if(i>=0&&j>=0&&i<town.N&&j<town.N){const v=town.G[j*town.N+i];if((v===0||v===4)&&y<town.CH[j*town.N+i]+.5)return true}else if(town.camBlock(x,y,z))return true;
+ for(const c of _near){if(c.box){const [x0,z0,x1,z1]=c.box;if(x>x0&&x<x1&&z>z0&&z<z1&&(c.top===undefined||y<c.top))return true}else if((x-c.x)**2+(z-c.z)**2<c.r*c.r)return true}return false}
+function umbClear(cx,cy,cz,R){let best=R,px=0,pz=0;for(let k=0;k<12;k++){const a=k/12*Math.PI*2,dx=Math.cos(a),dz=Math.sin(a);let c=R;
+  for(let r=.12;r<=R+.001;r+=.11)if(umbSolid(cx+dx*r,cy,cz+dz*r)){c=Math.max(0,r-.11);break}
+  if(c<R){px-=dx*(R-c);pz-=dz*(R-c)}best=Math.min(best,c)}return {best,px,pz}}
+function fitUmbrella(dt){const U=HERO.props.umb;if(!U.visible){UMB.tx=UMB.tz=0;UMB.s=1;return}
+ if(!UMB.can)UMB.can=U.children.find(m=>m.geometry&&m.geometry.type==='ConeGeometry');
+ _near.length=0;for(const c of town.colliders){if(c.box){const [x0,z0,x1,z1]=c.box;if(P.x>x0-2&&P.x<x1+2&&P.z>z0-2&&P.z<z1+2)_near.push(c)}else if(c.r<=.6&&Math.abs(c.x-P.x)<2&&Math.abs(c.z-P.z)<2)_near.push(c)}
+ // 기울이기 전 우산 둘레(손잡이 → 우산 테)에서 막힌 정도를 재고, 그 반대쪽으로 기울인다
+ U.quaternion.identity();HERO.root.updateMatrixWorld(true);U.localToWorld(_ub.set(0,0,0));U.localToWorld(_uc.set(0,.75,0));
+ const R=.66,q=umbClear(_uc.x,_uc.y,_uc.z,R),pl=Math.hypot(q.px,q.pz),ln=_uc.distanceTo(_ub);let wx=0,wz=0,m=0,ux=0,uz=0;
+ if(pl>.001){ux=q.px/pl;uz=q.pz/pl;m=Math.min(.32,Math.asin(Math.min(.95,(R-q.best)/ln)));wx=ux*m;wz=uz*m}
+ // 기울인 자리에서도 모자라는 만큼만 우산을 접는다
+ const sh=Math.sin(m)*ln,q2=umbClear(_uc.x+ux*sh,_uc.y,_uc.z+uz*sh,R),s=clamp(q2.best/R+.06,.45,1);
+ const k=Math.min(1,dt*14);UMB.tx+=(wx-UMB.tx)*k;UMB.tz+=(wz-UMB.tz)*k;UMB.s=s<UMB.s?s:UMB.s+(s-UMB.s)*Math.min(1,dt*6);
+ // 세계 방향 기울기(수평축 둘레 회전)를 우산이 붙은 몸통 좌표로 바꿔 적용
+ const ang=Math.hypot(UMB.tx,UMB.tz);if(ang>1e-4){U.parent.getWorldQuaternion(_uq);_ua.set(UMB.tz,0,-UMB.tx).normalize();_uw.setFromAxisAngle(_ua,ang);U.quaternion.copy(_uq).invert().multiply(_uw).multiply(_uq)}
+ if(UMB.can)UMB.can.scale.set(UMB.s,1+(1-UMB.s)*.9,UMB.s)}
 function scootPose(kick,t,dt){const J=HERO.J,k=Math.max(0,Math.sin(kick)),c=Math.cos(kick);HERO.walk(0,0,t,dt);
  J.hips.position.y=.56-k*.05;J.hips.rotation.set(0,.12,0);J.spine.rotation.set(.16+k*.06,-.12,0);J.head.rotation.set(-.12,-.05,0);
  J.thighL.rotation.set(-.18-k*.12,0,0);J.kneeL.rotation.set(.3+k*.25,0,0);
