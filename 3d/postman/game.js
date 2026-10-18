@@ -58,7 +58,7 @@ function applySky(){const t=ENV.tod;let a=SKF[0],b=SKF[SKF.length-1];for(let k=0
 
 /* ═══ 3. 주인공 — 마을 주인공 그대로(툰 재질로만 갈아입힘) ═══ */
 const HERO=NYC_HERO.make({T,scene,owner:heroOwner,K:.55});
-HERO.dress({season:'spring',wet:false,riding:false,gems,wear:VP});HERO.dog.g.visible=false;HERO.bike.g.visible=false;
+HERO.dress({season:'spring',wet:false,riding:false,gems,wear:VP});HERO.dog.g.visible=false;HERO.bike.g.visible=false;   // 마을 자전거 대신 킥보드(14-1)
 function toonify(root){root.traverse(m=>{if(!m.isMesh)return;if(m.material.isMeshStandardMaterial){const c='#'+m.material.color.getHexString();m.material=toon(c)}else curve(m.material)})}
 toonify(HERO.root);curve(HERO.shadow.material);
 HERO.root.traverse(m=>{if(m.isMesh&&m.material.color){const c=m.material.color;if(c.r+c.g+c.b<.25)m.userData.noOutline=true}});outline(HERO.root,120);
@@ -269,7 +269,7 @@ function movePlayer(dt){let ix=0,iz=0;if(keys.KeyW||keys.ArrowUp)iz+=1;if(keys.K
  let dx=fx*iz+rx*ix,dz=fz*iz+rz*ix;
  if(riding){// 앞쪽 비탈: 가파르면(계단) 내려서 끌고, 내리막이면 빨라지고 오르막이면 느려진다
   const L=Math.hypot(dx,dz)||1,ux=m>.05?dx/L:Math.sin(P.h),uz=m>.05?dz/L:Math.cos(P.h),g0=town.groundY(P.x,P.z),grade=(town.groundY(P.x+ux*1.2,P.z+uz*1.2)-g0)/1.2,back=(g0-town.groundY(P.x-ux,P.z-uz));
-  pushing=Math.abs(grade)>.34||Math.abs(back)>.34;if(pushing){sp=2.5;acc=8}else{sp=(run?9.8:7.2)*clamp(1-grade*2.6,.5,1.75);acc=m>.05?(WX==='snow'?1.8:3.2):(WX==='snow'?1.2:2.6)}}
+  pushing=Math.abs(grade)>.34||Math.abs(back)>.34;if(pushing){sp=2.5;acc=8}else{sp=(run?8.8:6.6)*clamp(1-grade*2.6,.5,1.8);kickSp=sp;acc=m>.05?(WX==='snow'?1.8:3.2):(WX==='snow'?1.2:2.6)}}
  const tvx=dx*sp,tvz=dz*sp;
  P.vx+=(tvx-P.vx)*Math.min(1,dt*acc);P.vz+=(tvz-P.vz)*Math.min(1,dt*acc);const v=Math.hypot(P.vx,P.vz);
  const n=Math.max(1,Math.ceil(v*dt/.12));let ox=P.x,oz=P.z;for(let k=0;k<n;k++){const [x,z]=resolve(P.x+P.vx*dt/n,P.z+P.vz*dt/n,PR,P.y);P.x=x;P.z=z}
@@ -280,12 +280,14 @@ function movePlayer(dt){let ix=0,iz=0;if(keys.KeyW||keys.ArrowUp)iz+=1;if(keys.K
   P.vy-=13*dt;P.air+=P.vy*dt;if(P.air<=0){P.air=0;P.vy=0;P.onGround=true}P.y=P.gy+P.air}
  const amt=clamp(moved/dt/3.1,0,1.4);P.walk+=(Math.min(1,amt)-P.walk)*Math.min(1,dt*8);P.phase+=dt*(5+amt*4.2)*P.walk;
  if(!riding||pushing){if(P.onGround&&P.walk>.3){const s2=Math.floor(P.phase/Math.PI);if(s2!==lastStep){lastStep=s2;stepSnd()}}}
- // 비: 달리면 우산이 기울어 젖고, 자전거는 우산이 없어 더 젖는다
+ // 비: 달리면 우산이 기울어 젖고, 킥보드는 두 손으로 잡느라 우산이 없어 더 젖는다
  if(WX==='rain'&&moved/dt>.5)wetten(dt*(riding?6:run?4.5:0));
- if(riding){const b=BIKE,K=HERO.K,sa=Math.sin(P.h),ca=Math.cos(P.h),dd=moved;b.wheels.forEach(w=>{w.rotation.x+=dd/(.42*K)});
-  if(pushing){lean+=(0-lean)*Math.min(1,dt*6);b.g.position.set(P.x+ca*.42,P.y,P.z-sa*.42);b.g.rotation.set(0,P.h,0);HERO.root.position.set(P.x,P.y+.02,P.z);HERO.root.rotation.set(0,P.h,0);HERO.walk(P.phase,P.walk,clock.t,dt)}
-  else{lean+=(clamp(-turn*Math.min(1,v/5)*.9,-.32,.32)-lean)*Math.min(1,dt*5);b.crank+=dd/(.9*K);b.cranks.forEach(c=>{c.rotation.x=b.crank});b.g.position.set(P.x,P.y,P.z);b.g.rotation.set(0,P.h,lean);
-   HERO.root.position.set(P.x-sa*.22*K,P.y+.53*K,P.z-ca*.22*K);HERO.root.rotation.set(0,P.h,lean);HERO.ride(b.crank,clock.t,dt)}}
+ if(riding){const b=KICK,sa=Math.sin(P.h),ca=Math.cos(P.h),dd=moved;b.wheels.forEach(w=>{w.rotation.x+=dd/.065});
+  if(pushing){lean+=(0-lean)*Math.min(1,dt*6);b.g.position.set(P.x+ca*.38,P.y,P.z-sa*.38);b.g.rotation.set(0,P.h,0);HERO.root.position.set(P.x,P.y+.02,P.z);HERO.root.rotation.set(0,P.h,0);HERO.walk(P.phase,P.walk,clock.t,dt)}
+  else{lean+=(clamp(-turn*Math.min(1,v/5)*.9,-.28,.28)-lean)*Math.min(1,dt*5);
+   // 발로 차기: 입력이 있고 아직 목표 속도보다 느리면(오르막 포함) 뒷발이 땅을 찬다. 빠르면 두 발 모두 발판 위
+   const kicking=m>.05&&v<kickSp*.9&&P.onGround;if(kicking||Math.sin(b.kick)>.05){const was=Math.sin(b.kick);b.kick+=dt*7.5;if(was<.9&&Math.sin(b.kick)>=.9)stepSnd()}else b.kick=0;
+   b.g.position.set(P.x,P.y,P.z);b.g.rotation.set(0,P.h,lean);HERO.root.position.set(P.x-sa*.06,P.y+.13,P.z-ca*.06);HERO.root.rotation.set(0,P.h,lean);scootPose(b.kick,clock.t,dt)}}
  else{HERO.root.position.set(P.x,P.y+.02,P.z);HERO.root.rotation.set(0,P.h,0);HERO.walk(P.phase,P.walk,clock.t,dt)}
  HERO.shadow.position.set(P.x,P.gy+.04,P.z);HERO.shadow.scale.setScalar((riding&&!pushing?1.5:1)-Math.min(.5,P.air*.3));
  return {v:moved/dt,m}}
@@ -340,14 +342,14 @@ function feedCat(c){const first=!catFed.includes(c.k);c.hop=.7;c.t=2;setTimeout(
  if(first){catFed.push(c.k);store(CATKEY,JSON.stringify(catFed));renderCats();tone(880,0,.15,'sine',.04);tone(1320,.12,.25,'sine',.04);
   toast(`<b>🐱 ${c.name}</b>간식을 맛있게 먹었어요! 고양이 도감 ${catFed.length} / ${CATS.length}`+(catFed.length>=CATS.length?'<br>다 모았어요! 축제 날 고양이들도 광장에 와요':''),4);if(fest&&catFed.length>=CATS.length)catsToPlaza()}
  else toast(`<b>🐱 ${c.name}</b>골골골… 기분이 좋대요`,2.2)}
-const POSTMSG={1:{1:'좋은 아침이에요, 배달부님! 첫 가방이에요. 받는 사람 집은 편지에 적힌 골목 · 벽 색 · 간판을 보고 찾아요. 지도(M)도 있어요! 아, 우체국 앞 빨간 자전거도 빌려 가요!',2:'벌써 다 했어요? 점심 가방이에요. 받은 사람이 다른 사람에게 물건을 맡길지도 몰라요.',3:'오후 가방이에요. 빨간 우표가 붙은 건 급배달! 블록담 앞 나무 상자를 밟고 뛰면 담을 넘는 지름길이 있어요.',4:'마지막 가방! 노을 지기 전에 끝내 봐요.'},
- 2:{1:'비 오는 아침이에요! 오늘은 어제 받은 사람들이 쓴 답장이 많아요. 📨 젖으면 안 되는 건 우산 쓰고 천천히, 웅덩이는 피해서! 자전거는 빠르지만 우산이 없어요.',2:'오늘은 동네 사람들이 비를 피해 집 안에 있어요. 문 앞에서 E를 누르면 문을 열고 받아 갈 거예요.',3:'오후 가방이에요. 빨간 우표는 급배달, 시간 안에!',4:'마지막 가방이에요. 언덕집 할아버지 답장은 저한테 다시 가져와 줘요!'}};
-function postMsg(r){const m=POSTMSG[S.day];if(m)return m[r];const w=WX==='rain'?'비가 오니 젖으면 안 되는 물건 조심! ':WX==='snow'?'눈길이 미끄러워요, 자전거는 천천히! ':'날씨가 좋아요! ';return {1:`${S.day}일째 아침이에요. ${w}오늘 첫 가방이에요.`,2:'점심 가방이에요. 답장을 맡기는 사람도 있을 거예요. 📨',3:'오후 가방! 빨간 우표가 붙은 급배달이 있는지 봐요.',4:'마지막 가방이에요. 오늘 밤도 광장에서 등불 축제!'}[r]}
+const POSTMSG={1:{1:'좋은 아침이에요, 배달부님! 첫 가방이에요. 받는 사람 집은 편지에 적힌 골목 · 벽 색 · 간판을 보고 찾아요. 지도(M)도 있어요! 아, 우체국 앞 빨간 킥보드도 빌려 가요!',2:'벌써 다 했어요? 점심 가방이에요. 받은 사람이 다른 사람에게 물건을 맡길지도 몰라요.',3:'오후 가방이에요. 빨간 우표가 붙은 건 급배달! 블록담 앞 나무 상자를 밟고 뛰면 담을 넘는 지름길이 있어요.',4:'마지막 가방! 노을 지기 전에 끝내 봐요.'},
+ 2:{1:'비 오는 아침이에요! 오늘은 어제 받은 사람들이 쓴 답장이 많아요. 📨 젖으면 안 되는 건 우산 쓰고 천천히, 웅덩이는 피해서! 킥보드는 빠르지만 두 손으로 잡느라 우산을 못 써요.',2:'오늘은 동네 사람들이 비를 피해 집 안에 있어요. 문 앞에서 E를 누르면 문을 열고 받아 갈 거예요.',3:'오후 가방이에요. 빨간 우표는 급배달, 시간 안에!',4:'마지막 가방이에요. 언덕집 할아버지 답장은 저한테 다시 가져와 줘요!'}};
+function postMsg(r){const m=POSTMSG[S.day];if(m)return m[r];const w=WX==='rain'?'비가 오니 젖으면 안 되는 물건 조심! ':WX==='snow'?'눈길이 미끄러워요, 킥보드는 천천히! ':'날씨가 좋아요! ';return {1:`${S.day}일째 아침이에요. ${w}오늘 첫 가방이에요.`,2:'점심 가방이에요. 답장을 맡기는 사람도 있을 거예요. 📨',3:'오후 가방! 빨간 우표가 붙은 급배달이 있는지 봐요.',4:'마지막 가방이에요. 오늘 밤도 광장에서 등불 축제!'}[r]}
 function postTalk(n){if(S.done.length>=TOTAL&&!S.fest){say(n,'오늘 배달 끝! 정말 수고 많았어요. 해가 지면 종탑 광장에서 등불 축제가 열려요. 광장 분수로 와요! 🏮',7);startEve();return}
  if(S.fest){say(n,'오늘 같은 날이 또 오면 좋겠어요. 내일도 골목을 부탁해요!',5);return}
  if(canIssue()){S.round++;const list=JOBS.filter(j=>j.r===S.round&&!j.from&&!S.done.includes(j.id)&&!S.bag.includes(j.id));S.bag.push(...list.map(j=>j.id));list.forEach(j=>{if(j.rush)S.rush[j.id]=j.rush});
   const newBike=!S.bike;S.bike=true;parkBike();save();renderBag();say(n,postMsg(S.round),7);HERO.wave();tone(523,0,.2);tone(659,.1,.2);tone(784,.2,.3);
-  if(newBike)setTimeout(()=>toast(`<b>🚲 빨간 자전거를 빌렸어요</b>${TOUCH?'🚲 단추':'B 키'}로 타고 내려요 · 계단에선 끌고 가요`,5),2400);
+  if(newBike)setTimeout(()=>toast(`<b>🛴 빨간 킥보드를 빌렸어요</b>${TOUCH?'🛴 단추':'B 키'}로 타고 내려요 · 발로 차서 달리고, 계단에선 끌고 가요`,5),2400);
   else if(list.some(j=>j.rush))setTimeout(()=>toast('<b>🟥 급배달</b>빨간 우표 물건은 시간 안에! 나무 상자 밟고 담 넘기 지름길',4.5),2400);return}
  const left=S.bag.length;say(n,left?`가방에 아직 ${left}개 남았어요. ${hintFor(job(S.bag[0]).to)} — 거기부터 가 볼까요?`:'잠깐만요, 다음 우편을 정리하고 있어요.',6)}
 function closeTalk(){talk.npc=null;$('bubble').hidden=true}
@@ -422,7 +424,7 @@ function renderCats(){$('catn').textContent=`${catFed.length}/${CATS.length}`;co
  CATS.forEach(c=>{const f=catFed.includes(c.k),d=document.createElement('div');d.className='cc'+(f?' on':'');const bg=c.patch?`radial-gradient(circle at 70% 35%,${c.patch} 0 26%,transparent 27%),${c.body}`:c.body;
   d.innerHTML=`<span class="cf" style="background:${f?bg:'#d9cfbf'}"><i style="border-bottom-color:${f?c.head:'#d9cfbf'}"></i><i style="border-bottom-color:${f?c.head:'#d9cfbf'}"></i>${f?'':'?'}</span><b>${f?c.name:'???'}</b><small>${catWhere(c)}</small>`;el.appendChild(d)})}
 function toggleCats(on){const m=$('catbook');on=on===undefined?!m.classList.contains('on'):on;m.classList.toggle('on',on);if(on)renderCats();blip()}
-// 다음 날 — 배달 목록 · 날씨 · 집 안 사람이 바뀐다(고양이 도감 · 자전거 · 걸은 거리는 그대로)
+// 다음 날 — 배달 목록 · 날씨 · 집 안 사람이 바뀐다(고양이 도감 · 킥보드 · 걸은 거리는 그대로)
 function nextDay(){S=blank(S.day+1,{dist:S.dist,bike:S.bike,crateHint:S.crateHint,starsAll:(S.starsAll||0)+S.stars.length});save();try{sessionStorage.setItem('pm-autostart','1')}catch(e){}location.reload()}
 function setupDay(){WX=wxFor(S.day);makePuddles(S.day);setInside();dressHero();parkBike();setRainSound();applySky();renderCats()}
 function crateHint(){if(S.crateHint||!started)return;for(const c of town.crates)if(Math.hypot(c.x-P.x,c.z-P.z)<1.6){S.crateHint=1;toast('<b>📦 지름길 나무 상자</b>상자 위로 뛰어(Space) 한 번 더 뛰면 블록담을 넘어요',4.5);return}}
@@ -437,15 +439,28 @@ function startFest(){if(fest)return;fest={t:0};S.fest=true;if(riding)toggleBike(
  setTimeout(()=>{$('fin-n').textContent=`${S.done.length} / ${TOTAL}`;$('fin-s').textContent=`${S.stars.length} / ${TOTAL}`;$('fin-h').textContent=`${S.day}일째 배달 끝!`;$("fin-next").textContent=`${S.day+1}일째 배달하러 가기 · ${WXI[wxFor(S.day+1)]}`;$('fin-d').textContent=(S.dist/1000).toFixed(2)+' km';$('fin-t').textContent=Math.max(1,Math.round(S.time/60))+'분';$('finale').hidden=false;try{store('asset-village-3d-postman',JSON.stringify({done:TOTAL,total:TOTAL,cleared:true,at:Date.now()}))}catch(e){}},5200)}
 
 
-/* ═══ 14-1. 자전거 — 우체국 빨간 자전거. 내리막에선 빨라지고 계단 · 가파른 비탈에선 내려서 끌고 간다 ═══ */
-const BIKE=HERO.bike;toonify(BIKE.g);BIKE.g.traverse(m=>{if(m.isMesh&&m.material.color&&m.material.color.getHexString()==='5fb8a0')m.material=toon('#d8463d')});outline(BIKE.g,40);
+/* ═══ 14-1. 킥보드 — 우체국 빨간 킥보드. 발로 차서 달리고 내리막에선 저절로 빨라진다. 계단 · 가파른 비탈에선 내려서 끌고 간다 ═══ */
+const KICK=(()=>{const g=new T.Group(),wheels=[],mk=(geo,c,x,y,z,par=g)=>{const m=new T.Mesh(geo,toon(c));m.position.set(x,y,z);m.castShadow=true;par.add(m);return m};
+ mk(new T.BoxGeometry(.2,.045,.74),'#d8463d',0,.1,0);mk(new T.BoxGeometry(.17,.01,.6),'#3b3d42',0,.127,-.02);mk(new T.BoxGeometry(.2,.03,.16),'#d8463d',0,.105,.4).rotation.x=-.25;
+ for(const z of [.36,-.34]){const w=new T.Group();w.position.set(0,.065,z);g.add(w);const t=mk(new T.CylinderGeometry(.065,.065,.045,16),'#33363b',0,0,0,w);t.rotation.z=Math.PI/2;const h=mk(new T.CylinderGeometry(.03,.03,.05,8),'#e8e2d6',0,0,0,w);h.rotation.z=Math.PI/2;wheels.push(w)}
+ mk(new T.BoxGeometry(.08,.02,.16),'#d8463d',0,.14,-.36).rotation.x=.3;
+ const st=mk(new T.CylinderGeometry(.024,.024,.74,10),'#c9cfd2',0,.48,.33);st.rotation.x=-.16;
+ const bar=mk(new T.CylinderGeometry(.02,.02,.46,10),'#c9cfd2',0,.84,.27);bar.rotation.z=Math.PI/2;for(const s2 of [-1,1]){const gr=mk(new T.CylinderGeometry(.03,.03,.1,10),'#2f302c',s2*.21,.84,.27);gr.rotation.z=Math.PI/2}
+ mk(new T.SphereGeometry(.035,10,8),'#ffd36a',0,.72,.37);outline(g,40);g.visible=false;scene.add(g);return {g,wheels,kick:0}})();
+const BIKE=KICK;
 const parkAt=(()=>{const d=post.door,sx=d.nz,sz=-d.nx;return {x:d.x+d.nx*1.5+sx*1.9,z:d.z+d.nz*1.5+sz*1.9,h:Math.atan2(sx,sz)}})();
-let riding=false,pushing=false,lean=0;
+let riding=false,pushing=false,lean=0,kickSp=0;
+// 킥보드 위 자세: 앞발은 발판, 뒷발로 땅을 차고(달리는 중 · 오르막), 두 손은 손잡이
+function scootPose(kick,t,dt){const J=HERO.J,k=Math.max(0,Math.sin(kick)),c=Math.cos(kick);HERO.walk(0,0,t,dt);
+ J.hips.position.y=.56-k*.05;J.hips.rotation.set(0,.12,0);J.spine.rotation.set(.16+k*.06,-.12,0);J.head.rotation.set(-.12,-.05,0);
+ J.thighL.rotation.set(-.18-k*.12,0,0);J.kneeL.rotation.set(.3+k*.25,0,0);
+ J.thighR.rotation.set(.12+k*.95*(c<0?1:.7),0,0);J.kneeR.rotation.set(.2+k*.3,0,0);
+ J.shoulderL.rotation.set(-1.05,0,-.08);J.shoulderR.rotation.set(-1.05,0,.08);J.elbowL.rotation.set(-.45,0,0);J.elbowR.rotation.set(-.45,0,0)}
 function parkBike(){const show=!S.bike&&!riding;BIKE.g.visible=show||riding;if(show){const y=town.footY(parkAt.x,parkAt.z,.3);BIKE.g.position.set(parkAt.x,y,parkAt.z);BIKE.g.rotation.set(0,parkAt.h,0)}}
 function dressHero(){HERO.dress({season:WX==='snow'?'winter':'spring',wet:WX==='rain'&&!riding,riding,gems,wear:VP})}
-function toggleBike(on){au();if(!S.bike){toast('<b>🚲 빨간 자전거</b>우체국장님께 첫 가방을 받으면 빌려줘요',3);return}if(talkLock())return;
+function toggleBike(on){au();if(!S.bike){toast('<b>🛴 빨간 킥보드</b>우체국장님께 첫 가방을 받으면 빌려줘요',3);return}if(talkLock())return;
  riding=on===undefined?!riding:on;pushing=false;BIKE.g.visible=riding;dressHero();HERO.root.rotation.set(0,P.h,0);$('bikebtn').classList.toggle('on',riding);
- if(riding){tone(1500,0,.25,'sine',.04);tone(1900,.12,.35,'sine',.035)}else{tone(600,0,.1,'sine',.03);parkBike()}}
+ if(riding){tone(900,0,.06,'square',.02);tone(1300,.07,.08,'square',.018)}else{tone(600,0,.1,'sine',.03);parkBike()}}
 
 /* ═══ 14-2. 날씨 — 맑음 · 비(우산 · 웅덩이 · 젖으면 안 되는 물건) · 눈(하얗게 덮인 지붕과 길) ═══ */
 const RAIN=(()=>{const n=TOUCH?500:900,p=new Float32Array(n*6),g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(p,3));const sd=[];for(let k=0;k<n;k++)sd.push({x:(Math.random()-.5)*26,y:Math.random()*14,z:(Math.random()-.5)*26,v:13+Math.random()*5});
@@ -471,7 +486,7 @@ function updateWeather(dt,t){CURVE.uSnow.value+=((WX==='snow'?1:0)-CURVE.uSnow.v
    p[k*3]=d.x;p[k*3+1]=d.y;p[k*3+2]=d.z}SNOW.m.geometry.attributes.position.needsUpdate=true}else SNOW.m.visible=false}
 function splash(x,y,z){for(let k=0;k<14;k++){const p=FW.pts[FW.i=(FW.i+1)%FW.pts.length],a=Math.random()*6.28,s2=.8+Math.random()*1.2;p.x=x+Math.cos(a)*.15;p.y=y+.05;p.z=z+Math.sin(a)*.15;p.vx=Math.cos(a)*s2;p.vz=Math.sin(a)*s2;p.vy=1.6+Math.random()*1.4;p.l=.45+Math.random()*.2;p.c=[.55,.7,.85]}
  const c=AU.ctx;if(c&&AU.on){const b=c.createBuffer(1,c.sampleRate*.12|0,c.sampleRate),d=b.getChannelData(0);for(let k=0;k<d.length;k++)d[k]=(Math.random()*2-1)*Math.pow(1-k/d.length,2);const s3=c.createBufferSource(),f=c.createBiquadFilter(),g=c.createGain();s3.buffer=b;f.type='highpass';f.frequency.value=1800;g.gain.value=.12;s3.connect(f);f.connect(g);g.connect(AU.m);s3.start()}}
-// 젖으면 안 되는 물건: 비 오는 날 달리거나(우산이 기울어져요) 자전거(우산 없음)를 타거나 웅덩이를 밟으면 젖는다
+// 젖으면 안 되는 물건: 비 오는 날 달리거나(우산이 기울어져요) 킥보드(우산 없음)를 타거나 웅덩이를 밟으면 젖는다
 function wetten(amt,why){if(WX!=='rain'||amt<=0)return;let warn=null;for(const id of S.bag){const j=job(id);if(!j.dry)continue;const w0=S.wet[id]||0,w=Math.min(100,w0+amt);S.wet[id]=w;if(w0<50&&w>=50)warn=[j,'젖어 가요'];if(w0<100&&w>=100)warn=[j,'흠뻑 젖었어요']}
  if(warn){toast(`<b>💧 ${warn[0].item} ${warn[1]}!</b>${warn[1]==='흠뻑 젖었어요'?'받는 사람이 조금 아쉬워할 거예요':'우산 쓰고 천천히 걸어요 · 웅덩이 조심'}`,3.6);renderBag()}else if(why&&Math.random()<.02)renderBag()}
 function updatePuddles(t){if(WX!=='rain'||!PUD.list.length||!P.onGround||P.air>.05)return;for(const q of PUD.list){if(Math.abs(q.x-P.x)>q.r+.3||Math.abs(q.z-P.z)>q.r+.3)continue;if(Math.hypot(q.x-P.x,q.z-P.z)<q.r&&Math.hypot(P.vx,P.vz)>1&&t-q.last>.5){q.last=t;splash(P.x,P.gy,P.z);wetten(riding?12:20,1);renderBag()}}}
