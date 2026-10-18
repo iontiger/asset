@@ -13,17 +13,19 @@ const CS=3,NB=7,BS=4,N=NB*(BS+1)-1,HW=N*CS/2;
 const cx=i=>(i+.5)*CS-HW,ci=x=>Math.floor((x+HW)/CS);
 
 /* ── 작은 행성 휨 · 툰 재질 · 외곽선 ── */
-const CURVE={uCurve:{value:.0062},uCC:{value:new T.Vector2()},uOW:{value:.03}};
+const CURVE={uCurve:{value:.0062},uCC:{value:new T.Vector2()},uOW:{value:.03},uSnow:{value:0}};
 const BEND=`vec4 mvPosition=vec4(transformed,1.0);
 #ifdef USE_INSTANCING
 mvPosition=instanceMatrix*mvPosition;
 #endif
 vec4 pmW=modelMatrix*mvPosition;vec2 pmD=pmW.xz-uCC;pmW.y-=dot(pmD,pmD)*uCurve;
 mvPosition=viewMatrix*pmW;gl_Position=projectionMatrix*mvPosition;`;
-function curve(mat,outline){
+// 눈 오는 날: 툰 재질의 위를 보는 면(지붕 · 땅 · 담 위 · 나무 꼭대기)을 하얗게 덮는다(uSnow 0~1)
+function curve(mat,outline){const snow=!outline&&mat.isMeshToonMaterial;
  mat.onBeforeCompile=sh=>{sh.uniforms.uCurve=CURVE.uCurve;sh.uniforms.uCC=CURVE.uCC;sh.uniforms.uOW=CURVE.uOW;
-  sh.vertexShader='uniform float uCurve;uniform vec2 uCC;uniform float uOW;\n'+sh.vertexShader.replace('#include <project_vertex>',(outline?'transformed+=normalize(normal)*uOW;\n':'')+BEND)};
- mat.customProgramCacheKey=()=>outline?'pm-outline':'pm-curve';return mat}
+  sh.vertexShader='uniform float uCurve;uniform vec2 uCC;uniform float uOW;\n'+(snow?'varying float vSnN;varying vec2 vSnW;\n':'')+sh.vertexShader.replace('#include <project_vertex>',(outline?'transformed+=normalize(normal)*uOW;\n':'')+BEND+(snow?'\nvSnN=(vec4(transformedNormal,0.)*viewMatrix).y;vSnW=pmW.xz;':''));
+  if(snow){sh.uniforms.uSnow=CURVE.uSnow;sh.fragmentShader='uniform float uSnow;varying float vSnN;varying vec2 vSnW;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\nif(uSnow>0.){float pmS=smoothstep(.45,.8,vSnN)*uSnow*(.82+.18*sin(vSnW.x*2.3+sin(vSnW.y*1.7)*2.));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.95,.97,1.),pmS);}')}};
+ mat.customProgramCacheKey=()=>outline?'pm-outline':snow?'pm-curve-snow':'pm-curve';return mat}
 const GRAD=(()=>{const t=new T.DataTexture(new Uint8Array([120,200,255]),3,1,T.RedFormat);t.minFilter=t.magFilter=T.NearestFilter;t.generateMipmaps=false;t.needsUpdate=true;return t})();
 const toonCache=new Map();
 function toon(o){if(typeof o==='string'){if(!toonCache.has(o))toonCache.set(o,curve(new T.MeshToonMaterial({color:o,gradientMap:GRAD})));return toonCache.get(o)}return curve(new T.MeshToonMaterial(Object.assign({gradientMap:GRAD},o)))}
@@ -63,7 +65,7 @@ const ACCENT=['#ffffff','#5f8380','#b84b45','#3f6e9e','#6b6a86','#d0902f','#5a7f
 const DIST={n:'빨래줄 골목',e:'등불 골목',s:'고양이 골목',w:'화분 골목',c:'종탑 광장'};
 
 function build({scene,seed=20261017}){
- const R=rng(seed),ri=n=>Math.floor(R()*n),pick=a=>a[ri(a.length)];
+ const R=rng(seed),ri=n=>Math.floor(R()*n),pick=a=>a[ri(a.length)],CR=rng(seed+77),crates=[];
  /* ═══ 1. 격자 — 0 집 · 1 골목 · 2 광장 · 4 종탑 · 7 마당 ═══ */
  const G=new Uint8Array(N*N),CH=new Float32Array(N*N),HID=new Int16Array(N*N).fill(-1);
  const at=(i,j)=>i<0||j<0||i>=N||j>=N?0:G[j*N+i],set=(i,j,v)=>{G[j*N+i]=v};
@@ -145,7 +147,7 @@ function build({scene,seed=20261017}){
     if(!big&&R()<.4){for(const s of [-1,1])shutters.push({m:M(px+Math.cos(ry)*s*.66,y,pz-Math.sin(ry)*s*.66,ry),c:hs.accent==='#ffffff'?'#5f8380':hs.accent})}
     if(!big&&R()<.35){boxes.push(M(px+f.nx*.14,y-.66,pz+f.nz*.14,ry));for(let k=-1;k<=1;k++)flowers.push({m:M(px+f.nx*.18+Math.cos(ry)*k*.28,y-.48,pz+f.nz*.18-Math.sin(ry)*k*.28,0,.13,.13,.13),c:pick(['#e98a9c','#f0cf68','#fbf6ea','#d8664f','#b98fd8'])})}};
    for(let k=2;k<=hs.floors;k++)if(R()<.85)winAt(b1+3.35+(k-2)*2.7+1.35);
-   if(isDoor){doorsI.push({m:M(px,gf+1.1,pz,ry),c:hs.door.col[0]});B.add(BOX,M(f.x+f.nx*.3,gf+.07,f.z+f.nz*.3,ry,1.3,.14,.6),'#cfc8b8');lampsI.push(M(px+Math.cos(ry)*.85,gf+2.35,pz-Math.sin(ry)*.85,ry))}
+   if(isDoor){if(hs.isHome)hs.doorAt={px,pz,gf,ry};else doorsI.push({m:M(px,gf+1.1,pz,ry),c:hs.door.col[0]});B.add(BOX,M(f.x+f.nx*.3,gf+.07,f.z+f.nz*.3,ry,1.3,.14,.6),'#cfc8b8');lampsI.push(M(px+Math.cos(ry)*.85,gf+2.35,pz-Math.sin(ry)*.85,ry))}
    else if(R()<.55)winAt(Math.max(gf,b0)+1.55,R()<.2)}}
  // 마당 — 텃밭 · 나무 정원 · 빈터 · 주차장(분홍 경트럭) · 자판기, 골목 쪽엔 낮은 블록 담
  const pots=[],cats=[];
@@ -163,7 +165,12 @@ function build({scene,seed=20261017}){
   // 골목 쪽 낮은 담(한두 면은 터 둔다)
   for(let a=0;a<y.w;a++)for(let b=0;b<y.h;b++){const i=y.i0+a,j=y.j0+b;for(const [di,dj] of [[1,0],[-1,0],[0,1],[0,-1]]){if(!road(at(i+di,j+dj))||R()<.45)continue;
    const ex=cx(i)+di*(CS/2-.12),ez=cx(j)+dj*(CS/2-.12),len=CS,g1=groundH(ex-dj*len/2,ez-di*len/2),g2=groundH(ex+dj*len/2,ez+di*len/2),g=Math.min(g1,g2),h2=Math.max(g1,g2)+1.05;
-   B.add(BOX,M(ex,(g-.4+h2)/2,ez,0,dj?len:.24,h2-g+.4,di?len:.24),'#c9c4b6',true);colliders.push({box:[ex-(dj?len/2:.12),ez-(di?len/2:.12),ex+(dj?len/2:.12),ez+(di?len/2:.12)]});
+   B.add(BOX,M(ex,(g-.4+h2)/2,ez,0,dj?len:.24,h2-g+.4,di?len:.24),'#c9c4b6',true);colliders.push({box:[ex-(dj?len/2:.12),ez-(di?len/2:.12),ex+(dj?len/2:.12),ez+(di?len/2:.12)],top:h2});
+   // 지름길 나무 상자 — 밟고 뛰면 담을 넘는다(급배달 지름길). 마을 모양이 바뀌지 않게 따로 뽑는다
+   const kx=ex+di*.5+dj*(CR()-.5)*1.4,kz=ez+dj*.5+di*(CR()-.5)*1.4,ky=groundY(kx,kz);
+   if(crates.length<16&&CR()<.14&&!STAIR.has((j+dj)*N+i+di)&&h2-(ky+.58)<.6&&h2-(ky+.58)>.3){
+    B.add(BOX,M(kx,ky+.29,kz,0,.62,.58,.62),'#c08f58',true);for(const s2 of [-1,1])B.add(BOX,M(kx,ky+.29+s2*.17,kz,0,.64,.06,.64),'#8f6440');
+    colliders.push({box:[kx-.31,kz-.31,kx+.31,kz+.31],top:ky+.58,crate:true});crates.push({x:kx,z:kz,y:ky+.58})}
    if(R()<.25&&!a&&!b)vend(cx(i)+di*(CS/2-.7),cx(j)+dj*(CS/2-.7),Math.atan2(di,dj))}}}
  // 계단 — 칸을 가로지르는 디딤돌 + 가장자리 난간
  for(const [k,s] of STAIR){const i=k%N,j=(k-i)/N,x=cx(i),z=cx(j),e0=(s.ax==='x'?x:z)-CS/2,bot=Math.min(groundH(x-CS/2,z-CS/2),groundH(x+CS/2,z+CS/2),groundH(x-CS/2,z+CS/2),groundH(x+CS/2,z-CS/2))-.6;
@@ -242,6 +249,14 @@ function build({scene,seed=20261017}){
  inst(frameG,toon('#ffffff'),frames,true);
  const litMat=toon({color:'#f3e3b0',emissive:'#ffc46b',emissiveIntensity:0}),darkMat=toon({color:'#86aab8',emissive:'#ffcf86',emissiveIntensity:0});
  inst(glassG,litMat,glassLit);inst(glassG,darkMat,glassDark);inst(shutG,toon('#ffffff'),shutters,true);inst(boxG,toon('#7d6249'),boxes);inst(flowerG,toon('#ffffff'),flowers,true);inst(doorG,toon('#ffffff'),doorsI,true,true);
+ // 동네 사람 집 문은 경첩으로 열린다(배달할 때 문이 열리고 손이 나와 받아 간다) — h.doorPivot.rotation.y = h.doorAt.ry - 열린 각
+ {const dark=curve(new T.MeshBasicMaterial({color:'#2a2026'})),knobG=new T.SphereGeometry(.06,8,6),panelG=new T.BoxGeometry(.75,.5,.03);
+  for(const h of homes){const a=h.doorAt;if(!a)continue;const c=Math.cos(a.ry),sn=Math.sin(a.ry),nx=h.door.nx,nz=h.door.nz;
+   const hole=new T.Mesh(new T.PlaneGeometry(1.0,2.12),dark);hole.position.set(a.px-nx*.012,a.gf+1.07,a.pz-nz*.012);hole.rotation.y=a.ry;scene.add(hole);
+   const pv=new T.Group();pv.position.set(a.px-c*.525,a.gf,a.pz+sn*.525);pv.rotation.y=a.ry;scene.add(pv);
+   const d=new T.Mesh(doorG,toon(h.door.col[0]));d.position.set(.525,1.1,0);d.castShadow=true;pv.add(d);
+   const pn=new T.Mesh(panelG,toon('#ffffff'));pn.material=toon(new T.Color(h.door.col[0]).lerp(new T.Color('#ffffff'),.25).getStyle());pn.position.set(.525,1.45,.075);pv.add(pn);
+   const kb=new T.Mesh(knobG,toon('#e8c25a'));kb.position.set(.9,1.05,.1);pv.add(kb);h.doorPivot=pv;h.doorOpen=0}}
  const lampG=new T.CylinderGeometry(.09,.13,.3,6).translate(0,.18,.24),bulbMat=curve(new T.MeshBasicMaterial({color:'#fff1c4'}));
  inst(lampG,toon('#8f8a7a'),lampsI);inst(new T.SphereGeometry(.11,10,8).translate(0,-.02,.24),bulbMat,lampsI);
  // 빨랫줄 — 빨래줄 골목의 마주 보는 집 사이(낮은 집 지붕 아래)
@@ -279,7 +294,7 @@ function build({scene,seed=20261017}){
  function update(t,dt,px,pz,night){for(let k=0;k<cloth.length;k++){const c=cloth[k];if((Math.abs(c.x-px)>30||Math.abs(c.z-pz)>30)&&t>1)continue;_o.position.set(c.x,c.y,c.z);_o.rotation.set(Math.sin(t*2.2+c.ph)*.22,c.ry+Math.sin(t*1.3+c.ph)*.12,0);_o.scale.set(c.w,c.h,1);_o.updateMatrix();clothM.setMatrixAt(k,_o.matrix)}clothM.instanceMatrix.needsUpdate=true;
   OUTER&&OUTER.update(t,dt);litMat.emissiveIntensity=night*1.05;darkMat.emissiveIntensity=night*.25;bulbMat.color.setRGB(.55+night*.6,.5+night*.5,.35+night*.4)}
  update(0,0,0,0,0);
- return {G,CH,HID,N,CS,HW,cx,ci,at,houses,yards,post,homes,plaza,fountain,tower:TW,colliders,poles,stairs:STAIR,blockedCell,camBlock,groundY,groundH,footY,district,districtKey,cats,CURVE,curve,toon,outline,signMesh,setSign,update,walk,mats:{litMat,darkMat},outer:OUTER,
+ return {G,CH,HID,N,CS,HW,cx,ci,at,houses,yards,crates,post,homes,plaza,fountain,tower:TW,colliders,poles,stairs:STAIR,blockedCell,camBlock,groundY,groundH,footY,district,districtKey,cats,CURVE,curve,toon,outline,signMesh,setSign,update,walk,mats:{litMat,darkMat},outer:OUTER,
   walkFix:(x,z,r)=>OUTER?OUTER.walkFix(x,z,r):[Math.max(-HW+r,Math.min(HW-r,x)),Math.max(-HW+r,Math.min(HW-r,z))]}}
 root.PM_TOWN={build,curve,toon,outline,CURVE,rng,GRAD};
 })(window);
