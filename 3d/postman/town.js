@@ -186,13 +186,52 @@ function build({scene,seed=20261017}){
   const fm=curve(new T.MeshBasicMaterial({map:face,transparent:true}));for(const [nx,nz] of [[0,1],[1,0],[0,-1],[-1,0]]){const p=new T.Mesh(new T.CircleGeometry(.85,24),fm);p.position.set(x+nx*1.22,g+h-1.6,z+nz*1.22);p.rotation.y=Math.atan2(nx,nz);scene.add(p)}
   const bell=new T.Mesh(new T.ConeGeometry(.45,.7,12,1,true),toon({color:'#d0a041',side:T.DoubleSide}));bell.position.set(x,g+h-2.4,z);scene.add(bell);
   for(const [nx,nz] of [[0,1],[1,0],[0,-1],[-1,0]])B.add(BOX,M(x+nx*1.17,g+h-2.4,z+nz*1.17,Math.atan2(nx,nz),1.2,1.6,.1),'#3b3a40')}
+ // 골목 육교 — 곧은 골목이 다른 골목과 만나는 네거리 위로 걸어서 건너는 민트색 다리. 계단은 골목 한쪽 절반(집 벽 쪽)에 붙여 아래 길은 그대로 다닐 수 있다
+ const OV=(()=>{const DL=2.1,SL=5.2,HW2=.7,CLR=2.8,road=(i,j)=>at(i,j)===1&&!STAIR.has(j*N+i),solid=(i,j)=>{const v=at(i,j);return v===0||v===4};let best=null;
+  for(let j=4;j<N-4;j++)for(let i=4;i<N-4;i++){if(!road(i,j))continue;for(const ax of ['x','z']){const A=(k,l)=>ax==='z'?[i+l,j+k]:[i+k,j+l];let ok=true;for(const k of [-2,-1,1,2])if(!road(...A(k,0)))ok=false;if(!ok)continue;
+    const cross=[-1,1].filter(l=>{const [a,b]=A(0,l),v=at(a,b);return v===1||v===2}).length;if(!cross)continue;
+    const u0=ax==='z'?cx(j):cx(i),v0=ax==='z'?cx(i):cx(j);let lo=1e9,hi=-1e9;for(let u=-7.5;u<=7.5;u+=1.5)for(const v of [-1.2,1.2]){const g=ax==='z'?groundH(v0+v,u0+u):groundH(u0+u,v0+v);lo=Math.min(lo,g);hi=Math.max(hi,g)}if(hi-lo>.3)continue;
+    for(const sd of [-1,1]){const vcc=v0+sd*(CS/2-HW2-.06);if(houses.some(h=>{if(!h.door)return false;const du=ax==='z'?h.door.z-u0:h.door.x-u0,dv=ax==='z'?h.door.x-vcc:h.door.z-vcc;return Math.abs(du)<DL+SL+1&&Math.abs(dv)<HW2+1.2}))continue;let walls=0,low=false;for(const k of [-2,-1,1,2]){const [a,b]=A(k,sd);if(solid(a,b)){walls++;if(CH[b*N+a]<hi+(Math.abs(k)===1?CLR+1.4:Math.abs(k)===2?2.6:1.6))low=true}}for(const l of [-1,1]){const [a,b]=A(0,l);for(const m of [-1,1]){const [c,d]=[a+(ax==='z'?0:m),b+(ax==='z'?m:0)];if(solid(c,d)&&CH[d*N+c]<hi+CLR+1.4)low=true}}if(low)continue;const sc=cross*3+walls*2-Math.hypot(u0,v0)*.1;if(!best||sc>best.sc)best={sc,ax,sd,u0,v0,g:hi}}}}
+  if(!best)return null;const {ax,sd,u0,v0,g}=best,vc=v0+sd*(CS/2-HW2-.06),H=g+CLR,n=16,rise=(H-g)/n,tr=SL/n;
+  const W=(u,v)=>ax==='z'?[v,u]:[u,v],box=(ua,ub,va,vb)=>{const [x0,z0]=W(Math.min(ua,ub),Math.min(va,vb)),[x1,z1]=W(Math.max(ua,ub),Math.max(va,vb));return [Math.min(x0,x1),Math.min(z0,z1),Math.max(x0,x1),Math.max(z0,z1)]};
+  const parts=[],steps=[];   // 걸을 수 있는 면(계단 디딤판 · 다리 바닥)
+  for(const dir of [-1,1]){const [fx,fz]=W(u0+dir*(DL+SL),vc),gb=Math.min(groundH(fx,fz),groundH(...W(u0+dir*(DL+SL+.6),vc)));for(let k=0;k<n;k++){const ua=u0+dir*(DL+SL-k*tr),ub=u0+dir*(DL+SL-(k+1)*tr),top=gb+(k+1)*(H-gb)/n;steps.push({b:box(ua,ub,vc-HW2,vc+HW2),top,ua,ub,dir,k})}}
+  const deck={b:box(u0-DL,u0+DL,vc-HW2,vc+HW2),top:H};
+  return {ax,sd,u0,v0,vc,g,H,DL,SL,HW2,n,rise,tr,W,box,steps,deck,
+   // 계단 덩어리 + 다리판 (발판 위로 조금, 바닥 판 두께만큼) — 카메라 · 우산이 뚫지 않게
+   solid(x,y,z){for(const s of steps){const [x0,z0,x1,z1]=s.b;if(x>x0&&x<x1&&z>z0&&z<z1&&y<s.top+.05)return true}const [x0,z0,x1,z1]=deck.b;return x>x0-.1&&x<x1+.1&&z>z0-.1&&z<z1+.1&&y>H-.4&&y<H+.05},
+   inside(x,z,pad=0){const uL=DL+SL+pad,{0:px,1:pz}=ax==='z'?[x-vc,z-u0]:[z-vc,x-u0];return Math.abs(pz)<uL&&Math.abs(px)<HW2+pad}}})();
+ const inOV=(x,z,pad=0)=>!!OV&&OV.inside(x,z,pad);
+ if(OV){const {ax,sd,u0,vc,g,H,DL,SL,HW2,n,rise,tr,W}=OV,MINT='#86c4ae',MINT2='#5f9f8a',STEP='#dcd8cc';
+  const bx=(u,y,v,lu,ly,lv,c,e=true,rx=0)=>{const [x,z]=W(u,v);B.add(BOX,ax==='z'?M(x,y,z,0,lv,ly,lu,rx):M(x,y,z,0,lu,ly,lv,0,-rx),c,e)};
+  // 계단: 디딤판마다 바닥까지 채운 콘크리트 + 민트 옆판(바깥쪽) + 손잡이
+  for(const s of OV.steps){const um=(s.ua+s.ub)/2,bot=g-.3;bx(um,(bot+s.top)/2,vc,Math.abs(s.ub-s.ua)+.004,s.top-bot,HW2*2,s.k%2?STEP:'#d2cdbf',false);
+   B.add(BOX,(()=>{const [x,z]=W(um,vc);return M(x,s.top-.02,z,0,ax==='z'?HW2*2+.02:Math.abs(s.ub-s.ua)+.01,.05,ax==='z'?Math.abs(s.ub-s.ua)+.01:HW2*2+.02)})(),'#eeeae0')}
+  for(const dir of [-1,1]){const ut=u0+dir*DL,ub=u0+dir*(DL+SL),len=Math.hypot(SL,H-g),ang=Math.atan2(H-g,SL)*dir;
+   for(const side of [-1,1]){const v=vc+side*(HW2+.06),um=(ut+ub)/2;
+    // 비스듬한 옆판(계단 위로 0.9) — 두께 0.12
+    bx(um,(g+H)/2+.45-.1,v,len,1.15,.12,MINT,true,ang);
+    // 손잡이 봉
+    bx(um,(g+H)/2+1.0,v,len+.1,.07,.16,MINT2,true,ang)}}
+  // 다리판 · 양쪽 난간벽(민트, 위에 손잡이) · 기둥 넷 · 간판
+  bx(u0,H-.18,vc,DL*2+.3,.36,HW2*2+.36,MINT);bx(u0,H-.01,vc,DL*2,.04,HW2*2,'#eeeae0',false);
+  for(const side of [-1,1]){const v=vc+side*(HW2+.12);bx(u0,H+.42,v,DL*2+.3,.88,.12,MINT);bx(u0,H+.9,v,DL*2+.4,.08,.2,MINT2);
+   for(const e of [-1,1]){const [x,z]=W(u0+e*(DL-.25),v);B.add(BOX,M(x,(g+H-.36)/2,z,0,.26,H-.36-g,.26),MINT2,true);colliders.push({x,z,r:.2,ov:true})}}
+  // 층계참 아래 그늘 줄 · 다리 밑면 띠
+  bx(u0,H-.38,vc,DL*2+.3,.06,HW2*2+.4,MINT2,false);
+  for(const side of [-1,1]){const sg=signMesh('골목 육교','',  '#fffaf0','#2f6f5c',1.7,.42),[x,z]=W(u0,vc+side*(HW2+.19));sg.position.set(x,H+.4,z);sg.rotation.y=ax==='z'?side*Math.PI/2:(side>0?0:Math.PI);sg.material.side=T.DoubleSide;scene.add(sg)}
+  // 디딤판 · 다리 바닥 — 올라설 수 있는 면(step: 한 칸씩 걸어 오른다, deck: 아래로는 지나다닌다), 난간 — 위층에 있을 때만 막는다
+  for(const s of OV.steps)colliders.push({box:s.b,top:s.top,step:true,ax,ov:true});
+  colliders.push({box:OV.deck.b,top:H,deck:true,bot:H-.4,ov:true});
+  const rail=(ua,ub,top)=>{for(const side of [-1,1]){const v=vc+side*(HW2+.1);colliders.push({box:OV.box(ua,ub,v-.06,v+.06),bot:top-.45,top:top+1.1,ov:true})}};
+  rail(u0-DL,u0+DL,H);for(const s of OV.steps)rail(s.ua,s.ub,s.top)}
  // 광장 — 분수 · 나무 · 벤치
  const fountain={x:0,z:0},PH=PLAZA_H;{B.add(CYL,M(0,PH+.3,0,0,4.2,.6,4.2),'#d4cbb8',true);B.add(CYL,M(0,PH+.58,0,0,3.7,.08,3.7),'#79bcc8');B.add(CYL,M(0,PH+1.1,0,0,.5,1.2,.5),'#d4cbb8',true);B.add(CYL,M(0,PH+1.75,0,0,1.5,.2,1.5),'#d4cbb8',true);B.add(CYL,M(0,PH+1.86,0,0,1.3,.06,1.3),'#8fc8d4');B.add(BLOB,M(0,PH+2.15,0,0,.28,.4,.28),'#d4cbb8');colliders.push({x:0,z:0,r:2.2})}
  tree(6.6,-6.6,1.05);tree(-6.6,6.6,1);bench(4.6,2.8,-Math.PI/2);bench(-2.8,-5,0);
  // 화분 · 고양이 자리
  for(let j=0;j<N;j++)for(let i=0;i<N;i++){if(at(i,j)!==1||STAIR.has(j*N+i))continue;const x=cx(i),z=cx(j),dk=districtKey(x,z);
   for(const [di,dj] of [[1,0],[-1,0],[0,1],[0,-1]]){if(at(i+di,j+dj)!==0)continue;if(R()<(dk==='w'?.5:.14)){const t=(R()-.5)*1.8,px=x+di*(CS/2-.34)+(dj?t:0),pz=z+dj*(CS/2-.34)+(di?t:0);pots.push([px,pz,.7+R()*.6])}}}
- for(const [x,z,s] of pots){const y=groundY(x,z);BR.add(CYL,M(x,y+.22*s,z,0,.42*s,.44*s,.42*s),pick(['#b86f4c','#a96646','#d6c8aa','#6f8fa0']));BR.add(BLOB,M(x,y+.6*s,z,0,.32*s,.3*s,.32*s),pick(['#6f9f62','#83b26f','#5a8a5a','#e98a9c']))}
+ for(const [x,z,s] of pots){if(inOV(x,z,.45))continue;const y=groundY(x,z);BR.add(CYL,M(x,y+.22*s,z,0,.42*s,.44*s,.42*s),pick(['#b86f4c','#a96646','#d6c8aa','#6f8fa0']));BR.add(BLOB,M(x,y+.6*s,z,0,.32*s,.3*s,.32*s),pick(['#6f9f62','#83b26f','#5a8a5a','#e98a9c']))}
  for(const hs of houses){if(!hs.door||hs.isHome||hs.isPost)continue;const dk=districtKey(hs.x,hs.z);if(R()<(dk==='s'?.3:.05)){const sd=R()<.5?-1:1;cats.push({x:hs.door.x+hs.door.nx*.6+sd*hs.door.nz*.85,z:hs.door.z+hs.door.nz*.6+sd*hs.door.nx*.85,ry:Math.atan2(hs.door.nx,hs.door.nz)+(R()-.5)})}}
  cats.forEach(c=>c.y=groundY(c.x,c.z));
 
@@ -205,12 +244,12 @@ function build({scene,seed=20261017}){
   colliders.push({x,z,r:.22});const p={x,z,g,h};poles.push(p);return p};
  const sag=(a,b,s)=>{const pts=[];for(let k=0;k<=10;k++){const t=k/10;pts.push(new T.Vector3(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t-Math.sin(Math.PI*t)*s,a.z+(b.z-a.z)*t))}return pts};
  const runs=[];for(const vert of [false,true])for(let a=0;a<NB-1;a++){const L=a*5+4;let run=[];for(let k=0;k<=N;k++){const i=vert?L:k,j=vert?k:L,v=k<N?at(i,j):0;if(v===1||v===2){run.push(k)}else{if(run.length>=3)runs.push({vert,L,run});run=[]}}}
- for(const r of runs){const side=((r.L*7)%2?1:-1),list=[];for(let m=1;m<r.run.length;m+=3){const k=r.run[m],x=r.vert?cx(r.L)+side*(CS/2-.3):cx(k),z=r.vert?cx(k):cx(r.L)+side*(CS/2-.3);if(Math.hypot(x,z)<6)continue;list.push(pole(x,z,R()<.3))}
+ for(const r of runs){const side=((r.L*7)%2?1:-1),list=[];for(let m=1;m<r.run.length;m+=3){const k=r.run[m],x=r.vert?cx(r.L)+side*(CS/2-.3):cx(k),z=r.vert?cx(k):cx(r.L)+side*(CS/2-.3);if(Math.hypot(x,z)<6)continue;if(inOV(x,z,1.5)){R();continue}list.push(pole(x,z,R()<.3))}
   for(let m=0;m<list.length-1;m++){const p=list[m],q=list[m+1];for(const [dy,off] of [[-.4,-.7],[-.4,.7],[-.4,0],[-1.05,.5]]){const A=new T.Vector3(p.x+(r.vert?off:0),p.g+p.h+dy,p.z+(r.vert?0:off)),Bv=new T.Vector3(q.x+(r.vert?off:0),q.g+q.h+dy,q.z+(r.vert?0:off));WIRE.line(sag(A,Bv,.55+R()*.35))}}
   // 집으로 가는 인입선
   for(const p of list){if(R()<.6){const hs=houses[ri(houses.length)];const near=houses.filter(h=>Math.hypot(h.x-p.x,h.z-p.z)<9);const h=near.length?near[ri(near.length)]:null;if(h){const A=new T.Vector3(p.x,p.g+p.h-1.05,p.z),Bv=new T.Vector3(h.x+(p.x-h.x)*.45,h.top-.3,h.z+(p.z-h.z)*.45);WIRE.line(sag(A,Bv,.35))}}}}
  // 볼록거울 · 삼각 표지판 — 몇몇 골목 모퉁이
- for(let a=0;a<NB-1;a++)for(let b=0;b<NB-1;b++){if(R()>.35)continue;const i=a*5+4,j=b*5+4;if(at(i,j)!==1)continue;const x=cx(i)+CS/2-.3,z=cx(j)+CS/2-.3,g=groundH(x,z);
+ for(let a=0;a<NB-1;a++)for(let b=0;b<NB-1;b++){if(R()>.35)continue;const i=a*5+4,j=b*5+4;if(at(i,j)!==1)continue;const x=cx(i)+CS/2-.3,z=cx(j)+CS/2-.3,g=groundH(x,z);if(inOV(x,z,.6)){R();continue}
   if(R()<.6){B.add(CYL6,M(x,g+1.4,z,0,.08,2.8,.08),'#d36a3c');const m=new T.Mesh(new T.CircleGeometry(.42,20),toon({color:'#cfe2e6',emissive:'#6f8f99',emissiveIntensity:.2}));m.position.set(x-.12,g+2.9,z-.12);m.rotation.y=Math.PI*1.25;scene.add(m);B.add(CYL,M(x-.08,g+2.9,z-.08,Math.PI*1.25,.95,.95,.08,Math.PI/2),'#d36a3c')}
   else{B.add(CYL6,M(x,g+1.2,z,0,.06,2.4,.06),'#8a8f88');B.add(new T.CylinderGeometry(.5,.5,.06,3),M(x-.05,g+2.55,z-.05,Math.PI*1.25,1,1,1,Math.PI/2),'#c9493f')}
   colliders.push({x,z,r:.15})}
@@ -283,7 +322,7 @@ function build({scene,seed=20261017}){
 
  /* ── 판정 ── */
  function blockedCell(i,j){const v=at(i,j);return !(v===1||v===2||v===7)}
- function camBlock(x,y,z){if(y<groundY(x,z)+.3)return true;const i=ci(x),j=ci(z);if(i<0||j<0||i>=N||j>=N)return OUTER?OUTER.camBlock(x,y,z):false;const v=G[j*N+i];if(v===0||v===4)return y<CH[j*N+i]+.9;return false}
+ function camBlock(x,y,z){if(y<groundY(x,z)+.3)return true;if(OV&&OV.solid(x,y,z))return true;const i=ci(x),j=ci(z);if(i<0||j<0||i>=N||j>=N)return OUTER?OUTER.camBlock(x,y,z):false;const v=G[j*N+i];if(v===0||v===4)return y<CH[j*N+i]+.9;return false}
  // 눈에 보이는 땅(삼각형 메시)의 실제 높이 — 메시가 groundH 보다 볼록한 곳에서 발이 묻히지 않게 둘 중 높은 쪽을 밟는다
  function meshH(x,z,size,segs,f){const s=size/segs,u0=(x+size/2)/s,v0=(z+size/2)/s,ix=Math.floor(u0),iz=Math.floor(v0),u=u0-ix,v=v0-iz,X=-size/2+ix*s,Z=-size/2+iz*s;
   const ha=f(X,Z),hb=f(X,Z+s),hc=f(X+s,Z+s),hd=f(X+s,Z);return u+v<=1?ha+(hd-ha)*u+(hb-ha)*v:hc+(hb-hc)*(1-u)+(hd-hc)*(1-v)}
@@ -294,7 +333,7 @@ function build({scene,seed=20261017}){
  function update(t,dt,px,pz,night){for(let k=0;k<cloth.length;k++){const c=cloth[k];if((Math.abs(c.x-px)>30||Math.abs(c.z-pz)>30)&&t>1)continue;_o.position.set(c.x,c.y,c.z);_o.rotation.set(Math.sin(t*2.2+c.ph)*.22,c.ry+Math.sin(t*1.3+c.ph)*.12,0);_o.scale.set(c.w,c.h,1);_o.updateMatrix();clothM.setMatrixAt(k,_o.matrix)}clothM.instanceMatrix.needsUpdate=true;
   OUTER&&OUTER.update(t,dt);litMat.emissiveIntensity=night*1.05;darkMat.emissiveIntensity=night*.25;bulbMat.color.setRGB(.55+night*.6,.5+night*.5,.35+night*.4)}
  update(0,0,0,0,0);
- return {G,CH,HID,N,CS,HW,cx,ci,at,houses,yards,crates,post,homes,plaza,fountain,tower:TW,colliders,poles,stairs:STAIR,blockedCell,camBlock,groundY,groundH,footY,district,districtKey,cats,CURVE,curve,toon,outline,signMesh,setSign,update,walk,mats:{litMat,darkMat},outer:OUTER,
+ return {G,CH,HID,N,CS,HW,cx,ci,at,houses,yards,crates,post,homes,plaza,fountain,tower:TW,colliders,poles,stairs:STAIR,overpass:OV,blockedCell,camBlock,groundY,groundH,footY,district,districtKey,cats,CURVE,curve,toon,outline,signMesh,setSign,update,walk,mats:{litMat,darkMat},outer:OUTER,
   walkFix:(x,z,r)=>OUTER?OUTER.walkFix(x,z,r):[Math.max(-HW+r,Math.min(HW-r,x)),Math.max(-HW+r,Math.min(HW-r,z))]}}
 root.PM_TOWN={build,curve,toon,outline,CURVE,rng,GRAD};
 })(window);
