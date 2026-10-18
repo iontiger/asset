@@ -254,12 +254,18 @@ function setSound(on){AU.on=on;store('asset-postman-sound',on?'on':'off');au();i
 function blocked(i,j){if(i<0||j<0||i>=town.N||j>=town.N)return false;return town.blockedCell(i,j)}
 function resolve(px,pz,r,y=-1e9){let x=px,z=pz;for(let it=0;it<3;it++){const i0=ci(x),j0=ci(z);for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const i=i0+di,j=j0+dj;if(!blocked(i,j))continue;const x0=cx(i)-CS/2,x1=x0+CS,z0=cx(j)-CS/2,z1=z0+CS,qx=clamp(x,x0,x1),qz=clamp(z,z0,z1);let dx=x-qx,dz=z-qz,d=Math.hypot(dx,dz);
    if(d<r){if(d<1e-6){const opts=[[x-x0,-1,0],[x1-x,1,0],[z-z0,0,-1],[z1-z,0,1]].sort((a,b)=>a[0]-b[0])[0];x+=opts[1]*(opts[0]+r);z+=opts[2]*(opts[0]+r)}else{x+=dx/d*(r-d);z+=dz/d*(r-d)}}}
-  for(const c of town.colliders){if(c.top!==undefined&&y>=c.top-.06)continue;if(c.box){const [x0,z0,x1,z1]=c.box;if(x<x0-r||x>x1+r||z<z0-r||z>z1+r)continue;const qx=clamp(x,x0,x1),qz=clamp(z,z0,z1);let dx=x-qx,dz=z-qz,d=Math.hypot(dx,dz);if(d<r){if(d<1e-6){const o=[[x-x0,-1,0],[x1-x,1,0],[z-z0,0,-1],[z1-z,0,1]].sort((p,q)=>p[0]-q[0])[0];x+=o[1]*(o[0]+r);z+=o[2]*(o[0]+r)}else{x+=dx/d*(r-d);z+=dz/d*(r-d)}}continue}if(!c.r)continue;const dx=x-c.x,dz=z-c.z,d=Math.hypot(dx,dz),rr=c.r+r;if(d<rr&&d>1e-6){x+=dx/d*(rr-d);z+=dz/d*(rr-d)}}
+  for(const c of town.colliders){if(c.deck||c.top!==undefined&&y>=c.top-(c.step?.3:.06)||c.bot!==undefined&&y<c.bot)continue;
+   // 육교 계단 디딤판: 오르는 방향으로는 발끝만큼(0.12)만 막아 한 칸씩 올라서고, 옆으로는 몸 반지름만큼 막는다
+   if(c.step){const [x0,z0,x1,z1]=c.box,ex=c.ax==='x'?.12:r,ez=c.ax==='z'?.12:r;if(x>x0-ex&&x<x1+ex&&z>z0-ez&&z<z1+ez){const a=x-(x0-ex),b=x1+ex-x,cc=z-(z0-ez),d=z1+ez-z,m=Math.min(a,b,cc,d);if(m===a)x-=a;else if(m===b)x+=b;else if(m===cc)z-=cc;else z+=d}continue}
+   if(c.box){const [x0,z0,x1,z1]=c.box;if(x<x0-r||x>x1+r||z<z0-r||z>z1+r)continue;const qx=clamp(x,x0,x1),qz=clamp(z,z0,z1);let dx=x-qx,dz=z-qz,d=Math.hypot(dx,dz);if(d<r){if(d<1e-6){const o=[[x-x0,-1,0],[x1-x,1,0],[z-z0,0,-1],[z1-z,0,1]].sort((p,q)=>p[0]-q[0])[0];x+=o[1]*(o[0]+r);z+=o[2]*(o[0]+r)}else{x+=dx/d*(r-d);z+=dz/d*(r-d)}}continue}if(!c.r)continue;const dx=x-c.x,dz=z-c.z,d=Math.hypot(dx,dz),rr=c.r+r;if(d<rr&&d>1e-6){x+=dx/d*(rr-d);z+=dz/d*(rr-d)}}
   for(const n of NPCS){if(n.inside)continue;const dx=x-n.x,dz=z-n.z,d=Math.hypot(dx,dz),rr=.36+r;if(d<rr&&d>1e-6){x+=dx/d*(rr-d);z+=dz/d*(rr-d)}}
   [x,z]=town.walkFix(x,z,r)}return [x,z]}
 const PR=.42;   // 주인공 몸 반지름(팔 · 가방까지) — 벽에 겹쳐 보이지 않게
 // 담 · 나무 상자 위에 설 수 있다(높이 top). 지금 높이에서 한 뼘 안쪽이면 올라선다
-function platTop(x,z,y){let top=-1e9;for(const c of town.colliders){if(c.top===undefined)continue;const [x0,z0,x1,z1]=c.box;if(x<x0-.08||x>x1+.08||z<z0-.08||z>z1+.08)continue;if(c.top<=y+.14&&c.top>top)top=c.top}return top}
+function platTop(x,z,y){let top=-1e9;for(const c of town.colliders){if(c.top===undefined||c.bot!==undefined&&!c.deck)continue;const [x0,z0,x1,z1]=c.box;if(x<x0-.08||x>x1+.08||z<z0-.08||z>z1+.08)continue;if(c.top<=y+(c.step||c.deck?.3:.14)&&c.top>top)top=c.top}return top}
+// 골목 육교의 계단 디딤판 · 다리 바닥 높이(지금 높이에서 한 칸 안쪽이면 그 면을 밟는다)
+const OVC=town.colliders.filter(c=>c.ov&&(c.step||c.deck));
+function ovTop(x,z,y){let top=-1e9;for(const c of OVC){const [x0,z0,x1,z1]=c.box;if(x<x0||x>x1||z<z0||z>z1)continue;if(c.top<=y+.3&&c.top>top)top=c.top}return top}
 function jump(){if(P.onGround&&!talkLock()){P.vy=riding?3.4:4.6;P.onGround=false;if(!riding)HERO.jump();tone(520,0,.12,'sine',.03);tone(780,.05,.12,'sine',.025)}}
 let lastStep=0;
 function movePlayer(dt){let ix=0,iz=0;if(keys.KeyW||keys.ArrowUp)iz+=1;if(keys.KeyS||keys.ArrowDown)iz-=1;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;
@@ -268,7 +274,7 @@ function movePlayer(dt){let ix=0,iz=0;if(keys.KeyW||keys.ArrowUp)iz+=1;if(keys.K
  const run=keys.ShiftLeft||keys.ShiftRight||(joy.on&&m>.92);let sp=run?5.6:3.1,acc=m>.05?9:12;
  let dx=fx*iz+rx*ix,dz=fz*iz+rz*ix;
  if(riding){// 앞쪽 비탈: 가파르면(계단) 내려서 끌고, 내리막이면 빨라지고 오르막이면 느려진다
-  const L=Math.hypot(dx,dz)||1,ux=m>.05?dx/L:Math.sin(P.h),uz=m>.05?dz/L:Math.cos(P.h),g0=town.groundY(P.x,P.z),grade=(town.groundY(P.x+ux*1.2,P.z+uz*1.2)-g0)/1.2,back=(g0-town.groundY(P.x-ux,P.z-uz));
+  const L=Math.hypot(dx,dz)||1,ux=m>.05?dx/L:Math.sin(P.h),uz=m>.05?dz/L:Math.cos(P.h),GY=(x,z)=>Math.max(town.groundY(x,z),ovTop(x,z,P.y+.35)),g0=GY(P.x,P.z),grade=(GY(P.x+ux*1.2,P.z+uz*1.2)-g0)/1.2,back=(g0-GY(P.x-ux,P.z-uz));
   pushing=Math.abs(grade)>.34||Math.abs(back)>.34;if(pushing){sp=2.5;acc=8}else{sp=(run?8.8:6.6)*clamp(1-grade*2.6,.5,1.8);kickSp=sp;acc=m>.05?(WX==='snow'?1.8:3.2):(WX==='snow'?1.2:2.6)}}
  const tvx=dx*sp,tvz=dz*sp;
  P.vx+=(tvx-P.vx)*Math.min(1,dt*acc);P.vz+=(tvz-P.vz)*Math.min(1,dt*acc);const v=Math.hypot(P.vx,P.vz);
@@ -403,6 +409,7 @@ function drawMap(){const W=mapC.width,N=town.N,G=town.G;mctx.fillStyle='#a9d58f'
  {const [ox,oz]=tp(-town.HW,-town.HW);for(let j=0;j<N;j++)for(let i=0;i<N;i++){const v=G[j*N+i];mctx.fillStyle=v===1?'#fffaf0':v===2?'#f3e6c9':v===7?'#b5d69c':v===4?'#4f6f8f':'#d9c7a8';mctx.fillRect(ox+i*s,oz+j*s,s+.5,s+.5)}
   for(const h of town.houses){mctx.fillStyle=h.wall;mctx.fillRect(ox+h.i0*s+.8,oz+h.j0*s+.8,h.w*s-1.6,h.h*s-1.6)}}
  for(const c of town.crates){const [x,y]=tp(c.x,c.z);mctx.fillStyle='#b07a45';mctx.fillRect(x-3,y-3,6,6)}
+ {const O=town.overpass;if(O){const [x0,z0]=tp(...O.W(O.u0-O.DL-O.SL,O.vc-O.HW2)),[x1,z1]=tp(...O.W(O.u0+O.DL+O.SL,O.vc+O.HW2)),[d0,e0]=tp(...O.W(O.u0-O.DL,O.vc-O.HW2-.3)),[d1,e1]=tp(...O.W(O.u0+O.DL,O.vc+O.HW2+.3));mctx.fillStyle='#86c4ae';mctx.fillRect(Math.min(x0,x1),Math.min(z0,z1),Math.abs(x1-x0),Math.abs(z1-z0));mctx.fillStyle='#5f9f8a';mctx.fillRect(Math.min(d0,d1),Math.min(e0,e1),Math.abs(d1-d0),Math.abs(e1-e0))}}
  mctx.fillStyle='#79c3d6';{const [x,y]=tp(0,0);mctx.beginPath();mctx.arc(x,y,Math.max(3,s*.9),0,7);mctx.fill()}
  mctx.textAlign='center';mctx.textBaseline='middle';mctx.font='700 13px Jua,"Apple SD Gothic Neo",sans-serif';
  for(const [t,x,z] of [['빨래줄 골목',0,-30],['등불 골목',30,0],['고양이 골목',0,30],['화분 골목',-30,0],...(MAPD?MAPD.labels:[])]){const [a,b]=tp(x,z);mctx.lineWidth=4;mctx.strokeStyle='rgba(255,250,240,.9)';mctx.strokeText(t,a,b);mctx.fillStyle='#5a4636';mctx.fillText(t,a,b)}
@@ -428,7 +435,7 @@ function toggleCats(on){const m=$('catbook');on=on===undefined?!m.classList.cont
 // 다음 날 — 배달 목록 · 날씨 · 집 안 사람이 바뀐다(고양이 도감 · 킥보드 · 걸은 거리는 그대로)
 function nextDay(){S=blank(S.day+1,{dist:S.dist,bike:S.bike,crateHint:S.crateHint,starsAll:(S.starsAll||0)+S.stars.length});save();try{sessionStorage.setItem('pm-autostart','1')}catch(e){}location.reload()}
 function setupDay(){WX=wxFor(S.day);makePuddles(S.day);setInside();dressHero();parkBike();setRainSound();applySky();renderCats()}
-function crateHint(){if(S.crateHint||!started)return;for(const c of town.crates)if(Math.hypot(c.x-P.x,c.z-P.z)<1.6){S.crateHint=1;toast('<b>📦 지름길 나무 상자</b>상자 위로 뛰어(Space) 한 번 더 뛰면 블록담을 넘어요',4.5);return}}
+function crateHint(){const O=town.overpass;if(O&&!S.ovHint&&started&&O.inside(P.x,P.z,1.2)){S.ovHint=1;toast('<b>🌉 골목 육교</b>계단으로 올라가 네거리 위를 건너 보세요',4)}if(S.crateHint||!started)return;for(const c of town.crates)if(Math.hypot(c.x-P.x,c.z-P.z)<1.6){S.crateHint=1;toast('<b>📦 지름길 나무 상자</b>상자 위로 뛰어(Space) 한 번 더 뛰면 블록담을 넘어요',4.5);return}}
 function updateRush(dt){if(!started||!$('finale').hidden||SC)return;for(const id of S.bag){if(!(id in S.rush))continue;const was=S.rush[id];S.rush[id]=was-dt;if(was>0&&S.rush[id]<=0){const j=job(id);toast(`<b>🟥 ${j.item}</b>급배달 시간이 지났어요. 그래도 갖다 줘요!`,3.5);renderBag()}
   else if(Math.floor(was)!==Math.floor(S.rush[id])&&$('bag').classList.contains('has'))renderBagSoon()}}
 let rbT=0;function renderBagSoon(){if(clock.t-rbT>1){rbT=clock.t;renderBag()}}
@@ -458,10 +465,10 @@ function legIK(side,lift){const J=HERO.J,th=J['thigh'+side],kn=J['knee'+side],a=
  const ky=-a*Math.cos(t0),kz=-a*Math.sin(t0),g=t0+ph0,fy=ky-b*Math.cos(g)-.05*Math.sin(g),fz=kz-b*Math.sin(g)+.05*Math.cos(g);
  const gy=.02-J.hips.position.y+lift,ty=Math.min(-.24,Math.max(fy,gy)),tz=fz;if(ty<=fy+.002)return;const D=clamp(Math.hypot(ty,tz),b-a+.02,a+b-.003),ph=Math.PI-Math.acos(clamp((a*a+b*b-D*D)/(2*a*b),-1,1));
  th.rotation.x=Math.atan2(-tz,-ty)-Math.atan2(b*Math.sin(ph),a+b*Math.cos(ph));kn.rotation.x=ph}
-function stepFeet(dt){const sc=HERO.root.scale.y,pg=P.gy,on=P.onGround&&P.air<.02&&!(platTop(P.x,P.z,P.y)>town.footY(P.x,P.z,.2)+.05);
+function stepFeet(dt){const sc=HERO.root.scale.y,pg=P.gy,on=P.onGround&&P.air<.02&&!(platTop(P.x,P.z,P.y)>Math.max(town.footY(P.x,P.z,.2),ovTop(P.x,P.z,P.y))+.05);
  HERO.root.updateMatrixWorld(true);const gs={};
  // 발마다 뒤꿈치·발끝 두 곳의 땅 높이 중 높은 쪽 (발끝이 계단 턱에 박히지 않게). 벽처럼 너무 높거나 낭떠러지처럼 너무 낮으면 몸 높이로 본다
- for(const sd of ['L','R']){let g=-1e9;for(const oz of [-.1,.2]){HERO.J['knee'+sd].localToWorld(_fv.set(0,-.315,oz));g=Math.max(g,town.footY(_fv.x,_fv.z))}gs[sd]=g>pg+.7||g<pg-.6?pg:g}
+ for(const sd of ['L','R']){let g=-1e9;for(const oz of [-.1,.2]){HERO.J['knee'+sd].localToWorld(_fv.set(0,-.315,oz));g=Math.max(g,town.footY(_fv.x,_fv.z),ovTop(_fv.x,_fv.z,pg+.3))}gs[sd]=g>pg+.7||g<pg-.6?pg:g}
  // 몸은 낮은 발 쪽에 두되, 높은 발을 0.2 넘게 들어 올려야 하면 그만큼 몸을 올린다
  const hi=Math.max(gs.L,gs.R),lo=Math.min(gs.L,gs.R),base=Math.max(lo,hi-.2),want=on?clamp(pg-base,-.4,.4):0;
  FT.shift+=(want-FT.shift)*Math.min(1,dt*14);HERO.root.position.y-=FT.shift;
@@ -470,7 +477,7 @@ function stepFeet(dt){const sc=HERO.root.scale.y,pg=P.gy,on=P.onGround&&P.air<.0
 const UMB={tx:0,tz:0,s:1,can:null},_uc=new T.Vector3(),_ub=new T.Vector3(),_ua=new T.Vector3(),_uq=new T.Quaternion(),_uw=new T.Quaternion(),_near=[];
 function umbSolid(x,y,z){if(y<town.groundY(x,z)+.05)return true;const i=town.ci(x),j=town.ci(z);
  if(i>=0&&j>=0&&i<town.N&&j<town.N){const v=town.G[j*town.N+i];if((v===0||v===4)&&y<town.CH[j*town.N+i]+.5)return true}else if(town.camBlock(x,y,z))return true;
- for(const c of _near){if(c.box){const [x0,z0,x1,z1]=c.box;if(x>x0&&x<x1&&z>z0&&z<z1&&(c.top===undefined||y<c.top))return true}else if((x-c.x)**2+(z-c.z)**2<c.r*c.r)return true}return false}
+ for(const c of _near){if(c.box){const [x0,z0,x1,z1]=c.box;if(x>x0&&x<x1&&z>z0&&z<z1&&(c.top===undefined||y<c.top)&&(c.bot===undefined||y>=c.bot))return true}else if((x-c.x)**2+(z-c.z)**2<c.r*c.r)return true}return false}
 function umbClear(cx,cy,cz,R){let best=R,px=0,pz=0;for(let k=0;k<12;k++){const a=k/12*Math.PI*2,dx=Math.cos(a),dz=Math.sin(a);let c=R;
   for(let r=.12;r<=R+.001;r+=.11)if(umbSolid(cx+dx*r,cy,cz+dz*r)){c=Math.max(0,r-.11);break}
   if(c<R){px-=dx*(R-c);pz-=dz*(R-c)}best=Math.min(best,c)}return {best,px,pz}}
@@ -612,7 +619,7 @@ if(TOUCH)document.body.classList.add('touch');
 WX=wxFor(S.day);dressHero();parkBike();spawn();applySky();renderBag();renderCats();
 $('start').disabled=false;try{if(sessionStorage.getItem('pm-autostart')){sessionStorage.removeItem('pm-autostart');setTimeout(()=>begin(false),300)}}catch(e){}
 requestAnimationFrame(frame);
-window.pmDebug={T,scene,camera,renderer,town,HERO,NPCS,P,cam,keys,get S(){return S},get JOBS(){return JOBS},get WX(){return WX},get riding(){return riding},get pushing(){return pushing},get SC(){return SC},CATS,get catFed(){return catFed},feedCat,toggleBike,toggleCats,nextDay,setupDay,setWx(w){WX=w;makePuddles(S.day);setInside();dressHero()},ENV,get started(){return started},begin,act,emote,jump,step:(n=1,dt=1/30)=>{for(let k=0;k<n;k++)step(dt,k<n-1)},get camFix(){return camFix},closeTalk,tick:(n=1)=>{for(let k=0;k<n;k++)step(1/30,true)},pause:v=>{paused=v},
+window.pmDebug={T,scene,camera,renderer,town,HERO,NPCS,P,cam,keys,platTop,ovTop,resolve,get S(){return S},get JOBS(){return JOBS},get WX(){return WX},get riding(){return riding},get pushing(){return pushing},get SC(){return SC},CATS,get catFed(){return catFed},feedCat,toggleBike,toggleCats,nextDay,setupDay,setWx(w){WX=w;makePuddles(S.day);setInside();dressHero()},ENV,get started(){return started},begin,act,emote,jump,step:(n=1,dt=1/30)=>{for(let k=0;k<n;k++)step(dt,k<n-1)},get camFix(){return camFix},closeTalk,tick:(n=1)=>{for(let k=0;k<n;k++)step(1/30,true)},pause:v=>{paused=v},
  tp(name){const n=npcBy(name);if(!n)return;P.x=n.x+Math.sin(n.ry)*1.1;P.z=n.z+Math.cos(n.ry)*1.1;P.h=n.ry+Math.PI;cam.yaw=P.h+Math.PI+.4;cam.cur=cam.dist},
  deliverAll(){S.done=JOBS.map(j=>j.id);S.bag=[];S.round=4;ENV.want=.84;save();renderBag()},tpCat(k){const c=CATS[k];P.x=c.x+Math.sin(c.g.rotation.y)*1.1;P.z=c.z+Math.cos(c.g.rotation.y)*1.1;P.h=c.g.rotation.y+Math.PI;cam.yaw=P.h+Math.PI+.4},startEve,startFest,setTod(v){ENV.tod=ENV.want=v},toggleMap};
 })();
