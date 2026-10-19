@@ -228,14 +228,70 @@ addEventListener('keydown',e=>{if(e.repeat&&!['KeyW','KeyA','KeyS','KeyD','Arrow
  if(e.code==='Space'){e.preventDefault();jump()}if(['KeyE','KeyF','Enter'].includes(e.code)){e.preventDefault();act()}if(e.code==='KeyM'||e.code==='Tab'){e.preventDefault();toggleMap()}
  if(/^Digit[1-5]$/.test(e.code))emote(+e.code.slice(5)-1);if(e.code==='KeyB')toggleBike();if(e.code==='KeyC')toggleCats();if(e.code==='Escape'){if($('catbook').classList.contains('on'))toggleCats(false);else if($('map').classList.contains('on'))toggleMap(false);else if(!$('finale').hidden)$('fin-walk').click();else if(EMBED)goHome()}});
 addEventListener('keyup',e=>{keys[e.code]=false});addEventListener('blur',()=>{for(const k in keys)keys[k]=false});
-canvas.addEventListener('pointerdown',e=>{au();if(!started)return;canvas.setPointerCapture(e.pointerId);
+canvas.addEventListener('pointerdown',e=>{au();if(!started)return;canvas.setPointerCapture(e.pointerId);tap={id:e.pointerId,x:e.clientX,y:e.clientY,t:performance.now(),moved:false};
  if(e.pointerType==='touch'&&e.clientX<innerWidth*.5&&!joy.on){joy.on=true;joy.id=e.pointerId;joy.sx=e.clientX;joy.sy=e.clientY;joy.x=joy.y=0;showJoy();return}
  drag={id:e.pointerId,x:e.clientX,y:e.clientY}});
-canvas.addEventListener('pointermove',e=>{if(joy.on&&e.pointerId===joy.id){const dx=e.clientX-joy.sx,dy=e.clientY-joy.sy,m=Math.hypot(dx,dy),R=56;joy.x=m>R?dx/m:dx/R;joy.y=m>R?dy/m:dy/R;showJoy();return}
+canvas.addEventListener('pointermove',e=>{if(tap&&e.pointerId===tap.id&&Math.hypot(e.clientX-tap.x,e.clientY-tap.y)>7)tap.moved=true;if(joy.on&&e.pointerId===joy.id){const dx=e.clientX-joy.sx,dy=e.clientY-joy.sy,m=Math.hypot(dx,dy),R=56;joy.x=m>R?dx/m:dx/R;joy.y=m>R?dy/m:dy/R;showJoy();return}
  if(drag&&e.pointerId===drag.id){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;cam.yaw-=dx*.0065;cam.pitch=clamp(cam.pitch+dy*.0045,-.05,1.05);cam.user=clock.t}});
-const endP=e=>{if(joy.on&&e.pointerId===joy.id){joy.on=false;joy.x=joy.y=0;showJoy()}if(drag&&e.pointerId===drag.id)drag=null};
+const endP=e=>{if(tap&&e.pointerId===tap.id){const ok=!tap.moved&&e.type==='pointerup'&&performance.now()-tap.t<600;tap=null;if(ok)tapAt(e.clientX,e.clientY)}if(joy.on&&e.pointerId===joy.id){joy.on=false;joy.x=joy.y=0;showJoy()}if(drag&&e.pointerId===drag.id)drag=null};
 canvas.addEventListener('pointerup',endP);canvas.addEventListener('pointercancel',endP);
 canvas.addEventListener('wheel',e=>{e.preventDefault();cam.dist=clamp(cam.dist*(1+Math.sign(e.deltaY)*.1),2.4,8)},{passive:false});
+
+/* ═══ 7-1. 마우스로 걷기 — 덴트포토 마을처럼: 땅을 짧게 누르면(끌지 않고) 그곳까지 길을 찾아 걸어가고, 끌면 카메라를 돌린다.
+   사람 · 고양이를 누르면 앞까지 걸어가 말을 걸고(E 와 같다), 지도를 누르면 그곳으로 간다. 걷기 키를 누르면 길 안내는 그친다 */
+let tap=null;const ROUTE={pts:[],goal:null,npc:null,cat:null,stuck:0};const GSZ=.5;
+// y 높이에서 이어서 설 수 있는 곳의 높이(육교 계단 · 다리 위 포함), 못 서면 null
+// 길 찾기는 같은 자리를 수천 번 재므로 부딪힐 것들을 3m 칸에 미리 나눠 둔다
+let CGRID=null;const cgKey=(i,j)=>i*10007+j;
+function colsNear(x,z){if(!CGRID){CGRID=new Map();for(const c of town.colliders){const [x0,z0,x1,z1]=c.box||[c.x-c.r,c.z-c.r,c.x+c.r,c.z+c.r];for(let i=Math.floor((x0-1)/3);i<=Math.floor((x1+1)/3);i++)for(let j=Math.floor((z0-1)/3);j<=Math.floor((z1+1)/3);j++){const k=cgKey(i,j);if(!CGRID.has(k))CGRID.set(k,[]);CGRID.get(k).push(c)}}}
+ return CGRID.get(cgKey(Math.floor(x/3),Math.floor(z/3)))||[]}
+function standAt(x,z,y){const g=Math.max(town.footY(x,z),ovTop(x,z,y+.15));const [rx,rz]=resolve(x,z,PR*.92,g,true,colsNear(x,z));return Math.abs(rx-x)+Math.abs(rz-z)<.03?g:null}
+function nearestStand(x,z,y){for(let r=0;r<=4;r+=.5){let best=null,bd=1e9;const n=r?Math.max(8,Math.round(r*7)):1;for(let k=0;k<n;k++){const a=k/n*Math.PI*2,px=x+Math.cos(a)*r,pz=z+Math.sin(a)*r,g=standAt(px,pz,y);if(g!==null&&Math.abs(g-y)<1.6){const d=Math.abs(g-y);if(d<bd){bd=d;best={x:px,z:pz,y:g}}}}if(best)return best}return null}
+function lineOK(a,b){const d=Math.hypot(b.x-a.x,b.z-a.z),n=Math.max(1,Math.ceil(d/.3));let y=a.y;for(let k=1;k<=n;k++){const t=k/n,ny=standAt(a.x+(b.x-a.x)*t,a.z+(b.z-a.z)*t,y);if(ny===null||ny-y>.5||y-ny>.9)return false;y=ny}return Math.abs(y-b.y)<.6}
+function findPath(s,goal){const t0=performance.now(),gi=Math.round(goal.x/GSZ),gj=Math.round(goal.z/GSZ),LY=y=>Math.max(0,Math.min(31,Math.round((y+8)/1.4))),NK=(i,j,l)=>((i+2000)*4001+(j+2000))*32+l,cache=new Map(),
+  at=(i,j,y)=>{const k=NK(i,j,LY(y));if(cache.has(k))return cache.get(k);const v=standAt(i*GSZ,j*GSZ,y);cache.set(k,v);return v},H=(i,j)=>{const dx=Math.abs(i-gi),dz=Math.abs(j-gj);return (Math.max(dx,dz)+.4142*Math.min(dx,dz))*1.1};
+ const open=[],push=(k,f)=>{open.push([f,k]);let i=open.length-1;while(i){const q=(i-1)>>1;if(open[q][0]<=open[i][0])break;[open[q],open[i]]=[open[i],open[q]];i=q}},pop=()=>{const top=open[0],l=open.pop();if(open.length){open[0]=l;let i=0;for(;;){const a=i*2+1,b=a+1;let m=i;if(a<open.length&&open[a][0]<open[m][0])m=a;if(b<open.length&&open[b][0]<open[m][0])m=b;if(m===i)break;[open[m],open[i]]=[open[i],open[m]];i=m}}return top[1]};
+ const gS=new Map(),par=new Map(),node=new Map(),closed=new Set();let si=Math.round(s.x/GSZ),sj=Math.round(s.z/GSZ),sy=at(si,sj,s.y);
+ // 벽에 붙어 서 있으면 시작 칸이 막혀 있을 수 있다 → 가장 가까운 설 수 있는 칸에서 시작
+ if(sy===null){let bd=1e9;for(let dj=-3;dj<=3;dj++)for(let di=-3;di<=3;di++){const i=Math.round(s.x/GSZ)+di,j=Math.round(s.z/GSZ)+dj,v=at(i,j,s.y),d=Math.hypot(i*GSZ-s.x,j*GSZ-s.z);if(v!==null&&Math.abs(v-s.y)<.6&&d<bd){bd=d;si=i;sj=j;sy=v}}if(sy===null)sy=s.y}
+ const sk=NK(si,sj,LY(sy));gS.set(sk,0);node.set(sk,[si,sj,sy]);push(sk,H(si,sj));let found=null,exp=0;
+ while(open.length){const k=pop();if(closed.has(k))continue;closed.add(k);const [i,j,y]=node.get(k);if(i===gi&&j===gj&&Math.abs(y-goal.y)<1){found=k;break}
+  if(++exp>60000||(exp%1500===0&&performance.now()-t0>500))break;const g0=gS.get(k);
+  for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){if(!di&&!dj)continue;const ni=i+di,nj=j+dj,ny=at(ni,nj,y);if(ny===null||ny-y>.5||y-ny>.9)continue;
+   if(di&&dj&&(at(i+di,j,y)===null||at(i,j+dj,y)===null))continue;const nk=NK(ni,nj,LY(ny));if(closed.has(nk))continue;const ng=g0+(di&&dj?1.4142:1)+Math.max(0,ny-y)*.6;
+   if(!gS.has(nk)||ng<gS.get(nk)){gS.set(nk,ng);par.set(nk,k);node.set(nk,[ni,nj,ny]);push(nk,ng+H(ni,nj))}}}
+ findPath.exp=exp;findPath.ms=performance.now()-t0;if(found===null)return null;
+ const raw=[];for(let k=found;k!==undefined;k=par.get(k)){const [i,j,y]=node.get(k);raw.push({x:i*GSZ,z:j*GSZ,y})}raw.reverse();raw.push(goal);
+ // 줄 당기기: 곧게 걸어갈 수 있는 가장 먼 점까지 건너뛴다
+ const out=[];let cur={x:s.x,z:s.z,y:s.y},i=0;while(i<raw.length-1){let j=Math.min(raw.length-1,i+28);while(j>i+1&&!lineOK(cur,raw[j]))j--;out.push(raw[j]);cur=raw[j];i=j}return out}
+const RING=new T.Mesh(new T.TorusGeometry(.42,.05,6,28).rotateX(-Math.PI/2),curve(new T.MeshBasicMaterial({color:'#fff4bf',transparent:true,opacity:.95,depthWrite:false})));RING.visible=false;RING.renderOrder=3;scene.add(RING);
+let routeLine=null;const routeMat=curve(new T.LineBasicMaterial({color:'#fff4bf',transparent:true,opacity:.85,depthWrite:false}));
+function drawRoute(){if(routeLine){scene.remove(routeLine);routeLine.geometry.dispose();routeLine=null}if(!ROUTE.pts.length){RING.visible=false;return}
+ const e=ROUTE.pts[ROUTE.pts.length-1];RING.position.set(e.x,e.y+.06,e.z);RING.visible=!ROUTE.npc&&!ROUTE.cat;
+ const pts=[new T.Vector3(P.x,P.gy+.08,P.z)];for(const q of ROUTE.pts){const a=pts[pts.length-1],n=Math.ceil(Math.hypot(q.x-a.x,q.z-a.z)/.6);for(let k=1;k<=n;k++){const t=k/n,x=a.x+(q.x-a.x)*t,z=a.z+(q.z-a.z)*t;pts.push(new T.Vector3(x,Math.max(town.footY(x,z),ovTop(x,z,a.y+(q.y-a.y)*t+.2))+.08,z))}}
+ routeLine=new T.Line(new T.BufferGeometry().setFromPoints(pts),routeMat);routeLine.renderOrder=3;routeLine.frustumCulled=false;scene.add(routeLine)}
+function clearRoute(){ROUTE.pts=[];ROUTE.npc=ROUTE.cat=null;drawRoute()}
+function travelTo(x,z,y,who){let end;if(who){const g=standAt(x,z,y);end=g!==null?{x,z,y:g}:nearestStand(x,z,y)}else end=nearestStand(x,z,y);if(!end){toast('<b>🚶 여기는 못 가요</b>걸어갈 수 있는 길을 눌러 보세요',2.2);return false}
+ ROUTE.npc=who&&who.npc||null;ROUTE.cat=who&&who.cat||null;ROUTE.stuck=0;
+ if(Math.hypot(end.x-P.x,end.z-P.z)<.6&&Math.abs(end.y-P.gy)<.6){ROUTE.pts=[end];arriveRoute();return true}
+ const path=findPath({x:P.x,z:P.z,y:P.gy},end);if(!path||!path.length){ROUTE.npc=ROUTE.cat=null;toast('<b>🚶 길을 못 찾았어요</b>조금 더 가까운 곳을 눌러 보세요',2.6);return false}
+ ROUTE.pts=path;drawRoute();blip();return true}
+function arriveRoute(){const n=ROUTE.npc,c=ROUTE.cat;clearRoute();if(n){P.h=Math.atan2(n.x-P.x,n.z-P.z);act()}else if(c){P.h=Math.atan2(c.x-P.x,c.z-P.z);feedCat(c)}}
+// 화면의 한 점 → 땅(휜 세상 그대로 보이는 높이)에서 처음 닿는 곳. 집이나 육교에 닿으면 그 앞 길
+const _ray=new T.Raycaster(),_ndc=new T.Vector2();
+function pickGround(cx,cy){_ndc.set(cx/innerWidth*2-1,-cy/innerHeight*2+1);_ray.setFromCamera(_ndc,camera);const o=_ray.ray.origin,d=_ray.ray.direction,K=CURVE.uCurve.value,O=town.overpass;let last=null;
+ for(let t=.4;t<160;t+=t<20?.12:.3){const x=o.x+d.x*t,z=o.z+d.z*t,c=((x-P.x)**2+(z-P.z)**2)*K,y=o.y+d.y*t+c;   // y 는 휨을 되돌린 실제 높이
+  const i=town.ci(x),j=town.ci(z),inT=i>=0&&j>=0&&i<town.N&&j<town.N,v=inT?town.G[j*town.N+i]:-1;
+  if(inT&&(v===0||v===4)&&y<town.CH[j*town.N+i]+1.2)return last?{x:last.x,z:last.z,y:last.y,wall:true}:null;
+  if(O&&O.solid(x,y,z)){const top=ovTop(x,z,y+.4);return {x,z,y:top>-1e8?top:town.footY(x,z)}}
+  const g=town.footY(x,z);if(y<g)return {x,z,y:g};last={x,z,y:g}}return null}
+function tapAt(cx,cy){if(!started||talkLock()||SC||!$('finale').hidden)return;
+ // 사람 · 고양이를 눌렀나(머리 · 몸 쪽 화면 거리)
+ let best=null,bd=48;for(const n of NPCS){const q=project(n.x,n.y+(n.inside?1.3:.95),n.z);if(!q.ok)continue;const d=Math.hypot(q.x-cx,q.y-cy);if(d<bd){bd=d;best={npc:n}}}
+ for(const c of CATS){if(!c.g.visible)continue;const q=project(c.x,c.y+.25,c.z);if(!q.ok)continue;const d=Math.hypot(q.x-cx,q.y-cy);if(d<Math.min(bd,34)){bd=d;best={cat:c}}}
+ if(best){const w=best.npc||best.cat,a=Math.atan2(P.x-w.x,P.z-w.z),r=best.npc?1.15:.85;const near=Math.hypot(w.x-P.x,w.z-P.z)<(best.npc?2.1:1.6);if(near){ROUTE.npc=best.npc||null;ROUTE.cat=best.cat||null;arriveRoute();return}
+  for(const da of [0,.6,-.6,1.2,-1.2,1.9,-1.9,Math.PI]){const x=w.x+Math.sin(a+da)*r,z=w.z+Math.cos(a+da)*r;if(standAt(x,z,w.y??P.gy)!==null)return travelTo(x,z,w.y??town.footY(x,z),best)}return travelTo(w.x,w.z,w.y??P.gy,best)}
+ const p=pickGround(cx,cy);if(p)travelTo(p.x,p.z,p.y);else toast('<b>🚶 여기는 못 가요</b>걸어갈 수 있는 길을 눌러 보세요',2)}
 function showJoy(){const j=$('joy');j.hidden=!joy.on;if(joy.on){j.style.left=joy.sx+'px';j.style.top=joy.sy+'px';j.firstElementChild.style.transform=`translate(${joy.x*40}px,${joy.y*40}px)`}}
 
 /* ═══ 8. 소리 — 오르골 같은 잔잔한 곡 · 발소리 · 배달 종소리 ═══ */
@@ -252,13 +308,13 @@ function setSound(on){AU.on=on;store('asset-postman-sound',on?'on':'off');au();i
 
 /* ═══ 9. 주인공 움직임 · 카메라 ═══ */
 function blocked(i,j){if(i<0||j<0||i>=town.N||j>=town.N)return false;return town.blockedCell(i,j)}
-function resolve(px,pz,r,y=-1e9){let x=px,z=pz;for(let it=0;it<3;it++){const i0=ci(x),j0=ci(z);for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const i=i0+di,j=j0+dj;if(!blocked(i,j))continue;const x0=cx(i)-CS/2,x1=x0+CS,z0=cx(j)-CS/2,z1=z0+CS,qx=clamp(x,x0,x1),qz=clamp(z,z0,z1);let dx=x-qx,dz=z-qz,d=Math.hypot(dx,dz);
+function resolve(px,pz,r,y=-1e9,noNpc=false,cols=town.colliders){let x=px,z=pz;for(let it=0;it<3;it++){const i0=ci(x),j0=ci(z);for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const i=i0+di,j=j0+dj;if(!blocked(i,j))continue;const x0=cx(i)-CS/2,x1=x0+CS,z0=cx(j)-CS/2,z1=z0+CS,qx=clamp(x,x0,x1),qz=clamp(z,z0,z1);let dx=x-qx,dz=z-qz,d=Math.hypot(dx,dz);
    if(d<r){if(d<1e-6){const opts=[[x-x0,-1,0],[x1-x,1,0],[z-z0,0,-1],[z1-z,0,1]].sort((a,b)=>a[0]-b[0])[0];x+=opts[1]*(opts[0]+r);z+=opts[2]*(opts[0]+r)}else{x+=dx/d*(r-d);z+=dz/d*(r-d)}}}
-  for(const c of town.colliders){if(c.deck||c.top!==undefined&&y>=c.top-(c.step?.3:.06)||c.bot!==undefined&&y<c.bot)continue;
+  for(const c of cols){if(c.deck||c.top!==undefined&&y>=c.top-(c.step?.3:.06)||c.bot!==undefined&&y<c.bot)continue;
    // 육교 계단 디딤판: 오르는 방향으로는 발끝만큼(0.12)만 막아 한 칸씩 올라서고, 옆으로는 몸 반지름만큼 막는다
    if(c.step){const [x0,z0,x1,z1]=c.box,ex=c.ax==='x'?.12:r,ez=c.ax==='z'?.12:r;if(x>x0-ex&&x<x1+ex&&z>z0-ez&&z<z1+ez){const a=x-(x0-ex),b=x1+ex-x,cc=z-(z0-ez),d=z1+ez-z,m=Math.min(a,b,cc,d);if(m===a)x-=a;else if(m===b)x+=b;else if(m===cc)z-=cc;else z+=d}continue}
    if(c.box){const [x0,z0,x1,z1]=c.box;if(x<x0-r||x>x1+r||z<z0-r||z>z1+r)continue;const qx=clamp(x,x0,x1),qz=clamp(z,z0,z1);let dx=x-qx,dz=z-qz,d=Math.hypot(dx,dz);if(d<r){if(d<1e-6){const o=[[x-x0,-1,0],[x1-x,1,0],[z-z0,0,-1],[z1-z,0,1]].sort((p,q)=>p[0]-q[0])[0];x+=o[1]*(o[0]+r);z+=o[2]*(o[0]+r)}else{x+=dx/d*(r-d);z+=dz/d*(r-d)}}continue}if(!c.r)continue;const dx=x-c.x,dz=z-c.z,d=Math.hypot(dx,dz),rr=c.r+r;if(d<rr&&d>1e-6){x+=dx/d*(rr-d);z+=dz/d*(rr-d)}}
-  for(const n of NPCS){if(n.inside)continue;const dx=x-n.x,dz=z-n.z,d=Math.hypot(dx,dz),rr=.36+r;if(d<rr&&d>1e-6){x+=dx/d*(rr-d);z+=dz/d*(rr-d)}}
+  if(!noNpc)for(const n of NPCS){if(n.inside)continue;const dx=x-n.x,dz=z-n.z,d=Math.hypot(dx,dz),rr=.36+r;if(d<rr&&d>1e-6){x+=dx/d*(rr-d);z+=dz/d*(rr-d)}}
   [x,z]=town.walkFix(x,z,r)}return [x,z]}
 const PR=.42;   // 주인공 몸 반지름(팔 · 가방까지) — 벽에 겹쳐 보이지 않게
 // 담 · 나무 상자 위에 설 수 있다(높이 top). 지금 높이에서 한 뼘 안쪽이면 올라선다
@@ -273,6 +329,8 @@ function movePlayer(dt){let ix=0,iz=0;if(keys.KeyW||keys.ArrowUp)iz+=1;if(keys.K
  const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=Math.cos(cam.yaw),rz=-Math.sin(cam.yaw);
  const run=keys.ShiftLeft||keys.ShiftRight||(joy.on&&m>.92);let sp=run?5.6:3.1,acc=m>.05?9:12;
  let dx=fx*iz+rx*ix,dz=fz*iz+rz*ix;
+ if(ROUTE.pts.length){if(m>.05||talkLock())clearRoute();else{let q=ROUTE.pts[0],d=Math.hypot(q.x-P.x,q.z-P.z);while(d<(ROUTE.pts.length>1?.45:.3)){ROUTE.pts.shift();if(!ROUTE.pts.length){arriveRoute();break}q=ROUTE.pts[0];d=Math.hypot(q.x-P.x,q.z-P.z);drawRoute()}
+  if(ROUTE.pts.length){const sl=ROUTE.pts.length>1?1:Math.min(1,d/.7+.25);dx=(q.x-P.x)/d*sl;dz=(q.z-P.z)/d*sl;m=sl}}}
  if(riding){// 앞쪽 비탈: 가파르면(계단) 내려서 끌고, 내리막이면 빨라지고 오르막이면 느려진다
   const L=Math.hypot(dx,dz)||1,ux=m>.05?dx/L:Math.sin(P.h),uz=m>.05?dz/L:Math.cos(P.h),GY=(x,z)=>Math.max(town.groundY(x,z),ovTop(x,z,P.y+.35)),g0=GY(P.x,P.z),grade=(GY(P.x+ux*1.2,P.z+uz*1.2)-g0)/1.2,back=(g0-GY(P.x-ux,P.z-uz));
   pushing=Math.abs(grade)>.34||Math.abs(back)>.34;if(pushing){sp=2.5;acc=8}else{sp=(run?8.8:6.6)*clamp(1-grade*2.6,.5,1.8);kickSp=sp;acc=m>.05?(WX==='snow'?1.8:3.2):(WX==='snow'?1.2:2.6)}}
@@ -280,6 +338,7 @@ function movePlayer(dt){let ix=0,iz=0;if(keys.KeyW||keys.ArrowUp)iz+=1;if(keys.K
  P.vx+=(tvx-P.vx)*Math.min(1,dt*acc);P.vz+=(tvz-P.vz)*Math.min(1,dt*acc);const v=Math.hypot(P.vx,P.vz);
  const n=Math.max(1,Math.ceil(v*dt/.12));let ox=P.x,oz=P.z;for(let k=0;k<n;k++){const [x,z]=resolve(P.x+P.vx*dt/n,P.z+P.vz*dt/n,PR,P.y);P.x=x;P.z=z}
  const moved=Math.hypot(P.x-ox,P.z-oz);S.dist+=moved;
+ if(ROUTE.pts.length){ROUTE.stuck=moved<dt*.5?ROUTE.stuck+dt:0;if(ROUTE.stuck>1.1){clearRoute();toast('<b>🚶 길이 막혔어요</b>다른 곳을 눌러 보세요',2)}}
  let turn=0;if(v>.25){const th=Math.atan2(P.vx,P.vz);turn=wrapA(th-P.h);P.h+=turn*Math.min(1,dt*(riding&&!pushing?5:10))}
  {const fy=town.footY(P.x,P.z,.2),gy=Math.max(fy,platTop(P.x,P.z,P.y));
   if(P.gy===null)P.gy=gy;else if(gy<P.gy-.3){P.air+=P.gy-gy;P.gy=gy;if(P.air>.05)P.onGround=false}else if(gy>P.gy+.25&&P.air>0){P.air=Math.max(0,P.air-(gy-P.gy));P.gy=gy}else P.gy=Math.max(gy-.04,P.gy+(gy-P.gy)*Math.min(1,dt*18));
@@ -397,12 +456,15 @@ function updateHud(dt){const near=nearestNpc();const a=$('act');
 
 /* ═══ 13. 지도 ═══ */
 const mapC=$('map-c'),mctx=mapC.getContext('2d');
+let MAPT=null;
+// 지도를 누르면 그곳으로 길 안내(마을 지도처럼)
+mapC.addEventListener('click',e=>{if(!MAPT||!started)return;const r=mapC.getBoundingClientRect(),px=(e.clientX-r.left)*mapC.width/r.width,py=(e.clientY-r.top)*mapC.height/r.height,x=(px-MAPT.W/2)/MAPT.k+MAPT.mx,z=(py-MAPT.W/2)/MAPT.k+MAPT.mz;if(travelTo(x,z,town.footY(x,z)))toggleMap(false)});
 function toggleMap(on){const m=$('map');on=on===undefined?!m.classList.contains('on'):on;m.classList.toggle('on',on);if(on)drawMap();blip()}
 const MAPD=OUT?OUT.mapData():null;
 function drawMap(){const W=mapC.width,N=town.N,G=town.G;mctx.fillStyle='#a9d58f';mctx.fillRect(0,0,W,W);
  // 마을 + 바깥 세 곳이 다 들어가게(정사각)
  let [bx0,bz0,bx1,bz1]=MAPD?MAPD.bounds:[-town.HW,-town.HW,town.HW,town.HW];const span=Math.max(bx1-bx0,bz1-bz0),mx=(bx0+bx1)/2,mz=(bz0+bz1)/2,k=W/span;
- const tp=(x,z)=>[(x-mx)*k+W/2,(z-mz)*k+W/2],s=CS*k;
+ const tp=(x,z)=>[(x-mx)*k+W/2,(z-mz)*k+W/2],s=CS*k;MAPT={mx,mz,k,W};
  if(MAPD){const line=(pts,w,col)=>{mctx.strokeStyle=col;mctx.lineWidth=Math.max(2,w*k);mctx.lineCap='round';mctx.lineJoin='round';mctx.beginPath();pts.forEach((p,i)=>{const [a,b]=tp(p[0],p[1]);i?mctx.lineTo(a,b):mctx.moveTo(a,b)});mctx.stroke()};
   for(const w of MAPD.water)line(w.pts,w.w,'#79c3d6');for(const r of MAPD.roads)line(r.pts,r.w,r.col);for(const p of MAPD.pads){const [a,b]=tp(p.x,p.z);mctx.fillStyle=p.col;mctx.beginPath();mctx.arc(a,b,p.r*k,0,7);mctx.fill()}
   for(const b of MAPD.boxes){const [a,c]=tp(b.x0,b.z0),[d,e]=tp(b.x1,b.z1);mctx.fillStyle='#e3cdb0';mctx.fillRect(a,c,d-a,e-c);mctx.strokeStyle='rgba(90,70,54,.5)';mctx.lineWidth=1;mctx.strokeRect(a,c,d-a,e-c)}}
@@ -427,7 +489,7 @@ const FW=(()=>{const n=1400,pos=new Float32Array(n*3),col=new Float32Array(n*3),
  const m=new T.Points(g,curve(new T.PointsMaterial({size:.32,vertexColors:true,transparent:true,depthWrite:false,blending:T.AdditiveBlending,fog:false})));m.frustumCulled=false;scene.add(m);const pts=[...Array(n)].map(()=>({x:0,y:-99,z:0,vx:0,vy:0,vz:0,l:0,c:[1,1,1]}));return {m,pts,pos,col,i:0,t:0}})();
 function burst(x,y,z,big){const cols=[[1,.55,.6],[1,.85,.4],[.55,.85,1],[.7,1,.6],[1,.6,1]],c=cols[Math.floor(Math.random()*cols.length)],n=big?140:36;for(let k=0;k<n;k++){const p=FW.pts[FW.i=(FW.i+1)%FW.pts.length];const u=Math.random()*2-1,a=Math.random()*6.28,q=Math.sqrt(1-u*u),s=(big?7:2.6)*(.7+Math.random()*.3);
  p.x=x;p.y=y;p.z=z;p.vx=Math.cos(a)*q*s;p.vy=u*s+(big?0:1.8);p.vz=Math.sin(a)*q*s;p.l=big?1.8+Math.random()*.6:.9+Math.random()*.4;p.c=c}}
-function catsToPlaza(){const py=town.plaza.y;CATS.forEach((c,k)=>{if(c.plaza)return;c.plaza=true;const a=k/CATS.length*Math.PI*2+.3,r=5.3;c.x=Math.cos(a)*r;c.z=Math.sin(a)*r;c.col.x=c.x;c.col.z=c.z;c.y=town.footY(c.x,c.z,.1);c.g.position.set(c.x,c.y,c.z);c.g.rotation.y=Math.atan2(-c.x,-c.z);c.hop=.7})}
+function catsToPlaza(){CGRID=null;const py=town.plaza.y;CATS.forEach((c,k)=>{if(c.plaza)return;c.plaza=true;const a=k/CATS.length*Math.PI*2+.3,r=5.3;c.x=Math.cos(a)*r;c.z=Math.sin(a)*r;c.col.x=c.x;c.col.z=c.z;c.y=town.footY(c.x,c.z,.1);c.g.position.set(c.x,c.y,c.z);c.g.rotation.y=Math.atan2(-c.x,-c.z);c.hop=.7})}
 function renderCats(){$('catn').textContent=`${catFed.length}/${CATS.length}`;const el=$('cat-grid');if(!el)return;el.innerHTML='';
  CATS.forEach(c=>{const f=catFed.includes(c.k),d=document.createElement('div');d.className='cc'+(f?' on':'');const bg=c.patch?`radial-gradient(circle at 70% 35%,${c.patch} 0 26%,transparent 27%),${c.body}`:c.body;
   d.innerHTML=`<span class="cf" style="background:${f?bg:'#d9cfbf'}"><i style="border-bottom-color:${f?c.head:'#d9cfbf'}"></i><i style="border-bottom-color:${f?c.head:'#d9cfbf'}"></i>${f?'':'?'}</span><b>${f?c.name:'???'}</b><small>${catWhere(c)}</small>`;el.appendChild(d)})}
@@ -619,7 +681,7 @@ if(TOUCH)document.body.classList.add('touch');
 WX=wxFor(S.day);dressHero();parkBike();spawn();applySky();renderBag();renderCats();
 $('start').disabled=false;try{if(sessionStorage.getItem('pm-autostart')){sessionStorage.removeItem('pm-autostart');setTimeout(()=>begin(false),300)}}catch(e){}
 requestAnimationFrame(frame);
-window.pmDebug={T,scene,camera,renderer,town,HERO,NPCS,P,cam,keys,platTop,ovTop,resolve,get S(){return S},get JOBS(){return JOBS},get WX(){return WX},get riding(){return riding},get pushing(){return pushing},get SC(){return SC},CATS,get catFed(){return catFed},feedCat,toggleBike,toggleCats,nextDay,setupDay,setWx(w){WX=w;makePuddles(S.day);setInside();dressHero()},ENV,get started(){return started},begin,act,emote,jump,step:(n=1,dt=1/30)=>{for(let k=0;k<n;k++)step(dt,k<n-1)},get camFix(){return camFix},closeTalk,tick:(n=1)=>{for(let k=0;k<n;k++)step(1/30,true)},pause:v=>{paused=v},
+window.pmDebug={T,scene,camera,renderer,town,HERO,NPCS,P,cam,keys,platTop,ovTop,resolve,tapAt,travelTo,findPath,ROUTE,pickGround,get S(){return S},get JOBS(){return JOBS},get WX(){return WX},get riding(){return riding},get pushing(){return pushing},get SC(){return SC},CATS,get catFed(){return catFed},feedCat,toggleBike,toggleCats,nextDay,setupDay,setWx(w){WX=w;makePuddles(S.day);setInside();dressHero()},ENV,get started(){return started},begin,act,emote,jump,step:(n=1,dt=1/30)=>{for(let k=0;k<n;k++)step(dt,k<n-1)},get camFix(){return camFix},closeTalk,tick:(n=1)=>{for(let k=0;k<n;k++)step(1/30,true)},pause:v=>{paused=v},
  tp(name){const n=npcBy(name);if(!n)return;P.x=n.x+Math.sin(n.ry)*1.1;P.z=n.z+Math.cos(n.ry)*1.1;P.h=n.ry+Math.PI;cam.yaw=P.h+Math.PI+.4;cam.cur=cam.dist},
  deliverAll(){S.done=JOBS.map(j=>j.id);S.bag=[];S.round=4;ENV.want=.84;save();renderBag()},tpCat(k){const c=CATS[k];P.x=c.x+Math.sin(c.g.rotation.y)*1.1;P.z=c.z+Math.cos(c.g.rotation.y)*1.1;P.h=c.g.rotation.y+Math.PI;cam.yaw=P.h+Math.PI+.4},startEve,startFest,setTod(v){ENV.tod=ENV.want=v},toggleMap};
 })();

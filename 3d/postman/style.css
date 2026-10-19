@@ -69,7 +69,7 @@ body.play .hud{opacity:1;pointer-events:auto}
 .map-card{background:var(--paper);border:4px solid var(--ink);border-radius:24px;padding:12px;box-shadow:var(--sh);width:min(600px,94vw)}
 .map-h{display:flex;align-items:center;gap:10px;margin:0 4px 8px}.map-h b{font:22px "Jua",sans-serif}.map-h small{opacity:.65;font-size:13px}
 .map-h button{margin-left:auto;width:38px;height:38px;border-radius:12px;border:3px solid var(--ink);background:#fff;font-size:17px}
-#map-c{display:block;width:100%;aspect-ratio:1;border-radius:14px;border:3px solid var(--ink);image-rendering:auto}
+#map-c{display:block;cursor:pointer;width:100%;aspect-ratio:1;border-radius:14px;border:3px solid var(--ink);image-rendering:auto}
 .intro{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:18px;background:radial-gradient(ellipse at 50% 40%,rgba(255,240,220,.25),rgba(80,50,60,.45))}
 .intro[hidden]{display:none}
 .paper{position:relative;width:min(560px,100%);max-height:94vh;overflow:auto;background:var(--paper);border:4px solid var(--ink);border-radius:28px;padding:28px 30px 22px;box-shadow:var(--sh);text-align:center;
