@@ -10216,6 +10216,8 @@ function runPopups() {
 function flushFgPopup() {
   if (!popupState.fgDue) return;
   popupState.fgDue = false;
+  if (!fgData) return;
+  lsSet('asset_fg_shown', fmtDateStr(new Date()));
   openFgSheet();
 }
 
@@ -10358,10 +10360,9 @@ function openFgSheet() {
 function applyFearGreed(score, prev) {
   fgData = { score: score, prev: prev };
   renderFgCard();
-  // 팝업은 하루 한 번만 — 날짜가 바뀌면 다시 띄운다
-  var today = fmtDateStr(new Date());
-  if (lsGet('asset_fg_shown') !== today) {
-    lsSet('asset_fg_shown', today);
+  // 팝업은 하루 한 번만 — 날짜가 바뀌면 다시 띄운다.
+  // '보여 줬음' 표시는 실제로 띄울 때(flushFgPopup) 남긴다 — 못 띄우고 끝나도 다음 접속 때 다시 뜨게
+  if (lsGet('asset_fg_shown') !== fmtDateStr(new Date())) {
     popupState.fgDue = true;   // 월간 요약이 먼저다 — 순서는 runPopups()가 정한다
   }
   markPopupReady('fg');
@@ -10370,13 +10371,28 @@ function applyFearGreed(score, prev) {
 function showFearGreed() {
   var cached = null;
   try { cached = JSON.parse(lsGet('asset_fg_cache') || 'null'); } catch (e) {}
-  fetch(FG_URL)
-    .then(function (res) { return res.json(); })
+  function getJson(url) {
+    return fetch(url, { cache: 'no-store' }).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    });
+  }
+  // CNN 을 바로 → 막히면(CORS · 차단) 사이트의 fg.json(배포 때 GitHub Actions 가 받아 둔 값) → 이 기기에 둔 마지막 값
+  getJson(FG_URL)
     .then(function (data) {
       var fg = data.fear_and_greed;
       if (!fg || !isFinite(fg.score)) throw new Error('bad payload');
-      lsSet('asset_fg_cache', JSON.stringify({ score: fg.score, prev: fg.previous_close, ts: Date.now() }));
-      applyFearGreed(fg.score, fg.previous_close);
+      return { score: fg.score, prev: fg.previous_close };
+    })
+    .catch(function () {
+      return getJson('fg.json?t=' + Date.now()).then(function (d) {
+        if (!d || !isFinite(d.score)) throw new Error('bad fg.json');
+        return { score: d.score, prev: d.prev };
+      });
+    })
+    .then(function (fg) {
+      lsSet('asset_fg_cache', JSON.stringify({ score: fg.score, prev: fg.prev, ts: Date.now() }));
+      applyFearGreed(fg.score, fg.prev);
     })
     .catch(function () {
       if (cached && isFinite(cached.score)) applyFearGreed(cached.score, cached.prev);
