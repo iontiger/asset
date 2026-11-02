@@ -12628,14 +12628,27 @@ async function gsSave(cfg, db) {
     body: JSON.stringify({ token: cfg.token || '', base: cloud.updatedAt, data: gsWithKr(db) })
   });
   cloud.updatedAt = j.updatedAt || null;
+  cloud.krDirty = false;   // 국내주식 목록도 함께 올라갔다
 }
-// 국내주식 찾아본 목록 · 보유 종목도 함께 보낸다 (예전 Apps Script 는 모르는 값이라 그냥 무시)
+// 국내주식 찾아본 목록 · 보유 종목도 함께 보낸다.
+// settings 안에도 넣는다 — Apps Script 를 새 버전으로 다시 배포하지 않았어도 settings 는 그대로 저장되기 때문
 function gsWithKr(db) {
   if (typeof kr === 'undefined' || !kr) return db;
-  var out = Object.assign({}, db);
-  if (kr.wat) out.krwatch = { list: kr.watch, at: kr.wat };
-  if (kr.hat) out.krhold = { list: kr.hold, at: kr.hat };
+  var out = Object.assign({}, db), extra = {};
+  if (kr.wat) out.krwatch = extra.krwatch = { list: kr.watch, at: kr.wat };
+  if (kr.hat) out.krhold = extra.krhold = { list: kr.hold, at: kr.hat };
+  out.settings = Object.assign({}, db.settings || {}, extra);
   return out;
+}
+// 예전 Apps Script(kv 없음)면 국내주식 목록이 바뀔 때 전체 저장으로 올린다 — 잇따른 변경은 한 번에
+var gsKrTimer = null;
+function gsKrSaveSoon() {
+  cloud.krDirty = true;
+  clearTimeout(gsKrTimer);
+  gsKrTimer = setTimeout(function () {
+    if (store.mode !== 'gsheet' || store.locked || !cloud.krDirty) return;
+    persist().catch(function (e) { if (!e.conflict) showToast('국내주식 목록 저장 실패: ' + e.message); });
+  }, 1200);
 }
 // 값 하나만 시트에 올린다 — 새 Apps Script(kv 지원)일 때만. 예전 스크립트에 보내면 자산 기록을 지우므로 보내지 않는다
 var gsKvQueue = Promise.resolve();
@@ -12670,12 +12683,15 @@ function applyCloudDb(db) {
   if (myGoal > 0) goalAmount = Math.round(myGoal);
   else if (!db.noState) goalAmount = GOAL_DEFAULT;   // app_state 가 없으면 이미 이 브라우저 값(asset_pc_sb_state)이다
   cloud.gsKv = !!db.kv;   // 국내주식 목록을 따로 저장할 수 있는 Apps Script 인지
-  if (db.krwatch && typeof kr !== 'undefined' && kr) krWatchFromCloud(db.krwatch);   // 국내주식 최근 찾아본 종목
-  if (db.krhold && typeof kr !== 'undefined' && kr) krHoldFromCloud(db.krhold);     // 국내주식 보유 종목
-  // 시트에 아직 국내주식 목록이 없으면 (Apps Script 를 막 새로 배포한 경우) 이 기기 목록을 올린다
-  if (db.kv && typeof kr !== 'undefined' && kr) {
-    if (!db.krhold && kr.hat) krPush('krhold', { list: kr.hold, at: kr.hat });
-    if (!db.krwatch && kr.wat) krPushWatch();
+  // 구글 시트는 settings 안에 넣어 둔 것도 읽는다 (예전 Apps Script 로 저장한 경우)
+  var dset = db.settings || {}, isGs = store.mode === 'gsheet';
+  var cWatch = db.krwatch || (isGs ? dset.krwatch : null), cHold = db.krhold || (isGs ? dset.krhold : null);
+  if (cWatch && typeof kr !== 'undefined' && kr) krWatchFromCloud(cWatch);   // 국내주식 최근 찾아본 종목
+  if (cHold && typeof kr !== 'undefined' && kr) krHoldFromCloud(cHold);     // 국내주식 보유 종목
+  // 시트에 아직 국내주식 목록이 없으면 이 기기 목록을 올린다
+  if (isGs && typeof kr !== 'undefined' && kr) {
+    if (!cHold && kr.hat) krPush('krhold', { list: kr.hold, at: kr.hat });
+    if (!cWatch && kr.wat) krPushWatch();
   }
   syncMarks();
   cloud.noState = !!db.noState;
@@ -12686,6 +12702,7 @@ function applyCloudDb(db) {
 }
 // 불러온 뒤: 이 브라우저에만 있던 뱃지 · 연금 등을 app_state 로 올린다
 async function afterCloudLoad() {
+  if (store.mode === 'gsheet' && cloud.krDirty) gsKrSaveSoon();   // 불러오는 동안 미뤄 둔 국내주식 목록 저장
   if (store.mode !== 'supabase') return;
   if (cloud.noState) return;
   if (!cloud.migrate) return;
@@ -12908,7 +12925,6 @@ function renderCloudSec() {
     var st = storeStateText();
     cloudMsg((other ? '지금은 <b>' + cloudName(active) + '</b> 를 쓰는 중입니다. ' + cloudName(pane) + ' 로 바꾸려면 먼저 연동을 해제하세요.<br>'
                     : ico('cloud') + ' <b>' + cloudName(active) + '</b> 에 저장 중 · ' + escapeHtml(cloudHost(store.cloud || {})) + ' · ' + escapeHtml(st.txt) + '<br>' +
-                      (active === 'gsheet' && !cloud.gsKv && !store.locked ? '<span class="cloud-sub">Apps Script 가 예전 버전이라 국내주식 보유 종목 · 찾아본 목록은 이 기기에만 저장됩니다. <b>Apps Script 복사</b>로 코드를 바꾸고 <b>배포 관리 → 수정 → 버전: 새 버전</b>으로 다시 배포하면 다른 기기와 맞춰집니다 (URL 그대로).</span><br>' : '') +
                       (active === 'supabase' && cloud.noState ? '<span class="cloud-sub">예전 프로젝트(owners · assets 만)로 쓰는 중 — 자산 기록 · 소유자는 Supabase 에, 목표 · 뱃지 · 연금 포트폴리오는 이 브라우저에 저장됩니다. 함께 저장하려면 "SQL 복사"로 app_state 를 만든 뒤 다시 연결하세요.</span><br>' : '')) +
       '<button type="button" class="btn btn-ghost btn-sm" data-act="cloudReload">↻ 다시 불러오기</button> ' +
       '<button type="button" class="btn btn-ghost btn-sm" data-act="cloudOff">연동 해제 → PC 파일로</button>', other ? 'warn' : 'ok');
@@ -14934,8 +14950,8 @@ function krRenderHold(box) {
 function krPush(key, val) {
   if (typeof store === 'undefined' || !store.cloud) return;
   if (store.mode === 'gsheet') {
-    if (cloud.gsKv) gsPushKv(key, val).catch(function () {});
-    else if (!store.locked && !cloud.gsKvWarned) { cloud.gsKvWarned = true; showToast('구글 시트에 국내주식 목록을 저장하려면 설정 → 클라우드에서 Apps Script 를 새 버전으로 다시 배포하세요'); }
+    if (cloud.gsKv) gsPushKv(key, val).catch(function () { gsKrSaveSoon(); });
+    else gsKrSaveSoon();
     return;
   }
   if (store.mode !== 'supabase' || cloud.noState) return;
