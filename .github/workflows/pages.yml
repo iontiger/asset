@@ -76,6 +76,10 @@ jobs:
         id: briefing
         run: python3 .github/scripts/briefing.py _site/briefing.json "${{ steps.pages.outputs.base_url }}" "${{ github.event_name }}" "${GITHUB_SHA::7}"
 
+      # 공포·탐욕 지수 — 브라우저가 CNN 을 바로 못 부를 때 앱이 읽는 fg.json. 못 받아도 배포는 멈추지 않는다
+      - name: 공포·탐욕 지수 받기
+        run: python3 .github/scripts/fear_greed.py _site/fg.json "${{ steps.pages.outputs.base_url }}"
+
       # 휴대폰 투자 탭의 스토캐스틱 신호 카드 — 전 영업일 종가 기준 매수/매도 신호 종목 (시가총액 순 5개씩).
       # 하루 두 번(08시 KST 전/후)만 새로 뽑고, 그 사이에는 사이트의 stoch.json 을 그대로 쓴다. 못 뽑아도 배포는 멈추지 않는다
       - name: 스토캐스틱 신호 받기
