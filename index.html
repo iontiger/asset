@@ -7840,10 +7840,18 @@ function rbDue(p) {
   var days = Rebalance.daysSince(p.lastRebalancedAt);
   return days !== null && days >= (p.settings.cycleDays || 30) && rbHasHoldings(p);
 }
+// 리밸런싱 알림은 화면을 한 번 열면 끈다 — 다음 리밸런싱(lastRebalancedAt 이 바뀜) 뒤 주기가 다시 지나면 또 켜진다
+var RB_SEEN_KEY = 'asset_rebal_seen';
+function rbSeenKey() { var p = rbPf(); return String(p.lastRebalancedAt || '') + '|' + (p.settings.cycleDays || 30); }
+function rbMarkSeen() {
+  if (store.mode === 'demo' || !rbDue()) return;
+  lsSet(RB_SEEN_KEY, rbSeenKey());
+  updateRebalNav();
+}
 function updateRebalNav() {
   var b = $('navBadgeRebal');
   if (!b) return;
-  var due = store.mode !== 'demo' && rbDue();   // 데모로 둘러볼 때는 경고처럼 보이지 않게
+  var due = store.mode !== 'demo' && rbDue() && lsGet(RB_SEEN_KEY) !== rbSeenKey();   // 데모로 둘러볼 때는 경고처럼 보이지 않게
   b.textContent = due ? '!' : '';
   b.classList.toggle('show', due);
   b.title = due ? '리밸런싱 시점입니다' : '';
@@ -9200,7 +9208,7 @@ function switchView(v) {
   if (v === 'home') { renderHome(); mHelloOnShow(); }
   if (v === 'list') drawDetailChart();
   // 가격(전일 종가)은 리밸런싱 화면을 처음 열 때 불러온다 (앱 시작을 느리게 하지 않게)
-  if (v === 'rebal') { if (!rb.prices && !rb.loading) rbLoadPrices(); renderRebal(); mNewsOnShow(); }
+  if (v === 'rebal') { if (!rb.prices && !rb.loading) rbLoadPrices(); renderRebal(); mNewsOnShow(); rbMarkSeen(); }
   if (v === 'invest') { invRender(); mNewsOnShow(); }
   $('rbSaveBar').hidden = !(rb.dirty && v === 'rebal');
   if (v === 'badges') { renderBadges(); updateBadgeNav(); }
@@ -14002,46 +14010,60 @@ $('mBell').addEventListener('click', function () {
   openSheet('mNoteSheet');
 });
 
-// 알림 — 지금 챙길 것(빨간 점)과 바로 보기. 사이드바 배지 · 새 버전 알림과 같은 상태를 읽는다
-function mNotices() {
+// 알림 — 지금 챙길 것과 바로 보기(이번 달 요약 · 보유 종목 중 오늘 등급이 바뀐 것). 사이드바 배지 · 새 버전 알림과 같은 상태를 읽는다
+// 종의 빨간 점은 아직 확인하지 않은 알림이 있을 때만 — 알림 창을 열면 그때 있던 알림은 모두 읽은 것으로 이 기기에 적어 둔다
+var M_NOTE_SEEN_KEY = 'asset_note_seen';
+function mNoteSeen() { try { var v = JSON.parse(lsGet(M_NOTE_SEEN_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+// 보유 종목 중 오늘 등급이 바뀐 것
+function mKrHoldChanged() {
+  if (typeof kr === 'undefined' || !kr || !kr.idx || !kr.hold.length) return [];
+  var hold = {};
+  kr.hold.forEach(function (h) { hold[h.c] = 1; });
+  return krChanged().filter(function (x) { return hold[x[0][0]]; });
+}
+function mNotices(withInfo) {
   var hot = [], info = [];
   var upd = $('updBar').dataset.build;
-  if (upd && upd !== APP_BUILD) {
-    hot.push({ ic: 'rocket', t: '새 버전이 나왔어요', s: '눌러서 새로고침하면 바로 적용돼요', c: 'var(--grp4)', dot: upd !== updDismissed,
+  if (upd && upd !== APP_BUILD && upd !== updDismissed) {
+    hot.push({ key: 'upd:' + upd, ic: 'rocket', t: '새 버전이 나왔어요', s: '눌러서 새로고침하면 바로 적용돼요', c: 'var(--grp4)',
                go: function () { $('updReload').click(); } });
   }
   function pillN(id) { var e = $(id); return e.classList.contains('show') ? Number(e.textContent) || 0 : 0; }
   var nIn = pillN('navBadge');
-  if (nIn) hot.push({ ic: 'pencil', t: '저장하지 않은 입력 ' + nIn + '건', s: '입력 화면에서 오늘 날짜로 저장하세요', c: 'var(--accent)', dot: true,
+  if (nIn) hot.push({ key: 'in:' + nIn, ic: 'pencil', t: '저장하지 않은 입력 ' + nIn + '건', s: '입력 화면에서 오늘 날짜로 저장하세요', c: 'var(--accent)',
                       go: function () { switchView('input'); } });
   var nB = pillN('navBadgeNew');
-  if (nB) hot.push({ ic: 'award', t: '새 뱃지 ' + nB + '개', s: '그동안 넘어선 마일스톤을 확인해 보세요', c: '#f15bb5', dot: true,
+  if (nB) hot.push({ key: 'badge:' + nB, ic: 'award', t: '새 뱃지 ' + nB + '개', s: '그동안 넘어선 마일스톤을 확인해 보세요', c: '#f15bb5',
                      go: function () { switchView('badges'); } });
   if ($('navBadgeRebal').classList.contains('show')) {
-    hot.push({ ic: 'scale', t: '연금 리밸런싱할 때예요', s: '주기가 지났어요 — 목표비중으로 맞춰 보세요', c: 'var(--warn)', dot: true,
+    hot.push({ key: 'rebal:' + rbSeenKey(), ic: 'scale', t: '연금 리밸런싱할 때예요', s: '주기가 지났어요 — 목표비중으로 맞춰 보세요', c: 'var(--warn)',
                go: function () { switchView('rebal'); } });
   }
   if (store.state === 'perm' || store.state === 'error') {
     var act = store.state === 'perm' ? 'reconnect' : isCloud() ? 'cloudReload' : store.mode === 'folder' ? 'reload' : '';
-    hot.push({ ic: 'alert', t: store.state === 'perm' ? '데이터 폴더를 다시 연결해 주세요' : '저장소에 문제가 있어요',
-               s: store.state === 'perm' ? '권한을 허용하면 기록을 불러옵니다' : (store.error || '다시 불러와 보세요'), c: 'var(--down)', dot: true,
+    hot.push({ key: 'store:' + store.state, ic: 'alert', t: store.state === 'perm' ? '데이터 폴더를 다시 연결해 주세요' : '저장소에 문제가 있어요',
+               s: store.state === 'perm' ? '권한을 허용하면 기록을 불러옵니다' : (store.error || '다시 불러와 보세요'), c: 'var(--down)',
                go: function () { if (act) doAct(act); else openSettings(); } });
   }
-  var thisKey = monthKeyOf(new Date()), prevKey = shiftMonthKey(thisKey, -1);
-  var sNow = monthSummary(thisKey), sPrev = monthSummary(prevKey);
-  if (sNow) info.push({ ic: 'calendar', t: monthLabel(thisKey) + ' 요약', s: '지금까지 순자산 ' + signedTxt(sNow.change) + ' · 전월 대비',
-                        c: 'var(--grp2)', go: function () { openMonthSheet(thisKey); } });
-  if (sPrev) info.push({ ic: 'calendar', t: monthTitle(prevKey) + ' 결산', s: '순자산 ' + signedTxt(sPrev.change) + ' · 그달의 날씨',
-                         c: 'var(--grp1)', go: function () { openMonthSheet(prevKey); } });
-  if (fgData) {
-    var z = FG_ZONES[fgZoneIndex(fgData.score)];
-    info.push({ ic: 'target', t: '공포 · 탐욕 지수 ' + Math.round(fgData.score), s: z.name + ' — ' + z.verdict, c: 'var(--grp3)',
-                go: function () { openFgSheet(); } });
+  // 보유 종목 등급 변화 — 바로 보기에 두지만 새로 바뀐 것은 빨간 점도 켠다
+  mKrHoldChanged().forEach(function (x) {
+    var r = x[0], up = r[8] < x[1];
+    info.push({ key: 'kr:' + kr.idx.basis + ':' + r[0] + ':' + r[8], ic: up ? 'up' : 'down', t: r[1] + ' ' + x[1] + '→' + r[8] + '등급',
+                s: '보유 종목 · 오늘 등급이 ' + (up ? '올랐어요' : '내렸어요') + ' (' + r[6] + '점)', c: up ? 'var(--up)' : 'var(--down)',
+                go: function () { krOpen(r[0]); } });
+  });
+  if (withInfo) {
+    var thisKey = monthKeyOf(new Date()), sNow = monthSummary(thisKey);
+    if (sNow) info.unshift({ ic: 'calendar', t: monthLabel(thisKey) + ' 요약', s: '지금까지 순자산 ' + signedTxt(sNow.change) + ' · 전월 대비',
+                             c: 'var(--grp2)', go: function () { openMonthSheet(thisKey); } });
   }
   return { hot: hot, info: info };
 }
+function mNoteKeys(n) {
+  return n.hot.concat(n.info).map(function (it) { return it.key; }).filter(Boolean);
+}
 function mRenderNotes() {
-  var n = mNotices(), box = $('mNotes');
+  var n = mNotices(true), box = $('mNotes');
   box.innerHTML = '';
   function add(item, hot) {
     var b = el('button', 'm-note' + (hot ? ' hot' : ''));
@@ -14059,18 +14081,16 @@ function mRenderNotes() {
     box.appendChild(el('div', 'm-note-cap', '바로 보기'));
     n.info.forEach(function (it) { add(it, false); });
   }
+  lsSet(M_NOTE_SEEN_KEY, JSON.stringify(mNoteKeys(n)));   // 열어 본 알림은 읽음
 }
 // 종 · 탭의 빨간 점과 개수 — 배지 · 저장 바 · 저장소 상태가 바뀔 때마다 부른다
 function mSyncDots() {
   if (!$('mBellDot')) return;
   function shown(id) { return $(id).classList.contains('show') ? $(id).textContent : ''; }
   var nIn = shown('navBadge'), nB = shown('navBadgeNew'), due = !!shown('navBadgeRebal');
-  var upd = $('updBar').dataset.build;
-  var hot = (nIn ? 1 : 0) + (nB ? 1 : 0) + (due ? 1 : 0) +
-    (store.state === 'perm' || store.state === 'error' ? 1 : 0) +
-    (upd && upd !== APP_BUILD && upd !== updDismissed ? 1 : 0);
+  var seen = mNoteSeen(), hot = mNoteKeys(mNotices(false)).filter(function (k) { return seen.indexOf(k) < 0; }).length;
   $('mBellDot').hidden = !hot;
-  $('mBell').setAttribute('aria-label', hot ? '알림 ' + hot + '개' : '알림');
+  $('mBell').setAttribute('aria-label', hot ? '새 알림 ' + hot + '개' : '알림');
   $('mTabDotRebal').classList.toggle('show', due);
   $('mTabDotMore').classList.toggle('show', !!nB);
   ['mFabN', 'mAddN', 'mMoreInput'].forEach(function (id) {
@@ -14816,6 +14836,7 @@ function krRender() {
   var mob = $('krMWrap');
   if (mob) mob.hidden = location.protocol === 'file:';
   ['krPc', 'krM'].forEach(function (id) { var b = $(id); if (b) krRenderInto(b); });
+  mSyncDots();   // 보유 종목 등급이 바뀌었으면 종에 빨간 점
 }
 // ── 오늘 바뀐 등급 (보유 · 찾아본 종목 중 전일 점수의 등급과 다른 것)
 function krChanged() {
@@ -14951,6 +14972,8 @@ function krLoad() {
     .catch(function () {})
     .then(function () { kr.busy = false; krRender(); });
 }
+// 보유 종목이 있으면 앱을 열 때 평가도 받아 둔다 — 종 알림에 오늘 바뀐 등급을 띄우려고
+setTimeout(function () { if (kr.hold.length && !kr.at) krLoad(); }, 2500);
 function krOnShow() {
   if (!mInvShown()) return;
   if (!kr.at || Date.now() - kr.at > 30 * 60e3) krLoad();
