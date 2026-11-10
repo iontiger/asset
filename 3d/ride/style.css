@@ -169,3 +169,19 @@
 .delivery-tip{display:none}.touch-mode .delivery-tip{display:block;margin-top:6px;font-style:normal;font-size:12px;font-weight:700;color:#ffe45c}
 .touch-mode .delivery-mission.far-delivery{display:none}
 .touch-score{display:none}.touch-mode .touch-score{display:flex;position:fixed;z-index:6;left:50%;bottom:max(16px,calc(env(safe-area-inset-bottom) + 10px));transform:translateX(-50%);align-items:baseline;gap:8px;padding:8px 20px;border:1px solid #fff;border-radius:30px;background:#fffbedee;box-shadow:0 6px 22px #34432c30;pointer-events:none}.touch-score small{font-size:9px;font-weight:600;letter-spacing:2px;color:#5f765b}.touch-score b{font-size:24px;font-weight:700;letter-spacing:-.5px;color:#344237;font-variant-numeric:tabular-nums}.touch-score.pop b{animation:tscorePop .45s ease-out}@keyframes tscorePop{40%{transform:scale(1.25);color:#d08a00}}
+/* 오늘의 미션 (ride-plus.js): 오른쪽 명소 카드 아래 · 폰/좁은 화면은 위쪽 작은 알약 */
+.missions{position:fixed;z-index:4;right:43px;top:250px;width:224px;box-sizing:border-box;padding:13px 16px 11px;background:#fffbeddf;border:1px solid #fff9;border-radius:14px;backdrop-filter:blur(8px);pointer-events:none;opacity:0;transform:translateX(12px);transition:opacity .4s,transform .4s}
+.missions.on{opacity:1;transform:none}
+.missions .eyebrow{font-size:8px;letter-spacing:2px}
+.missions ol{list-style:none;margin:8px 0 6px;padding:0;display:grid;gap:6px}
+.missions li{display:grid;grid-template-columns:20px 1fr auto;align-items:center;gap:6px;font-size:11px;line-height:1.3;color:#334033}
+.missions li i{font-style:normal;text-align:center;font-size:12px}
+.missions li b{font-size:10px;font-weight:700;color:#8a7a56;font-variant-numeric:tabular-nums}
+.missions li.done{color:#1f8a4c}.missions li.done span{text-decoration:line-through;text-decoration-color:#1f8a4c88}
+.missions li.done i{color:#fff;background:#1f8a4c;border-radius:50%;width:18px;height:18px;line-height:18px;font-size:11px;font-weight:800}
+.missions li.done b{color:#1f8a4c}
+.missions .m-best{display:block;font-size:10px;color:#c08a2a;letter-spacing:.5px}
+.missions.all{border-color:#e0a21f;box-shadow:0 0 0 3px #e0a21f33,0 8px 24px #e0a21f33}
+.mission-chip{position:fixed;z-index:5;left:12px;top:64px;padding:5px 11px;border-radius:999px;background:#fffbedee;color:#334033;font-size:11px;font-weight:700;box-shadow:0 4px 14px #0002;pointer-events:none;display:none}
+@media(max-width:800px){.missions{display:none}.mission-chip.on{display:block}}
+.touch-mode .missions{display:none!important}.touch-mode .mission-chip.on{display:block}

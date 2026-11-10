@@ -123,10 +123,11 @@ ball(lean,0,.75,.4,.7,'#b85648',.65,.7,1.25);ball(lean,0,1.1,-.7,.75,'#c7614d',.
 beam(lean,[0,.65,-.85],[0,1.7,-.65],.08,'#c1c9c0');beam(lean,[-.65,1.7,-.6],[.65,1.7,-.6],.06,'#c1c9c0');for(const x of [-.65,.65]){beam(lean,[x,1.7,-.6],[x*1.1,2.15,-.62],.024,'#a9bdb5');ball(lean,x*1.1,2.17,-.62,.16,'#d9e8de',1,1,.3)}
 ball(lean,0,1.35,-.93,.22,'#fff1c3',1,.8,.3);ball(lean,0,.93,1.01,.2,'#fa7454',1,.75,.3);beam(lean,[.5,.4,.15],[.5,.4,1.15],.09,'#b8bcb0');box(lean,0,1.27,.95,.75,.13,.45,'#b6bdb0');box(lean,0,1.5,.98,.68,.42,.33,'#ab7a4c');for(const x of [-.22,.22])box(lean,x,1.5,1.16,.07,.43,.03,'#e1c698');
 const riderRig=new T.Group();lean.add(riderRig);
-ball(riderRig,0,1.95,.07,.51,'#6293b0',.9,1.15,.7);ball(riderRig,0,2.72,-.03,.47,'#f0c79b',1,1,1);ball(riderRig,0,2.89,.09,.46,'#69503a',1,.8,.95);
+ball(riderRig,0,1.95,.07,.51,'#6293b0',.9,1.15,.7);const headG=new T.Group();headG.position.set(0,2.35,0);riderRig.add(headG);   // 고개(머리 · 머리카락 · 모자)는 목을 축으로 돌린다 (ride-plus.js)
+ball(headG,0,.37,-.03,.47,'#f0c79b',1,1,1);ball(headG,0,.54,.09,.46,'#69503a',1,.8,.95);
 const normalArms={};
 for(const x of [-1,1]){normalArms[x]=[];normalArms[x].push(beam(riderRig,[x*.3,2.17,-.02],[x*.54,1.88,-.36],.16,'#6293b0'));normalArms[x].push(beam(riderRig,[x*.54,1.88,-.36],[x*.62,1.73,-.59],.115,'#f0c79b'));normalArms[x].push(ball(riderRig,x*.62,1.73,-.59,.13,'#f0c79b'));beam(riderRig,[x*.28,1.55,.3],[x*.4,1.04,-.1],.16,'#c6b78a');ball(riderRig,x*.4,.88,-.08,.23,'#735947',.7,.6,1.4);ball(riderRig,x*.46,2.68,0,.12,'#e6b889')}
-ball(riderRig,0,2.99,0,.79,'#dcc690',1,.12,.9);ball(riderRig,0,3.16,0,.54,'#e5ce98',1,.62,.92);cyl(riderRig,0,3.06,0,.5,.51,.13,'#91734e');
+ball(headG,0,.64,0,.79,'#dcc690',1,.12,.9);ball(headG,0,.81,0,.54,'#e5ce98',1,.62,.92);cyl(headG,0,.71,0,.5,.51,.13,'#91734e');
 ball(riderRig,0,1.98,.51,.39,'#6d9fb5',.86,1.1,.4);box(riderRig,0,1.92,.67,.4,.3,.08,'#87aec0');for(const x of [-.28,.28])beam(riderRig,[x,2.35,.2],[x,1.7,.41],.045,'#dfbd68');
 // World-space reaching arm keeps the glove planted on the actual road surface.
 const slideArm=new T.Group();scene.add(slideArm);slideArm.visible=false;
@@ -191,7 +192,7 @@ const windData=new Float32Array(64*6),windGeo=new T.BufferGeometry();windGeo.set
 const windMat=new T.LineBasicMaterial({color:'#fff4db',transparent:true,opacity:0,depthTest:false,depthWrite:false});
 const wind=new T.LineSegments(windGeo,windMat);wind.frustumCulled=false;wind.renderOrder=10;camera.add(wind);scene.add(camera);
 let windTravel=0;let jumpCameraBlend=0;
-const sound=new RideSound();
+const sound=new RideSound();let plus=null;   // ride-plus.js: 하늘 돔 · 라이더 동작 · 바람 고리 · 오늘의 미션
 // Muddy creek water on the camera lens (2D overlay between the 3D view and the HUD).
 const mud=new MudScreen($('mud'));let mudT=0;let time=0,toastTime=0;
 let bestScore=0,bestTime=null;try{const saved=JSON.parse(localStorage.getItem('dentphoto-record-v1')||'{}');bestScore=Number(saved.score)||0;bestTime=Number(saved.time)||null}catch(e){}
@@ -211,10 +212,10 @@ function penaltyFX(e){const el=$('penalty');el.innerHTML=`<b>${e.points}</b><spa
  const f=$('penalty-flash');f.className='penalty-flash '+e.kind;void f.offsetWidth;f.classList.add('show');sound.impact(.45);soundTone(196);
  if(e.kind==='speed'){const pu=CITY.uOf(ride.pos);let best=0,bd=1e9;CITY.cameras.forEach((c,i)=>{const d=Math.abs(c.u-pu);if(d<bd){bd=d;best=i}});cityScene.flash(best)}}
 function show(title,description,button){$('overlay').classList.remove('hidden','finished');$('finish-card').hidden=true;document.querySelector('.welcome h2').innerHTML=title;document.querySelector('.welcome p').innerHTML=description;$('start').innerHTML=button+' <span>↗</span>'}
-function start(){const fresh=ride.mode!=='paused';ride.start();sound.musicLoad();if(fresh){plays++;try{localStorage.setItem(PLAYS_KEY,String(plays))}catch(e){}{const force=/[?&]quake=1/.test(location.search);ride.quakeOn=plays>=3||force;ride.waveOn=plays>=4||force;ride.slideOn=plays>=5||force}waveTold=slideTold=false;quakeFx.reset();quakeBlockTold=false;sound.musicReset();ghostReset();nightReset();cityNoted.clear();boltT=0;gotAt.clear();sparkLife.fill(0);mud.clear();mudT=0;dustPool.forEach(d=>d.life=0);dustBudget=0;lastDustPos=0;warnedTurns.clear();turnBlend=0;jumpCameraBlend=0;lastTrack=-100;trackDummy.scale.setScalar(0);trackDummy.updateMatrix();for(let i=0;i<900;i++)tracks.setMatrixAt(i,trackDummy.matrix);tracks.instanceMatrix.needsUpdate=true;}keys.clear();$('overlay').classList.add('hidden');$('pause').textContent='Ⅱ';notify(touchMode?'자동으로 출발! 화면 왼쪽 · 오른쪽을 눌러 방향을 바꿔요.':'↑ 또는 W로 출발! 3D 마을에서 편지 80통을 모아보세요.');syncCamera(true)}
+function start(){const fresh=ride.mode!=='paused';ride.start();sound.musicLoad();if(plus)plus.start(fresh);if(fresh){plays++;try{localStorage.setItem(PLAYS_KEY,String(plays))}catch(e){}{const force=/[?&]quake=1/.test(location.search);ride.quakeOn=plays>=3||force;ride.waveOn=plays>=4||force;ride.slideOn=plays>=5||force}waveTold=slideTold=false;quakeFx.reset();quakeBlockTold=false;sound.musicReset();ghostReset();nightReset();cityNoted.clear();boltT=0;gotAt.clear();sparkLife.fill(0);mud.clear();mudT=0;dustPool.forEach(d=>d.life=0);dustBudget=0;lastDustPos=0;warnedTurns.clear();turnBlend=0;jumpCameraBlend=0;lastTrack=-100;trackDummy.scale.setScalar(0);trackDummy.updateMatrix();for(let i=0;i<900;i++)tracks.setMatrixAt(i,trackDummy.matrix);tracks.instanceMatrix.needsUpdate=true;}keys.clear();$('overlay').classList.add('hidden');$('pause').textContent='Ⅱ';notify(touchMode?'자동으로 출발! 화면 왼쪽 · 오른쪽을 눌러 방향을 바꿔요.':'↑ 또는 W로 출발! 3D 마을에서 편지 80통을 모아보세요.');syncCamera(true)}
 function pause(){if(ride.mode==='playing'){ride.pause();keys.clear();show('잠시, 쉬어가요.','마을의 바람은 기다려 줄 거예요.','이어서 달리기');$('pause').textContent='▶';sound.silence()}else if(ride.mode==='paused')start()}
 function finish(){ghostSave();keys.clear();sound.silence();if(embedded&&!ride.practice)try{parent.postMessage({dpRide:'finish',letters:ride.letters,score:ride.score,time:ride.elapsed,branch:ride.branchChoice},'*')}catch(e){}const isRecord=!ride.practice&&ride.score>bestScore;if(!ride.practice){bestScore=Math.max(bestScore,ride.score);bestTime=bestTime===null?ride.elapsed:Math.min(bestTime,ride.elapsed);try{localStorage.setItem('dentphoto-record-v1',JSON.stringify({score:bestScore,time:bestTime}))}catch(e){}}
-show(ride.practice?'구간 주행을 마쳤어요.':isRecord?'새로운 최고 기록!':'마을에 도착했어요.',`${ride.score.toLocaleString()}점 · 최고 ${bestScore.toLocaleString()}점<br>편지 ${ride.letters}통 · 아슬아슬 회피 ${ride.nearMisses}회<br>${Math.floor(ride.elapsed/60)}분 ${Math.floor(ride.elapsed%60)}초 · 최단 ${Math.floor(bestTime/60)}분 ${Math.floor(bestTime%60)}초<br>${ride.branchChoice==='cliff'?'협곡 헤어핀':'뉴욕 시내 · 배달 '+ride.city.delivered+'/3'}로 달렸어요.`,'다시 여행하기');finishCard(isRecord)}
+show(ride.practice?'구간 주행을 마쳤어요.':isRecord?'새로운 최고 기록!':'마을에 도착했어요.',`${ride.score.toLocaleString()}점 · 최고 ${bestScore.toLocaleString()}점<br>편지 ${ride.letters}통 · 아슬아슬 회피 ${ride.nearMisses}회<br>${Math.floor(ride.elapsed/60)}분 ${Math.floor(ride.elapsed%60)}초 · 최단 ${Math.floor(bestTime/60)}분 ${Math.floor(bestTime%60)}초<br>${ride.branchChoice==='cliff'?'협곡 헤어핀':'뉴욕 시내 · 배달 '+ride.city.delivered+'/3'}로 달렸어요.`+(plus?plus.finish():''),'다시 여행하기');finishCard(isRecord)}
 // 완주 카드: 라이더 + 무작위 명소 하나를 따로 찍어 1080×1350 PNG 로 만든다(finish-card.js). '다른 명소로'는 명소만 다시 뽑는다.
 let card=null,cardInfo=null,cardPick=-1;
 function riderCopy(){const sv=[lean.rotation.clone(),riderRig.position.clone(),riderRig.rotation.clone(),bike.visible];lean.rotation.set(0,0,0);riderRig.position.set(0,0,0);riderRig.rotation.set(0,0,0);bike.visible=true;
@@ -286,7 +287,7 @@ const mapPoints=Array.from({length:Math.floor(ride.length/100)+1},(_,i)=>ROAD_PA
 function jumpToLandmark(index){
  if(cityPrep.state==='loading')return;
  const l=landmarks[index],branch=ride.branchChoice;
- ride.mode='ready';start();ride.startFrom(l.z,branch);steerTouches.clear();
+ ride.mode='ready';start();ride.startFrom(l.z,branch);if(plus)plus.jumped();steerTouches.clear();
  cityScene.crossers.length=0;clearTimeout(penaltyFX.t);$('penalty').classList.remove('show');$('penalty-flash').classList.remove('show');
  $('overlay').classList.remove('finished');hideCourseTip();cenv=cityEnvNow();skySnap=true;syncCamera(true);hud();
  notify(l.name+'에서 새로 출발! · 구간 주행은 최고 기록에 저장되지 않아요.');
@@ -445,7 +446,7 @@ windGeo.attributes.position.needsUpdate=true;
 const biome=cenv?{sky:cenv.sky,fog:cenv.fog,fogNear:cenv.fogNear,fogFar:cenv.fogFar}:ADVENTURE.biome(ride.pos,ride.branchChoice),skyK=skySnap?1:1-Math.exp(-dt*(cenv?3:1.5));skySnap=false;scene.background.lerp(new T.Color(biome.sky),skyK);scene.fog.color.lerp(new T.Color(biome.fog),skyK);scene.fog.near+=((biome.fogNear||65)-scene.fog.near)*skyK;scene.fog.far+=((biome.fogFar||230)-scene.fog.far)*skyK;
 landingRing.visible=ride.jumping;
 if(ride.jumping){let t=0,s=ride.pos,y=ride.flightY,v=ride.airV;while(t<4){t+=.04;s+=ride.speed*1.35*.04*ADVENTURE.travelScale(s,ride.branchChoice);v-=16*.04;y+=v*.04;if(y<=height(s))break}landingRing.position.copy(drivePoint(s,ride.player*9));landingRing.position.y+=.05;landingRing.material.color.set(ride.airV<0&&ride.airY<4?'#a9e6a0':'#f1d886');}
-updateGhost();updateNight(dt);if(frame++%4===0)hud();if(window.rideCamHook)window.rideCamHook(camera);
+updateGhost();updateNight(dt);if(plus)plus.update(dt,time,ride.events,cenv);if(frame++%4===0)hud();if(window.rideCamHook)window.rideCamHook(camera);
  if(cityScene.wet&&cityScene.group.visible)cityScene.wet.render(renderer,scene,camera,!!(post&&post.on));
  if(post&&post.on&&cityScene.group.visible)post.render(dt,cenv);else renderer.render(scene,camera);requestAnimationFrame(tick)}
 // ── 고스트 라이더: 내가 완주한 주행을 0.2초마다 기록해 두었다가, 다음 판에서 첫 언덕을 넘은 뒤부터 반투명 바이크로 같이 달린다.
@@ -509,9 +510,10 @@ function updateNight(dt){const n=Math.max(ADVENTURE.nightAmt(ride.pos),cenv?cenv
   for(let i=0;i<FF/2;i++){const [u,v,w]=ffSeed[i*2+g];a[i*3]=bike.position.x+(u-.5)*46+Math.sin(time*.6+i)*1.6;a[i*3+1]=bike.position.y+.8+v*4.5+Math.sin(time*1.3+i*1.7)*.5;a[i*3+2]=bike.position.z+(w-.5)*46+Math.cos(time*.5+i*.9)*1.6}
   pts.geometry.attributes.position.needsUpdate=true});
  if(!cenv&&!nightNoted&&n>.3&&ride.mode==='playing'){nightNoted=true;notify('🌙 해가 졌어요 · 헤드라이트를 켜고 가로등 길을 달려요')}}
+if(window.RIDE_PLUS)try{plus=RIDE_PLUS.build({T,scene,camera,ride,drivePoint,driveHeading,lean,riderRig,headG,sun,sound,notify,rewardFX,sparkle:sparkleBurst})}catch(e){console.warn('ride-plus 실패',e)}
 requestAnimationFrame(tick);
 // 타이틀 화면(title.jpg): 처음 열면 덮고 있다가, 준비가 끝나면 하단 '시작하기'로 바로 출발한다
 {const ts=$('title-screen'),tb=$('title-start');tb.disabled=false;tb.textContent='시작하기';tb.focus();
  tb.addEventListener('click',()=>{ts.classList.add('out');setTimeout(()=>ts.remove(),500);start()},{once:true})}
-window.rideDebug={ride,quakeFx,cityPrep,start,keys,camera,renderer,canyon,cityScene,get post(){return post},scene,T,drivePoint,mud,snowfall,sound,snap:()=>{syncCamera(true);skySnap=true}};window.getGameState=()=>({mode:ride.mode,pos:ride.pos,speed:ride.speed,letters:ride.letters,energy:ride.energy,landmarksVisited:ride.visited.size,airHeight:ride.airY,crashing:ride.crashing,jumping:ride.jumping,surface:ride.surface,score:ride.score,combo:ride.combo,drifting:ride.drifting,branch:ride.branchChoice,renderer:'Three.js WebGL',drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles});
+window.rideDebug={get plus(){return plus},ride,quakeFx,cityPrep,start,keys,camera,renderer,canyon,cityScene,get post(){return post},scene,T,drivePoint,mud,snowfall,sound,snap:()=>{syncCamera(true);skySnap=true}};window.getGameState=()=>({mode:ride.mode,pos:ride.pos,speed:ride.speed,letters:ride.letters,energy:ride.energy,landmarksVisited:ride.visited.size,airHeight:ride.airY,crashing:ride.crashing,jumping:ride.jumping,surface:ride.surface,score:ride.score,combo:ride.combo,drifting:ride.drifting,branch:ride.branchChoice,renderer:'Three.js WebGL',drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles});
 })();
