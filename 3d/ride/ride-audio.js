@@ -16,7 +16,7 @@ class RideSound {
  const loop=(freq)=>{const n=a.createBufferSource();n.buffer=this.noise;n.loop=true;const f=a.createBiquadFilter();f.type='bandpass';f.frequency.value=freq;f.Q.value=.5;const g=a.createGain();g.gain.value=0;n.connect(f);f.connect(g);g.connect(this.master);n.start();return g};this.wind=loop(1000);this.gravel=loop(190);}}
  async toggle(){this.init();this.muted=!this.muted;if(this.tracks)for(const m of this.tracks)m.muted=this.muted;await this.ctx.resume();this.master.gain.setTargetAtTime(this.muted?0:.45,this.ctx.currentTime,.1);return this.muted;}
  update(r,t){if(!this.ctx)return;const a=this.ctx,active=r.mode==='playing',v=active?r.speed/520:0;this.engine.frequency.setTargetAtTime(32+v*155+Math.sin(t*28)*v*4,a.currentTime,.06);this.motor.gain.setTargetAtTime(active?.045+v*.025:0,a.currentTime,.1);this.wind.gain.setTargetAtTime(v*v*.16,a.currentTime,.1);this.gravel.gain.setTargetAtTime(active&&r.airY<.1?(r.surface==='stone'?.06+Math.abs(Math.sin(t*75))*.09:.015)*v:0,a.currentTime,.03)}
- silence(){if(!this.ctx)return;for(const g of [this.motor,this.wind,this.gravel,this.rainG,this.cityG,this.hissG,this.rumbleG].filter(Boolean))g.gain.setTargetAtTime(0,this.ctx.currentTime,.04)}
+ silence(){if(!this.ctx)return;for(const g of [this.motor,this.wind,this.gravel,this.rainG,this.cityG,this.hissG,this.rumbleG,this.waterG].filter(Boolean))g.gain.setTargetAtTime(0,this.ctx.currentTime,.04)}
  chime(freq=660){if(!this.ctx||this.muted)return;const a=this.ctx,o=a.createOscillator(),g=a.createGain();o.frequency.value=freq;g.gain.setValueAtTime(.1,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.22);o.connect(g);g.connect(this.master);o.start();o.stop(a.currentTime+.23)}
  // 뉴욕 시내 폭우: 빗소리(고음 잡음 고리)와 번개 뒤 우르릉 천둥
  // 지진 우르릉: 아주 낮은 소음이 흔들림 세기(v)만큼 커진다
@@ -49,6 +49,11 @@ class RideSound {
  fanfare(){if(!this.ctx||this.muted)return;const a=this.ctx,t=a.currentTime;
   const note=(f,at,len,vol,type='triangle')=>{const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t+at);g.gain.linearRampToValueAtTime(vol,t+at+.012);g.gain.exponentialRampToValueAtTime(.0008,t+at+len);o.connect(g);g.connect(this.master);o.start(t+at);o.stop(t+at+len+.05)};
   [523.25,659.25,783.99].forEach((f,i)=>note(f,i*.1,.22,.12));for(const f of [1046.5,1318.5,1568])note(f,.3,1.1,.07);for(const f of [2093,2637])note(f,.3,.8,.03,'sine')}
+ // 얼음 호수: 물속 웅웅거림(낮은 소음) · 얼음 금 가는 소리
+ water(v){if(!this.ctx)return;const a=this.ctx;if(!this.waterG){if(v<.01)return;const n=a.createBufferSource();n.buffer=this.noise;n.loop=true;const f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=240;this.waterG=a.createGain();this.waterG.gain.value=0;n.connect(f);f.connect(this.waterG);this.waterG.connect(this.master);n.start()}
+  this.waterG.gain.setTargetAtTime(v*.9,a.currentTime,.12);if(this.wind&&v>.5)this.wind.gain.setTargetAtTime(0,a.currentTime,.05)}
+ crack(power=1){if(!this.ctx||this.muted)return;const a=this.ctx,t=a.currentTime,n=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();n.buffer=this.noise;f.type='highpass';f.frequency.value=2200+Math.random()*1800;g.gain.setValueAtTime(.22*power,t);g.gain.exponentialRampToValueAtTime(.001,t+.09+power*.08);n.connect(f);f.connect(g);g.connect(this.master);n.start(t,Math.random());n.stop(t+.3);
+  const o=a.createOscillator(),og=a.createGain();o.type='triangle';o.frequency.setValueAtTime(190+Math.random()*120,t);o.frequency.exponentialRampToValueAtTime(60,t+.18);og.gain.setValueAtTime(.12*power,t);og.gain.exponentialRampToValueAtTime(.001,t+.2);o.connect(og);og.connect(this.master);o.start(t);o.stop(t+.22)}
  impact(power=1){if(!this.ctx||this.muted)return;const a=this.ctx,n=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();n.buffer=this.noise;f.type='lowpass';f.frequency.value=350+power*500;g.gain.setValueAtTime(.18*power,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.5);n.connect(f);f.connect(g);g.connect(this.master);n.start();n.stop(a.currentTime+.51)}
 }
 RideSound.PLAYLIST=['upbeat.mp3','duet-pop-ballad.mp3','fusion-jazz.mp3'];
