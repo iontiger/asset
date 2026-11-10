@@ -47,8 +47,16 @@
  const night={start:98500,full:100300};
  const nightAmt=s=>sstep(night.start,night.full,s);
  const nightBiome={name:'별빛 밤길',ground:'#9da779',road:'#bfa584',sky:'#101a38',fog:'#1b2544',fogNear:45,fogFar:210};
+ // 얼음 호수: 폭설 평원 끝(ice)부터 빙판 → 빙판이 깨지며(start) 길이 호수 바닥(depth)으로 내려갔다가 rise→end 에서 다시 올라와 물 밖으로 솟는다 (lake.js)
+ const lake={ice:97300,start:98500,bottom:98700,rise:101450,end:102000,depth:8.5,surface:.12,name:'얼음 호수 속'};
+ const lakeDip=s=>s<=lake.start||s>=lake.end?0:Math.min(sstep(lake.start,lake.bottom,s),sstep(lake.end,lake.rise,s));
+ const lakeIn=s=>lakeDip(s)>.12;
+ const iceAmt=s=>Math.min(sstep(lake.ice,lake.ice+200,s),sstep(lake.start+260,lake.start+140,s));
+ const lakeBiome={name:lake.name,ground:'#b9ad86',road:'#c9b98f',sky:'#0a4560',fog:'#0d5a74',fogNear:3,fogFar:58};
  const blizzard={name:'폭설 평원',ground:'#eef1f3',road:'#f3f5f7',sky:'#d9dfe5',fog:'#e6ebef',fogNear:24,fogFar:150};
  const city={name:'뉴욕 시내',ground:'#8d9196',road:'#3d4146',sky:'#b4c6d6',fog:'#c2ccd4',fogNear:70,fogFar:430};
- function biome(s,choice){if(choice==='cliff'&&s>fork.start+250&&s<fork.end-250)return canyon;if(choice==='safe'&&s>fork.start&&s<fork.end)return city;if(snowAmt(s)>.5)return blizzard;if(nightAmt(s)>.55)return nightBiome;let b=biomes[0];for(const x of biomes)if(s>=x.from)b=x;return b}
- const api={fork,branchOffset,travelScale,biomes,canyon,city,biome,mountain,mountainField,mountainMask,creek,creekX,snow,snowAmt,snowCover,blizzard,sstep,night,nightAmt,nightBiome};root.ADVENTURE=api;if(typeof module!=='undefined')module.exports=api;
+ function biome(s,choice){if(choice==='cliff'&&s>fork.start+250&&s<fork.end-250)return canyon;if(choice==='safe'&&s>fork.start&&s<fork.end)return city;if(snowAmt(s)>.5)return blizzard;let b=biomes[0];if(nightAmt(s)>.55)b=nightBiome;else for(const x of biomes)if(s>=x.from)b=x;
+  // 호수 바닥: 하늘 · 안개는 물 위 것 그대로(물속 색은 카메라가 잠겼을 때 game.js 가 lakeBiome 으로 바꾼다), 땅 · 이름만 호수
+  if(lakeDip(s)>.5)return {...b,name:lake.name,ground:lakeBiome.ground,road:lakeBiome.road};return b}
+ const api={fork,branchOffset,travelScale,biomes,canyon,city,biome,mountain,mountainField,mountainMask,creek,creekX,snow,snowAmt,snowCover,blizzard,sstep,night,nightAmt,nightBiome,lake,lakeDip,lakeIn,iceAmt,lakeBiome};root.ADVENTURE=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

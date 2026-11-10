@@ -185,3 +185,8 @@
 .mission-chip{position:fixed;z-index:5;left:12px;top:64px;padding:5px 11px;border-radius:999px;background:#fffbedee;color:#334033;font-size:11px;font-weight:700;box-shadow:0 4px 14px #0002;pointer-events:none;display:none}
 @media(max-width:800px){.missions{display:none}.mission-chip.on{display:block}}
 .touch-mode .missions{display:none!important}.touch-mode .mission-chip.on{display:block}
+/* 얼음 호수 물속 (lake.js): 가장자리 푸른 어둠 · 수면을 지날 때 물빛 번쩍 */
+#underwater{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(ellipse at 50% 42%,#0b6f8a00 38%,#06415a88 78%,#032a3dcc 100%),linear-gradient(#7fe9ff14,#04304400 45%)}
+#underwater.on{opacity:1}
+#underwater.flash{animation:lakeFlash .7s ease-out}
+@keyframes lakeFlash{0%{box-shadow:inset 0 0 0 100vmax #c9f6ffcc}100%{box-shadow:inset 0 0 0 100vmax #c9f6ff00}}

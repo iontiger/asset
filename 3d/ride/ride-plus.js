@@ -8,7 +8,7 @@
 //  4) 바람 고리: 길 위 6개짜리 '바람길'(좌우로 굽이치게 놓임) · 점프하면 비행 궤적에 금빛 '하늘 고리' 3개
 //  5) 오늘의 미션: 날짜로 고른 3개 (같은 날은 같은 미션) · 완료 +500, 셋 다 +1,000 · 오늘 최고 별 수는 localStorage
 (function(root){
-const RING_TRAILS_BASE=[1800,7600,10800,16000,42500,48000,52000,57500,63000,71500,75500,79000,87000,91500,95000,102500,105400];
+const RING_TRAILS_BASE=[1800,7600,10800,16000,42500,48000,52000,57500,63000,71500,75500,79000,87000,91500,95000,99300,103500,105600];
 const RING_N=6,RING_GAP=250,RING_R=2.2,RING_Y=2.2,RING_HIT=.24;
 const MISSION_KEY='dentphoto-missions-v1';
 const POOL=[
@@ -54,7 +54,7 @@ const skyMat=new T.ShaderMaterial({uniforms:skyU,depthWrite:false,fog:false,tone
 const dome=new T.Mesh(new T.SphereGeometry(600,32,20),skyMat);dome.frustumCulled=false;dome.renderOrder=-1000;scene.add(dome);
 const deep=new T.Color('#4f8fd0'),nightZen=new T.Color('#060b1f'),sunsetCol=new T.Color('#ffb36b'),dayCol=new T.Color('#fff1cf'),tmpC=new T.Color();
 const sunAz=Math.atan2(25,-22);   // 실제 그림자 방향(햇빛)과 같은 쪽 하늘에 해를 그린다
-function updateSky(cenv){dome.visible=!cenv;if(cenv)return;dome.position.copy(camera.position);
+function updateSky(cenv){dome.visible=!cenv&&!ride.submerged;if(!dome.visible)return;dome.position.copy(camera.position);
  const s=ride.pos,night=A.nightAmt(s),snow=A.snowAmt(s),dusk=A.sstep(66000,97500,s);
  skyU.uHor.value.copy(scene.fog.color);skyU.uSky.value.copy(scene.background);
  skyU.uZen.value.copy(scene.background).lerp(deep,.32*(1-night)*(1-snow*.8)).lerp(nightZen,night*.7);

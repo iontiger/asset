@@ -10,9 +10,9 @@
     {z:43000,x:1.75,model:'vault',name:'보물 창고길',scale:1.45},
     {z:63000,x:-1.6,model:'tower',name:'억 돌파 석탑',scale:1.45},
     {z:84500,x:2.1,model:'pier',name:'오래오래 낚시터',scale:1.3},
-    {z:100000,x:-1.8,model:'lighthouse',name:'바위섬 등대',scale:1.6}
+    {z:104300,x:-1.8,model:'lighthouse',name:'바위섬 등대',scale:1.6}
   ];
-  const JUMPS=[4600,13600,45500,83000,99600];
+  const JUMPS=[4600,13600,45500,83000,102050];   // 마지막 점프는 얼음 호수에서 물 밖으로 솟아오르는 자리
   const COBBLES=[[8400,10100],[29000,30500],[61200,62700],[102000,103600]];
   // Ordinary rolling hills and jump crests, faded out where the road climbs over 목표봉.
   function roadHeight(s){let h=Math.sin(s/1400)*2.8+Math.sin(s/530)*.7;
@@ -20,6 +20,8 @@
     const m=adventure.mountainMask(s);if(m>0){const p=path.at(s);h=h*(1-m)+adventure.mountainField(p.x,p.z)}
     // 폭설 평원은 평평한 들판 (언덕을 거의 없앤다)
     const sc=adventure.snowCover(s);if(sc>0)h*=1-.9*sc;
+    // 얼음 호수: 빙판이 깨진 자리에서 호수 바닥으로 내려갔다가 다시 올라온다
+    const ld=adventure.lakeDip(s);if(ld>0)h=h*(1-ld)-(adventure.lake.depth+Math.sin(s/170)*.6)*ld;
     return h;
   }
   // 지진(3회차부터 · game.js 가 ride.quakeOn 을 켠다): 첫 점프 착지 뒤 ~ 갈림길 전.
@@ -57,10 +59,11 @@
   class Ride {
     constructor(){this.length=path.LENGTH;this.mode='ready';this.reset();this.mode='ready';this.items=[];
       for(let i=0;i<216;i++)this.items.push({z:600+i*475,x:Math.sin(i*2.1)*.67,type:'letter',id:i});
-      for(let i=0;i<160;i++){const z=1050+i*645;if(adventure.creek.fords.some(f=>Math.abs(z-f)<450))continue;if(z>adventure.fork.start-400&&z<adventure.fork.end+400)continue;   // 협곡(갈림길) 구간에는 낙석이 없다
+      for(let i=0;i<160;i++){const z=1050+i*645;if(adventure.creek.fords.some(f=>Math.abs(z-f)<450))continue;if(z>adventure.fork.start-400&&z<adventure.fork.end+400)continue;if(z>adventure.lake.ice-300&&z<adventure.lake.end+900)continue;   // 빙판 · 호수 · 솟아오르는 자리에도 없다
+          // 협곡(갈림길) 구간에는 낙석이 없다
         this.items.push({z,x:Math.sin(i*3.7+.8)*.78,type:'rock',id:1000+i,radius:2.1+(i%3)*.45})}
     }
-    reset(){this.practice=false;this.pos=0;this.speed=0;this.player=0;this.steer=0;this.energy=100;this.letters=0;this.elapsed=0;this.hit=0;this.boost=false;this.airY=0;this.airV=0;this.crashing=false;this.jumping=false;this.flightY=0;this.flightAge=0;this.jumped=new Set();this.surface='dirt';this.crashAge=0;this.grassCooldown=0;this.shake=0;this.falling=new Map();this.visited=new Set();this.collected=new Set();this.events=[];this.score=0;this.combo=0;this.comboTime=0;this.nearMisses=0;this.driftCharge=0;this.drifting=false;this.drifted=new Set();this.rockPassed=new Set();this.branchChoice='cliff';this.snow=0;this.latV=0;this.grassBounce=0;this.slip=0;this.inSnow=false;this.quake=0;this.quakeIn=false;this.boulders=new Map();this.blocks=new Map();this.rampsSeen=new Set();this.liftY=0;this.liftSlope=0;this.waves=new Map();this.waveNear=0;this.wavePress=-99;this.slides=new Map();this.landingPress=-99;this.wasLandingKey=false;this.bonusTime=0;this.city=city.newState();}
+    reset(){this.practice=false;this.pos=0;this.speed=0;this.player=0;this.steer=0;this.energy=100;this.letters=0;this.elapsed=0;this.hit=0;this.boost=false;this.airY=0;this.airV=0;this.crashing=false;this.jumping=false;this.flightY=0;this.flightAge=0;this.jumped=new Set();this.surface='dirt';this.crashAge=0;this.grassCooldown=0;this.shake=0;this.falling=new Map();this.visited=new Set();this.collected=new Set();this.events=[];this.score=0;this.combo=0;this.comboTime=0;this.nearMisses=0;this.driftCharge=0;this.drifting=false;this.drifted=new Set();this.rockPassed=new Set();this.branchChoice='cliff';this.snow=0;this.onIce=false;this.inLake=false;this.water=0;this.ice=0;this.latV=0;this.grassBounce=0;this.slip=0;this.inSnow=false;this.quake=0;this.quakeIn=false;this.boulders=new Map();this.blocks=new Map();this.rampsSeen=new Set();this.liftY=0;this.liftSlope=0;this.waves=new Map();this.waveNear=0;this.wavePress=-99;this.slides=new Map();this.landingPress=-99;this.wasLandingKey=false;this.bonusTime=0;this.city=city.newState();}
     reward(base,type){this.combo=Math.min(5,this.combo+1);this.comboTime=8;const points=base*this.combo;this.score+=points;this.events.push({type,points,combo:this.combo});}
     chooseBranch(choice){if(this.pos<adventure.fork.start&&['safe','cliff'].includes(choice)){this.branchChoice=choice;return true}return false}
     start(){if(this.mode!=='paused')this.reset();this.mode='playing'}
@@ -111,7 +114,11 @@
       // 폭설: 바퀴가 눈에 반쯤 잠겨 최고 속도 · 가속이 줄고, 손을 떼면 금방 느려진다
       const snow=this.snow=adventure.snowAmt(this.pos);
       if(snow>.3&&!this.inSnow){this.inSnow=true;this.events.push({type:'snowIn'})}else if(snow<.05&&this.inSnow){this.inSnow=false;this.events.push({type:'snowOut'})}
-      const limit=(canyonCruise?500:(this.boost||this.bonusTime>0?520:400))*(1-Math.max(-.12,Math.min(.3,grade*.9)))*(1-.45*snow);
+      // 얼음 호수: 빙판 위(미끄럽다) → 물속(물의 저항으로 느리고 둥실둥실)
+      const ice=this.ice=adventure.iceAmt(this.pos),water=this.water=adventure.lakeIn(this.pos)?1:0;
+      if(ice>.5&&!this.onIce){this.onIce=true;this.events.push({type:'iceIn'})}else if(ice<.05&&this.onIce)this.onIce=false;
+      if(water&&!this.inLake){this.inLake=true;this.speed=Math.min(this.speed,230);this.events.push({type:'plunge'})}else if(!water&&this.inLake){this.inLake=false;this.events.push({type:'surface'})}
+      const limit=(canyonCruise?500:(this.boost||this.bonusTime>0?520:400))*(1-Math.max(-.12,Math.min(.3,grade*.9)))*(1-.45*snow)*(1-.42*water);
       // Gentle launch, then stronger pull as the engine gains speed (0–200 km/h ≈ 5.3 s).
       const acceleration=(45+75*Math.min(1,this.speed/400)+(this.boost?70:0))*(1-.45*snow);
       const force=down?-240:this.drifting?-12:canyonCruise?(this.speed<limit?Math.max(acceleration,260):-18):up?(this.speed>limit?-100:acceleration):-38-70*snow;
