@@ -43,6 +43,8 @@ jobs:
         run: |
           mkdir _site
           cp index.html sw.js manifest.webmanifest app-icon-192.png app-icon-512.png app-icon-180.png _site/
+          # 탐험 탭의 자산마을 (index.html 이 가벼워지도록 따로 둔 파일, 탐험을 열 때만 받는다)
+          cp village.html _site/
           # 자산마을 3D 미니게임판 (자산 금액 없이 마을만) → https://iontiger.github.io/asset/3d/
           mkdir -p _site/3d && cp 3d/index.html _site/3d/
           # 실사 화질용 사진 무늬 · 하늘빛 (3d/assets/real, 출처는 CREDITS.md)

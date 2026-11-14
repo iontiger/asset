@@ -1,16 +1,14 @@
 """DentPhoto 마을(3d/index.html) 만들기 — python3 3d/src/build.py
 
-자산 현황(index.html)의 탐험 원본(#villageSrc)을 꺼내, 아래의 정확한 문자열 바꾸기(rep)로 자산 금액 · 기록을 걷어 내고
+자산 현황의 탐험 원본(village.html)을 읽어, 아래의 정확한 문자열 바꾸기(rep)로 자산 금액 · 기록을 걷어 내고
 game.css · game.js(미니게임 · 계절 · 요트 …)를 덧붙여 3d/index.html 에 쓴다. 3d/index.html 은 직접 고치지 말고 여기서 만든다.
 원본이 바뀌어 rep 가 맞지 않으면 assert 가 어느 문자열인지 알려 준다.
 """
 import os,re
 HERE=os.path.dirname(os.path.abspath(__file__))
 ROOT=os.path.dirname(os.path.dirname(HERE))
-src=open(os.path.join(ROOT,'index.html'),encoding='utf-8').read()
-a=src.index('<script type="text/plain" id="villageSrc">')+len('<script type="text/plain" id="villageSrc">')
-b=src.index('</body></html></script>',a)+len('</body></html>')
-s=src[a:b].replace('<\\/script','</script').replace('<\\/SCRIPT','</script').replace('<\\!--','<!--')
+src=open(os.path.join(ROOT,'village.html'),encoding='utf-8').read()
+s=src[:src.rindex('</body></html>')+len('</body></html>')]
 def rep(a,b,count=1):
     global s
     n=s.count(a)

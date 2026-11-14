@@ -434,9 +434,9 @@ JavaScript가 윈도우 PC의 폴더에 `asset-data.json` 파일을 직접 만�
 - 소유자는 목록 순서대로 첫 번째가 남자, 두 번째가 여자 캐릭터로 걷습니다.
 - 날씨는 공포 · 탐욕 지수, 마을 주민은 네이버 증권 속보를 전합니다 (인터넷 연결 필요). 3D 화면이라
   브라우저의 하드웨어 가속이 켜져 있어야 하고, 다른 메뉴로 가면 그리기를 멈춥니다.
-- 마을 앱 원본은 `index.html` 맨 끝 `<script type="text/plain" id="villageSrc">` 에 통째로 들어 있어
-  (Three.js r160 · MIT 포함) 여전히 `index.html` 한 파일로 동작합니다. 처음 탐험을 열 때 iframe 으로 띄웁니다.
-  3D 등산 지도도 이 안의 Three.js 를 꺼내 씁니다 — 원본을 통째로 바꿀 때 Three.js 블록이 빠지면 등산 지도는 평면으로 보입니다.
+- 마을 앱 원본은 `village.html` (Three.js r160 · MIT 포함, 약 1.1MB) 에 따로 있어, 처음 탐험을 열 때만 받아 iframe 으로 띄웁니다.
+  `index.html` 에 넣어 두면 앱을 열 때마다 함께 받아야 해서 떼어 냈습니다. DentPhoto 마을(`3d/src/build.py`)도 이 파일에서 만듭니다.
+  3D 등산 지도는 처음 그릴 때 `3d/ride/vendor/three.min.js` 를 받아 쓰고, 못 받으면 평면 지도로 보입니다.
 
 ### 연금 리밸런싱
 
