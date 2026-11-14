@@ -3004,6 +3004,23 @@
     }
     .m-tab-n.show { display:inline-flex; }
   }
+  /* 좁은 휴대폰(아이폰 13 미니 · 화면 확대 320px 포함) 자산 탭 — 소유자 칩을 빼고 이름을 소유자 색으로,
+     그 자리에는 금액을 고친 날짜(오늘이면 '오늘') */
+  @media (max-width: 400px) {
+    #listBody .a-item { grid-template-columns:max-content minmax(0,1fr) max-content 22px; grid-template-areas:"name name amt grip" "date delta amt grip"; column-gap:8px; padding-left:14px; }
+    #listBody .a-item > :nth-child(3) { display:none; }
+    #listBody .a-item > :nth-child(4), #listBody .a-item > :nth-child(5) { display:block; }
+    #listBody .a-item .a-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    #listBody .a-item.o-p0 .a-name { color:var(--own0-fg); }
+    #listBody .a-item.o-p1 .a-name { color:var(--own1-fg); }
+    #listBody .a-item.o-p2 .a-name { color:var(--own2-fg); }
+    #listBody .a-item.o-p3 .a-name { color:var(--own3-fg); }
+    #listBody .a-item.o-p4 .a-name { color:var(--own4-fg); }
+    #listBody .a-item.o-p5 .a-name { color:var(--own5-fg); }
+    #listBody .a-item.o-p6 .a-name { color:var(--own6-fg); }
+    #listBody .a-item.o-p7 .a-name { color:var(--own7-fg); }
+    #listBody .a-gblock .a-group { padding-left:14px; padding-right:14px; }
+  }
   /* 아주 좁은 휴대폰 — 도넛을 범례 위로 */
   @media (max-width: 359px) {
     .m-comp { flex-direction:column; align-items:stretch; }
@@ -3823,7 +3840,7 @@
   </div>
 </div>
 
-<!-- 금액 입력 숫자 패드 (휴대폰) — 입력 화면에서 자산 칸을 누르면 올라온다. 값은 PC 와 같은 입력 칸에 들어가 저장 바로 저장한다 -->
+<!-- 금액 입력 숫자 패드 (휴대폰) — 입력 화면에서 자산 칸을 누르면 올라온다. 자산 탭에서는 금액 쪽을 누르면 올라온다. '저장'을 누르면 바로 오늘 날짜로 저장한다 -->
 <div class="sheet-back m-sb" id="mPadSheet">
   <div class="sheet m-sheet m-pad" role="dialog" aria-labelledby="mPadName">
     <button type="button" class="m-grab" data-close="mPadSheet" aria-label="닫기"></button>
@@ -3843,7 +3860,7 @@
     <div class="m-pad-acts">
       <button type="button" class="btn btn-ghost" id="mPadRevert">되돌리기</button>
       <button type="button" class="btn btn-ghost" id="mPadDone">완료</button>
-      <button type="button" class="btn btn-primary" id="mPadNext">다음 ›</button>
+      <button type="button" class="btn btn-primary" id="mPadNext">저장</button>
     </div>
   </div>
 </div>
@@ -6098,6 +6115,8 @@ function renderListTable() {
       var isDebt = isDebtRow(a);
       var row = el('div', 'a-row a-item row-in' + (a.name === selectedName ? ' sel' : ''));
       row.dataset.name = a.name;
+      var opc = a.owner ? ownerPaletteClass(a.owner) : '';
+      if (opc) row.classList.add('o-' + opc);   // 좁은 휴대폰: 이름을 소유자 색으로 (CSS)
       row.style.animationDelay = (Math.min(rowInIdx++, 14) * 22) + 'ms';
       row.appendChild(logoNode(a, true));
       var nm = el('div', 'a-name', a.name);
@@ -9359,7 +9378,13 @@ $('listSearch').addEventListener('input', function () {
 $('listBody').addEventListener('click', function (e) {
   if (Date.now() < dragEatClick) { e.preventDefault(); e.stopPropagation(); return; }
   var row = e.target.closest('.a-item');
-  if (row) selectAsset(row.dataset.name);
+  if (!row) return;
+  // 휴대폰: 금액 쪽을 누르면 오늘 금액 입력 창, 이름 쪽을 누르면 상세
+  if (isMobile() && !e.target.closest('.a-grip')) {
+    var amt = row.querySelector('.a-amt');
+    if (amt && e.clientX >= amt.getBoundingClientRect().left - 6 && mPadOpenByName(row.dataset.name)) return;
+  }
+  selectAsset(row.dataset.name);
 });
 
 /* ═══════════ 자산 탭: 끌어서 순서 바꾸기 ═══════════
@@ -13940,6 +13965,7 @@ var mPad = { inp: null, buf: '', fresh: true };
 function mPadOpen(inp) {
   if (!inp) return;
   mPad.inp = inp;
+  mPad.fromList = false;
   mPad.buf = inp.dataset.value || '';
   mPad.fresh = true;
   var last = latestByName()[inp.dataset.name], row = inp.closest('.in-item');
@@ -13949,10 +13975,16 @@ function mPadOpen(inp) {
     (last ? ' · ' + (last.date === fmtDateStr(new Date()) ? '오늘' : last.date) : '');
   document.querySelectorAll('#inputList .in-item.m-on').forEach(function (r) { r.classList.remove('m-on'); });
   if (row) row.classList.add('m-on');
-  var list = amtInputs();
-  $('mPadNext').disabled = list.indexOf(inp) >= list.length - 1;
   mPadPaint();
   if (!$('mPadSheet').classList.contains('open')) openSheet('mPadSheet');
+}
+// 자산 탭에서 금액을 눌렀을 때 — 입력 화면의 같은 자산 칸에 연결해 연다
+function mPadOpenByName(name) {
+  var inp = amtInputs().filter(function (c) { return c.dataset.name === name; })[0];
+  if (!inp) return false;
+  mPadOpen(inp);
+  mPad.fromList = true;   // 저장하지 않고 닫으면 고치던 금액은 버린다 (자산 탭에는 저장 바가 없다)
+  return true;
 }
 function mPadPaint() {
   var b = mPad.buf, init = mPad.inp.dataset.initial;
@@ -13967,7 +13999,7 @@ function mPadPaint() {
 }
 function mPadKey(k) {
   if (k === '000' && (mPad.fresh || mPad.buf === '' || mPad.buf === '0')) return;   // 앞에 붙는 0 은 뜻이 없다
-  var b = mPad.fresh ? '' : mPad.buf;
+  var b = mPad.fresh && k !== 'del' ? '' : mPad.buf;   // 지우기는 처음 눌러도 뒤에서 한 자리만
   if (k === 'del') b = b.slice(0, -1);
   else if (k === '000') b = b === '' || b === '0' ? b : b + '000';
   else b += k;
@@ -13981,7 +14013,7 @@ function mPadKey(k) {
 }
 // 창이 닫힐 때(완료 · 당겨 닫기 · 바깥 · Esc) — 비워 둔 금액은 원래대로
 function mPadClosed() {
-  if (mPad.inp && (mPad.inp.dataset.value || '') === '') revertAmt(mPad.inp);
+  if (mPad.inp && ((mPad.inp.dataset.value || '') === '' || (mPad.fromList && !mPad.keep))) revertAmt(mPad.inp);
   document.querySelectorAll('#inputList .in-item.m-on').forEach(function (r) { r.classList.remove('m-on'); });
   mPad.inp = null;
 }
@@ -13999,9 +14031,14 @@ $('mPadRevert').addEventListener('click', function () {
 $('mPadDone').addEventListener('click', function () { closeSheet('mPadSheet'); });
 $('mPadNext').addEventListener('click', function () {
   if (!mPad.inp) return;
-  var list = amtInputs(), next = list[list.indexOf(mPad.inp) + 1];
-  if ((mPad.inp.dataset.value || '') === '') revertAmt(mPad.inp);
-  if (next) mPadOpen(next); else closeSheet('mPadSheet');
+  // 저장 — 바뀐 금액을 바로 오늘 날짜로 기록하고 닫는다
+  var inp = mPad.inp;
+  if ((inp.dataset.value || '') === '') revertAmt(inp);
+  var changed = inp.dataset.value !== inp.dataset.initial;
+  mPad.keep = true;
+  closeSheet('mPadSheet');
+  mPad.keep = false;
+  if (changed) saveEntries(); else showToast('바뀐 금액이 없어요');
 });
 // 휴대폰에서 자산 칸을 누르면 숫자 패드
 $('inputList').addEventListener('click', function (e) {
@@ -14014,7 +14051,7 @@ document.addEventListener('keydown', function (e) {
   if (!mPad.inp || !$('mPadSheet').classList.contains('open') || e.ctrlKey || e.metaKey || e.altKey) return;
   if (/^[0-9]$/.test(e.key)) { e.preventDefault(); mPadKey(e.key); }
   else if (e.key === 'Backspace') { e.preventDefault(); mPadKey('del'); }
-  else if (e.key === 'Enter') { e.preventDefault(); ($('mPadNext').disabled ? $('mPadDone') : $('mPadNext')).click(); }
+  else if (e.key === 'Enter') { e.preventDefault(); $('mPadNext').click(); }
 });
 
 // 아래에서 올라오는 창을 아래로 당겨 닫기 — 손잡이 · 윗줄은 언제든, 내용은 맨 위까지 올라가 있을 때.
