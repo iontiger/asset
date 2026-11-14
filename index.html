@@ -1855,6 +1855,7 @@
   .a-name { font-size:.92rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
   .a-date { font-size:.8rem; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
   .a-date.today { color:var(--chip3-fg); font-weight:700; }
+  .a-date .d-short { display:none; }   /* 좁은 휴대폰에서만 — 올해면 월-일, 다른 해면 연도 두 자리 */
   .a-delta { font-size:.76rem; font-weight:700; text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
   .a-delta.good { color:var(--up); }
   .a-delta.bad { color:var(--down); }
@@ -3011,6 +3012,12 @@
     #listBody .a-item > :nth-child(3) { display:none; }
     #listBody .a-item > :nth-child(4), #listBody .a-item > :nth-child(5) { display:block; }
     #listBody .a-item .a-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    /* 이름 아래 줄은 작게 · 날짜는 올해면 월-일만 — 금액 칸으로 넘치지 않게. 금액은 10% 크게 · 굵게 */
+    #listBody .a-item .a-date, #listBody .a-item .a-delta { font-size:.7rem; letter-spacing:-.01em; }
+    #listBody .a-item .a-delta { min-width:0; overflow:hidden; }
+    #listBody .a-item .a-date .d-full { display:none; }
+    #listBody .a-item .a-date .d-short { display:inline; }
+    #listBody .a-item .a-amt { font-size:.97rem; font-weight:800; }
     #listBody .a-item.o-p0 .a-name { color:var(--own0-fg); }
     #listBody .a-item.o-p1 .a-name { color:var(--own1-fg); }
     #listBody .a-item.o-p2 .a-name { color:var(--own2-fg); }
@@ -6126,7 +6133,12 @@ function renderListTable() {
       var oc = el('div');
       if (a.owner) oc.appendChild(ownerChip(a.owner));
       row.appendChild(oc);
-      row.appendChild(el('div', 'a-date' + (a.date === todayStr ? ' today' : ''), a.date === todayStr ? '오늘' : a.date));
+      var dc = el('div', 'a-date' + (a.date === todayStr ? ' today' : ''), a.date === todayStr ? '오늘' : '');
+      if (a.date !== todayStr) {
+        dc.appendChild(el('span', 'd-full', a.date));
+        dc.appendChild(el('span', 'd-short', a.date.slice(0, 4) === todayStr.slice(0, 4) ? a.date.slice(5) : a.date.slice(2)));
+      }
+      row.appendChild(dc);
       // 직전 입력 대비 증감률 (부채는 잔액이 줄어야 좋음) — 0.0%로 반올림되는 변화는 생략
       var de = el('div', 'a-delta');
       var prev = prevMap[a.name];
